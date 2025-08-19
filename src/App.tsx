@@ -1,20 +1,34 @@
-import { buttonVariants } from "@/components/ui/button";
+import { Routes, Route } from "react-router-dom";
+import Navbar from "@/components/layout/Navbar";
+import Home from "@/pages/Home";
+import About from "@/pages/About";
+import Interview from "@/pages/Interview";
+import routes from "@/constants/routes";
+import Login from "./pages/Auth/Login";
+import Signup from "./pages/Auth/Signup";
+import ProtectedRoute from "./routes/ProtectedRoute";
+import Profile from "./pages/Profile/Profile";
+import CompleteProfile from "./pages/Profile/CompleteProfile";
 
 function App() {
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen space-y-20">
-      <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
-        Vite, React, Shadcn-ui minimal starter
-      </h1>
-      <a
-        href="https://github.com/moinulmoin/vite-react-tailwind-starter"
-        target="_blank"
-        rel="noreferrer"
-        className={buttonVariants()}
-      >
-        ⭐️ on GitHub
-      </a>
-    </main>
+    <div className="bg-gray-50">
+      <Navbar />
+      <Routes>
+        <Route path={routes.home} element={<Home />} />
+        <Route path={routes.about} element={<About />} />
+        <Route path={routes.interview} element={<Interview />} />
+
+        <Route path={routes.login} element={<Login />} />
+        <Route path={routes.signup} element={<Signup />} />
+
+        {/* Protected */}
+        <Route element={<ProtectedRoute />}>
+          <Route path={routes.profile} element={<Profile />} />
+          <Route path={routes.completeProfile} element={<CompleteProfile />} />
+        </Route>
+      </Routes>
+    </div>
   );
 }
 
