@@ -12,6 +12,10 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
+  app.enableCors({
+    origin: true,       
+    credentials: true,  
+  });
   
   const resumeDir = path.resolve(process.env.UPLOAD_DIR ?? 'uploads/resumes');
   const profileDir = path.resolve('uploads/profile-images');
