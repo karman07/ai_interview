@@ -1,4 +1,4 @@
-import { ChangeEvent } from 'react';
+import { ChangeEvent } from "react";
 
 export default function FileInput({
   label,
@@ -13,8 +13,9 @@ export default function FileInput({
     const f = e.target.files?.[0];
     if (f) onChange(f);
   };
+  
   return (
-    <div>
+    <div className="">
       <span className="mb-1 block text-sm font-medium text-gray-700">{label}</span>
       <input
         type="file"
