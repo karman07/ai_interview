@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Input from "@/components/ui/Input";
-import Button from "@/components/ui/Button";
+import Button from "../../components/ui/Button";
 import InlineError from "@/components/feedback/InlineError";
 import routes from "@/constants/routes";
 import { useAuth } from "@/contexts/AuthContext";
