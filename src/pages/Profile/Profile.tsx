@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { UsersApi } from '@/api/users';
 import { useAuth } from '@/contexts/AuthContext';
 import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
+import Button from '../../components/ui/Button';
 import InlineError from '@/components/feedback/InlineError';
 import FileInput from '@/components/ui/FileInput';
 import { useNavigate } from 'react-router-dom';
