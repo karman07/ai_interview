@@ -7,9 +7,11 @@ import InlineError from "@/components/feedback/InlineError";
 import routes from "@/constants/routes";
 import { useAuth } from "@/contexts/AuthContext";
 import SignupIllustration from "@/assets/bot_login.png";
+import { auth, googleProvider } from "@/firebase";
+import { signInWithPopup } from "firebase/auth";
 
 export default function Signup() {
-  const { signup } = useAuth();
+  const { signup, googleLogin } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -30,6 +32,17 @@ export default function Signup() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
+      await googleLogin(idToken);
+      navigate(routes.completeProfile, { replace: true });
+    } catch (error: any) {
+      setErr(error.message || "Google login failed.");
     }
   };
 
@@ -124,6 +137,22 @@ export default function Signup() {
             >
               Sign in
             </Link>
+          </div>
+
+          {/* Google Login */}
+          <div className="mt-8">
+            <Button
+              variant="secondary"
+              className="w-full py-3 flex items-center justify-center gap-3 rounded-xl shadow-sm hover:shadow-md transition"
+              onClick={handleGoogleLogin}
+            >
+              <img
+                src="https://www.svgrepo.com/show/355037/google.svg"
+                alt="Google"
+                className="w-5 h-5"
+              />
+              Continue with Google
+            </Button>
           </div>
         </motion.div>
       </div>

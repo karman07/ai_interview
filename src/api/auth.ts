@@ -16,12 +16,9 @@ export const AuthApi = {
     return data;
   },
 
-  async google(idToken: string): Promise<AuthPayload> {
-    const { data } = await http.post<AuthPayload>('/auth/google', { idToken });
-    tokenStore.set(data.accessToken);
-    userStore.set({ _id: data.user._id, email: data.user.email });
-    return data;
-  },
+
+  googleLogin: (idToken: string) =>
+    http.post<AuthPayload>("/auth/google", { idToken }),
 
   async logout(): Promise<void> {
     await http.get('/auth/logout');

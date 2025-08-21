@@ -7,11 +7,15 @@ import routes from "@/constants/routes";
 import { useAuth } from "@/contexts/AuthContext";
 import BOTImage from "../../assets/bot_login.png";
 
+// 👇 import Firebase auth
+import { signInWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "@/firebase";
+
 export default function Login() {
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth(); // added googleLogin from context
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const redirect = params.get("redirect") || routes.profile;
+  const redirect = params.get("redirect") || routes.completeProfile;
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
@@ -33,16 +37,33 @@ export default function Login() {
     }
   };
 
+  // 👇 Google Login handler
+  const handleGoogleLogin = async () => {
+    setErr(undefined);
+    setLoading(true);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
+
+      // call your NestJS backend via context
+      await googleLogin(idToken);
+
+      navigate(redirect, { replace: true });
+    } catch (error: any) {
+      console.error("Google login error:", error);
+      setErr("Google sign-in failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="relative min-h-screen flex bg-gradient-to-br from-indigo-100 via-white to-indigo-50">
 
       {/* Left side illustration */}
       <div className="hidden lg:flex flex-col justify-center items-center w-1/2 px-12 relative overflow-hidden bg-gradient-to-br from-indigo-700 via-indigo-800 to-indigo-900 text-white">
-        {/* Gradient overlay */}
         <div className="absolute inset-0 bg-indigo-900/50 backdrop-blur-sm z-0" />
-
         <div className="relative z-10 flex flex-col items-center text-center px-6 pt-28">
-          {/* 👆 pt-28 ensures content starts below navbar */}
           <h2 className="text-4xl font-extrabold mb-6 leading-snug">
             Your AI Interview Coach
           </h2>
@@ -50,7 +71,6 @@ export default function Login() {
             Practice interviews with AI, track progress, and land your dream job
             with confidence.
           </p>
-
           <img
             src={BOTImage}
             alt="AI Interview"
@@ -61,7 +81,6 @@ export default function Login() {
 
       {/* Right side form */}
       <div className="flex w-full lg:w-1/2 items-center justify-center px-6 lg:px-16 py-20">
-        {/* 👆 py-20 instead of py-12 to push form below navbar */}
         <div className="w-full max-w-md backdrop-blur-xl bg-white/90 rounded-3xl shadow-2xl p-10 border border-gray-100 transition-transform hover:scale-[1.01]">
           <h1 className="mb-3 text-3xl font-extrabold text-gray-900">
             Welcome back 👋
@@ -118,6 +137,7 @@ export default function Login() {
           <div className="mt-8">
             <Button
               variant="secondary"
+              onClick={handleGoogleLogin}
               className="w-full py-3 flex items-center justify-center gap-3 rounded-xl shadow-sm hover:shadow-md transition"
             >
               <img
@@ -125,7 +145,7 @@ export default function Login() {
                 alt="Google"
                 className="w-5 h-5"
               />
-              Continue with Google
+              {loading ? "Signing in…" : "Continue with Google"}
             </Button>
           </div>
         </div>
@@ -133,5 +153,3 @@ export default function Login() {
     </div>
   );
 }
-
-/* Extra Tailwind animation */

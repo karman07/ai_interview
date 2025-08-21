@@ -4,7 +4,6 @@ import FeatureCard from "@/components/ui/FeatureCard";
 import StatCard from "@/components/ui/StatCard";
 import TestimonialCard from "@/components/ui/TestimonialCard";
 import Button from "@/components/ui/Button";
-import Footer from "@/components/layout/Footer";
 
 const Home: React.FC = () => {
 
@@ -33,7 +32,7 @@ const Home: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row justify-center gap-6 mb-16">
               <Button variant="primary" className="text-lg px-8 py-4 inline-flex items-center">
-                Start Free Practice
+                Start  Practice
                 <ChevronRight className="w-5 h-5 ml-2" />
               </Button>
               <Button variant="secondary" className="text-lg px-8 py-4 inline-flex items-center">
@@ -115,7 +114,7 @@ const Home: React.FC = () => {
             <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Ready to Transform Your Interview Skills?</h2>
             <p className="text-lg text-indigo-100 mb-8">Join over 50,000 professionals who've upgraded their careers with our AI-powered interview coaching.</p>
             <div className="flex flex-col sm:flex-row justify-center gap-6">
-              <Button variant="secondary" className="text-indigo-600 text-lg px-8 py-4">Start Free Trial</Button>
+              <Button variant="secondary" className="text-indigo-600 text-lg px-8 py-4">Start Trial</Button>
               <Button variant="ghost" className="text-white border-white hover:bg-white hover:text-indigo-600 text-lg px-8 py-4">View Pricing Plans</Button>
             </div>
             <div className="mt-16 flex justify-center items-center space-x-8 opacity-80 text-white">
@@ -125,7 +124,7 @@ const Home: React.FC = () => {
               </div>
               <div className="flex items-center">
                 <Check className="w-5 h-5 mr-2" />
-                <span>Free Forever Plan</span>
+                <span> Forever Plan</span>
               </div>
               <div className="flex items-center">
                 <Check className="w-5 h-5 mr-2" />
@@ -135,8 +134,6 @@ const Home: React.FC = () => {
           </div>
         </section>
       </main>
-
-      <Footer />
     </div>
   );
 };
