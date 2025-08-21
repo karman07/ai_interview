@@ -1,6 +1,6 @@
-import { ReactNode } from "react";
+import { ButtonHTMLAttributes, ReactNode } from "react";
 
-interface ButtonProps {
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>{
   children: ReactNode;
   onClick?: () => void;
   variant?: "primary" | "secondary" | "ghost" | "outline";
