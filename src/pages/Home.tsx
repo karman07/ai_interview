@@ -4,8 +4,21 @@ import FeatureCard from "@/components/ui/FeatureCard";
 import StatCard from "@/components/ui/StatCard";
 import TestimonialCard from "@/components/ui/TestimonialCard";
 import Button from "@/components/ui/Button";
+import { useNavigate } from "react-router-dom";
+import routes from "@/constants/routes";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Home: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleStartPractice = () => {
+    if (user) {
+      navigate(routes.dashboard);
+    } else {
+      navigate(routes.login);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -31,7 +44,7 @@ const Home: React.FC = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row justify-center gap-6 mb-16">
-              <Button variant="primary" className="text-lg px-8 py-4 inline-flex items-center">
+              <Button variant="primary" className="text-lg px-8 py-4 inline-flex items-center" onClick={handleStartPractice}>
                 Start  Practice
                 <ChevronRight className="w-5 h-5 ml-2" />
               </Button>

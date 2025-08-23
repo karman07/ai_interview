@@ -1,20 +1,16 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState} from "react";
 import routes from "@/constants/routes";
 import Button from "../ui/Button";
 import colors from "@/constants/colors";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeLink, setActiveLink] = useState(routes.home);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    // Check for access token in localStorage
-    const accessToken = localStorage.getItem('access_token');
-    setIsAuthenticated(!!accessToken);
-  }, []);
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const isAuthenticated = !!user || !!localStorage.getItem('access_token');
 
   const navLinks = [
     { to: routes.home, label: "Home" },
@@ -23,9 +19,9 @@ export default function Navbar() {
     { to: routes.pricing, label: "Pricing" }
   ];
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem('access_token');
-    setIsAuthenticated(false);
+    await logout();
     setActiveLink(routes.home);
   };
 
@@ -114,12 +110,9 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-3">
             {isAuthenticated ? (
               <div className="flex items-center space-x-3">
-                {/* <div className="flex items-center space-x-2 px-4 py-2 bg-green-50 rounded-lg border border-green-200">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-medium text-green-700">Online</span>
-                </div> */}
                 <Button 
                   variant="primary"
+                  onClick={() => navigate(routes.dashboard)}
                   className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   Dashboard
