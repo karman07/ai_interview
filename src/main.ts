@@ -16,7 +16,7 @@ async function bootstrap() {
     origin: true,       
     credentials: true,  
   });
-  
+
   const resumeDir = path.resolve(process.env.UPLOAD_DIR ?? 'uploads/resumes');
   const profileDir = path.resolve('uploads/profile-images');
   [resumeDir, profileDir].forEach(dir => {
@@ -27,7 +27,7 @@ async function bootstrap() {
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
 
   const config = new DocumentBuilder()
-    .setTitle('Job Portal API')
+    .setTitle('AI interview')
     .setDescription('Auth + User Profile API with Google & uploads')
     .setVersion('1.0')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'access-token')

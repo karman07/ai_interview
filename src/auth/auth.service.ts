@@ -35,9 +35,12 @@ export class AuthService {
     return this.safeResponse(user, tokens);
   }
 
-  async googleLogin(idToken: string) {
-    const decoded = await this.firebase.verifyGoogleToken(idToken);
-    let user = await this.usersService.findByGoogleId(decoded.uid);
+async googleLogin(idToken: string) {
+  const decoded = await this.firebase.verifyGoogleToken(idToken);
+  let user = await this.usersService.findByGoogleId(decoded.uid);
+
+  if (!user) {
+    user = await this.usersService.findByEmail(decoded.email);
     if (!user) {
       user = await this.usersService.createGoogleUser({
         name: decoded.name ?? 'Google User',
@@ -45,12 +48,21 @@ export class AuthService {
         googleId: decoded.uid,
         profileImageUrl: decoded.picture,
       });
+    } else {
+
+      user.googleId = decoded.uid;
+      await user.save();
     }
-    const userId = user._id.toString();
-    const tokens = await this.issueTokens(userId, user.email);
-    await this.saveRefresh(userId, tokens.refreshToken);
-    return this.safeResponse(user, tokens);
   }
+
+  const userId = user._id.toString();
+  const tokens = await this.issueTokens(userId, user.email);
+  await this.saveRefresh(userId, tokens.refreshToken);
+
+  return this.safeResponse(user, tokens);
+}
+
+
 
   async refresh(userId: string, email: string) {
     const tokens = await this.issueTokens(userId, email);
