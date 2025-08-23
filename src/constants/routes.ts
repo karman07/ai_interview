@@ -8,6 +8,7 @@ const routes = {
   signup: '/signup',
   profile: '/profile',
   completeProfile: '/complete-profile',
+  dashboard: '/dashboard'
 };
 
 export default routes;

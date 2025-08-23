@@ -7,20 +7,16 @@ let accessToken: string | null = null;
 let currentUser: { _id: string; email: string } | null = null;
 
 export const tokenStore = {
-  get: () => accessToken ?? localStorage.getItem('access_token'),
+  get: () => accessToken,
   set: (t: string | null) => {
     accessToken = t;
-    if (t) localStorage.setItem('access_token', t);
-    else localStorage.removeItem('access_token');
   },
 };
 
 export const userStore = {
-  get: () => currentUser ?? JSON.parse(localStorage.getItem('auth_user') || 'null'),
+  get: () => currentUser,
   set: (u: { _id: string; email: string } | null) => {
     currentUser = u;
-    if (u) localStorage.setItem('auth_user', JSON.stringify(u));
-    else localStorage.removeItem('auth_user');
   },
 };
 

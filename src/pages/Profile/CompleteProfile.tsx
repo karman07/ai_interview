@@ -44,7 +44,7 @@ export default function CompleteProfile() {
       if (resumeFile) await UsersApi.uploadResume(resumeFile);
       if (profileImage) await UsersApi.uploadProfileImage(profileImage);
       await refreshMe();
-      navigate(routes.profile, { replace: true });
+      navigate(routes.dashboard, { replace: true });
     } catch (error: any) {
       setErr(error?.response?.data?.message || 'Failed to update profile.');
     } finally {
