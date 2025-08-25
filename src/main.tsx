@@ -6,12 +6,13 @@ import "./index.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ResumeProvider } from "./contexts/ResumeContext";
 
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
         <ResumeProvider>
-          <App />
+              <App />
         </ResumeProvider>
       </AuthProvider>
     </BrowserRouter>
