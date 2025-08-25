@@ -2,7 +2,9 @@ import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Home from "@/pages/Home";
 import About from "@/pages/About";
-import Interview from "@/pages/Interview";
+import Sidebar from "@/components/layout/Sidebar/Sidebar";
+import { InterviewProvider } from "@/contexts/InterviewContext";
+import { ResultsProvider } from "@/contexts/ResultsContext";
 import PricingPage from "@/pages/Pricing/Pricing";
 import routes from "@/constants/routes";
 import Login from "./pages/Auth/Login";
@@ -13,11 +15,11 @@ import CompleteProfile from "./pages/Profile/CompleteProfile";
 import { PricingProvider } from "@/contexts/PricingContext";
 import Footer from "./components/layout/Footer";
 import ResumeDashboard from "@/pages/Dashboard/ResumeDashboard";
-import Sidebar from "@/components/layout/Sidebar/Sidebar";
 // import { userStore } from "@/api/http"; 
 
 // Wrapper to redirect logged-in users from public routes
 import { useAuth } from "@/contexts/AuthContext";
+import InterviewApp from "./pages/Interview/Interview";
 const RedirectIfLoggedIn = ({ children }: { children: JSX.Element }) => {
   const { user } = useAuth();
   if (user) return <Navigate to={routes.dashboard} replace />;
@@ -34,6 +36,7 @@ function App() {
     routes.profile,
     routes.completeProfile,
     routes.dashboard,
+    routes.interview
   ];
   const shouldHideNavbar = hideNavbarRoutes.includes(location.pathname);
 
@@ -47,7 +50,21 @@ function App() {
             {/* Public Routes */}
             <Route path={routes.home} element={<Home />} />
             <Route path={routes.about} element={<About />} />
-            <Route path={routes.interview} element={<Interview />} />
+            <Route
+              path={routes.interview}
+              element={
+                <div className="flex min-h-screen">
+                  <Sidebar />
+                  <div className="flex-1">
+                    <InterviewProvider>
+                      <ResultsProvider>
+                        <InterviewApp/>
+                      </ResultsProvider>
+                    </InterviewProvider>
+                  </div>
+                </div>
+              }
+            />
             <Route path={routes.pricing} element={<PricingPage />} />
 
             {/* Login / Signup with redirect if already logged in */}
