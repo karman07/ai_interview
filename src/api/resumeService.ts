@@ -6,9 +6,17 @@ export const resumeService = {
     const res = await http.get('/resume/history');
     return res.data;
   },
-  uploadResume: async (file: File) => {
+  /**
+   * Upload resume and optional JD file, with optional JD text
+   * @param files Array of File objects: [resumeFile, jdFile?]
+   * @param jdText Optional JD text
+   */
+  uploadResume: async (files: File[], jdText?: string) => {
     const formData = new FormData();
-    formData.append('file', file);
+    files.forEach((file) => {
+      formData.append('files', file);
+    });
+    if (jdText) formData.append('jd_text', jdText);
     const res = await http.post('/resume/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
