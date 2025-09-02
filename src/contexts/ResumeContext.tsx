@@ -6,7 +6,12 @@ import { useAuth } from "@/contexts/AuthContext";
 interface ResumeContextType {
   resumes: Resume[];
   fetchResumes: () => Promise<void>;
-  uploadResume: (file: File) => Promise<void>;
+  /**
+   * Upload resume and optional JD file/text
+   * @param files Array of File objects: [resumeFile, jdFile?]
+   * @param jdText Optional JD text
+   */
+  uploadResume: (files: File[], jdText?: string) => Promise<void>;
 }
 
 const ResumeContext = createContext<ResumeContextType | undefined>(undefined);
@@ -27,9 +32,9 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setResumes(data);
   };
 
-  const uploadResume = async (file: File) => {
+  const uploadResume = async (files: File[], jdText?: string) => {
     if (!user) return;
-    const newResume = await resumeService.uploadResume(file);
+    const newResume = await resumeService.uploadResume(files, jdText);
     setResumes((prev) => [newResume, ...prev]);
   };
 

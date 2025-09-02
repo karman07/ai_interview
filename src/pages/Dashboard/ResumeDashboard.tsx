@@ -22,42 +22,7 @@ import { useResume } from "@/contexts/ResumeContext";
 import StatCard from "@/components/dashboad/StatCard";
 import DetailedResumeCard from "@/components/dashboad/DetailedResumeCard";
 
-// Types
-interface Resume {
-  _id: string;
-  filename: string;
-  stats: {
-    wordCount: number;
-    readabilityScore: number;
-    skillsExtracted: string[];
-    recommendedImprovements?: string[];
-    fit_index?: {
-      score: number;
-      band: string;
-    };
-    cv_quality?: {
-      score: number;
-      band: string;
-      subscores: {
-        dimension: string;
-        score: number;
-        max_score: number;
-        evidence: string;
-      }[];
-    };
-    jd_match?: {
-      score: number;
-      band: string;
-      subscores: {
-        dimension: string;
-        score: number;
-        max_score: number;
-        evidence: string;
-      }[];
-    };
-  };
-  createdAt: string;
-}
+import { Resume } from '@/types/Resume';
 
 // (StatCard and DetailedResumeCard props live in their component files)
 
@@ -136,10 +101,13 @@ const ResumeDashboard: React.FC = () => {
   const { resumes, uploadResume } = useResume();
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [selectedResume, setSelectedResume] = useState<Resume | null>(null);
-  const [file, setFile] = useState<File | null>(null);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [jdFile, setJDFile] = useState<File | null>(null);
+  const [jdText, setJDText] = useState<string>('');
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('overview');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
+  const jdInputRef = useRef<HTMLInputElement>(null);
 
   // Chart colors
   const COLORS = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899', '#14B8A6', '#F97316'];
@@ -149,48 +117,63 @@ const ResumeDashboard: React.FC = () => {
 
   // Calculate statistics
   const totalResumes = safeResumes.length;
-  const avgFitIndex = totalResumes ? safeResumes.reduce((acc, r) => acc + (r.stats.fit_index?.score || 0), 0) / totalResumes : 0;
-  const avgCVQuality = totalResumes ? safeResumes.reduce((acc, r) => acc + (r.stats.cv_quality?.score || 0), 0) / totalResumes : 0;
-  const avgJDMatch = totalResumes ? safeResumes.reduce((acc, r) => acc + (r.stats.jd_match?.score || 0), 0) / totalResumes : 0;
+  const totalFlags = totalResumes ? safeResumes.reduce((acc, r) => acc + ((r.stats.key_takeaways?.green_flags?.length || 0) + (r.stats.key_takeaways?.red_flags?.length || 0)), 0) : 0;
 
   // Chart data preparation
-  const performanceData = safeResumes.map((r, index) => ({
-    name: `Resume ${index + 1}`,
-    date: new Date(r.createdAt).toLocaleDateString(),
-    fitIndex: r.stats.fit_index?.score || 0,
-    cvQuality: r.stats.cv_quality?.score || 0,
-    jdMatch: r.stats.jd_match?.score || 0,
-  }));
+  const performanceData = safeResumes.map((r, index) => {
+    const cvQualityScore = Math.round(r.stats.cv_quality?.overall_score || 0);
+    const jdMatchScore = Math.round(r.stats.jd_match?.overall_score || 0);
+    const greenFlags = r.stats.key_takeaways?.green_flags?.length || 0;
+    return {
+      name: `Resume ${index + 1}`,
+      date: new Date(r.createdAt).toLocaleDateString(),
+      cvQuality: cvQualityScore,
+      jdMatch: jdMatchScore,
+      insights: greenFlags
+    };
+  });
 
   const radarData = safeResumes.length > 0 && safeResumes[0].stats.cv_quality?.subscores ? safeResumes[0].stats.cv_quality.subscores.map(sub => ({
     dimension: sub.dimension.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
     score: (sub.score / sub.max_score) * 100,
-    maxScore: 100
+    maxScore: 100,
+    evidence: sub.evidence
   })) : [];
 
   const pieData = safeResumes.length > 0 ? [
-    { name: 'Fit Index', value: safeResumes[0].stats.fit_index?.score || 0, color: COLORS[0] },
-    { name: 'CV Quality', value: safeResumes[0].stats.cv_quality?.score || 0, color: COLORS[1] },
-    { name: 'JD Match', value: safeResumes[0].stats.jd_match?.score || 0, color: COLORS[2] }
+    { name: 'CV Quality', value: safeResumes[0].stats.cv_quality?.overall_score || 0, color: COLORS[0] },
+    { name: 'JD Match', value: safeResumes[0].stats.jd_match?.overall_score || 0, color: COLORS[1] },
+    { name: 'Green Flags', value: safeResumes[0].stats.key_takeaways?.green_flags?.length || 0, color: COLORS[2] }
   ] : [];
 
   const handleUpload = async (): Promise<void> => {
-    if (!file) return;
+    if (!resumeFile) return;
     try {
-      await uploadResume(file);
+      const files: File[] = [resumeFile];
+      if (jdFile) files.push(jdFile);
+      await uploadResume(files, jdText);
       setIsUploadOpen(false);
-      setFile(null);
+      setResumeFile(null);
+      setJDFile(null);
+      setJDText('');
     } catch (err) {
       console.error('Upload failed', err);
       // TODO: show user-facing error
     }
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>): void => {
+  const handleResumeDrop = (e: React.DragEvent<HTMLDivElement>): void => {
     e.preventDefault();
     setIsDragOver(false);
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) setFile(droppedFile);
+    if (droppedFile) setResumeFile(droppedFile);
+  };
+
+  const handleJDDrop = (e: React.DragEvent<HTMLDivElement>): void => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile) setJDFile(droppedFile);
   };
 
   const handleDownload = (format: string = 'json'): void => {
@@ -203,12 +186,10 @@ const ResumeDashboard: React.FC = () => {
   const csvData = safeResumes.map(r => ({
           filename: r.filename,
           date: new Date(r.createdAt).toLocaleDateString(),
-          fit_index: r.stats.fit_index?.score || 0,
-          cv_quality: r.stats.cv_quality?.score || 0,
-          jd_match: r.stats.jd_match?.score || 0,
-          fit_band: r.stats.fit_index?.band || 'N/A',
-          cv_band: r.stats.cv_quality?.band || 'N/A',
-          jd_band: r.stats.jd_match?.band || 'N/A'
+          cv_quality: r.stats.cv_quality?.overall_score || 0,
+          jd_match: r.stats.jd_match?.overall_score || 0,
+          green_flags: r.stats.key_takeaways?.green_flags?.length || 0,
+          red_flags: r.stats.key_takeaways?.red_flags?.length || 0
         }));
         const csvContent = [
           Object.keys(csvData[0]).join(','),
@@ -290,22 +271,22 @@ const ResumeDashboard: React.FC = () => {
             subtitle="Uploaded & analyzed"
           />
           <StatCard
-            title="Avg Fit Index"
-            value={avgFitIndex}
+            title="Total Flags"
+            value={totalFlags}
             icon={<StarIcon className="w-5 h-5 text-green-600" />}
             color="bg-green-50"
-            subtitle="Job compatibility"
+            subtitle="Combined insights"
           />
           <StatCard
-            title="Avg CV Quality"
-            value={avgCVQuality}
+            title="CV Quality"
+            value={safeResumes[0]?.stats.cv_quality?.overall_score || 0}
             icon={<AcademicCapIcon className="w-5 h-5 text-purple-600" />}
             color="bg-purple-50"
             subtitle="Content & structure"
           />
           <StatCard
-            title="Avg JD Match"
-            value={avgJDMatch}
+            title="JD Match"
+            value={safeResumes[0]?.stats.jd_match?.overall_score || 0}
             icon={<BriefcaseIcon className="w-5 h-5 text-orange-600" />}
             color="bg-orange-50"
             subtitle="Requirements alignment"
@@ -372,9 +353,9 @@ const ResumeDashboard: React.FC = () => {
                       }} 
                     />
                     <Legend />
-                    <Area type="monotone" dataKey="fitIndex" stroke="#3B82F6" fillOpacity={1} fill="url(#colorFit)" strokeWidth={2} name="Fit Index" />
-                    <Area type="monotone" dataKey="cvQuality" stroke="#10B981" fillOpacity={1} fill="url(#colorCV)" strokeWidth={2} name="CV Quality" />
-                    <Area type="monotone" dataKey="jdMatch" stroke="#8B5CF6" fillOpacity={1} fill="url(#colorJD)" strokeWidth={2} name="JD Match" />
+                    <Area type="monotone" dataKey="cvQuality" stroke="#10B981" fillOpacity={1} fill="url(#colorCV)" strokeWidth={2} name="CV Quality Score" />
+                    <Area type="monotone" dataKey="jdMatch" stroke="#8B5CF6" fillOpacity={1} fill="url(#colorJD)" strokeWidth={2} name="JD Match Score" />
+                    <Area type="monotone" dataKey="insights" stroke="#3B82F6" fillOpacity={1} fill="url(#colorFit)" strokeWidth={2} name="Green Flags" />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
@@ -507,30 +488,31 @@ const ResumeDashboard: React.FC = () => {
                 <div className="sm:flex sm:items-start">
                   <div className="w-full mt-3 text-center sm:mt-0 sm:text-left">
                     <h3 className="text-2xl font-bold leading-6 text-gray-900 mb-2">
-                      Upload Resume
+                      Upload Resume & JD
                     </h3>
                     <p className="text-sm text-gray-600 mb-6">
-                      Upload your resume in PDF, DOC, or DOCX format for analysis
+                      Upload your resume in PDF, DOC, or DOCX format for analysis. Optionally, upload a Job Description file or paste JD text for better matching.
                     </p>
                     
+                    {/* Resume File Input */}
                     <div
                       className={`mt-4 border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 ${
                         isDragOver
                           ? 'border-blue-400 bg-blue-50'
                           : 'border-gray-300 hover:border-gray-400'
                       }`}
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => resumeInputRef.current?.click()}
                       onDragOver={(e) => {
                         e.preventDefault();
                         setIsDragOver(true);
                       }}
                       onDragLeave={() => setIsDragOver(false)}
-                      onDrop={handleDrop}
+                      onDrop={handleResumeDrop}
                     >
                       <CloudArrowUpIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                      {file ? (
+                      {resumeFile ? (
                         <div>
-                          <p className="text-lg font-medium text-gray-900">{file.name}</p>
+                          <p className="text-lg font-medium text-gray-900">{resumeFile.name}</p>
                           <p className="text-sm text-gray-500">Click to choose a different file</p>
                         </div>
                       ) : (
@@ -544,11 +526,66 @@ const ResumeDashboard: React.FC = () => {
                         </div>
                       )}
                       <input
-                        ref={fileInputRef}
+                        ref={resumeInputRef}
                         type="file"
                         accept=".pdf,.doc,.docx"
-                        onChange={(e) => setFile(e.target.files?.[0] || null)}
+                        onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
                         className="hidden"
+                      />
+                    </div>
+
+                    {/* JD File Input */}
+                    <div
+                      className={`mt-4 border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 ${
+                        isDragOver
+                          ? 'border-purple-400 bg-purple-50'
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                      onClick={() => jdInputRef.current?.click()}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsDragOver(true);
+                      }}
+                      onDragLeave={() => setIsDragOver(false)}
+                      onDrop={handleJDDrop}
+                    >
+                      <BriefcaseIcon className="w-12 h-12 mx-auto mb-4 text-purple-400" />
+                      {jdFile ? (
+                        <div>
+                          <p className="text-lg font-medium text-gray-900">{jdFile.name}</p>
+                          <p className="text-sm text-gray-500">Click to choose a different file</p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-lg font-medium text-gray-900 mb-2">
+                            Drop JD file here (optional)
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            or click to browse • PDF, DOC, DOCX up to 10MB
+                          </p>
+                        </div>
+                      )}
+                      <input
+                        ref={jdInputRef}
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        onChange={(e) => setJDFile(e.target.files?.[0] || null)}
+                        className="hidden"
+                      />
+                    </div>
+
+                    {/* JD Text Input */}
+                    <div className="mt-4">
+                      <label htmlFor="jdText" className="block text-sm font-medium text-gray-700 mb-2">
+                        Paste JD Text (optional)
+                      </label>
+                      <textarea
+                        id="jdText"
+                        value={jdText}
+                        onChange={(e) => setJDText(e.target.value)}
+                        rows={4}
+                        className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Paste job description text here for better matching..."
                       />
                     </div>
                   </div>
@@ -557,7 +594,7 @@ const ResumeDashboard: React.FC = () => {
                 <div className="mt-6 sm:flex sm:flex-row-reverse gap-3">
                   <button
                     onClick={handleUpload}
-                    disabled={!file}
+                    disabled={!resumeFile}
                     className="inline-flex justify-center w-full px-6 py-3 text-base font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 border border-transparent rounded-xl hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                   >
                     <CloudArrowUpIcon className="w-5 h-5 mr-2" />
@@ -614,25 +651,27 @@ const ResumeDashboard: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     {[
                       { 
-                        label: 'Fit Index', 
-                        value: selectedResume.stats.fit_index?.score, 
-                        band: selectedResume.stats.fit_index?.band, 
-                        color: 'from-blue-500 to-blue-600',
-                        icon: StarIcon 
-                      },
-                      { 
                         label: 'CV Quality', 
-                        value: selectedResume.stats.cv_quality?.score, 
-                        band: selectedResume.stats.cv_quality?.band, 
+                        value: Math.round(selectedResume.stats.cv_quality?.overall_score || 0), 
+                        band: selectedResume.stats.cv_quality?.overall_score >= 70 ? 'Strong' : 
+                              selectedResume.stats.cv_quality?.overall_score >= 50 ? 'Good' : 'Needs Improvement', 
                         color: 'from-green-500 to-green-600',
                         icon: DocumentTextIcon 
                       },
                       { 
                         label: 'JD Match', 
-                        value: selectedResume.stats.jd_match?.score, 
-                        band: selectedResume.stats.jd_match?.band, 
+                        value: Math.round(selectedResume.stats.jd_match?.overall_score || 0), 
+                        band: selectedResume.stats.jd_match?.overall_score >= 70 ? 'Strong' : 
+                              selectedResume.stats.jd_match?.overall_score >= 50 ? 'Good' : 'Needs Improvement',
                         color: 'from-purple-500 to-purple-600',
                         icon: BriefcaseIcon 
+                      },
+                      { 
+                        label: 'Insights', 
+                        value: selectedResume.stats.key_takeaways?.green_flags?.length || 0,
+                        band: `${selectedResume.stats.key_takeaways?.green_flags?.length || 0} Green Flags`, 
+                        color: 'from-blue-500 to-blue-600',
+                        icon: StarIcon 
                       }
                     ].map((metric, idx) => (
                       <div key={idx} className="bg-gradient-to-r from-gray-50 to-white p-6 rounded-2xl border border-gray-100">
@@ -682,7 +721,11 @@ const ResumeDashboard: React.FC = () => {
                                   style={{ width: `${(subscore.score / subscore.max_score) * 100}%` }}
                                 />
                               </div>
-                              <p className="text-xs text-gray-600">{subscore.evidence}</p>
+                              <div className="text-xs text-gray-600">
+                                {subscore.evidence.map((evidence, i) => (
+                                  <p key={i} className="mb-1">{evidence}</p>
+                                ))}
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -720,47 +763,76 @@ const ResumeDashboard: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Additional Resume Stats */}
+                    {/* Resume Analysis */}
                     <div className="bg-white border border-gray-100 rounded-2xl p-6">
                       <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
                         <UserIcon className="w-6 h-6 text-blue-600" />
-                        Resume Details
+                        Resume Analysis
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                          <h4 className="font-medium text-gray-900 mb-3">Basic Metrics</h4>
+                          <h4 className="font-medium text-gray-900 mb-3">Technical Skills</h4>
                           <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Word Count:</span>
-                              <span className="font-medium">{selectedResume.stats.wordCount}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Readability Score:</span>
-                              <span className="font-medium">{selectedResume.stats.readabilityScore}/100</span>
-                            </div>
+                            {(selectedResume.stats.cv_quality?.subscores?.find(s => s.dimension === 'technical_depth')?.evidence || []).map((skill, idx) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                <span className="text-gray-700">{skill}</span>
+                              </div>
+                            ))}
+                            {(selectedResume.stats.cv_quality?.subscores?.find(s => s.dimension === 'technical_depth')?.evidence || []).length === 0 && (
+                              <p className="text-sm text-gray-500">No technical skills found in analysis.</p>
+                            )}
                           </div>
                         </div>
                         <div>
-                          <h4 className="font-medium text-gray-900 mb-3">Extracted Skills</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {(selectedResume?.stats?.skillsExtracted || []).map((skill, idx) => (
-                              <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                                {skill}
-                              </span>
+                          <h4 className="font-medium text-gray-900 mb-3">Career Highlights</h4>
+                          <div className="space-y-2 text-sm">
+                            {(selectedResume.stats.cv_quality?.subscores?.find(s => s.dimension === 'career_progression')?.evidence || []).map((item, idx) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-green-500" />
+                                <span className="text-gray-700">{item}</span>
+                              </div>
                             ))}
+                            {(selectedResume.stats.cv_quality?.subscores?.find(s => s.dimension === 'career_progression')?.evidence || []).length === 0 && (
+                              <p className="text-sm text-gray-500">No career progression info found.</p>
+                            )}
                           </div>
                         </div>
                       </div>
-                      {selectedResume?.stats?.recommendedImprovements && (
-                        <div className="mt-6">
-                          <h4 className="font-medium text-gray-900 mb-3">Recommended Improvements</h4>
-                          <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
-                            {(selectedResume?.stats?.recommendedImprovements || []).map((improvement, idx) => (
-                              <li key={idx}>{improvement}</li>
-                            ))}
-                          </ul>
+
+                      {/* Key Takeaways */}
+                      <div className="mt-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-green-500" />
+                              Strengths
+                            </h4>
+                            <ul className="list-disc list-inside space-y-2 text-sm text-gray-600">
+                              {(selectedResume.stats.key_takeaways?.green_flags || []).map((flag, idx) => (
+                                <li key={idx} className="text-green-600">{flag}</li>
+                              ))}
+                              {(selectedResume.stats.key_takeaways?.green_flags || []).length === 0 && (
+                                <li className="text-sm text-gray-500">No green flags identified.</li>
+                              )}
+                            </ul>
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-red-500" />
+                              Areas for Improvement
+                            </h4>
+                            <ul className="list-disc list-inside space-y-2 text-sm text-gray-600">
+                              {(selectedResume.stats.key_takeaways?.red_flags || []).map((flag, idx) => (
+                                <li key={idx} className="text-red-600">{flag}</li>
+                              ))}
+                              {(selectedResume.stats.key_takeaways?.red_flags || []).length === 0 && (
+                                <li className="text-sm text-gray-500">No red flags identified.</li>
+                              )}
+                            </ul>
+                          </div>
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>

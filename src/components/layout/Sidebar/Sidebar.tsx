@@ -32,7 +32,7 @@ export default function ResponsiveNavbar() {
         },
         {
           icon: <HelpCircle size={18} />,
-          label: "Interview",
+          label: "AI Quiz",
           description: "Practice with AI interviewer"
         },
         {

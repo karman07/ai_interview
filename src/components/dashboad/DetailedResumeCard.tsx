@@ -16,14 +16,14 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume, onViewD
             <DocumentTextIcon className="w-6 h-6 text-blue-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-lg text-gray-900">{resume.filename}</h3>
+            <h3 className="font-semibold text-lg text-gray-900">{resume?.filename}</h3>
             <p className="text-sm text-gray-500 flex items-center gap-2">
               <CalendarIcon className="w-4 h-4" />
-              {new Date(resume.createdAt).toLocaleDateString('en-US', { 
+              {resume?.createdAt ? new Date(resume.createdAt).toLocaleDateString('en-US', { 
                 year: 'numeric', 
                 month: 'long', 
                 day: 'numeric' 
-              })}
+              }) : 'N/A'}
             </p>
           </div>
         </div>
@@ -37,9 +37,24 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume, onViewD
 
       <div className="grid grid-cols-3 gap-4 mb-6">
         {[
-          { label: 'Fit Index', value: resume.stats.fit_index?.score, band: resume.stats.fit_index?.band, icon: StarIcon },
-          { label: 'CV Quality', value: resume.stats.cv_quality?.score, band: resume.stats.cv_quality?.band, icon: DocumentTextIcon },
-          { label: 'JD Match', value: resume.stats.jd_match?.score, band: resume.stats.jd_match?.band, icon: BriefcaseIcon }
+          { 
+            label: 'CV Quality', 
+            value: resume.stats?.cv_quality?.overall_score ?? 0, 
+            band: (resume.stats?.cv_quality?.overall_score ?? 0) >= 70 ? 'Strong' : (resume.stats?.cv_quality?.overall_score ?? 0) >= 50 ? 'Good' : 'Needs Work', 
+            icon: DocumentTextIcon 
+          },
+          { 
+            label: 'JD Match', 
+            value: resume.stats?.jd_match?.overall_score ?? 0, 
+            band: (resume.stats?.jd_match?.overall_score ?? 0) >= 70 ? 'Strong' : (resume.stats?.jd_match?.overall_score ?? 0) >= 50 ? 'Good' : 'Needs Work', 
+            icon: BriefcaseIcon 
+          },
+          { 
+            label: 'Green Flags', 
+            value: resume.stats?.key_takeaways?.green_flags?.length ?? 0, 
+            band: 'Total', 
+            icon: StarIcon 
+          }
         ].map((metric, idx) => (
           <div key={idx} className="text-center">
             <div className="flex justify-center mb-2">
@@ -57,11 +72,11 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume, onViewD
       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
         <div 
           className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-1000"
-          style={{ width: `${Math.min(((resume.stats.fit_index?.score || 0) + (resume.stats.cv_quality?.score || 0) + (resume.stats.jd_match?.score || 0)) / 3, 100)}%` }}
+          style={{ width: `${Math.min(((resume.stats?.cv_quality?.overall_score || 0) + (resume.stats?.jd_match?.overall_score || 0)) / 2, 100)}%` }}
         />
       </div>
       <p className="text-xs text-gray-500 mt-2 text-center">
-        Overall Score: {Math.round(((resume.stats.fit_index?.score || 0) + (resume.stats.cv_quality?.score || 0) + (resume.stats.jd_match?.score || 0)) / 3)}/100
+        Overall Score: {Math.round(((resume.stats?.cv_quality?.overall_score || 0) + (resume.stats?.jd_match?.overall_score || 0)) / 2)}/100
       </p>
     </div>
   </div>

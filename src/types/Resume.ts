@@ -3,35 +3,27 @@ export interface Resume {
   _id: string;
   filename: string;
   stats: {
-    wordCount: number;
-    readabilityScore: number;
-    skillsExtracted: string[];
-    recommendedImprovements?: string[];
-
-    // ✅ Added new AI analysis fields
-    fit_index?: {
-      score: number;
-      band: string;
-    };
-    cv_quality?: {
-      score: number;
-      band: string;
+    cv_quality: {
+      overall_score: number;
       subscores: {
         dimension: string;
         score: number;
         max_score: number;
-        evidence: string;
+        evidence: string[];
       }[];
     };
-    jd_match?: {
-      score: number;
-      band: string;
+    jd_match: {
+      overall_score: number;
       subscores: {
         dimension: string;
         score: number;
         max_score: number;
-        evidence: string;
+        evidence: string[];
       }[];
+    };
+    key_takeaways: {
+      red_flags: string[];
+      green_flags: string[];
     };
   };
   createdAt: string;
