@@ -1,5 +1,14 @@
-import { Controller, Post, UseGuards, UseInterceptors, UploadedFile, Req, Get } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  Controller,
+  Post,
+  UseGuards,
+  UseInterceptors,
+  UploadedFiles,
+  Req,
+  Get,
+  Body,
+} from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { ResumeService } from './resume.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
@@ -9,15 +18,29 @@ export class ResumeController {
 
   @UseGuards(JwtAuthGuard)
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file', {
-    dest: './uploads', // folder where files are stored
-  }))
-  async upload(@UploadedFile() file: Express.Multer.File, @Req() req) {
-    if (!file) throw new Error('File is required');
+  @UseInterceptors(FilesInterceptor('files', 2, { dest: './uploads' }))
+  async upload(
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body('jd_text') jdText: string,
+    @Req() req,
+  ) {
+    if (!files || files.length === 0) {
+      throw new Error('At least one file (resume) is required');
+    }
 
-    // req.user.sub comes from JwtAuthGuard
-    const userId = req.user.sub; 
-    const resume = await this.resumeService.uploadResume(file, userId);
+    const userId = req.user.sub;
+
+    // First file is resume, second (optional) is JD file
+    const resumeFile = files[0];
+    const jdFile = files.length > 1 ? files[1] : undefined;
+
+    const resume = await this.resumeService.uploadResume(
+      resumeFile,
+      jdFile,
+      jdText,
+      userId,
+    );
+
     return { message: 'Resume uploaded successfully', resume };
   }
 

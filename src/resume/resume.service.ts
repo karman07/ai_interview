@@ -4,6 +4,8 @@ import { Model } from 'mongoose';
 import { Resume, ResumeDocument } from './resume.schema';
 import * as fs from 'fs';
 import * as path from 'path';
+import axios from 'axios';
+import * as FormData from 'form-data';
 
 @Injectable()
 export class ResumeService {
@@ -11,9 +13,14 @@ export class ResumeService {
     @InjectModel(Resume.name) private resumeModel: Model<ResumeDocument>,
   ) {}
 
-  async uploadResume(file: Express.Multer.File, userId: string) {
+  async uploadResume(
+    file: Express.Multer.File,
+    jdFile: Express.Multer.File | undefined,
+    jdText: string,
+    userId: string,
+  ) {
     if (!file) {
-      throw new BadRequestException('No file uploaded');
+      throw new BadRequestException('No resume file uploaded');
     }
 
     // Ensure uploads folder exists
@@ -22,122 +29,49 @@ export class ResumeService {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
 
-    // ✅ Full dummy stats (your JSON)
-    const stats = {
-      fit_index: {
-        score: 54.71,
-        band: "Weak",
-      },
-      cv_quality: {
-        score: 42.5,
-        band: "Weak",
-        subscores: [
-          {
-            dimension: "ats_structure",
-            score: 5.0,
-            max_score: 10.0,
-            evidence: "Contact info present (email, phone, LinkedIn)",
-          },
-          {
-            dimension: "writing_clarity",
-            score: 5.0,
-            max_score: 15.0,
-            evidence: "Some generic phrasing, lacks concise action statements",
-          },
-          {
-            dimension: "quantified_impact",
-            score: 4.0,
-            max_score: 20.0,
-            evidence: "Reduced API response time by 40%",
-          },
-          {
-            dimension: "technical_depth",
-            score: 15.0,
-            max_score: 15.0,
-            evidence: "Led development of microservices architecture serving 1M+ users",
-          },
-          {
-            dimension: "projects_portfolio",
-            score: 2.5,
-            max_score: 10.0,
-            evidence: "Certifications listed, limited project detail",
-          },
-          {
-            dimension: "leadership_skills",
-            score: 7.5,
-            max_score: 10.0,
-            evidence: "Led teams and mentored colleagues",
-          },
-          {
-            dimension: "career_progression",
-            score: 3.5,
-            max_score: 10.0,
-            evidence: "Some progression shown (Senior Engineer role)",
-          },
-          {
-            dimension: "consistency",
-            score: 0.0,
-            max_score: 10.0,
-            evidence: "Formatting/date consistency issues",
-          },
-        ],
-      },
-      jd_match: {
-        score: 62.86,
-        band: "Partial",
-        subscores: [
-          {
-            dimension: "hard_skills",
-            score: 30.0,
-            max_score: 35.0,
-            evidence: "Matched: Python, Java, Terraform, Kubernetes, Docker, Redis, PostgreSQL",
-          },
-          {
-            dimension: "responsibilities",
-            score: 12.86,
-            max_score: 15.0,
-            evidence: "Overlap: develop, implement, manage, design, mentor, collaborate",
-          },
-          {
-            dimension: "domain_relevance",
-            score: 7.5,
-            max_score: 10.0,
-            evidence: "E-commerce platform project in CV relevant to JD",
-          },
-          {
-            dimension: "seniority",
-            score: 0.0,
-            max_score: 10.0,
-            evidence: "No clear years-of-experience match to JD",
-          },
-          {
-            dimension: "nice_to_haves",
-            score: 2.5,
-            max_score: 5.0,
-            evidence: "Mention of Agile/Scrum",
-          },
-          {
-            dimension: "education_certs",
-            score: 0.0,
-            max_score: 5.0,
-            evidence: "No explicit education/cert evidence found",
-          },
-          {
-            dimension: "recent_achievements",
-            score: 0.0,
-            max_score: 10.0,
-            evidence: "No recent role-relevant wins highlighted",
-          },
-          {
-            dimension: "constraints",
-            score: 10.0,
-            max_score: 10.0,
-            evidence: "Location/remote constraints mentioned in JD",
-          },
-        ],
-      },
-    };
+    // ✅ Prepare multipart form data for external API
+    const formData = new FormData();
+    formData.append('file', fs.createReadStream(file.path), {
+      filename: file.originalname,
+      contentType: 'application/pdf',
+    });
 
+    if (jdText) {
+      formData.append('jd_text', jdText);
+    } else {
+      formData.append('jd_text', '');
+    }
+
+    if (jdFile) {
+      formData.append('jd_file', fs.createReadStream(jdFile.path), {
+        filename: jdFile.originalname,
+        contentType: jdFile.mimetype,
+      });
+    } else {
+      formData.append('jd_file', '');
+    }
+
+    let stats: any;
+    try {
+      const response = await axios.post(
+        'http://82.112.231.134:8000/upload/cv_evaluate',
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+            accept: 'application/json',
+          },
+          maxBodyLength: Infinity,
+          maxContentLength: Infinity,
+        },
+      );
+      stats = response.data; // ✅ real API response
+    } catch (err) {
+      console.error('Error calling external CV API:', err.message);
+      throw new BadRequestException('Failed to evaluate CV');
+    }
+
+    // ✅ Save resume with API stats
     const resume = new this.resumeModel({
       filename: file.originalname,
       path: file.path,
