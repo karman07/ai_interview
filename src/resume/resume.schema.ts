@@ -12,9 +12,13 @@ export class Resume {
   @Prop({ required: true })
   path: string;
 
-  // ✅ Tell Mongoose this is a plain object
+  // ✅ CV evaluation stats
   @Prop({ type: Object, required: true })
   stats: Record<string, any>;
+
+  // ✅ New improvement_resume field
+  @Prop({ type: Object, default: null })
+  improvement_resume: Record<string, any> | null;
 
   @Prop({ type: Types.ObjectId, ref: User.name, required: true })
   user: User;

@@ -7,6 +7,8 @@ import {
   Req,
   Get,
   Body,
+  Patch,
+  Param,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ResumeService } from './resume.service';
@@ -30,7 +32,6 @@ export class ResumeController {
 
     const userId = req.user.sub;
 
-    // First file is resume, second (optional) is JD file
     const resumeFile = files[0];
     const jdFile = files.length > 1 ? files[1] : undefined;
 
@@ -50,5 +51,23 @@ export class ResumeController {
     const userId = req.user.sub;
     const resumes = await this.resumeService.getUserResumes(userId);
     return resumes;
+  }
+
+  // ✅ PATCH API to improve resume with JD later
+  @UseGuards(JwtAuthGuard)
+  @Patch('improve/:id')
+  @UseInterceptors(FilesInterceptor('files', 1, { dest: './uploads' }))
+  async improveResume(
+    @Param('id') id: string,
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body('jd_text') jdText: string,
+  ) {
+    const jdFile = files?.[0];
+    const updatedResume = await this.resumeService.improveResume(
+      id,
+      jdFile,
+      jdText,
+    );
+    return { message: 'Resume improved successfully', resume: updatedResume };
   }
 }
