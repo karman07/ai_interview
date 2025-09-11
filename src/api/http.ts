@@ -1,8 +1,8 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 // import { AuthPayload } from '@/types/user';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
-
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
+export const baseURL = 'http://82.112.231.134:9030';
 let accessToken: string | null = null;
 let currentUser: { _id: string; email: string } | null = null;
 
