@@ -451,7 +451,7 @@ const ResumeDashboard: React.FC = () => {
             {resumes.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {safeResumes.map((resume) => (
-                  <DetailedResumeCard key={resume._id} resume={resume} onViewDetails={setSelectedResume} />
+                  <DetailedResumeCard key={resume._id} resume={resume}  />
                 ))}
               </div>
             ) : (

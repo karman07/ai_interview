@@ -20,6 +20,8 @@ import ResumeDashboard from "@/pages/Dashboard/ResumeDashboard";
 // Wrapper to redirect logged-in users from public routes
 import { useAuth } from "@/contexts/AuthContext";
 import InterviewApp from "./pages/Interview/Interview";
+import ResourcesHub from "./pages/Resources/Resources";
+import JobSearchApp from "./pages/Job/JobSearch";
 const RedirectIfLoggedIn = ({ children }: { children: JSX.Element }) => {
   const { user } = useAuth();
   if (user) return <Navigate to={routes.dashboard} replace />;
@@ -36,7 +38,9 @@ function App() {
     routes.profile,
     routes.completeProfile,
     routes.dashboard,
-    routes.interview
+    routes.interview,
+    routes.resources,
+    routes.jobListings
   ];
   const shouldHideNavbar = hideNavbarRoutes.includes(location.pathname);
 
@@ -65,6 +69,24 @@ function App() {
                 </div>
               }
             />
+
+            <Route path={routes.jobListings} element={
+              <div className="flex min-h-screen">
+                <Sidebar />
+                <div className="flex-1">
+                  <JobSearchApp />
+                </div>
+              </div>
+            } />
+
+            <Route path={routes.resources} element={                
+              <div className="flex min-h-screen">
+                <Sidebar />
+                <div className="flex-1">
+                  <ResourcesHub />
+                </div>
+              </div>
+            } />
             <Route path={routes.pricing} element={<PricingPage />} />
 
             {/* Login / Signup with redirect if already logged in */}

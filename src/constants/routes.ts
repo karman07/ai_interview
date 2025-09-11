@@ -8,7 +8,9 @@ const routes = {
   signup: '/signup',
   profile: '/profile',
   completeProfile: '/complete-profile',
-  dashboard: '/dashboard'
+  dashboard: '/dashboard',
+  resources: '/resources',
+  jobListings: '/jobs',
 };
 
 export default routes;
