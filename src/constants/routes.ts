@@ -11,6 +11,9 @@ const routes = {
   dashboard: '/dashboard',
   resources: '/resources',
   jobListings: '/jobs',
+  subjects: '/subjects',
+  subjectDetails: (id: string) => `/subjects/${id}`,
+  lessonDetails: (id: string) => `/lessons/${id}`,
 };
 
 export default routes;
