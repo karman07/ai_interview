@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Input from "@/components/ui/Input";
-import Button from "../../components/ui/Button";
+import Button from "../../components/ui/button";
 import InlineError from "@/components/feedback/InlineError";
 import routes from "@/constants/routes";
 import { useAuth } from "@/contexts/AuthContext";

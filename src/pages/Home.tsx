@@ -3,7 +3,7 @@ import { ChevronRight, Brain, Target, TrendingUp, Star, Play, Zap, Check } from 
 import FeatureCard from "@/components/ui/FeatureCard";
 import StatCard from "@/components/ui/StatCard";
 import TestimonialCard from "@/components/ui/TestimonialCard";
-import Button from "@/components/ui/Button";
+import Button from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import routes from "@/constants/routes";
 import { useAuth } from "@/contexts/AuthContext";
