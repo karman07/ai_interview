@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState} from "react";
 import routes from "@/constants/routes";
-import Button from "../ui/Button";
+import Button from "../ui/button";
 import colors from "@/constants/colors";
 import { useAuth } from "@/contexts/AuthContext";
 

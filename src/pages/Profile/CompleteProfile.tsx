@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
+import Button from '@/components/ui/button';
 import FileInput from '@/components/ui/FileInput';
 import InlineError from '@/components/feedback/InlineError';
 import { UsersApi } from '@/api/users';
