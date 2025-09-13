@@ -11,7 +11,7 @@ export class ResultsService {
 
   // Get all results for logged-in user
   async getMyResults(userId: string) {
-    console.log('Fetching results for user:', userId);
+    // console.log('Fetching results for user:', userId);
     return this.resultModel
       .find({ owner: new Types.ObjectId(userId) })
       .sort({ createdAt: -1 })

@@ -14,7 +14,7 @@ export class FirebaseService implements OnModuleInit {
 
   async verifyGoogleToken(idToken: string) {
     // Verifies Firebase ID token coming from Google sign-in
-    console.log(idToken)
+    // console.log(idToken)
     return admin.auth().verifyIdToken(idToken);
   }
 }

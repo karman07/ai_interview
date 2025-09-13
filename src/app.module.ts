@@ -7,6 +7,10 @@ import { UsersModule } from './users/users.module';
 import { ResumeModule } from './resume/resume.module';
 import { ResultsModule } from './results/results.module';
 import { InterviewModule } from './interview/interview.module';
+import { LessonsModule } from './lessons/lessons.module';
+import { ProgressModule } from './progress/progress.module';
+import { SubjectsModule } from './subjects/subjects.module';
+import { QuizzesModule } from './quizzes/quizzes.module';
 
 @Module({
   imports: [
@@ -19,7 +23,11 @@ import { InterviewModule } from './interview/interview.module';
     UsersModule,
     ResumeModule,
     ResultsModule,
-    InterviewModule
+    InterviewModule, 
+    LessonsModule,
+    ProgressModule,
+    SubjectsModule,
+    QuizzesModule
   ],
 })
 export class AppModule {}
