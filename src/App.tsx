@@ -26,6 +26,10 @@ import { SubjectsProvider } from "./contexts/SubjectsContext";
 import { ProgressProvider } from "./contexts/ProgressContext";
 import LessonDetailsPage from "./pages/Lessons/LessonDetailsPage";
 import { LessonsProvider } from "./contexts/LessonsContext";
+import Results from "./pages/Interview_round/Results";
+import InterviewHome from "./pages/Interview_round/InterviewHome";
+import InterviewStart from "./pages/Interview_round/InterviewStart";
+import InterviewRoomPage from "./pages/Interview_round/InterviewRoomPage";
 const RedirectIfLoggedIn = ({ children }: { children: JSX.Element }) => {
   const { user } = useAuth();
   if (user) return <Navigate to={routes.dashboard} replace />;
@@ -48,11 +52,14 @@ function App() {
     routes.subjects,
     routes.subjectDetails,
     routes.lessonDetails,
+    routes.interviewHome,
   ];
   const shouldHideNavbar =
     hideNavbarRoutes.includes(location.pathname) ||
     location.pathname.startsWith("/subjects/") ||
-    location.pathname.startsWith("/lessons/");
+    location.pathname.startsWith("/lessons/") ||
+    location.pathname.startsWith("/interview/start/") ||
+    location.pathname.startsWith("/interview/room/");
 
   return (
     <PricingProvider>
@@ -141,6 +148,40 @@ function App() {
                 path={routes.completeProfile}
                 element={<CompleteProfile />}
               />
+              <Route path={routes.interviewHome} element={
+              <div className="flex min-h-screen">
+                    <Sidebar />
+                    <div className="flex-1">
+                      <InterviewHome />
+                    </div>
+                  </div>
+                }
+              />
+              <Route path={routes.interviewStart(":type")} element={
+                <div className="flex min-h-screen">
+                  <Sidebar />
+                  <div className="flex-1">
+                      <InterviewStart />
+                    </div>
+                  </div>
+                }
+              />
+              <Route path={routes.interviewRoom(":type")} element={
+                <div className="flex min-h-screen">
+                  <Sidebar />
+                  <div className="flex-1">
+                    <InterviewRoomPage />
+                  </div>
+                </div>
+              } />
+              <Route path={routes.interviewResults} element={
+                <div className="flex min-h-screen">
+                  <Sidebar />
+                  <div className="flex-1">
+                    <Results />
+                  </div>
+                </div>
+              } />
             </Route>
 
             <Route element={<ProtectedRoute />}>

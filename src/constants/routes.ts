@@ -14,6 +14,10 @@ const routes = {
   subjects: '/subjects',
   subjectDetails: (id: string) => `/subjects/${id}`,
   lessonDetails: (id: string) => `/lessons/${id}`,
+  interviewHome: '/interview_round',
+  interviewStart: (type: string) => `/interview/start/${type}`,
+  interviewRoom: (type: string) => `/interview/room/${type}`,
+  interviewResults: '/interview/results',
 };
 
 export default routes;
