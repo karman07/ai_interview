@@ -26,7 +26,6 @@ import { SubjectsProvider } from "./contexts/SubjectsContext";
 import { ProgressProvider } from "./contexts/ProgressContext";
 import LessonDetailsPage from "./pages/Lessons/LessonDetailsPage";
 import { LessonsProvider } from "./contexts/LessonsContext";
-import Results from "./pages/Interview_round/Results";
 import InterviewHome from "./pages/Interview_round/InterviewHome";
 import InterviewStart from "./pages/Interview_round/InterviewStart";
 import InterviewRoomPage from "./pages/Interview_round/InterviewRoomPage";
@@ -171,14 +170,6 @@ function App() {
                   <Sidebar />
                   <div className="flex-1">
                     <InterviewRoomPage />
-                  </div>
-                </div>
-              } />
-              <Route path={routes.interviewResults} element={
-                <div className="flex min-h-screen">
-                  <Sidebar />
-                  <div className="flex-1">
-                    <Results />
                   </div>
                 </div>
               } />
