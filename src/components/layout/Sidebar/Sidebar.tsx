@@ -34,7 +34,7 @@ const sidebarRoutes = [
     label: "AI Quiz",
     icon: <Zap size={18} />, // represents action / challenge / AI quiz
     description: "Practice with AI interviewer",
-    path: "/interview",
+    path: "/interview_round",
   },
   {
     label: "Preparation Hub",
