@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Input from "@/components/common/Input";
 import { Textarea } from "@/components/ui/Textarea";
-import { Button } from "@/components/common/button";
+import Button from "@/components/ui/button";
 import { 
   Briefcase,
   Building2,
