@@ -16,7 +16,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Button } from "../common/button";
+import Button from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
