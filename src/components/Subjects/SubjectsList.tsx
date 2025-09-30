@@ -6,17 +6,18 @@ import { Search, Filter, BookOpen } from "lucide-react";
 export const SubjectsList: React.FC = () => {
   const {
     subjects,
-    loading,
-    error,
-    search,
+    filters,
+    isLoading,
+    loadingIndicator,
     setSearch,
-    categoryFilter,
     setCategoryFilter,
-    levelFilter,
     setLevelFilter,
   } = useSubjects();
 
-  if (loading) {
+  // Extract individual filter values from the filters object
+  const { search, categoryFilter, levelFilter } = filters;
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
@@ -27,12 +28,12 @@ export const SubjectsList: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (loadingIndicator.type === "error") {
     return (
       <div className="text-center py-20">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
           <p className="text-red-600 font-semibold">Error loading subjects</p>
-          <p className="text-red-500 text-sm mt-2">{error}</p>
+          <p className="text-red-500 text-sm mt-2">{loadingIndicator.message}</p>
         </div>
       </div>
     );

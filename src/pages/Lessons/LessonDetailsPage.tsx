@@ -36,7 +36,7 @@ interface StoredState {
 const LessonDetailsPage: React.FC = () => {
   const { subjectId } = useParams<{ subjectId: string }>();
   const navigate = useNavigate();
-  const { lessons, fetchLessons, quizzes, fetchQuizzes, loading } = useLessons();
+  const { lessons, fetchLessons, quizzes, fetchQuizzes, isLoading } = useLessons();
 
   const [progress, setProgress] = useState<ProgressState>({});
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
@@ -166,7 +166,7 @@ const LessonDetailsPage: React.FC = () => {
     setShowAnswers(true);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
         <div className="flex flex-col justify-center items-center h-96 space-y-4">
