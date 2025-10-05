@@ -15,15 +15,49 @@ class RedisIoAdapter extends IoAdapter {
   private adapter;
 
   async connectToRedis() {
-    const pubClient = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
-    const subClient = pubClient.duplicate();
-    await Promise.all([pubClient.connect(), subClient.connect()]);
-    this.adapter = createAdapter(pubClient, subClient);
+    // Disable Redis for now - using memory adapter
+    // To re-enable Redis, uncomment the code below and set proper REDIS_URL
+    console.log('Redis disabled - using memory adapter for WebSocket');
+    this.adapter = null;
+    return;
+    
+    /* 
+    // Uncomment this block when you have a working Redis connection
+    try {
+      const redisUrl = process.env.REDIS_URL;
+      
+      if (!redisUrl) {
+        console.log('No REDIS_URL provided, using memory adapter');
+        return;
+      }
+
+      const pubClient = createClient({ 
+        url: redisUrl,
+        socket: {
+          connectTimeout: 5000,
+        }
+      });
+      
+      const subClient = pubClient.duplicate();
+      
+      await Promise.all([pubClient.connect(), subClient.connect()]);
+      this.adapter = createAdapter(pubClient, subClient);
+      console.log('Redis adapter connected successfully');
+    } catch (error) {
+      console.warn('Failed to connect Redis adapter, using memory adapter as fallback');
+      this.adapter = null;
+    }
+    */
   }
 
   createIOServer(port: number, options?: any) {
     const server = super.createIOServer(port, options);
-    server.adapter(this.adapter);
+    if (this.adapter) {
+      server.adapter(this.adapter);
+      console.log('Using Redis adapter for WebSocket scaling');
+    } else {
+      console.log('Using memory adapter for WebSocket (single instance only)');
+    }
     return server;
   }
 }
@@ -31,10 +65,18 @@ class RedisIoAdapter extends IoAdapter {
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  // Add global error handler for unhandled promise rejections
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  });
+
+  process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+  });
   
   app.useGlobalFilters(new AllWsExceptionsFilter());
   // Global prefix & validation
-  app.setGlobalPrefix('api');
+  // app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   // Enable CORS
