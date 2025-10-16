@@ -11,6 +11,8 @@ import { LessonsModule } from './lessons/lessons.module';
 import { ProgressModule } from './progress/progress.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { QuizzesModule } from './quizzes/quizzes.module';
+import { DsaQuestionsModule } from './dsa-questions/dsa-questions.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -27,7 +29,9 @@ import { QuizzesModule } from './quizzes/quizzes.module';
     LessonsModule,
     ProgressModule,
     SubjectsModule,
-    QuizzesModule
+    QuizzesModule,
+    DsaQuestionsModule,
+    AnalyticsModule
   ],
 })
 export class AppModule {}

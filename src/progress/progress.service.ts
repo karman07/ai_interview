@@ -2,13 +2,13 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Progress, ProgressDocument } from './schemas/progress.schema';
-import { UpdateProgressDto } from './dto/update-progress.dto';
+import { UpdateLessonProgressDto } from './dto/update-progress.dto';
 
 @Injectable()
 export class ProgressService {
   constructor(@InjectModel(Progress.name) private progressModel: Model<ProgressDocument>) {}
 
-  async update(userId: string, dto: UpdateProgressDto) {
+  async update(userId: string, dto: UpdateLessonProgressDto) {
     const userObj = new Types.ObjectId(userId);
     const lessonObj = new Types.ObjectId(dto.lessonId);
 
