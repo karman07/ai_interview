@@ -11,6 +11,11 @@ import { LessonsModule } from './lessons/lessons.module';
 import { ProgressModule } from './progress/progress.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { QuizzesModule } from './quizzes/quizzes.module';
+import { InterviewRoundsModule } from './interview_rounds/interview.module';
+import { PaymentModule } from './payments/payment.module';
+import { SubscriptionModule } from './subscriptions/subscription.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { PlaceholderModule } from './common/placeholder';
 
 @Module({
   imports: [
@@ -27,7 +32,12 @@ import { QuizzesModule } from './quizzes/quizzes.module';
     LessonsModule,
     ProgressModule,
     SubjectsModule,
-    QuizzesModule
+    QuizzesModule,
+    InterviewRoundsModule,
+    PaymentModule,
+    SubscriptionModule,
+    AnalyticsModule,
+    PlaceholderModule
   ],
 })
 export class AppModule {}

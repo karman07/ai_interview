@@ -9,7 +9,7 @@ import { Resume, ResumeDocument } from './resume.schema';
 import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
-import * as FormData from 'form-data';
+import FormData = require('form-data');
 
 @Injectable()
 export class ResumeService {
