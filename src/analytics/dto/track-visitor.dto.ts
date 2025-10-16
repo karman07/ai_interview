@@ -9,6 +9,11 @@ export class TrackVisitorDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  sessionId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
   userId?: string;
 
   @ApiProperty({ required: false })

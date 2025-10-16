@@ -93,20 +93,62 @@ export class AnalyticsService {
   }
 
   // End session
-  async endSession(sessionId: string, exitPage?: string) {
-    const session = await this.sessionModel.findOneAndUpdate(
-      { sessionId },
+  async endSession(data: { sessionId: string; exitPage?: string }) {
+    const session = await this.sessionModel.findOne({ sessionId: data.sessionId });
+    
+    if (!session) {
+      return { session: null, alreadyEnded: false };
+    }
+
+    const alreadyEnded = !!session.endTime;
+    
+    if (alreadyEnded) {
+      // Calculate duration if not already done
+      const duration = session.endTime && session.startTime 
+        ? Math.floor((session.endTime.getTime() - session.startTime.getTime()) / 1000)
+        : 0;
+      
+      // Get page views count
+      const pageViews = await this.pageViewModel.countDocuments({ sessionId: data.sessionId });
+      
+      return { 
+        session: {
+          ...session.toObject(),
+          duration,
+          pageViews,
+        }, 
+        alreadyEnded: true 
+      };
+    }
+
+    const updatedSession = await this.sessionModel.findOneAndUpdate(
+      { sessionId: data.sessionId },
       {
         $set: {
           endTime: new Date(),
-          exitPage: exitPage,
+          exitPage: data.exitPage,
           isActive: false,
         },
       },
       { new: true },
     );
 
-    return session;
+    // Calculate duration
+    const duration = updatedSession.endTime && updatedSession.startTime 
+      ? Math.floor((updatedSession.endTime.getTime() - updatedSession.startTime.getTime()) / 1000)
+      : 0;
+    
+    // Get page views count
+    const pageViews = await this.pageViewModel.countDocuments({ sessionId: data.sessionId });
+
+    return { 
+      session: {
+        ...updatedSession.toObject(),
+        duration,
+        pageViews,
+      }, 
+      alreadyEnded: false 
+    };
   }
 
   // Track page view
@@ -250,6 +292,88 @@ export class AnalyticsService {
       message: 'Heartbeat received',
       sessionId: data.sessionId,
       isActive: session?.isActive || false,
+    };
+  }
+
+  // Update page view time spent
+  async updatePageViewTimeSpent(sessionId: string, path: string, timeSpent: number) {
+    const pageView = await this.pageViewModel.findOneAndUpdate(
+      { sessionId, path },
+      { $set: { timeOnPage: timeSpent } },
+      { sort: { timestamp: -1 }, new: true },
+    );
+
+    return pageView;
+  }
+
+  // Get real-time stats
+  async getRealTimeStats() {
+    const now = new Date();
+    const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const lastHour = new Date(now.getTime() - 60 * 60 * 1000);
+
+    const [
+      totalVisitors,
+      totalSessions,
+      totalPageViews,
+      activeSessions,
+      visitorsLast24h,
+      sessionsLast24h,
+      pageViewsLast24h,
+      visitorsLastHour,
+      sessionsLastHour,
+      pageViewsLastHour,
+    ] = await Promise.all([
+      this.visitorModel.countDocuments(),
+      this.sessionModel.countDocuments(),
+      this.pageViewModel.countDocuments(),
+      this.sessionModel.countDocuments({ isActive: true }),
+      this.visitorModel.countDocuments({ lastVisit: { $gte: last24Hours } }),
+      this.sessionModel.countDocuments({ startTime: { $gte: last24Hours } }),
+      this.pageViewModel.countDocuments({ timestamp: { $gte: last24Hours } }),
+      this.visitorModel.countDocuments({ lastVisit: { $gte: lastHour } }),
+      this.sessionModel.countDocuments({ startTime: { $gte: lastHour } }),
+      this.pageViewModel.countDocuments({ timestamp: { $gte: lastHour } }),
+    ]);
+
+    // Get popular pages (last 24 hours)
+    const popularPages = await this.pageViewModel.aggregate([
+      { $match: { timestamp: { $gte: last24Hours } } },
+      { $group: { _id: '$path', count: { $sum: 1 }, title: { $first: '$title' } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
+      { $project: { path: '$_id', title: 1, count: 1, _id: 0 } },
+    ]);
+
+    // Get recent sessions
+    const recentSessions = await this.sessionModel
+      .find()
+      .sort({ startTime: -1 })
+      .limit(10)
+      .lean();
+
+    return {
+      total: {
+        visitors: totalVisitors,
+        sessions: totalSessions,
+        pageViews: totalPageViews,
+      },
+      active: {
+        sessions: activeSessions,
+      },
+      last24Hours: {
+        visitors: visitorsLast24h,
+        sessions: sessionsLast24h,
+        pageViews: pageViewsLast24h,
+      },
+      lastHour: {
+        visitors: visitorsLastHour,
+        sessions: sessionsLastHour,
+        pageViews: pageViewsLastHour,
+      },
+      popularPages,
+      recentSessions,
+      timestamp: now,
     };
   }
 }

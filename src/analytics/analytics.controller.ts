@@ -28,7 +28,7 @@ export class AnalyticsController {
     @Param('sessionId') sessionId: string,
     @Body('exitPage') exitPage?: string,
   ) {
-    return this.analyticsService.endSession(sessionId, exitPage);
+    return this.analyticsService.endSession({ sessionId, exitPage });
   }
 
   @Post('pageviews')
