@@ -1,16 +1,20 @@
 import { Controller, Post, Body, UseGuards, Get, Param, Delete } from '@nestjs/common';
 import { ProgressService } from './progress.service';
-import { UpdateProgressDto } from './dto/update-progress.dto';
+import { UpdateLessonProgressDto } from './dto/update-progress.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 
+@ApiTags('progress')
 @Controller('progress')
 export class ProgressController {
   constructor(private readonly svc: ProgressService) {}
 
+  @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
   @Post()
-  update(@CurrentUser() user: any, @Body() dto: UpdateProgressDto) {
+  @ApiOperation({ summary: 'Update lesson progress' })
+  update(@CurrentUser() user: any, @Body() dto: UpdateLessonProgressDto) {
     return this.svc.update(user.sub, dto);
   }
 

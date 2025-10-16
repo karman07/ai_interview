@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
-export class TrackPageViewDto {
+export class StartSessionDto {
   @ApiProperty({ example: 'session_1759377952761_aozn7jswc' })
   @IsString()
   sessionId: string;
@@ -15,14 +15,10 @@ export class TrackPageViewDto {
   @IsString()
   userId?: string;
 
-  @ApiProperty({ example: '/dsa' })
-  @IsString()
-  path: string;
-
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  title?: string;
+  landingPage?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
@@ -31,11 +27,16 @@ export class TrackPageViewDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsNumber()
-  timeOnPage?: number;
+  @IsString()
+  userAgent?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsNumber()
-  scrollDepth?: number;
+  @IsString()
+  country?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  device?: string;
 }

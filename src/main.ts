@@ -12,51 +12,40 @@ import { createClient } from 'redis';
 import { AllWsExceptionsFilter } from './common/filters/ws-exception.filter';
 
 class RedisIoAdapter extends IoAdapter {
-  private adapter;
+  private adapter: ReturnType<typeof createAdapter> | null = null;
 
   async connectToRedis() {
-    // Disable Redis for now - using memory adapter
-    // To re-enable Redis, uncomment the code below and set proper REDIS_URL
-    console.log('Redis disabled - using memory adapter for WebSocket');
-    this.adapter = null;
-    return;
-    
-    /* 
-    // Uncomment this block when you have a working Redis connection
     try {
-      const redisUrl = process.env.REDIS_URL;
-      
-      if (!redisUrl) {
-        console.log('No REDIS_URL provided, using memory adapter');
-        return;
-      }
+      const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 
-      const pubClient = createClient({ 
+      console.log(`Connecting to Redis at: ${redisUrl}`);
+
+      const pubClient = createClient({
         url: redisUrl,
-        socket: {
-          connectTimeout: 5000,
-        }
+        socket: { connectTimeout: 5000 },
       });
-      
+
       const subClient = pubClient.duplicate();
-      
+
       await Promise.all([pubClient.connect(), subClient.connect()]);
+
       this.adapter = createAdapter(pubClient, subClient);
-      console.log('Redis adapter connected successfully');
+
+      console.log('✅ Redis adapter connected successfully for WebSocket scaling');
     } catch (error) {
-      console.warn('Failed to connect Redis adapter, using memory adapter as fallback');
+      console.error('❌ Failed to connect Redis adapter. Falling back to in-memory adapter.');
+      console.error(error);
       this.adapter = null;
     }
-    */
   }
 
   createIOServer(port: number, options?: any) {
     const server = super.createIOServer(port, options);
     if (this.adapter) {
       server.adapter(this.adapter);
-      console.log('Using Redis adapter for WebSocket scaling');
+      console.log('🚀 Using Redis adapter for WebSocket scaling');
     } else {
-      console.log('Using memory adapter for WebSocket (single instance only)');
+      console.log('⚠️ Using in-memory adapter (single instance only)');
     }
     return server;
   }
@@ -65,7 +54,7 @@ class RedisIoAdapter extends IoAdapter {
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Add global error handler for unhandled promise rejections
+  // Global error handling for unhandled rejections and exceptions
   process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   });
@@ -73,10 +62,9 @@ async function bootstrap() {
   process.on('uncaughtException', (error) => {
     console.error('Uncaught Exception:', error);
   });
-  
+
+  // Apply global filters and pipes
   app.useGlobalFilters(new AllWsExceptionsFilter());
-  // Global prefix & validation
-  // app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   // Enable CORS
@@ -88,7 +76,7 @@ async function bootstrap() {
   // Ensure upload directories exist
   const resumeDir = path.resolve(process.env.UPLOAD_DIR ?? 'uploads/resumes');
   const profileDir = path.resolve('uploads/profile-images');
-  [resumeDir, profileDir].forEach(dir => {
+  [resumeDir, profileDir].forEach((dir) => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   });
 
@@ -100,8 +88,12 @@ async function bootstrap() {
     .setTitle('AI Interview')
     .setDescription('Auth + User Profile API with Google & uploads')
     .setVersion('1.0')
-    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'access-token')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'access-token',
+    )
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 

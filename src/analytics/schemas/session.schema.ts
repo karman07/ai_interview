@@ -1,81 +1,48 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types, Schema as MongooseSchema } from 'mongoose';
+import { Document } from 'mongoose';
 
 export type SessionDocument = Session & Document;
 
-export enum SessionStatus {
-  ACTIVE = 'active',
-  ENDED = 'ended',
-  EXPIRED = 'expired',
-}
-
 @Schema({ timestamps: true })
 export class Session {
-  @Prop({ required: true })
-  sessionId: string; // Unique session identifier
+  @Prop({ required: true, unique: true, index: true })
+  sessionId: string;
 
-  @Prop({ required: true })
-  visitorId: string; // Reference to visitor
+  @Prop({ required: true, index: true })
+  visitorId: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'User' })
-  userId?: Types.ObjectId; // If the session belongs to a logged-in user
+  @Prop()
+  userId?: string;
 
-  @Prop({ required: true })
+  @Prop({ type: Date })
   startTime: Date;
 
-  @Prop()
-  endTime: Date;
+  @Prop({ type: Date })
+  endTime?: Date;
 
   @Prop({ default: 0 })
-  duration: number; // Session duration in seconds
-
-  @Prop({ default: 0 })
-  pageViews: number; // Number of pages viewed in this session
-
-  @Prop({ default: 0 })
-  interactions: number; // Number of interactions (clicks, scrolls, etc.)
+  pageCount: number;
 
   @Prop()
-  lastActivity: Date;
-
-  @Prop({ required: true, enum: SessionStatus, default: SessionStatus.ACTIVE })
-  status: SessionStatus;
+  landingPage?: string;
 
   @Prop()
-  ipAddress: string;
+  exitPage?: string;
 
   @Prop()
-  userAgent: string;
+  referrer?: string;
 
   @Prop()
-  entryPage: string; // First page visited in the session
+  userAgent?: string;
 
   @Prop()
-  exitPage: string; // Last page visited in the session
-
-  @Prop({ type: [String], default: [] })
-  pagesVisited: string[]; // All pages visited in this session
-
-  @Prop({ default: 0 })
-  bounceRate: number; // 1 if bounced (single page view), 0 if not
+  country?: string;
 
   @Prop()
-  referrer: string;
+  device?: string;
 
-  @Prop()
-  utmSource: string;
-
-  @Prop()
-  utmMedium: string;
-
-  @Prop()
-  utmCampaign: string;
-
-  @Prop({ type: MongooseSchema.Types.Mixed })
-  events: any[]; // Array of custom events during the session
-
-  @Prop({ type: MongooseSchema.Types.Mixed })
-  metadata: Record<string, any>;
+  @Prop({ default: false })
+  isActive: boolean;
 }
 
 export const SessionSchema = SchemaFactory.createForClass(Session);

@@ -23,8 +23,18 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
+    // Validate input
+    if (!email || !password) {
+      throw new UnauthorizedException('Email and password are required');
+    }
+
     const user = await this.usersService.findByEmail(email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    // Check if user has a password (not a Google-only user)
+    if (!user.passwordHash) {
+      throw new UnauthorizedException('This account uses Google Sign-In. Please login with Google.');
+    }
 
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) throw new UnauthorizedException('Invalid credentials');
