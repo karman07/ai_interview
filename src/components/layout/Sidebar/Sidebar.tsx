@@ -43,6 +43,12 @@ const sidebarRoutes = [
     path: "/subjects",
   },
   {
+    label: "DSA Practice",
+    icon: <Target size={18} />, // represents coding / algorithms
+    description: "Data Structures & Algorithms",
+    path: "/dsa",
+  },
+  {
     label: "Resources",
     icon: <Layers size={18} />, // represents resources / organized content
     description: "Resources & study materials",
