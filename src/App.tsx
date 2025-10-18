@@ -29,6 +29,17 @@ import { LessonsProvider } from "./contexts/LessonsContext";
 import InterviewHome from "./pages/Interview_round/InterviewHome";
 import InterviewStart from "./pages/Interview_round/InterviewStart";
 import InterviewRoomPage from "./pages/Interview_round/InterviewRoomPage";
+// import { AnalyticsProvider } from '@/contexts/AnalyticsContext';
+
+import { AnalyticsProvider } from "./contexts/AnalyticsContext";
+import AnalyticsTest from "./pages/Test/AnalyticsTest";
+import { DSAQuestionsProvider } from "./contexts/DSAQuestionsContext";
+import { DSAProgressProvider } from "./contexts/DSAProgressContext";
+import { CodeExecutionProvider } from "./contexts/CodeExecutionContext";
+import DSADashboard from "./pages/DSA/DSADashboard";
+import DSAQuestionsList from "./pages/DSA/DSAQuestionsList";
+import DSAQuestionSolvePage from "./pages/DSA/DSAQuestionSolvePage";
+
 const RedirectIfLoggedIn = ({ children }: { children: JSX.Element }) => {
   const { user } = useAuth();
   if (user) return <Navigate to={routes.dashboard} replace />;
@@ -52,20 +63,24 @@ function App() {
     routes.subjectDetails,
     routes.lessonDetails,
     routes.interviewHome,
+    routes.dsaDashboard,
+    routes.dsaQuestions,
   ];
   const shouldHideNavbar =
     hideNavbarRoutes.includes(location.pathname) ||
     location.pathname.startsWith("/subjects/") ||
     location.pathname.startsWith("/lessons/") ||
     location.pathname.startsWith("/interview/start/") ||
-    location.pathname.startsWith("/interview/room/");
+    location.pathname.startsWith("/interview/room/") ||
+    location.pathname.startsWith("/dsa/");
 
   return (
-    <PricingProvider>
-      <div className="bg-gray-50 min-h-screen flex flex-col">
-        {!shouldHideNavbar && <Navbar />}
+    <AnalyticsProvider>
+      <PricingProvider>
+        <div className="bg-gray-50 min-h-screen flex flex-col">
+          {!shouldHideNavbar && <Navbar />}
 
-        <div className="flex-grow">
+          <div className="flex-grow">
           <Routes>
             {/* Public Routes */}
             <Route path={routes.home} element={<Home />} />
@@ -109,6 +124,7 @@ function App() {
                 </div>
               }
             />
+            <Route path="/analytics-test" element={<AnalyticsTest />} />
             <Route path={routes.pricing} element={<PricingPage />} />
 
             {/* Login / Signup with redirect if already logged in */}
@@ -142,6 +158,7 @@ function App() {
                   </div>
                 }
               />
+
               <Route path={routes.profile} element={<Profile />} />
               <Route
                 path={routes.completeProfile}
@@ -228,6 +245,57 @@ function App() {
               />
             </Route>
 
+            {/* DSA Routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route
+                path={routes.dsaDashboard}
+                element={
+                  <div className="flex min-h-screen">
+                    <Sidebar />
+                    <div className="flex-1">
+                      <DSAQuestionsProvider>
+                        <DSAProgressProvider>
+                          <DSADashboard />
+                        </DSAProgressProvider>
+                      </DSAQuestionsProvider>
+                    </div>
+                  </div>
+                }
+              />
+              <Route
+                path={routes.dsaQuestions}
+                element={
+                  <div className="flex min-h-screen">
+                    <Sidebar />
+                    <div className="flex-1">
+                      <DSAQuestionsProvider>
+                        <DSAProgressProvider>
+                          <DSAQuestionsList />
+                        </DSAProgressProvider>
+                      </DSAQuestionsProvider>
+                    </div>
+                  </div>
+                }
+              />
+              <Route
+                path={routes.dsaQuestionDetails(":questionId")}
+                element={
+                  <div className="flex min-h-screen">
+                    <Sidebar />
+                    <div className="flex-1">
+                      <DSAQuestionsProvider>
+                        <DSAProgressProvider>
+                          <CodeExecutionProvider>
+                            <DSAQuestionSolvePage />
+                          </CodeExecutionProvider>
+                        </DSAProgressProvider>
+                      </DSAQuestionsProvider>
+                    </div>
+                  </div>
+                }
+              />
+            </Route>
+
             {/* Catch-all: redirect unknown routes to home */}
             <Route path="*" element={<Navigate to={routes.home} replace />} />
           </Routes>
@@ -236,6 +304,7 @@ function App() {
         {!shouldHideNavbar && <Footer />}
       </div>
     </PricingProvider>
+    </AnalyticsProvider>
   );
 }
 

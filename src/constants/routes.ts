@@ -18,6 +18,10 @@ const routes = {
   interviewStart: (type: string) => `/interview/start/${type}`,
   interviewRoom: (type: string) => `/interview/room/${type}`,
   interviewResults: '/interview/results',
+  // DSA Routes
+  dsaDashboard: '/dsa',
+  dsaQuestions: '/dsa/questions',
+  dsaQuestionDetails: (questionId: string) => `/dsa/questions/${questionId}`,
 };
 
 export default routes;
