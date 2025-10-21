@@ -16,7 +16,7 @@ export default function Navbar() {
     { to: routes.home, label: "Home" },
     { to: routes.about, label: "About" },
     // { to: routes.interview, label: "Interview" },
-    { to: routes.pricing, label: "Pricing" }
+    { to: routes.pricing, label: "Team" }
   ];
 
   const handleLogout = async () => {
