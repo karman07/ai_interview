@@ -39,6 +39,7 @@ import { CodeExecutionProvider } from "./contexts/CodeExecutionContext";
 import DSADashboard from "./pages/DSA/DSADashboard";
 import DSAQuestionsList from "./pages/DSA/DSAQuestionsList";
 import DSAQuestionSolvePage from "./pages/DSA/DSAQuestionSolvePage";
+import ContactPage from "./pages/contact/ContactPage";
 
 const RedirectIfLoggedIn = ({ children }: { children: JSX.Element }) => {
   const { user } = useAuth();
@@ -85,6 +86,7 @@ function App() {
             {/* Public Routes */}
             <Route path={routes.home} element={<Home />} />
             <Route path={routes.about} element={<About />} />
+            <Route path={routes.contact} element={<ContactPage />} />
             <Route
               path={routes.interview}
               element={
