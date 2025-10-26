@@ -60,7 +60,7 @@ const sidebarRoutes = [
 ];
 
 export default function Sidebar() {
-  const [activeItem, setActiveItem] = useState("");
+  const [_, setActiveItem] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
