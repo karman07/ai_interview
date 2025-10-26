@@ -91,8 +91,6 @@ export class CodeExecutionService {
         throw new BadRequestException(`Unsupported language: ${language}`);
       }
 
-      // Here you would fetch the question and its test cases
-      // For now, we'll simulate the execution
       const testResults: TestCaseResult[] = [];
       let totalExecutionTime = 0;
       let maxMemoryUsed = 0;
