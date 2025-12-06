@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo, useRef } from "react";
-import { io, Socket } from "socket.io-client";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   Loader2, 
@@ -11,19 +10,15 @@ import {
   VolumeX,
   Clock,
   MessageSquare,
-
   Award,
-
   Zap,
   BookOpen,
   User,
-
   BarChart3,
   Users,
   Code,
   Lightbulb,
   MessageCircle,
-
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -38,32 +33,35 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
-import { baseURL } from "@/api/http";
 import { useNavigate } from "react-router-dom";
+import {
+  startInterview,
+  submitAnswer as submitAnswerAPI,
+  getInterviewReport,
+  type InterviewReport,
+  type InterviewState,
+} from "@/api/aiInterview";
 
 type Props = { round: string };
 
-type ResponseItem = {
-  question: string;
-  answer: string;
-  feedback?: string;
-  createdAt?: string;
-  _id?: string;
-};
-
 export default function InterviewRoom({ round }: Props) {
   const { user } = useAuth();
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const navigate = useNavigate();
 
+  // Session state
+  const [sessionId, setSessionId] = useState<string>("");
+  const [interviewState, setInterviewState] = useState<InterviewState | null>(null);
+  
+  // UI state
   const [question, setQuestion] = useState("");
-  const [questionId, setQuestionId] = useState("");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [responses, setResponses] = useState<ResponseItem[]>([]);
+  // Results state
   const [showResults, setShowResults] = useState(false);
-  const [overallFeedback, setOverallFeedback] = useState("");
-  const [resultsPayload, setResultsPayload] = useState<any>(null);
+  const [report, setReport] = useState<InterviewReport | null>(null);
 
   // Speech features state
   const [isListening, setIsListening] = useState(false);
@@ -116,10 +114,74 @@ export default function InterviewRoom({ round }: Props) {
     };
   }, []);
 
-  const navigate = useNavigate()
   const handleStartNewInterview = () => {
     navigate('/interview_round')
   }
+
+  // Initialize interview session
+  useEffect(() => {
+    const initInterview = async () => {
+      if (!user) return;
+      
+      try {
+        // Reset all state when switching rounds
+        setInitializing(true);
+        setError(null);
+        setShowResults(false);
+        setReport(null);
+        setInterviewState(null);
+        setQuestion("");
+        setAnswer("");
+        setLoading(false);
+
+        // Get interview details from localStorage
+        const interviewDetails = localStorage.getItem("interview_details");
+        const parsedDetails = interviewDetails ? JSON.parse(interviewDetails) : {};
+
+        // Generate session ID with timestamp to ensure uniqueness
+        const newSessionId = `session_${user._id}_${round}_${Date.now()}`;
+        setSessionId(newSessionId);
+
+        console.log('[InterviewRoom] Starting interview session:', {
+          userId: user._id,
+          sessionId: newSessionId,
+          round,
+          details: parsedDetails
+        });
+
+        // Start interview via REST API
+        const response = await startInterview({
+          user_id: user._id,
+          session_id: newSessionId,
+          role_title: parsedDetails.role || 'Software Engineer',
+          company_name: parsedDetails.company || 'Tech Company',
+          industry: parsedDetails.industry || 'Technology',
+          jd: parsedDetails.jd || parsedDetails.jobDescription || 'General software development role',
+          cv: parsedDetails.cv || parsedDetails.resume || user.email || 'Candidate profile',
+          round_type: (round as any) || 'full'
+        });
+
+        console.log('[InterviewRoom] Interview started successfully:', response);
+
+        setInterviewState(response.state);
+        setQuestion(response.first_question);
+        setInitializing(false);
+      } catch (err: any) {
+        console.error('[InterviewRoom] Failed to start interview:', err);
+        setError(err.response?.data?.message || err.message || 'Failed to start interview');
+        setInitializing(false);
+      }
+    };
+
+    initInterview();
+    
+    // Cleanup function to reset state when component unmounts or round changes
+    return () => {
+      setQuestion("");
+      setAnswer("");
+      setLoading(false);
+    };
+  }, [round, user]);
 
   // Toggle speech recognition
   const toggleListening = () => {
@@ -193,100 +255,124 @@ export default function InterviewRoom({ round }: Props) {
     return `${elapsed} min`;
   };
 
+  // Submit answer to current question
+  const handleSubmitAnswer = async () => {
+    if (!user || !answer.trim() || !sessionId) return;
 
-  useEffect(() => {
-    if (!user) return;
-    const token = localStorage.getItem("access_token");
-    if (!token) return;
+    try {
+      setLoading(true);
+      setError(null);
 
-    const interviewDetails = localStorage.getItem("interview_details");
-    const parsedDetails = interviewDetails ? JSON.parse(interviewDetails) : {};
-
-    const s: Socket = io(`${baseURL}/${round}`, {
-      path: "/socket.io",
-      auth: { token },
-      extraHeaders: { Authorization: `Bearer ${token}` },
-      transports: ["websocket"],
-    });
-
-    s.on("connect", () => {
-      // 🚀 reset local state at new interview start
-      setResponses([]);
-      setShowResults(false);
-      setQuestion("");
-      setAnswer("");
-      setResultsPayload(null);
-      setOverallFeedback("");
-      s.emit("start", {
+      console.log('[InterviewRoom] Submitting answer:', {
         userId: user._id,
-        round,
-        ...parsedDetails,
+        sessionId,
+        answerLength: answer.length
       });
-    });
 
-    s.on("question", (data: { id: string; question: string }) => {
-      setQuestion(data.question);
-      setQuestionId(data.id);
+      // Submit answer via REST API
+      const response = await submitAnswerAPI({
+        user_id: user._id,
+        session_id: sessionId,
+        answer: answer.trim()
+      });
+
+      console.log('[InterviewRoom] Answer submitted, received:', response);
+
+      // Update state
+      setInterviewState(response.state);
       setAnswer("");
+
+      // Check if interview is complete (next_question is null AND state.completed is true)
+      if (response.next_question === null && response.state.completed === true) {
+        console.log('[InterviewRoom] Interview completed, fetching report...');
+        await fetchReport();
+      } else if (response.next_question) {
+        // Set next question
+        setQuestion(response.next_question);
+      } else {
+        // Handle unexpected state
+        console.warn('[InterviewRoom] Unexpected state: next_question is null but interview not completed');
+        setError('Unexpected interview state. Please try again.');
+      }
+    } catch (err: any) {
+      console.error('[InterviewRoom] Failed to submit answer:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to submit answer');
+    } finally {
       setLoading(false);
-    });
-
-    s.on("feedback", (data: { id: string; feedback: string }) => {
-      setResponses((prev) =>
-        prev.map((r) =>
-          r._id === data.id ? { ...r, feedback: data.feedback } : r
-        )
-      );
-      setLoading(false);
-    });
-
-    s.on("finalReport", (data: { responses: ResponseItem[]; overallFeedback?: string; results?: any }) => {
-      setResponses(data.responses || []);
-      setOverallFeedback(data.overallFeedback || "");
-      setResultsPayload(data.results || null);
-      setShowResults(true);
-      setQuestion("");
-    });
-
-    setSocket(s);
-    return () => {
-      s.disconnect();
-    };
-  }, [round, user]);
-
-  const submitAnswer = () => {
-    if (!socket || !user || !answer.trim()) return;
-    setLoading(true);
-    setResponses((prev) => [
-      ...prev,
-      { question, answer, _id: questionId, createdAt: new Date().toISOString() },
-    ]);
-    socket.emit("answer", { id: questionId, userId: user._id, answer });
+    }
   };
 
+  // Fetch final interview report
+  const fetchReport = async () => {
+    if (!user || !sessionId) return;
+
+    try {
+      console.log('[InterviewRoom] Fetching interview report...');
+      const reportData = await getInterviewReport(user._id, sessionId);
+      console.log('[InterviewRoom] Report received:', reportData);
+
+      setReport(reportData);
+      setShowResults(true);
+    } catch (err: any) {
+      console.error('[InterviewRoom] Failed to fetch report:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to fetch report');
+    }
+  };
+
+  // Compute data for charts
   const pieData = useMemo(() => {
-    if (!resultsPayload?.details) return [];
+    if (!report?.history) return [];
     const buckets = { "0-3": 0, "4-6": 0, "7-8": 0, "9-10": 0 };
-    for (const d of resultsPayload.details) {
-      const score = typeof d.score === "number" ? d.score : null;
-      if (score === null) continue;
+    
+    for (const item of report.history) {
+      if (!item.evaluation) continue;
+      const score = item.evaluation.technical_depth;
       if (score <= 3) buckets["0-3"]++;
       else if (score <= 6) buckets["4-6"]++;
       else if (score <= 8) buckets["7-8"]++;
       else buckets["9-10"]++;
     }
+    
     return Object.entries(buckets).map(([name, value]) => ({ name, value }));
-  }, [resultsPayload]);
+  }, [report]);
 
   const barData = useMemo(() => {
-    if (!resultsPayload?.details) return [];
-    return resultsPayload.details.map((d: any, idx: number) => ({
-      name: `Q${idx + 1}`,
-      score: typeof d.score === "number" ? d.score : 0,
-    }));
-  }, [resultsPayload]);
+    if (!report?.history) return [];
+    return report.history
+      .filter(item => item.evaluation)
+      .map((item, idx) => ({
+        name: `Q${idx + 1}`,
+        score: item.evaluation?.technical_depth || 0,
+      }));
+  }, [report]);
 
   const COLORS = ["#ef4444", "#f59e0b", "#60a5fa", "#10b981"];
+
+  // Show error state
+  if (error && initializing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MessageCircle className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Failed to Start Interview</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <button
+              onClick={handleStartNewInterview}
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentHistory = interviewState?.history || [];
+  const answeredCount = currentHistory.filter(h => h.answer !== null).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
@@ -316,10 +402,10 @@ export default function InterviewRoom({ round }: Props) {
               </div>
               <div className="flex items-center gap-2 text-gray-600">
                 <MessageSquare className="w-4 h-4" />
-                <span className="font-medium">{responses.length} answered</span>
+                <span className="font-medium">{answeredCount} answered</span>
               </div>
               <div className={`px-4 py-2 rounded-full text-sm font-medium ${interviewInfo.bgColor}`}>
-                {showResults ? "Completed" : "In Progress"}
+                {showResults ? "Completed" : initializing ? "Starting..." : "In Progress"}
               </div>
             </div>
           </div>
@@ -333,12 +419,12 @@ export default function InterviewRoom({ round }: Props) {
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-900">Interview Progress</h3>
-                <span className="text-sm text-gray-500">Question {responses.length + 1}</span>
+                <span className="text-sm text-gray-500">Question {answeredCount + 1}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
                   className={`h-2 rounded-full bg-gradient-to-r ${interviewInfo.color} transition-all duration-500`}
-                  style={{ width: `${Math.min((responses.length / 5) * 100, 100)}%` }}
+                  style={{ width: `${Math.min((answeredCount / 5) * 100, 100)}%` }}
                 />
               </div>
             </div>
@@ -348,7 +434,19 @@ export default function InterviewRoom({ round }: Props) {
               <div className={`h-1 bg-gradient-to-r ${interviewInfo.color}`} />
               
               <div className="p-8">
-                {question ? (
+                {initializing ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <div className="animate-pulse mb-6">
+                      <div className={`w-16 h-16 bg-gradient-to-r ${interviewInfo.color} rounded-full flex items-center justify-center`}>
+                        <Loader2 className="animate-spin w-8 h-8 text-white" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Starting Your Interview</h3>
+                    <p className="text-gray-600 text-center max-w-md">
+                      Our AI interviewer is analyzing your profile and preparing your first question...
+                    </p>
+                  </div>
+                ) : question ? (
                   <div className="space-y-6">
                     {/* Question with TTS */}
                     <div>
@@ -426,7 +524,7 @@ export default function InterviewRoom({ round }: Props) {
                           value={answer}
                           onChange={(e) => setAnswer(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter" && e.ctrlKey) submitAnswer();
+                            if (e.key === "Enter" && e.ctrlKey) handleSubmitAnswer();
                           }}
                           placeholder={`Share your thoughts here... Take your time to provide a comprehensive answer.
 
@@ -463,10 +561,10 @@ ${speechSupported ? '• Click "Speak" to use voice input' : ''}
                       </div>
                       
                       <button
-                        onClick={submitAnswer}
-                        disabled={loading}
+                        onClick={handleSubmitAnswer}
+                        disabled={loading || !answer.trim()}
                         className={`inline-flex items-center gap-3 ${
-                          loading 
+                          loading || !answer.trim()
                             ? 'bg-gray-300 cursor-not-allowed' 
                             : `bg-gradient-to-r ${interviewInfo.color} hover:shadow-lg transform hover:scale-105`
                         } text-white font-semibold px-8 py-3 rounded-xl shadow-md transition-all duration-300`}
@@ -502,14 +600,24 @@ ${speechSupported ? '• Click "Speak" to use voice input' : ''}
             </div>
 
             {/* Previous Responses */}
-            {responses.length > 0 && (
+            {currentHistory.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
                 <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
                   <MessageSquare className="w-5 h-5" />
                   Previous Responses
                 </h3>
-                <div className="text-sm text-gray-500">
-                  {responses.length} answered so far
+                <div className="space-y-4">
+                  {currentHistory.filter(h => h.answer).map((item, idx) => (
+                    <div key={idx} className="border border-gray-200 rounded-xl p-4">
+                      <p className="text-sm font-semibold text-gray-700 mb-2">Q: {item.question}</p>
+                      <p className="text-sm text-gray-600 mb-2">A: {item.answer}</p>
+                      {item.evaluation && (
+                        <div className="text-xs text-green-700 bg-green-50 rounded p-2">
+                          <span className="font-semibold">Evaluation:</span> {item.evaluation.summary}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -539,9 +647,35 @@ ${speechSupported ? '• Click "Speak" to use voice input' : ''}
                       <CheckCircle2 className="w-6 h-6 text-green-600" />
                       <h3 className="text-2xl font-bold text-gray-900">Final Interview Report</h3>
                     </div>
-                    <p className="text-gray-700 whitespace-pre-line leading-relaxed">
-                      {overallFeedback}
-                    </p>
+                    {report && (
+                      <>
+                        <div className="mb-4">
+                          <p className="text-sm text-gray-600">
+                            <span className="font-semibold">Role:</span> {report.role}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-semibold">Company:</span> {report.company}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-semibold">Industry:</span> {report.industry}
+                          </p>
+                        </div>
+                        <div className="mb-4">
+                          <h4 className="font-semibold text-gray-900 mb-2">Average Scores</h4>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>Technical Depth: <span className="font-semibold">{report.avg_scores.technical_depth.toFixed(1)}</span></div>
+                            <div>Relevance: <span className="font-semibold">{report.avg_scores.relevance.toFixed(1)}</span></div>
+                            <div>Communication: <span className="font-semibold">{report.avg_scores.communication.toFixed(1)}</span></div>
+                            <div>Behavioral: <span className="font-semibold">{report.avg_scores.behavioral.toFixed(1)}</span></div>
+                          </div>
+                          <div className="mt-3 text-lg font-bold text-gray-900">
+                            Overall: <span className={`${
+                              report.avg_scores.overall.includes('Hire') ? 'text-green-600' : 'text-red-600'
+                            }`}>{report.avg_scores.overall}</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="w-72 ml-8">
                     <ResponsiveContainer width="100%" height={200}>
@@ -595,32 +729,37 @@ ${speechSupported ? '• Click "Speak" to use voice input' : ''}
                   <h4 className="text-xl font-bold text-gray-900">Detailed Q/A & Feedback</h4>
                 </div>
                 <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {responses.map((r, idx) => (
-                    <div key={r._id || idx} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  {report?.history.map((item, idx) => (
+                    <div key={idx} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
                       <div className="flex items-start gap-4">
                         <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${interviewInfo.color} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
                           {idx + 1}
                         </div>
                         <div className="flex-1 space-y-2">
                           <div>
-                            <p className="text-sm text-gray-500">Q{idx + 1}</p>
-                            <p className="font-medium text-gray-800 text-sm">{r.question}</p>
+                            <p className="text-sm text-gray-500">Q{idx + 1} - {item.stage}</p>
+                            <p className="font-medium text-gray-800 text-sm">{item.question}</p>
                             <p className="text-xs text-gray-600 mt-1">
-                              <span className="font-semibold">Answer:</span> {r.answer}
+                              <span className="font-semibold">Answer:</span> {item.answer || 'No answer provided'}
                             </p>
-                            {r.feedback && (
-                              <p className="text-xs text-green-700 mt-1">
-                                <span className="font-semibold">Feedback:</span> {r.feedback}
-                              </p>
+                            {item.evaluation && (
+                              <div className="text-xs text-green-700 mt-1 bg-green-50 rounded p-2">
+                                <p className="font-semibold mb-1">Evaluation:</p>
+                                <p>{item.evaluation.summary}</p>
+                                <div className="flex gap-3 mt-2">
+                                  <span>Clarity: {item.evaluation.clarity}/10</span>
+                                  <span>Confidence: {item.evaluation.confidence}/10</span>
+                                  <span>Technical: {item.evaluation.technical_depth}/10</span>
+                                </div>
+                              </div>
                             )}
                           </div>
                         </div>
-                        <div className="text-xs text-gray-400 flex-shrink-0">
-                          {r.createdAt ? new Date(r.createdAt).toLocaleString() : ""}
-                        </div>
                       </div>
                     </div>
-                  ))}
+                  )) || (
+                    <p className="text-gray-500 text-center py-8">No history available.</p>
+                  )}
                 </div>
               </div>
             </div>

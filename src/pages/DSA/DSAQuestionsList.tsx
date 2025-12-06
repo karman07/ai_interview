@@ -3,21 +3,22 @@ import { useDSAQuestions } from '@/contexts/DSAQuestionsContext';
 import { useDSAProgress } from '@/contexts/DSAProgressContext';
 import QuestionCard from '@/components/dsa/QuestionCard';
 import { Difficulty } from '@/types/dsa';
+import { Search, Filter, TrendingUp, BookOpen, CheckCircle2 } from 'lucide-react';
 
 const DSAQuestionsList: React.FC = () => {
   const { questions, pagination, loading, error, fetchQuestions } = useDSAQuestions();
   const { myProgress, fetchMyProgress } = useDSAProgress();
 
   const [difficulty, setDifficulty] = useState<Difficulty | ''>('');
-  const [category, setCategory] = useState('');
+  const [topic, setTopic] = useState('');
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState<'difficulty' | 'likes' | 'acceptanceRate'>('difficulty');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [status, setStatus] = useState<'solved' | 'attempted' | 'unsolved' | ''>('');
+  const [sortBy, setSortBy] = useState<'createdAt' | 'difficulty' | 'likes'>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
-  const limit = 10;
+  const limit = 20;
 
   useEffect(() => {
-    // Ensure page and limit are always valid numbers >= 1
     const validPage = Math.max(1, currentPage);
     const validLimit = Math.max(1, limit);
 
@@ -29,53 +30,109 @@ const DSAQuestionsList: React.FC = () => {
     };
 
     if (difficulty) filters.difficulty = difficulty;
-    if (category) filters.category = category;
+    if (topic) filters.topic = topic;
     if (search) filters.search = search;
+    if (status) filters.status = status;
 
-    console.log('Fetching DSA questions with filters:', filters);
+    console.log('[DSA Questions] Fetching with filters:', filters);
     fetchQuestions(filters);
-  }, [difficulty, category, search, sortBy, sortOrder, currentPage]);
+  }, [difficulty, topic, search, status, sortBy, sortOrder, currentPage]);
 
   useEffect(() => {
     fetchMyProgress();
   }, []);
 
   const getUserProgress = (questionId: string) => {
-    // Add safety check for undefined myProgress
     return myProgress?.find((p) => p.questionId === questionId);
   };
 
-  const categories = [
-    'Array',
-    'String',
-    'HashTable',
-    'Tree',
-    'Graph',
-    'Dynamic Programming',
-    'Sorting',
-    'Searching',
-    'LinkedList',
-    'Stack',
-    'Queue',
+  const topics = [
+    'arrays',
+    'strings',
+    'trees',
+    'graphs',
+    'dp',
+    'hash-table',
+    'sorting',
+    'searching',
+    'linked-list',
+    'stack',
+    'queue',
+    'heap',
+    'binary-search',
+    'two-pointers',
+    'sliding-window',
   ];
 
+  const stats = {
+    total: pagination?.totalItems || 0,
+    solved: myProgress?.filter(p => p.status === 'solved').length || 0,
+    attempted: myProgress?.filter(p => p.status === 'attempted').length || 0,
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        {/* Header with Stats */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">DSA Problems</h1>
-          <p className="text-gray-600">
-            Practice data structures and algorithms to ace your interviews
+          <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+            <BookOpen className="w-10 h-10 text-blue-600" />
+            DSA Practice
+          </h1>
+          <p className="text-gray-600 mb-6">
+            Master data structures and algorithms with {stats.total}+ problems
           </p>
+          
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <CheckCircle2 className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{stats.solved}</p>
+                  <p className="text-sm text-gray-600">Solved</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-yellow-100 rounded-lg">
+                  <TrendingUp className="w-6 h-6 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{stats.attempted}</p>
+                  <p className="text-sm text-gray-600">Attempted</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <BookOpen className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                  <p className="text-sm text-gray-600">Total Problems</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Filter className="w-5 h-5 text-gray-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Search */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Search className="w-4 h-4 inline mr-1" />
                 Search
               </label>
               <input
@@ -110,29 +167,49 @@ const DSAQuestionsList: React.FC = () => {
               </select>
             </div>
 
-            {/* Category */}
+            {/* Topic */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category
+                Topic
               </label>
               <select
-                value={category}
+                value={topic}
                 onChange={(e) => {
-                  setCategory(e.target.value);
+                  setTopic(e.target.value);
                   setCurrentPage(1);
                 }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
+                <option value="">All Topics</option>
+                {topics.map((t) => (
+                  <option key={t} value={t}>
+                    {t.charAt(0).toUpperCase() + t.slice(1).replace(/-/g, ' ')}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Sort */}
+            {/* Status */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
+              <select
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value as any);
+                  setCurrentPage(1);
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Status</option>
+                <option value="solved">Solved</option>
+                <option value="attempted">Attempted</option>
+                <option value="unsolved">Unsolved</option>
+              </select>
+            </div>
+
+            {/* Sort By */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Sort By
@@ -141,13 +218,13 @@ const DSAQuestionsList: React.FC = () => {
                 <select
                   value={sortBy}
                   onChange={(e) =>
-                    setSortBy(e.target.value as 'difficulty' | 'likes' | 'acceptanceRate')
+                    setSortBy(e.target.value as any)
                   }
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
+                  <option value="createdAt">Newest</option>
                   <option value="difficulty">Difficulty</option>
-                  <option value="likes">Likes</option>
-                  <option value="acceptanceRate">Acceptance Rate</option>
+                  <option value="likes">Most Liked</option>
                 </select>
                 <button
                   onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -165,10 +242,11 @@ const DSAQuestionsList: React.FC = () => {
             <button
               onClick={() => {
                 setDifficulty('');
-                setCategory('');
+                setTopic('');
                 setSearch('');
-                setSortBy('difficulty');
-                setSortOrder('asc');
+                setStatus('');
+                setSortBy('createdAt');
+                setSortOrder('desc');
                 setCurrentPage(1);
               }}
               className="text-sm text-blue-600 hover:text-blue-800"
