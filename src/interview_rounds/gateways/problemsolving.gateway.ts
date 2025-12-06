@@ -9,7 +9,7 @@ import {
 import { UseGuards, Logger, UseFilters } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { InterviewService } from '../services/interview.service';
-import { LlmService } from '../services/llm.service';
+import { AiInterviewApiService } from '../services/ai-interview-api.service';
 import { AllWsExceptionsFilter } from 'src/common/filters/ws-exception.filter';
 import { WsJwtGuard } from 'src/common/guards/ws-jwt.guard';
 
@@ -20,10 +20,11 @@ export class ProblemSolvingGateway {
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(ProblemSolvingGateway.name);
   private readonly MAX_QUESTIONS = 7;
+  private sessionMap = new Map<string, string>();
 
   constructor(
     private interviewService: InterviewService,
-    private llmService: LlmService,
+    private aiInterviewApi: AiInterviewApiService,
   ) {}
 
   @SubscribeMessage('start')
@@ -35,6 +36,7 @@ export class ProblemSolvingGateway {
       company?: string;
       jobDescription?: string;
       experience?: string;
+      cv?: string;
     },
     @ConnectedSocket() client: Socket,
   ) {
@@ -42,36 +44,41 @@ export class ProblemSolvingGateway {
       this.logger.log(`Start Problem-Solving interview for user: ${data.userId}`);
       client.join(data.userId);
 
-      // 🚀 Reset session for problem-solving round
       await this.interviewService.resetRound(data.userId, 'problem-solving');
 
-      // Save interview context if provided
-      if (data.role || data.company || data.jobDescription || data.experience) {
-        await this.interviewService.startWithContext({
-          userId: data.userId,
-          round: 'problem-solving',
-          role: data.role,
-          company: data.company,
-          jobDescription: data.jobDescription,
-          experience: data.experience,
-        });
-      }
+      const sessionId = `problem-${data.userId}-${Date.now()}`;
+      this.sessionMap.set(data.userId, sessionId);
 
-      // First question
-      const question = await this.llmService.generateQuestion(
-        'problem-solving',
-        data.userId,
-      );
+      const aiResponse = await this.aiInterviewApi.startInterview({
+        user_id: data.userId,
+        session_id: sessionId,
+        role_title: data.role || 'Problem Solver',
+        company_name: data.company || 'Tech Company',
+        industry: 'Software',
+        jd: data.jobDescription || 'Role requiring strong problem-solving skills',
+        cv: data.cv || data.experience || 'Experienced problem solver',
+        round_type: 'full',
+      });
+
+      await this.interviewService.startWithContext({
+        userId: data.userId,
+        round: 'problem-solving',
+        role: data.role,
+        company: data.company,
+        jobDescription: data.jobDescription,
+        experience: data.experience,
+      });
 
       const record = await this.interviewService.create(
         data.userId,
         'problem-solving',
-        question,
+        aiResponse.question || aiResponse.current_question || 'How would you approach a complex algorithmic problem?',
       );
 
       this.server.to(data.userId).emit('question', {
         id: record._id,
         question: record.question,
+        sessionId: sessionId,
       });
     } catch (err) {
       this.logger.error('Start Interview Error:', err);
@@ -93,71 +100,58 @@ export class ProblemSolvingGateway {
       const interview = await this.interviewService.findById(data.id);
       if (!interview) throw new WsException('Interview record not found');
 
-      // Evaluate answer
-      const feedback = await this.llmService.evaluateAnswer(
-        interview.question || '',
-        data.answer,
-      );
+      const sessionId = this.sessionMap.get(data.userId);
+      if (!sessionId) throw new WsException('No active session found');
+
+      const aiResponse = await this.aiInterviewApi.submitAnswer({
+        user_id: data.userId,
+        session_id: sessionId,
+        answer: data.answer,
+      });
 
       const record = await this.interviewService.submitAnswer(
         data.id,
         data.answer,
-        feedback,
+        aiResponse.feedback || aiResponse.evaluation || 'Answer recorded',
       );
 
-      // Send feedback
       this.server.to(data.userId).emit('feedback', {
         id: record._id,
         feedback: record.feedback,
+        aiResponse: aiResponse,
       });
 
-      // Count round-specific history
-      const history = await this.interviewService.getHistoryForRound(
-        data.userId,
-        'problem-solving',
-      );
-      const questionCount = history.length;
-
-      if (questionCount >= this.MAX_QUESTIONS) {
-        const allHistory = history.map((h) => ({
-          question: h.question || '',
-          answer: h.answer || '',
-          feedback: h.feedback || '',
-          _id: h._id,
-        }));
-
-        const results = await this.interviewService.getResultsForRound(
+      if (aiResponse.next_question || aiResponse.question) {
+        const nextQuestion = aiResponse.next_question || aiResponse.question;
+        const nextRecord = await this.interviewService.create(
           data.userId,
           'problem-solving',
+          nextQuestion,
         );
 
-        const overallFeedback = `Average Score: ${results.averageScore}. Completed ${questionCount}/${this.MAX_QUESTIONS} questions.`;
-
-        this.server.to(data.userId).emit('finalReport', {
-          responses: allHistory,
-          overallFeedback,
-          results,
+        this.server.to(data.userId).emit('question', {
+          id: nextRecord._id,
+          question: nextRecord.question,
         });
-
-        this.logger.log(`Problem-Solving interview finished for ${data.userId}`);
-        return;
+      } else {
+        try {
+          const finalReport = await this.aiInterviewApi.getInterviewReport(
+            data.userId,
+            sessionId,
+          );
+          this.server.to(data.userId).emit('finalReport', {
+            ...finalReport,
+            round: 'problem-solving',
+          });
+          this.sessionMap.delete(data.userId);
+        } catch (reportErr) {
+          const results = await this.interviewService.getResultsForRound(
+            data.userId,
+            'problem-solving',
+          );
+          this.server.to(data.userId).emit('finalReport', results);
+        }
       }
-
-      // Next question
-      const nextQuestion = await this.llmService.generateQuestion(
-        'problem-solving',
-        data.userId,
-      );
-      const nextRecord = await this.interviewService.create(
-        data.userId,
-        'problem-solving',
-        nextQuestion,
-      );
-
-      this.server.to(data.userId).emit('question', {
-        id: nextRecord._id,
-        question: nextRecord.question,
-      });
     } catch (err) {
       this.logger.error('Problem-Solving Answer Error:', err);
       throw new WsException(

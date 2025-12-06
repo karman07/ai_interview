@@ -6,21 +6,19 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Resume, ResumeDocument } from './resume.schema';
+import { AiCvApiService } from './ai-cv-api.service';
 import * as fs from 'fs';
 import * as path from 'path';
-import axios from 'axios';
-import FormData = require('form-data');
 
 @Injectable()
 export class ResumeService {
-  private aiBaseUrl: string;
   private appBaseUrl: string;
 
   constructor(
     @InjectModel(Resume.name) private resumeModel: Model<ResumeDocument>,
+    private readonly aiCvApiService: AiCvApiService,
   ) {
-    this.aiBaseUrl = process.env.AI_BASE_URL || 'http://82.112.231.134:8000';
-    this.appBaseUrl = process.env.APP_BASE_URL || 'http://localhost:3000'; // ✅ use env for frontend
+    this.appBaseUrl = process.env.APP_BASE_URL || process.env.APP_URL || 'http://localhost:3000';
   }
 
   private buildFileUrl(filePath: string): string {
@@ -44,25 +42,14 @@ export class ResumeService {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
 
-    // ✅ Always call CV evaluation API
-    const evalForm = new FormData();
-    evalForm.append('file', fs.createReadStream(file.path), {
-      filename: file.originalname,
-      contentType: 'application/pdf',
-    });
-
+    // ✅ Use AI CV API service to evaluate CV
     let stats: any;
     try {
-      const evalRes = await axios.post(
-        `${this.aiBaseUrl}/upload/cv_evaluate`,
-        evalForm,
-        {
-          headers: { ...evalForm.getHeaders(), accept: 'application/json' },
-          maxBodyLength: Infinity,
-          maxContentLength: Infinity,
-        },
+      stats = await this.aiCvApiService.uploadAndEvaluateCv(
+        file.path,
+        file.originalname,
+        jdText,
       );
-      stats = evalRes.data;
     } catch (err) {
       console.error('Error calling cv_evaluate:', err.message);
       throw new BadRequestException('Failed to evaluate CV');
@@ -72,30 +59,14 @@ export class ResumeService {
 
     // ✅ If JD is provided, also call cv_improvement API
     if (jdFile || jdText) {
-      const improveForm = new FormData();
-      improveForm.append('file', fs.createReadStream(file.path), {
-        filename: file.originalname,
-        contentType: 'application/pdf',
-      });
-      improveForm.append('jd_text', jdText || '');
-      if (jdFile) {
-        improveForm.append('jd_file', fs.createReadStream(jdFile.path), {
-          filename: jdFile.originalname,
-          contentType: jdFile.mimetype,
-        });
-      }
-
       try {
-        const improveRes = await axios.post(
-          `${this.aiBaseUrl}/upload/cv_improvement`,
-          improveForm,
-          {
-            headers: { ...improveForm.getHeaders(), accept: 'application/json' },
-            maxBodyLength: Infinity,
-            maxContentLength: Infinity,
-          },
+        improvement_resume = await this.aiCvApiService.uploadAndGetImprovements(
+          file.path,
+          file.originalname,
+          jdText,
+          jdFile?.path,
+          jdFile?.originalname,
         );
-        improvement_resume = improveRes.data;
       } catch (err) {
         console.error('Error calling cv_improvement:', err.message);
         throw new BadRequestException('Failed to improve CV');
@@ -107,7 +78,7 @@ export class ResumeService {
     const resume = new this.resumeModel({
       filename: file.originalname,
       path: normalizedPath,
-      url: this.buildFileUrl(normalizedPath), // ✅ add file URL
+      url: this.buildFileUrl(normalizedPath),
       stats,
       improvement_resume,
       user: userId,
@@ -138,31 +109,16 @@ export class ResumeService {
     const resume = await this.resumeModel.findById(resumeId);
     if (!resume) throw new NotFoundException('Resume not found');
 
-    const formData = new FormData();
-    formData.append('file', fs.createReadStream(resume.path), {
-      filename: resume.filename,
-      contentType: 'application/pdf',
-    });
-    formData.append('jd_text', jdText || '');
-    if (jdFile) {
-      formData.append('jd_file', fs.createReadStream(jdFile.path), {
-        filename: jdFile.originalname,
-        contentType: jdFile.mimetype,
-      });
-    }
-
     try {
-      const response = await axios.post(
-        `${this.aiBaseUrl}/upload/cv_improvement`,
-        formData,
-        {
-          headers: { ...formData.getHeaders(), accept: 'application/json' },
-          maxBodyLength: Infinity,
-          maxContentLength: Infinity,
-        },
+      const improvement_resume = await this.aiCvApiService.uploadAndGetImprovements(
+        resume.path,
+        resume.filename,
+        jdText,
+        jdFile?.path,
+        jdFile?.originalname,
       );
 
-      resume.improvement_resume = response.data;
+      resume.improvement_resume = improvement_resume;
       await resume.save();
 
       return {

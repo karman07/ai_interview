@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MulterModule } from '@nestjs/platform-express';
+import { LoggingMiddleware } from './common/middleware/logging.middleware';
 
 // Core modules
 import { AuthModule } from './auth/auth.module';
@@ -29,8 +30,13 @@ import { PlaceholderModule } from './common/placeholder';
     // Global configuration
     ConfigModule.forRoot({ isGlobal: true }),
 
-    // MongoDB connection
-    MongooseModule.forRoot(process.env.MONGO_URI),
+    // MongoDB connection with optimized settings
+    MongooseModule.forRoot(process.env.MONGO_URI, {
+      connectTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 5000,
+      maxPoolSize: 10,
+    }),
 
     // File uploads
     MulterModule.register({
@@ -55,4 +61,8 @@ import { PlaceholderModule } from './common/placeholder';
     PlaceholderModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggingMiddleware).forRoutes('*');
+  }
+}

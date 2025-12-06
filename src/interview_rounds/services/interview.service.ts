@@ -2,15 +2,12 @@ import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Interview, InterviewDocument } from '../schemas/interview.schema';
-import Redis from 'ioredis';
-import { DeleteResult } from 'mongodb'; // 👈 Import DeleteResult
 
 @Injectable()
 export class InterviewService {
   constructor(
     @InjectModel(Interview.name)
     private interviewModel: Model<InterviewDocument>,
-    @Inject('REDIS_CLIENT') private readonly redis: Redis,
   ) {}
 
   async create(
@@ -40,7 +37,6 @@ export class InterviewService {
 
     const interview = new this.interviewModel(payload);
     const saved = await interview.save();
-    await this.redis.publish('interview_events', JSON.stringify(saved));
     return saved;
   }
 
@@ -64,7 +60,6 @@ export class InterviewService {
       feedback: null,
       status: 'pending',
     });
-    await this.redis.publish('interview_events', JSON.stringify(rec));
     return rec;
   }
 
@@ -78,9 +73,6 @@ export class InterviewService {
       { answer, feedback, status: 'completed' },
       { new: true },
     );
-    if (updated) {
-      await this.redis.publish('interview_events', JSON.stringify(updated));
-    }
     return updated;
   }
 
@@ -101,7 +93,7 @@ export class InterviewService {
   }
 
   // 👉 Round-specific methods
-  async resetRound(userId: string, round: string): Promise<DeleteResult> {
+  async resetRound(userId: string, round: string): Promise<any> {
     return this.interviewModel
       .deleteMany({ userId, round, status: { $ne: 'completed' } })
       .exec();

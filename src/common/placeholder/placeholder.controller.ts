@@ -1,15 +1,9 @@
 import { Controller, Get, Param, Res } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
 
-@ApiTags('Utility')
 @Controller('placeholder')
 export class PlaceholderController {
   @Get(':width/:height')
-  @ApiOperation({ summary: 'Generate a placeholder image' })
-  @ApiParam({ name: 'width', description: 'Image width in pixels', example: 300 })
-  @ApiParam({ name: 'height', description: 'Image height in pixels', example: 200 })
-  @ApiResponse({ status: 200, description: 'Returns a placeholder image' })
   async getPlaceholderImage(
     @Param('width') width: string,
     @Param('height') height: string,
@@ -45,11 +39,6 @@ export class PlaceholderController {
   }
 
   @Get(':width/:height/:text')
-  @ApiOperation({ summary: 'Generate a placeholder image with custom text' })
-  @ApiParam({ name: 'width', description: 'Image width in pixels', example: 300 })
-  @ApiParam({ name: 'height', description: 'Image height in pixels', example: 200 })
-  @ApiParam({ name: 'text', description: 'Custom text to display', example: 'Sample Text' })
-  @ApiResponse({ status: 200, description: 'Returns a placeholder image with custom text' })
   async getPlaceholderImageWithText(
     @Param('width') width: string,
     @Param('height') height: string,

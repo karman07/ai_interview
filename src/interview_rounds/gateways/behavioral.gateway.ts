@@ -9,7 +9,7 @@ import {
 import { UseGuards, Logger, UseFilters } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { InterviewService } from '../services/interview.service';
-import { LlmService } from '../services/llm.service';
+import { AiInterviewApiService } from '../services/ai-interview-api.service';
 import { AllWsExceptionsFilter } from 'src/common/filters/ws-exception.filter';
 import { WsJwtGuard } from 'src/common/guards/ws-jwt.guard';
 
@@ -20,10 +20,11 @@ export class BehaviorGateway {
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(BehaviorGateway.name);
   private readonly MAX_QUESTIONS = 10;
+  private sessionMap = new Map<string, string>();
 
   constructor(
     private interviewService: InterviewService,
-    private llmService: LlmService,
+    private aiInterviewApi: AiInterviewApiService,
   ) {}
 
   @SubscribeMessage('start')
@@ -35,6 +36,7 @@ export class BehaviorGateway {
       company?: string;
       jobDescription?: string;
       experience?: string;
+      cv?: string;
     },
     @ConnectedSocket() client: Socket,
   ) {
@@ -42,36 +44,41 @@ export class BehaviorGateway {
       this.logger.log(`Start behavioral interview for user: ${data.userId}`);
       client.join(data.userId);
 
-      // Reset current behavioral session
       await this.interviewService.resetRound(data.userId, 'behavioral');
 
-      // Save context info
-      if (data.role || data.company || data.jobDescription || data.experience) {
-        await this.interviewService.startWithContext({
-          userId: data.userId,
-          round: 'behavioral',
-          role: data.role,
-          company: data.company,
-          jobDescription: data.jobDescription,
-          experience: data.experience,
-        });
-      }
+      const sessionId = `behavioral-${data.userId}-${Date.now()}`;
+      this.sessionMap.set(data.userId, sessionId);
 
-      // First question
-      const question = await this.llmService.generateQuestion(
-        'behavioral',
-        data.userId,
-      );
+      const aiResponse = await this.aiInterviewApi.startInterview({
+        user_id: data.userId,
+        session_id: sessionId,
+        role_title: data.role || 'Software Engineer',
+        company_name: data.company || 'Tech Company',
+        industry: 'Software',
+        jd: data.jobDescription || 'Role requiring strong behavioral competencies',
+        cv: data.cv || data.experience || 'Experienced professional',
+        round_type: 'behavioral',
+      });
+
+      await this.interviewService.startWithContext({
+        userId: data.userId,
+        round: 'behavioral',
+        role: data.role,
+        company: data.company,
+        jobDescription: data.jobDescription,
+        experience: data.experience,
+      });
 
       const record = await this.interviewService.create(
         data.userId,
         'behavioral',
-        question,
+        aiResponse.question || aiResponse.current_question || 'Tell me about a time when you faced a challenge at work.',
       );
 
       this.server.to(data.userId).emit('question', {
         id: record._id,
         question: record.question,
+        sessionId: sessionId,
       });
     } catch (err) {
       this.logger.error('Start Interview Error:', err);
@@ -91,72 +98,58 @@ export class BehaviorGateway {
       const interview = await this.interviewService.findById(data.id);
       if (!interview) throw new WsException('Interview record not found');
 
-      // Evaluate
-      const feedback = await this.llmService.evaluateAnswer(
-        interview.question || '',
-        data.answer,
-      );
+      const sessionId = this.sessionMap.get(data.userId);
+      if (!sessionId) throw new WsException('No active session found');
+
+      const aiResponse = await this.aiInterviewApi.submitAnswer({
+        user_id: data.userId,
+        session_id: sessionId,
+        answer: data.answer,
+      });
 
       const record = await this.interviewService.submitAnswer(
         data.id,
         data.answer,
-        feedback,
+        aiResponse.feedback || aiResponse.evaluation || 'Answer recorded',
       );
 
-      // Feedback (client keeps hidden until final report)
       this.server.to(data.userId).emit('feedback', {
         id: record._id,
         feedback: record.feedback,
+        aiResponse: aiResponse,
       });
 
-      // Count answered in current behavioral round
-      const history = await this.interviewService.getHistoryForRound(
-        data.userId,
-        'behavioral',
-      );
-      const questionCount = history.length;
-
-      if (questionCount >= this.MAX_QUESTIONS) {
-        // Build responses (latest 10)
-        const lastTen = history.slice(-this.MAX_QUESTIONS).map((h) => ({
-          _id: h._id,
-          question: h.question || '',
-          answer: h.answer || '',
-          feedback: h.feedback || '',
-        }));
-
-        const results = await this.interviewService.getResultsForRound(
+      if (aiResponse.next_question || aiResponse.question) {
+        const nextQuestion = aiResponse.next_question || aiResponse.question;
+        const nextRecord = await this.interviewService.create(
           data.userId,
           'behavioral',
+          nextQuestion,
         );
 
-        const overallFeedback = `Average Score: ${results.averageScore}. Completed ${questionCount}/${this.MAX_QUESTIONS} behavioral questions.`;
-
-        this.server.to(data.userId).emit('finalReport', {
-          responses: lastTen,
-          overallFeedback,
-          results,
+        this.server.to(data.userId).emit('question', {
+          id: nextRecord._id,
+          question: nextRecord.question,
         });
-
-        this.logger.log(`Interview finished for ${data.userId}`);
-        return;
+      } else {
+        try {
+          const finalReport = await this.aiInterviewApi.getInterviewReport(
+            data.userId,
+            sessionId,
+          );
+          this.server.to(data.userId).emit('finalReport', {
+            ...finalReport,
+            round: 'behavioral',
+          });
+          this.sessionMap.delete(data.userId);
+        } catch (reportErr) {
+          const results = await this.interviewService.getResultsForRound(
+            data.userId,
+            'behavioral',
+          );
+          this.server.to(data.userId).emit('finalReport', results);
+        }
       }
-
-      // Next Q
-      const nextQuestion = await this.llmService.generateQuestion(
-        'behavioral',
-        data.userId,
-      );
-      const nextRecord = await this.interviewService.create(
-        data.userId,
-        'behavioral',
-        nextQuestion,
-      );
-
-      this.server.to(data.userId).emit('question', {
-        id: nextRecord._id,
-        question: nextRecord.question,
-      });
     } catch (err) {
       this.logger.error('Answer Error:', err);
       throw new WsException(

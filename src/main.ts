@@ -1,71 +1,46 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
-import { IoAdapter } from '@nestjs/platform-socket.io';
-import { createAdapter } from '@socket.io/redis-adapter';
-import { createClient } from 'redis';
 import { AllWsExceptionsFilter } from './common/filters/ws-exception.filter';
-
-class RedisIoAdapter extends IoAdapter {
-  private adapter: ReturnType<typeof createAdapter> | null = null;
-
-  async connectToRedis() {
-    try {
-      const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-
-      console.log(`Connecting to Redis at: ${redisUrl}`);
-
-      const pubClient = createClient({
-        url: redisUrl,
-        socket: { connectTimeout: 5000 },
-      });
-
-      const subClient = pubClient.duplicate();
-
-      await Promise.all([pubClient.connect(), subClient.connect()]);
-
-      this.adapter = createAdapter(pubClient, subClient);
-
-      console.log('✅ Redis adapter connected successfully for WebSocket scaling');
-    } catch (error) {
-      console.error('❌ Failed to connect Redis adapter. Falling back to in-memory adapter.');
-      console.error(error);
-      this.adapter = null;
-    }
-  }
-
-  createIOServer(port: number, options?: any) {
-    const server = super.createIOServer(port, options);
-    if (this.adapter) {
-      server.adapter(this.adapter);
-      console.log('🚀 Using Redis adapter for WebSocket scaling');
-    } else {
-      console.log('⚠️ Using in-memory adapter (single instance only)');
-    }
-    return server;
-  }
-}
+import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const logger = new Logger('Bootstrap');
+  
+  try {
+    logger.log('🚀 Starting application...');
+    
+    const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+      logger: ['error', 'warn', 'log', 'debug'],
+      abortOnError: false, // Don't abort on non-critical errors
+    });
 
-  // Global error handling for unhandled rejections and exceptions
-  process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  });
+    // Global error handling for unhandled rejections and exceptions
+    process.on('unhandledRejection', (reason, promise) => {
+      logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    });
 
-  process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error);
-  });
+    process.on('uncaughtException', (error) => {
+      logger.error('Uncaught Exception:', error);
+    });
 
-  // Apply global filters and pipes
+  // Apply global filters, pipes, and interceptors
   app.useGlobalFilters(new AllWsExceptionsFilter());
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: false,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
+  app.useGlobalInterceptors(new TimeoutInterceptor(30000)); // 30 second timeout
 
   // Enable CORS
   app.enableCors({
@@ -83,31 +58,21 @@ async function bootstrap() {
   // Serve static uploads
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
 
-  // Swagger setup
-  const config = new DocumentBuilder()
-    .setTitle('AI Interview')
-    .setDescription('Auth + User Profile API with Google & uploads')
-    .setVersion('1.0')
-    .addBearerAuth(
-      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-      'access-token',
-    )
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
-
-  // Redis Socket.io Adapter
-  const redisAdapter = new RedisIoAdapter(app);
-  await redisAdapter.connectToRedis();
-  app.useWebSocketAdapter(redisAdapter);
-
   // Start server
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`🚀 Server running on http://localhost:${port}`);
-  console.log(`📘 Swagger at http://localhost:${port}/docs`);
-  console.log(`📂 Uploads served at http://localhost:${port}/uploads/`);
+  logger.log(`🚀 Server running on http://localhost:${port}`);
+  logger.log(`📂 Uploads served at http://localhost:${port}/uploads/`);
+  logger.log(`🔗 AI Interview API: ${process.env.AI_INTERVIEW_API_BASE_URL || 'http://34.27.237.113:8000'}`);
+  logger.log('✅ Application started successfully!');
+  
+  } catch (error) {
+    logger.error('❌ Failed to start application:', error);
+    process.exit(1);
+  }
 }
 
-bootstrap();
+bootstrap().catch(err => {
+  console.error('Fatal error during bootstrap:', err);
+  process.exit(1);
+});

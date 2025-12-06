@@ -1,4 +1,4 @@
-import { PartialType } from '@nestjs/swagger';
+import { PartialType } from '@nestjs/mapped-types';
 import { CreateDsaQuestionDto } from './create-dsa-question.dto';
 
 export class UpdateDsaQuestionDto extends PartialType(CreateDsaQuestionDto) {}

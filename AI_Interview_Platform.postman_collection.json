@@ -1,0 +1,518 @@
+{
+  "info": {
+    "name": "AI Interview Platform - Complete API Collection",
+    "_postman_id": "ai-interview-platform-2024",
+    "description": "Complete API collection for AI Interview Platform including WebSocket events, REST endpoints, Authentication, Resume, and Interview Rounds",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "session_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.access_token);",
+                  "    pm.collectionVariables.set('user_id', jsonData.user._id || jsonData.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Interview API Integration",
+      "item": [
+        {
+          "name": "Start Interview Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.session_id || jsonData.sessionId) {",
+                  "        pm.collectionVariables.set('session_id', jsonData.session_id || jsonData.sessionId);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"session_id\": \"session-{{$timestamp}}\",\n  \"role_title\": \"Backend Engineer\",\n  \"company_name\": \"Acme Corp\",\n  \"industry\": \"Software\",\n  \"jd\": \"Design and develop microservices using Node.js and TypeScript\",\n  \"cv\": \"Experienced backend engineer with 5 years in Node.js\",\n  \"round_type\": \"technical\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai-interview/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai-interview", "start"]
+            }
+          }
+        },
+        {
+          "name": "Submit Answer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"session_id\": \"{{session_id}}\",\n  \"answer\": \"My answer is to use async/await patterns with proper error handling and implement circuit breakers for external service calls.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai-interview/answer",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai-interview", "answer"]
+            }
+          }
+        },
+        {
+          "name": "Get Interview State",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai-interview/state/{{user_id}}/{{session_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai-interview", "state", "{{user_id}}", "{{session_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Interview Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai-interview/report/{{user_id}}/{{session_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai-interview", "report", "{{user_id}}", "{{session_id}}"]
+            }
+          }
+        },
+        {
+          "name": "List User Sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai-interview/sessions/{{user_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai-interview", "sessions", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"Backend Engineer\",\n  \"industry\": \"Software\",\n  \"company\": \"Acme Corp\",\n  \"cv_file_id\": \"cv123\",\n  \"jd_file_id\": \"jd456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai-interview/session/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai-interview", "session", "create"]
+            }
+          }
+        },
+        {
+          "name": "Get Next Question",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai-interview/session/{{session_id}}/next-question",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai-interview", "session", "{{session_id}}", "next-question"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI CV Evaluation",
+      "item": [
+        {
+          "name": "Score CV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cv_text\": \"Experienced software engineer with 5 years in Node.js, TypeScript, MongoDB, and AWS. Built scalable microservices handling 1M+ requests/day.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai-cv/score",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai-cv", "score"]
+            }
+          }
+        },
+        {
+          "name": "Calculate Fit Index",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cv_text\": \"Experienced software engineer with 5 years in Node.js, TypeScript, MongoDB, and AWS.\",\n  \"jd_text\": \"Looking for a backend engineer proficient in Node.js, TypeScript, and cloud platforms like AWS. Experience with microservices is a plus.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai-cv/fit-index",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai-cv", "fit-index"]
+            }
+          }
+        },
+        {
+          "name": "Get CV Improvements",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cv_text\": \"Software engineer with Node.js experience.\",\n  \"jd_text\": \"Senior backend engineer needed with expertise in Node.js, TypeScript, microservices architecture, and AWS.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai-cv/improvement",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai-cv", "improvement"]
+            }
+          }
+        },
+        {
+          "name": "Evaluate CV vs JD",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cv_text\": \"Full-stack developer with React and Node.js experience\",\n  \"jd_text\": \"Looking for a backend specialist in Node.js and Python\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai-cv/evaluate-vs-jd",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai-cv", "evaluate-vs-jd"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Resume Management",
+      "item": [
+        {
+          "name": "Upload Resume",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "resume",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "jdText",
+                  "value": "Looking for a backend engineer with Node.js experience",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/resume/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["resume", "upload"]
+            }
+          }
+        },
+        {
+          "name": "Get User Resumes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/resume",
+              "host": ["{{baseUrl}}"],
+              "path": ["resume"]
+            }
+          }
+        },
+        {
+          "name": "Improve Resume",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "jdText",
+                  "value": "Senior backend engineer with microservices experience",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/resume/:resumeId/improve",
+              "host": ["{{baseUrl}}"],
+              "path": ["resume", ":resumeId", "improve"],
+              "variable": [
+                {
+                  "key": "resumeId",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Interview Rounds (Legacy)",
+      "item": [
+        {
+          "name": "Start Interview Round",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"round\": \"technical\",\n  \"role\": \"Backend Engineer\",\n  \"company\": \"Acme Corp\",\n  \"jobDescription\": \"Backend role\",\n  \"experience\": \"5 years\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/interviews/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["interviews", "start"]
+            }
+          }
+        },
+        {
+          "name": "Get Interview History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/interviews/history/{{user_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["interviews", "history", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Interview Results",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/interviews/results/{{user_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["interviews", "results", "{{user_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "WebSocket Connection Guide",
+      "item": [
+        {
+          "name": "Technical Interview WebSocket",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "ws://localhost:3000/technical",
+              "protocol": "ws",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["technical"]
+            },
+            "description": "**WebSocket Events:**\n\n**Emit (Send):**\n- `start` - Start interview\n  ```json\n  {\n    \"userId\": \"user123\",\n    \"role\": \"Backend Engineer\",\n    \"company\": \"Acme\",\n    \"jobDescription\": \"Node.js expert\",\n    \"experience\": \"5 years\",\n    \"cv\": \"Resume text\"\n  }\n  ```\n\n- `answer` - Submit answer\n  ```json\n  {\n    \"id\": \"record_id\",\n    \"userId\": \"user123\",\n    \"answer\": \"My answer\"\n  }\n  ```\n\n**Listen (Receive):**\n- `question` - Receive new question\n- `feedback` - Receive feedback on answer\n- `finalReport` - Receive final report when interview ends"
+          }
+        },
+        {
+          "name": "Behavioral Interview WebSocket",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "ws://localhost:3000/behavioral",
+              "protocol": "ws",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["behavioral"]
+            },
+            "description": "Same events as Technical Interview WebSocket"
+          }
+        },
+        {
+          "name": "HR Interview WebSocket",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "ws://localhost:3000/hr",
+              "protocol": "ws",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["hr"]
+            },
+            "description": "**Emit:**\n- `start` - `{\"userId\": \"user123\", \"role\": \"Candidate\", \"company\": \"Acme\", \"cv\": \"Resume\"}`\n- `answer` - `{\"id\": \"record_id\", \"userId\": \"user123\", \"answer\": \"My answer\"}`\n\n**Listen:**\n- `question`, `feedback`, `finalReport`"
+          }
+        },
+        {
+          "name": "Problem Solving WebSocket",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "ws://localhost:3000/problem",
+              "protocol": "ws",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["problem"]
+            },
+            "description": "Same events as Technical Interview WebSocket"
+          }
+        }
+      ]
+    }
+  ]
+}

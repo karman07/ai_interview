@@ -8,12 +8,9 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiParam, ApiTags } from '@nestjs/swagger';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserDocument } from './schemas/user.schema';
 
-@ApiTags('users')
-@ApiBearerAuth('access-token')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -27,7 +24,6 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @ApiParam({ name: 'id', required: true })
   @Get(':id')
   async getById(@Param('id') id: string) {
     const u: UserDocument = await this.usersService.findById(id);
@@ -45,7 +41,6 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('me/resume')
-  @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('resume', {
     storage: diskStorage({
       destination: process.env.UPLOAD_DIR ?? 'uploads/resumes',
@@ -56,7 +51,6 @@ export class UsersController {
     }),
     limits: { fileSize: 10 * 1024 * 1024 },
   }))
-  @ApiBody({ schema: { type: 'object', properties: { resume: { type: 'string', format: 'binary' } } } })
   async uploadResume(@CurrentUser() user: any, @UploadedFile() file?: Express.Multer.File) {
     const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
     const resumeUrl = `${appUrl}/uploads/resumes/${file?.filename}`;
@@ -67,7 +61,6 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('me/profile-image')
-  @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('profileImage', {
     storage: diskStorage({
       destination: 'uploads/profile-images',
@@ -78,7 +71,6 @@ export class UsersController {
     }),
     limits: { fileSize: 5 * 1024 * 1024 },
   }))
-  @ApiBody({ schema: { type: 'object', properties: { profileImage: { type: 'string', format: 'binary' } } } })
   async uploadProfileImage(@CurrentUser() user: any, @UploadedFile() file?: Express.Multer.File) {
     const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
     const profileImageUrl = `${appUrl}/uploads/profile-images/${file?.filename}`;
