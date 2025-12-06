@@ -20,7 +20,7 @@ class AnalyticsWebSocketManager implements WebSocketManager {
       return;
     }
 
-    const baseUrl = 'http://localhost:3000'; // Fixed WebSocket base URL
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_BASE_URL || 'http://localhost:3000';
     
     console.log('🔌 WebSocket: Connecting to analytics namespace...', {
       visitorId: visitorId.slice(0, 15) + '...',
