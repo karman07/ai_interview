@@ -66,8 +66,8 @@ const DSAQuestionsList: React.FC = () => {
 
   const stats = {
     total: pagination?.totalItems || 0,
-    solved: myProgress?.filter(p => p.status === 'solved').length || 0,
-    attempted: myProgress?.filter(p => p.status === 'attempted').length || 0,
+    solved: myProgress?.filter(p => p.status === 'Solved').length || 0,
+    attempted: myProgress?.filter(p => p.status === 'Attempted').length || 0,
   };
 
   return (
