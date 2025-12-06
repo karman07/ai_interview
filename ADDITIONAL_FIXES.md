@@ -2,6 +2,7 @@
 
 ## **ROOT CAUSE IDENTIFIED: External API Calls Without Timeouts**
 
+#
 Your server was freezing because **ALL external API calls (Gemini, AI services) had NO TIMEOUTS**. When these APIs were slow or unresponsive, your entire Node.js event loop would block indefinitely.
 
 ---
