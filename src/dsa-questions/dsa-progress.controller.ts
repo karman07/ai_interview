@@ -34,6 +34,31 @@ import { SubmissionStatus } from './schemas/dsa-progress.schema';
 export class DsaProgressController {
   constructor(private readonly progressService: DsaProgressService) {}
 
+  @Post(':questionId/start')
+  @ApiOperation({ summary: 'Start tracking time for a question' })
+  @ApiParam({ name: 'questionId', description: 'Question ID' })
+  @ApiResponse({ status: 201, description: 'Time tracking started' })
+  async startQuestion(
+    @Request() req,
+    @Param('questionId') questionId: string,
+  ) {
+    const userId = req.user.userId || req.user.sub;
+    return await this.progressService.startQuestion(userId, questionId);
+  }
+
+  @Post(':questionId/time')
+  @ApiOperation({ summary: 'Record time spent on question' })
+  @ApiParam({ name: 'questionId', description: 'Question ID' })
+  @ApiResponse({ status: 201, description: 'Time recorded successfully' })
+  async recordTime(
+    @Request() req,
+    @Param('questionId') questionId: string,
+    @Body() body: { timeSpent: number },
+  ) {
+    const userId = req.user.userId || req.user.sub;
+    return await this.progressService.recordTime(userId, questionId, body.timeSpent);
+  }
+
   @Post(':questionId/submit')
   @ApiOperation({ summary: 'Record a code submission for a question' })
   @ApiParam({ name: 'questionId', description: 'Question ID' })
@@ -205,6 +230,19 @@ export class DsaProgressController {
     return await this.progressService.toggleDislike(userId, questionId);
   }
 
+  @Post(':questionId/attempt')
+  @ApiOperation({ summary: 'Record a coding attempt (without submission)' })
+  @ApiParam({ name: 'questionId', description: 'Question ID' })
+  @ApiResponse({ status: 201, description: 'Attempt recorded' })
+  async recordAttempt(
+    @Request() req,
+    @Param('questionId') questionId: string,
+    @Body() body: { code: string; language: string },
+  ) {
+    const userId = req.user.userId || req.user.sub;
+    return await this.progressService.recordAttempt(userId, questionId, body);
+  }
+
   @Post(':questionId/hint')
   @ApiOperation({ summary: 'Record that user revealed a hint' })
   @ApiParam({ name: 'questionId', description: 'Question ID' })
@@ -216,6 +254,18 @@ export class DsaProgressController {
   ) {
     const userId = req.user.userId || req.user.sub;
     return await this.progressService.addHintUsed(userId, questionId, hintDto);
+  }
+
+  @Post(':questionId/bookmark')
+  @ApiOperation({ summary: 'Toggle bookmark status' })
+  @ApiParam({ name: 'questionId', description: 'Question ID' })
+  @ApiResponse({ status: 201, description: 'Bookmark toggled' })
+  async toggleBookmark(
+    @Request() req,
+    @Param('questionId') questionId: string,
+  ) {
+    const userId = req.user.userId || req.user.sub;
+    return await this.progressService.toggleBookmark(userId, questionId);
   }
 
   @Delete(':questionId')

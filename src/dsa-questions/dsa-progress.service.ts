@@ -17,6 +17,94 @@ export class DsaProgressService {
   ) {}
 
   /**
+   * Start tracking time for a question
+   */
+  async startQuestion(userId: string, questionId: string): Promise<DsaProgress> {
+    let progress = await this.dsaProgressModel.findOne({ userId, questionId });
+
+    if (!progress) {
+      progress = new this.dsaProgressModel({
+        userId,
+        questionId,
+        status: SubmissionStatus.ATTEMPTED,
+        firstAttemptDate: new Date(),
+        lastAttemptDate: new Date(),
+      });
+    }
+
+    return await progress.save();
+  }
+
+  /**
+   * Record time spent on question
+   */
+  async recordTime(userId: string, questionId: string, timeSpent: number): Promise<DsaProgress> {
+    const progress = await this.dsaProgressModel.findOne({ userId, questionId });
+    
+    if (progress) {
+      progress.totalTimeSpent += timeSpent;
+      progress.lastAttemptDate = new Date();
+      return await progress.save();
+    }
+    
+    return new this.dsaProgressModel({
+      userId,
+      questionId,
+      status: SubmissionStatus.ATTEMPTED,
+      totalTimeSpent: timeSpent,
+      firstAttemptDate: new Date(),
+      lastAttemptDate: new Date(),
+    }).save();
+  }
+
+  /**
+   * Record coding attempt without submission
+   */
+  async recordAttempt(userId: string, questionId: string, data: { code: string; language: string }): Promise<DsaProgress> {
+    let progress = await this.dsaProgressModel.findOne({ userId, questionId });
+
+    if (!progress) {
+      progress = new this.dsaProgressModel({
+        userId,
+        questionId,
+        status: SubmissionStatus.ATTEMPTED,
+        totalAttempts: 1,
+        firstAttemptDate: new Date(),
+        lastAttemptDate: new Date(),
+        languagesAttempted: [data.language],
+      });
+    } else {
+      progress.totalAttempts += 1;
+      progress.lastAttemptDate = new Date();
+      if (!progress.languagesAttempted.includes(data.language)) {
+        progress.languagesAttempted.push(data.language);
+      }
+    }
+
+    return await progress.save();
+  }
+
+  /**
+   * Toggle bookmark status
+   */
+  async toggleBookmark(userId: string, questionId: string): Promise<DsaProgress> {
+    let progress = await this.dsaProgressModel.findOne({ userId, questionId });
+
+    if (!progress) {
+      progress = new this.dsaProgressModel({
+        userId,
+        questionId,
+        status: SubmissionStatus.ATTEMPTED,
+        isBookmarked: true,
+      });
+    } else {
+      progress.isBookmarked = !progress.isBookmarked;
+    }
+
+    return await progress.save();
+  }
+
+  /**
    * Record a new submission for a user
    */
   async recordSubmission(
