@@ -21,11 +21,23 @@ async function bootstrap() {
 
     // Global error handling for unhandled rejections and exceptions
     process.on('unhandledRejection', (reason, promise) => {
-      logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+      logger.error('🚨 Unhandled Rejection at:', promise, 'reason:', reason);
     });
 
     process.on('uncaughtException', (error) => {
-      logger.error('Uncaught Exception:', error);
+      logger.error('🚨 Uncaught Exception:', error);
+    });
+    
+    // Log when requests are taking too long
+    app.use((req, res, next) => {
+      const start = Date.now();
+      res.on('finish', () => {
+        const duration = Date.now() - start;
+        if (duration > 5000) { // Log requests taking more than 5 seconds
+          logger.warn(`⏰ Slow request: ${req.method} ${req.url} took ${duration}ms`);
+        }
+      });
+      next();
     });
 
   // Apply global filters, pipes, and interceptors
@@ -65,6 +77,12 @@ async function bootstrap() {
   logger.log(`📂 Uploads served at http://localhost:${port}/uploads/`);
   logger.log(`🔗 AI Interview API: ${process.env.AI_INTERVIEW_API_BASE_URL || 'http://34.27.237.113:8000'}`);
   logger.log('✅ Application started successfully!');
+  
+  // Log server health periodically
+  setInterval(() => {
+    const memUsage = process.memoryUsage();
+    logger.debug(`💾 Memory: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB / ${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`);
+  }, 60000); // Every minute
   
   } catch (error) {
     logger.error('❌ Failed to start application:', error);

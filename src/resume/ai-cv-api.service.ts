@@ -161,8 +161,20 @@ export class AiCvApiService {
    * Upload and evaluate CV file
    */
   async uploadAndEvaluateCv(filePath: string, originalName: string, jdText?: string): Promise<any> {
+    const startTime = Date.now();
+    this.logger.log(`🚀 Starting CV evaluation for: ${originalName}`);
+    
     try {
       const endpoint = this.configService.get<string>('AI_CV_EVALUATE_UPLOAD_ENDPOINT', '/upload/cv_evaluate');
+      this.logger.log(`🎯 Endpoint: ${this.baseUrl}${endpoint}`);
+      
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`File not found: ${filePath}`);
+      }
+      
+      const fileStats = fs.statSync(filePath);
+      this.logger.log(`📄 File size: ${fileStats.size} bytes`);
       
       const formData = new FormData();
       formData.append('file', fs.createReadStream(filePath), {
@@ -171,9 +183,11 @@ export class AiCvApiService {
       });
       
       if (jdText) {
+        this.logger.log(`📝 JD text length: ${jdText.length} characters`);
         formData.append('jd_text', jdText);
       }
 
+      this.logger.log('📤 Sending request to AI service...');
       const response = await this.axiosInstance.post(endpoint, formData, {
         headers: {
           ...formData.getHeaders(),
@@ -181,13 +195,28 @@ export class AiCvApiService {
         },
         maxBodyLength: Infinity,
         maxContentLength: Infinity,
+        timeout: 120000, // 2 minutes timeout
       });
       
+      const duration = Date.now() - startTime;
+      this.logger.log(`✅ CV evaluation successful in ${duration}ms`);
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to upload and evaluate CV', error);
+      const duration = Date.now() - startTime;
+      this.logger.error(`💥 CV evaluation failed after ${duration}ms`);
+      
+      if (error.code === 'ECONNABORTED') {
+        this.logger.error('⏰ Request timeout - AI service took too long to respond');
+      } else if (error.code === 'ECONNREFUSED') {
+        this.logger.error('🚫 Connection refused - AI service might be down');
+      } else if (error.response) {
+        this.logger.error(`📊 Response status: ${error.response.status}`);
+        this.logger.error(`📊 Response data: ${JSON.stringify(error.response.data)}`);
+      }
+      
+      this.logger.error('Full error details:', error.message);
       throw new HttpException(
-        'Failed to upload and evaluate CV',
+        `Failed to upload and evaluate CV: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
@@ -203,8 +232,17 @@ export class AiCvApiService {
     jdFilePath?: string,
     jdFileName?: string
   ): Promise<any> {
+    const startTime = Date.now();
+    this.logger.log(`🔄 Starting CV improvement for: ${originalName}`);
+    
     try {
       const endpoint = this.configService.get<string>('AI_CV_IMPROVEMENT_UPLOAD_ENDPOINT', '/upload/cv_improvement');
+      this.logger.log(`🎯 Endpoint: ${this.baseUrl}${endpoint}`);
+      
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`File not found: ${filePath}`);
+      }
       
       const formData = new FormData();
       formData.append('file', fs.createReadStream(filePath), {
@@ -213,15 +251,21 @@ export class AiCvApiService {
       });
       
       if (jdText) {
+        this.logger.log(`📝 JD text length: ${jdText.length} characters`);
         formData.append('jd_text', jdText);
       }
 
       if (jdFilePath && jdFileName) {
+        this.logger.log(`📋 JD file: ${jdFileName}`);
+        if (!fs.existsSync(jdFilePath)) {
+          throw new Error(`JD file not found: ${jdFilePath}`);
+        }
         formData.append('jd_file', fs.createReadStream(jdFilePath), {
           filename: jdFileName,
         });
       }
 
+      this.logger.log('📤 Sending improvement request to AI service...');
       const response = await this.axiosInstance.post(endpoint, formData, {
         headers: {
           ...formData.getHeaders(),
@@ -229,13 +273,28 @@ export class AiCvApiService {
         },
         maxBodyLength: Infinity,
         maxContentLength: Infinity,
+        timeout: 120000, // 2 minutes timeout
       });
       
+      const duration = Date.now() - startTime;
+      this.logger.log(`✅ CV improvement successful in ${duration}ms`);
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to upload and get improvements', error);
+      const duration = Date.now() - startTime;
+      this.logger.error(`💥 CV improvement failed after ${duration}ms`);
+      
+      if (error.code === 'ECONNABORTED') {
+        this.logger.error('⏰ Request timeout - AI service took too long to respond');
+      } else if (error.code === 'ECONNREFUSED') {
+        this.logger.error('🚫 Connection refused - AI service might be down');
+      } else if (error.response) {
+        this.logger.error(`📊 Response status: ${error.response.status}`);
+        this.logger.error(`📊 Response data: ${JSON.stringify(error.response.data)}`);
+      }
+      
+      this.logger.error('Full error details:', error.message);
       throw new HttpException(
-        'Failed to upload and get improvements',
+        `Failed to upload and get improvements: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
