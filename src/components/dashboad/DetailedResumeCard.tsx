@@ -33,14 +33,14 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume }) => {
     <>
       {/* Resume Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300">
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-blue-50 rounded-xl">
-                <DocumentTextIcon className="w-6 h-6 text-blue-600" />
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="p-2 sm:p-3 bg-blue-50 rounded-xl flex-shrink-0">
+                <DocumentTextIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               </div>
-              <div>
-                <h3 className="font-semibold text-lg text-gray-900">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-base sm:text-lg text-gray-900 truncate">
                   {resume?.filename}
                 </h3>
                 <p className="text-sm text-gray-500 flex items-center gap-2">
@@ -57,14 +57,14 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume }) => {
             </div>
             <button
               onClick={() => setOpen(true)}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors flex-shrink-0"
             >
-              <EyeIcon className="w-5 h-5" />
+              <EyeIcon className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
 
           {/* Metrics */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
             {[
               {
                 label: "CV Quality",
@@ -96,15 +96,15 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume }) => {
               },
             ].map((metric, idx) => (
               <div key={idx} className="text-center">
-                <div className="flex justify-center mb-2">
-                  <metric.icon className="w-5 h-5 text-gray-400" />
+                <div className="flex justify-center mb-1 sm:mb-2">
+                  <metric.icon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">
                   {Math.round(metric.value || 0)}
                 </p>
-                <p className="text-xs text-gray-500 mb-2">{metric.label}</p>
+                <p className="text-xs text-gray-500 mb-1 sm:mb-2 truncate">{metric.label}</p>
                 <span
-                  className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getBandColor(
+                  className={`inline-block px-1 sm:px-2 py-1 rounded-full text-xs font-medium ${getBandColor(
                     metric.band
                   )}`}
                 >
@@ -129,7 +129,7 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume }) => {
 
       {/* Details Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto mx-4">
           <DialogHeader>
             <DialogTitle>Resume Details</DialogTitle>
           </DialogHeader>

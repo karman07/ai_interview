@@ -22,9 +22,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "../dialog/dialog";
 import { baseURL } from "@/api/http";
+import { resumeService } from "@/api/resumeService";
 
 interface ResumeDetailsProps {
   resume: any;
@@ -33,6 +33,9 @@ interface ResumeDetailsProps {
 const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
   const [openJDDialog, setOpenJDDialog] = useState(false);
   const [jdFile, setJdFile] = useState<File | null>(null);
+  const [jdText, setJdText] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<"evaluation" | "improvement">(
     "evaluation"
   );
@@ -90,32 +93,34 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
   const overallScore = Math.round(resume.stats?.cv_quality?.overall_score);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
         {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-2xl border border-gray-200 shadow-lg"
         >
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center border border-blue-200 shadow-sm">
-                  <FileText className="w-7 h-7 text-blue-600" />
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-100 rounded-2xl flex items-center justify-center border border-blue-200 shadow-sm flex-shrink-0">
+                  <FileText className="w-6 h-6 sm:w-7 sm:h-7 text-blue-600" />
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                     {resume?.filename}
                   </h1>
-                  <p className="text-gray-600 mt-1 text-sm">
+                  <p className="text-gray-600 mt-1 text-xs sm:text-sm">
                     Resume Analysis Dashboard
                   </p>
                 </div>
               </div>
-              <div className="text-right text-5xl font-extrabold text-gray-900">
-                {overallScore}
-                <div className="text-gray-500 text-sm font-medium mt-1">
+              <div className="text-center md:text-right">
+                <div className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900">
+                  {overallScore}
+                </div>
+                <div className="text-gray-500 text-xs sm:text-sm font-medium mt-1">
                   Overall Score
                 </div>
               </div>
@@ -179,7 +184,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
         </motion.div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <ActionCard
             icon={<EyeIcon className="w-5 h-5 text-blue-600" />}
             title="View Resume"
@@ -197,44 +202,87 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
           />
 
           {!hasImprovement && (
-            <Dialog open={openJDDialog} onOpenChange={setOpenJDDialog}>
-              <DialogTrigger asChild>
-                <ActionCard
-                  icon={<Upload className="w-5 h-5 text-green-600" />}
-                  title="Upload Job Description"
-                  subtitle={
-                    <span className="text-green-600 text-sm font-medium">
-                      Enhance Resume →
-                    </span>
-                  }
-                  color="green"
-                  clickable
-                />
-              </DialogTrigger>
-              {/* Expanded Dialog Width */}
-              <DialogContent className="w-full max-w-5xl">
-                <DialogHeader>
-                  <DialogTitle className="text-xl font-semibold">
-                    Upload Job Description
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-2">
-                  <UploadBox jdFile={jdFile} setJdFile={setJdFile} />
+            <>
+              <ActionCard
+                icon={<Upload className="w-5 h-5 text-green-600" />}
+                title="Upload Job Description"
+                subtitle={
+                  <span className="text-green-600 text-sm font-medium">
+                    Enhance Resume →
+                  </span>
+                }
+                color="green"
+                clickable
+                onClick={() => setOpenJDDialog(true)}
+              />
+              
+              <Dialog open={openJDDialog} onOpenChange={setOpenJDDialog}>
+                <DialogContent className="w-full max-w-5xl mx-4">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-semibold">
+                      Upload Job Description
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-2">
+                    <UploadBox jdFile={jdFile} setJdFile={setJdFile} />
+                    
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Or paste job description text:
+                      </label>
+                      <textarea
+                        value={jdText}
+                        onChange={(e) => setJdText(e.target.value)}
+                        placeholder="Job Description: We are looking for a Senior Software Engineer with 5+ years experience in Node.js, React, and MongoDB..."
+                        className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
 
-                  <Button
-                    onClick={() => {
-                      if (!jdFile) return;
-                      console.log("JD File selected:", jdFile);
-                      setOpenJDDialog(false);
-                    }}
-                    disabled={!jdFile}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                  >
-                    Process & Enhance
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+                    {uploadError && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <p className="text-sm text-red-600">{uploadError}</p>
+                      </div>
+                    )}
+
+                    <Button
+                      onClick={async () => {
+                        if (!jdFile && !jdText.trim()) return;
+                        
+                        setIsUploading(true);
+                        setUploadError('');
+                        
+                        try {
+                          const result = await resumeService.improveResume(
+                            resume._id,
+                            jdText.trim() || undefined,
+                            jdFile || undefined
+                          );
+                          
+                          console.log('Upload successful:', result);
+                          setOpenJDDialog(false);
+                          setJdFile(null);
+                          setJdText('');
+                          window.location.reload();
+                        } catch (error: any) {
+                          console.error('Failed to improve resume:', error);
+                          setUploadError(
+                            error?.response?.data?.message || 
+                            error?.message || 
+                            'Failed to upload. Please try again.'
+                          );
+                        } finally {
+                          setIsUploading(false);
+                        }
+                      }}
+                      disabled={(!jdFile && !jdText.trim()) || isUploading}
+                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {isUploading ? 'Processing...' : 'Process & Enhance'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </>
           )}
 
           <ActionCard
@@ -273,7 +321,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
             </nav>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {activeTab === "evaluation" && <EvaluationTab resume={resume} />}
             {activeTab === "improvement" && hasImprovement && (
               <ImprovementTab resume={resume} />
@@ -293,38 +341,68 @@ const ActionCard = ({
   subtitle,
   color,
   clickable = false,
+  onClick,
 }: {
   icon: React.ReactNode;
   title: string;
   subtitle: React.ReactNode;
   color: "blue" | "green" | "gray";
   clickable?: boolean;
-}) => (
-  <motion.div
-    whileHover={{ scale: 1.02 }}
-    className={`bg-white rounded-xl border border-gray-200 p-4 transition-shadow ${
-      clickable ? "cursor-pointer hover:shadow-md" : ""
-    }`}
-  >
-    <div className="flex items-center gap-3">
-      <div
-        className={`p-2 rounded-lg ${
-          color === "blue"
-            ? "bg-blue-50"
-            : color === "green"
-            ? "bg-green-50"
-            : "bg-gray-50"
-        }`}
-      >
-        {icon}
+  onClick?: () => void;
+}) => {
+  if (clickable) {
+    return (
+      <motion.div whileHover={{ scale: 1.02 }}>
+        <button
+          onClick={onClick}
+          className="w-full bg-white rounded-xl border border-gray-200 p-4 transition-shadow text-left cursor-pointer hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className={`p-2 rounded-lg ${
+                color === "blue"
+                  ? "bg-blue-50"
+                  : color === "green"
+                  ? "bg-green-50"
+                  : "bg-gray-50"
+              }`}
+            >
+              {icon}
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">{title}</h3>
+              <div>{subtitle}</div>
+            </div>
+          </div>
+        </button>
+      </motion.div>
+    );
+  }
+  
+  return (
+    <motion.div whileHover={{ scale: 1.02 }}>
+      <div className="w-full bg-white rounded-xl border border-gray-200 p-4 transition-shadow">
+        <div className="flex items-center gap-3">
+          <div
+            className={`p-2 rounded-lg ${
+              color === "blue"
+                ? "bg-blue-50"
+                : color === "green"
+                ? "bg-green-50"
+                : "bg-gray-50"
+            }`}
+          >
+            {icon}
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900">{title}</h3>
+            <div>{subtitle}</div>
+          </div>
+        </div>
       </div>
-      <div>
-        <h3 className="font-semibold text-gray-900">{title}</h3>
-        <div>{subtitle}</div>
-      </div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 const UploadBox = ({
   jdFile,
@@ -332,33 +410,102 @@ const UploadBox = ({
 }: {
   jdFile: File | null;
   setJdFile: (file: File | null) => void;
-}) => (
-  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-    <Upload className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-    <input
-      type="file"
-      accept=".pdf,.doc,.docx,.txt"
-      className="hidden"
-      id="jd-upload"
-      onChange={(e) => setJdFile(e.target.files?.[0] || null)}
-    />
-    <label htmlFor="jd-upload" className="cursor-pointer">
-      <div className="font-medium text-gray-700 mb-1">
-        Select job description
-      </div>
-      <div className="text-sm text-gray-500">PDF, DOC, DOCX, TXT</div>
-    </label>
+}) => {
+  const [isDragOver, setIsDragOver] = useState(false);
 
-    {jdFile && (
-      <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-3">
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-green-600" />
-          <span className="text-sm font-medium text-green-800">{jdFile.name}</span>
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      if (validateFile(file)) {
+        setJdFile(file);
+      }
+    }
+  };
+
+  const validateFile = (file: File) => {
+    const validTypes = ['.pdf', '.doc', '.docx', '.txt'];
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    
+    if (!validTypes.includes(fileExtension)) {
+      alert('Please select a valid file type: PDF, DOC, DOCX, or TXT');
+      return false;
+    }
+    
+    if (file.size > maxSize) {
+      alert('File size must be less than 10MB');
+      return false;
+    }
+    
+    return true;
+  };
+
+  return (
+    <div
+      className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 ${
+        isDragOver
+          ? 'border-blue-400 bg-blue-50'
+          : jdFile
+          ? 'border-green-400 bg-green-50'
+          : 'border-gray-300 hover:border-gray-400'
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <Upload className={`w-10 h-10 mx-auto mb-3 ${
+        isDragOver ? 'text-blue-500' : jdFile ? 'text-green-500' : 'text-gray-400'
+      }`} />
+      
+      <input
+        type="file"
+        accept=".pdf,.doc,.docx,.txt"
+        className="hidden"
+        id="jd-upload"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file && validateFile(file)) {
+            setJdFile(file);
+          }
+        }}
+      />
+      
+      {jdFile ? (
+        <div className="space-y-3">
+          <div className="flex items-center justify-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-green-600" />
+            <span className="font-medium text-green-800">{jdFile.name}</span>
+          </div>
+          <label htmlFor="jd-upload" className="cursor-pointer inline-block">
+            <span className="text-sm text-blue-600 hover:text-blue-700 underline">
+              Choose different file
+            </span>
+          </label>
         </div>
-      </div>
-    )}
-  </div>
-);
+      ) : (
+        <label htmlFor="jd-upload" className="cursor-pointer block">
+          <div className="font-medium text-gray-700 mb-1">
+            {isDragOver ? 'Drop file here' : 'Click to select or drag & drop'}
+          </div>
+          <div className="text-sm text-gray-500">PDF, DOC, DOCX, TXT (max 10MB)</div>
+        </label>
+      )}
+    </div>
+  );
+};
 
 const TabButton = ({
   label,
@@ -399,7 +546,7 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume }) => {
           Quality Assessment
         </h3>
         <div className="overflow-x-auto border border-gray-200 rounded-lg">
-          <table className="w-full min-w-[700px]">
+          <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
@@ -550,7 +697,7 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume }) => {
       )}
 
       {/* Key Insights */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <InsightsCard
           title="Strengths"
           count={resume?.stats?.key_takeaways?.green_flags?.length || 0}

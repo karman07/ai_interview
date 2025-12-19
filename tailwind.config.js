@@ -11,10 +11,24 @@ module.exports = {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: {
+        DEFAULT: "1rem",
+        sm: "2rem",
+        lg: "4rem",
+        xl: "5rem",
+        "2xl": "6rem",
+      },
       screens: {
         "2xl": "1400px",
       },
+    },
+    screens: {
+      'xs': '475px',
+      'sm': '640px',
+      'md': '768px',
+      'lg': '1024px',
+      'xl': '1280px',
+      '2xl': '1536px',
     },
     extend: {
       colors: {
@@ -70,6 +84,22 @@ module.exports = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+      },
+      maxWidth: {
+        'screen-xs': '475px',
+        'screen-sm': '640px',
+        'screen-md': '768px',
+        'screen-lg': '1024px',
+        'screen-xl': '1280px',
+        'screen-2xl': '1536px',
+      },
+      minWidth: {
+        '0': '0',
+        'xs': '20rem',
+        'sm': '24rem',
+        'md': '28rem',
+        'lg': '32rem',
+        'xl': '36rem',
       },
     },
   },

@@ -228,17 +228,17 @@ const ResumeDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 bg-clip-text text-transparent mb-2">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 bg-clip-text text-transparent mb-2">
                 Resume Analytics Dashboard
               </h1>
-              <p className="text-gray-600 text-lg">Transform your career with data-driven insights</p>
+              <p className="text-gray-600 text-sm sm:text-base lg:text-lg">Transform your career with data-driven insights</p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative">
                 <select 
                   onChange={(e) => handleDownload(e.target.value)}
@@ -262,7 +262,7 @@ const ResumeDashboard: React.FC = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <StatCard
             title="Total Resumes"
             value={totalResumes}
@@ -294,7 +294,7 @@ const ResumeDashboard: React.FC = () => {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex space-x-1 bg-gray-100 p-1 rounded-2xl mb-8 w-fit">
+        <div className="flex flex-wrap sm:flex-nowrap space-x-1 bg-gray-100 p-1 rounded-2xl mb-6 sm:mb-8 w-full sm:w-fit overflow-x-auto">
           {[
             { id: 'overview', label: 'Overview', icon: ChartBarIcon },
             { id: 'performance', label: 'Performance', icon: TrendingUpIcon },
@@ -303,29 +303,30 @@ const ResumeDashboard: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+              className={`flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-xl font-medium transition-all duration-300 whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'bg-white text-blue-600 shadow-md'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               <tab.icon className="w-4 h-4" />
-              {tab.label}
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
             </button>
           ))}
         </div>
 
         {/* Tab Content */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8">
             {/* Performance Trends */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
-                <TrendingUpIcon className="w-6 h-6 text-blue-600" />
+            <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 flex items-center gap-3">
+                <TrendingUpIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                 Performance Trends
               </h3>
               {performanceData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={250}>
                   <AreaChart data={performanceData}>
                     <defs>
                       <linearGradient id="colorFit" x1="0" y1="0" x2="0" y2="1">
@@ -369,10 +370,10 @@ const ResumeDashboard: React.FC = () => {
             </div>
 
             {/* Score Distribution */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">Score Distribution</h3>
+            <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Score Distribution</h3>
               {pieData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
                       data={pieData}
@@ -401,11 +402,11 @@ const ResumeDashboard: React.FC = () => {
         )}
 
         {activeTab === 'performance' && radarData.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8">
             {/* Skills Radar */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">CV Quality Breakdown</h3>
-              <ResponsiveContainer width="100%" height={400}>
+            <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">CV Quality Breakdown</h3>
+              <ResponsiveContainer width="100%" height={300}>
                 <RadarChart data={radarData}>
                   <PolarGrid />
                   <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 12 }} />
@@ -424,8 +425,8 @@ const ResumeDashboard: React.FC = () => {
             </div>
 
             {/* Detailed Scores */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">Detailed Breakdown</h3>
+            <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Detailed Breakdown</h3>
               <div className="space-y-4">
                 {radarData.map((item, index) => (
                   <div key={index} className="space-y-2">
@@ -447,9 +448,9 @@ const ResumeDashboard: React.FC = () => {
         )}
 
         {activeTab === 'details' && (
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             {resumes.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {safeResumes.map((resume) => (
                   <DetailedResumeCard key={resume._id} resume={resume}  />
                 ))}
@@ -475,7 +476,7 @@ const ResumeDashboard: React.FC = () => {
           <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
               <div className="fixed inset-0 transition-opacity bg-black bg-opacity-50" onClick={() => setIsUploadOpen(false)} />
-              <div className="relative inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-2xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+              <div className="relative inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-2xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6 mx-4">
                 <div className="absolute top-0 right-0 hidden pt-4 pr-4 sm:block">
                   <button
                     onClick={() => setIsUploadOpen(false)}
@@ -591,18 +592,18 @@ const ResumeDashboard: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="mt-6 sm:flex sm:flex-row-reverse gap-3">
+                <div className="mt-6 flex flex-col sm:flex-row-reverse gap-3">
                   <button
                     onClick={handleUpload}
                     disabled={!resumeFile}
-                    className="inline-flex justify-center w-full px-6 py-3 text-base font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 border border-transparent rounded-xl hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                    className="inline-flex justify-center w-full px-6 py-3 text-sm sm:text-base font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 border border-transparent rounded-xl hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                   >
                     <CloudArrowUpIcon className="w-5 h-5 mr-2" />
                     Upload & Analyze
                   </button>
                   <button
                     onClick={() => setIsUploadOpen(false)}
-                    className="inline-flex justify-center w-full px-6 py-3 mt-3 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto transition-all duration-300"
+                    className="inline-flex justify-center w-full px-6 py-3 text-sm sm:text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:w-auto transition-all duration-300"
                   >
                     Cancel
                   </button>
@@ -617,7 +618,7 @@ const ResumeDashboard: React.FC = () => {
           <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
               <div className="fixed inset-0 transition-opacity bg-black bg-opacity-50" onClick={() => setSelectedResume(null)} />
-              <div className="relative inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-2xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6 max-h-[90vh] overflow-y-auto">
+              <div className="relative inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-2xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6 max-h-[90vh] overflow-y-auto mx-4">
                 <div className="absolute top-0 right-0 hidden pt-4 pr-4 sm:block">
                   <button
                     onClick={() => setSelectedResume(null)}
@@ -648,7 +649,7 @@ const ResumeDashboard: React.FC = () => {
                   </div>
 
                   {/* Main Scores */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                     {[
                       { 
                         label: 'CV Quality', 
@@ -674,13 +675,13 @@ const ResumeDashboard: React.FC = () => {
                         icon: StarIcon 
                       }
                     ].map((metric, idx) => (
-                      <div key={idx} className="bg-gradient-to-r from-gray-50 to-white p-6 rounded-2xl border border-gray-100">
+                      <div key={idx} className="bg-gradient-to-r from-gray-50 to-white p-4 sm:p-6 rounded-2xl border border-gray-100">
                         <div className="flex items-center gap-3 mb-4">
-                          <metric.icon className="w-6 h-6 text-gray-600" />
-                          <h3 className="font-semibold text-gray-900">{metric.label}</h3>
+                          <metric.icon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+                          <h3 className="font-semibold text-sm sm:text-base text-gray-900">{metric.label}</h3>
                         </div>
                         <div className="text-center">
-                          <p className="text-4xl font-bold text-gray-900 mb-2">{Math.round(metric.value || 0)}</p>
+                          <p className="text-2xl sm:text-4xl font-bold text-gray-900 mb-2">{Math.round(metric.value || 0)}</p>
                           <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getBandColor(metric.band)}`}>
                             {metric.band || 'N/A'}
                           </span>
@@ -699,12 +700,12 @@ const ResumeDashboard: React.FC = () => {
                   <div className="space-y-8">
                     {/* CV Quality Subscores */}
                     {selectedResume?.stats?.cv_quality?.subscores && (
-                      <div className="bg-white border border-gray-100 rounded-2xl p-6">
-                        <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
-                          <AcademicCapIcon className="w-6 h-6 text-green-600" />
+                      <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6">
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 flex items-center gap-3">
+                          <AcademicCapIcon className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
                           CV Quality Breakdown
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                           {(selectedResume?.stats?.cv_quality?.subscores || []).map((subscore, idx) => (
                             <div key={idx} className="bg-gray-50 rounded-xl p-4">
                               <div className="flex justify-between items-start mb-3">
@@ -734,12 +735,12 @@ const ResumeDashboard: React.FC = () => {
 
                     {/* JD Match Subscores */}
                     {selectedResume?.stats?.jd_match?.subscores && (
-                      <div className="bg-white border border-gray-100 rounded-2xl p-6">
-                        <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
-                          <BriefcaseIcon className="w-6 h-6 text-purple-600" />
+                      <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6">
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 flex items-center gap-3">
+                          <BriefcaseIcon className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
                           Job Description Match Breakdown
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                           {(selectedResume?.stats?.jd_match?.subscores || []).map((subscore, idx) => (
                             <div key={idx} className="bg-gray-50 rounded-xl p-4">
                               <div className="flex justify-between items-start mb-3">
@@ -764,12 +765,12 @@ const ResumeDashboard: React.FC = () => {
                     )}
 
                     {/* Resume Analysis */}
-                    <div className="bg-white border border-gray-100 rounded-2xl p-6">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
-                        <UserIcon className="w-6 h-6 text-blue-600" />
+                    <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 flex items-center gap-3">
+                        <UserIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                         Resume Analysis
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div>
                           <h4 className="font-medium text-gray-900 mb-3">Technical Skills</h4>
                           <div className="space-y-2 text-sm">
@@ -802,7 +803,7 @@ const ResumeDashboard: React.FC = () => {
 
                       {/* Key Takeaways */}
                       <div className="mt-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                           <div>
                             <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
                               <div className="w-2 h-2 rounded-full bg-green-500" />
