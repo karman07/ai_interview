@@ -63,7 +63,9 @@ async function bootstrap() {
   // Ensure upload directories exist
   const resumeDir = path.resolve(process.env.UPLOAD_DIR ?? 'uploads/resumes');
   const profileDir = path.resolve('uploads/profile-images');
-  [resumeDir, profileDir].forEach((dir) => {
+  const audioDir = path.resolve('uploads/audio');
+  const videoDir = path.resolve('uploads/video');
+  [resumeDir, profileDir, audioDir, videoDir].forEach((dir) => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   });
 

@@ -1,6 +1,22 @@
-import { Controller, Post, Get, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Param, UseGuards, Request, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { AiInterviewApiService } from '../services/ai-interview-api.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { TimeoutInterceptor } from 'src/common/interceptors/timeout.interceptor';
+import * as multer from 'multer';
+import * as path from 'path';
+
+// Configure multer for audio/video uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = file.mimetype.startsWith('audio/') ? './uploads/audio' : './uploads/video';
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
 
 @Controller('ai-interview')
 @UseGuards(JwtAuthGuard)
@@ -129,7 +145,7 @@ export class AiInterviewController {
 
   /**
    * POST /ai-interview/session/:sessionId/answer
-   * Submit answer to a session question
+   * Submit answer to a session question with optional audio/video
    */
   @Post('session/:sessionId/answer')
   async submitSessionAnswer(
@@ -139,6 +155,8 @@ export class AiInterviewController {
       question_id: string;
       text: string;
       audio_url?: string;
+      video_url?: string;
+      response_duration?: number;
     },
   ) {
     return this.aiInterviewApi.submitSessionAnswer(sessionId, payload);
@@ -151,6 +169,38 @@ export class AiInterviewController {
   @Get('session/:sessionId/report')
   async getSessionReport(@Param('sessionId') sessionId: string) {
     return this.aiInterviewApi.getSessionReport(sessionId);
+  }
+
+  /**
+   * POST /ai-interview/session/:sessionId/upload-response
+   * Upload audio/video response for a question
+   */
+  @Post('session/:sessionId/upload-response')
+  @UseInterceptors(
+    FilesInterceptor('files', 2, { storage }),
+    new TimeoutInterceptor(300000) // 5 minutes for media upload
+  )
+  async uploadResponse(
+    @Param('sessionId') sessionId: string,
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body() payload: {
+      question_id: string;
+      text?: string;
+      response_duration?: number;
+    },
+  ) {
+    const audioFile = files?.find(f => f.mimetype.startsWith('audio/'));
+    const videoFile = files?.find(f => f.mimetype.startsWith('video/'));
+    
+    const response = {
+      question_id: payload.question_id,
+      text: payload.text || '',
+      audio_url: audioFile ? `/uploads/audio/${audioFile.filename}` : undefined,
+      video_url: videoFile ? `/uploads/video/${videoFile.filename}` : undefined,
+      response_duration: payload.response_duration ? parseInt(payload.response_duration.toString()) : undefined,
+    };
+    
+    return this.aiInterviewApi.submitSessionAnswer(sessionId, response);
   }
 
   /**

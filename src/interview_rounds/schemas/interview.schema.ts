@@ -30,6 +30,22 @@ export class Interview {
   @Prop()
   answer?: string;
 
+  // Audio and Video responses
+  @Prop()
+  audioUrl?: string;
+
+  @Prop()
+  videoUrl?: string;
+
+  @Prop()
+  audioFilename?: string;
+
+  @Prop()
+  videoFilename?: string;
+
+  @Prop()
+  responseDuration?: number; // in seconds
+
   @Prop()
   feedback?: string;
 
