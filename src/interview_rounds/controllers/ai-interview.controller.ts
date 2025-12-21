@@ -1,10 +1,12 @@
-import { Controller, Post, Get, Delete, Body, Param, UseGuards, Request, UseInterceptors, UploadedFiles } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { Controller, Post, Get, Delete, Body, Param, UseGuards, Request, UseInterceptors, UploadedFiles, UploadedFile, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { FilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { AiInterviewApiService } from '../services/ai-interview-api.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { TimeoutInterceptor } from 'src/common/interceptors/timeout.interceptor';
+import { StartInterviewWithResumeDto } from '../dto/start-interview-with-resume.dto';
 import * as multer from 'multer';
 import * as path from 'path';
+import * as fs from 'fs';
 
 // Configure multer for audio/video uploads
 const storage = multer.diskStorage({
@@ -18,9 +20,26 @@ const storage = multer.diskStorage({
   }
 });
 
+// Configure multer for resume uploads
+const resumeStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = './uploads/resumes';
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
 @Controller('ai-interview')
 @UseGuards(JwtAuthGuard)
 export class AiInterviewController {
+  private readonly logger = new Logger(AiInterviewController.name);
+  
   constructor(private readonly aiInterviewApi: AiInterviewApiService) {}
 
   /**
@@ -42,8 +61,75 @@ export class AiInterviewController {
       round_type: 'technical' | 'behavioral' | 'hr' | 'full';
     },
   ) {
-    const userId = req.user?.userId || req.user?.sub || payload.user_id;
-    return this.aiInterviewApi.startInterview({ ...payload, user_id: userId });
+    try {
+      const userId = req.user?.userId || req.user?.sub || payload.user_id;
+      return await this.aiInterviewApi.startInterview({ ...payload, user_id: userId });
+    } catch (error) {
+      this.logger.error('Start interview failed:', error.message);
+      throw new HttpException(error.message || 'Failed to start interview', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * POST /ai-interview/start-with-resume
+   * Start a new interview session with resume upload
+   */
+  @Post('start-with-resume')
+  @UseInterceptors(
+    FileInterceptor('resume', { storage: resumeStorage }),
+    new TimeoutInterceptor(180000) // 3 minutes timeout for resume upload
+  )
+  async startInterviewWithResume(
+    @Request() req,
+    @UploadedFile() resumeFile: Express.Multer.File,
+    @Body() payload: StartInterviewWithResumeDto,
+  ) {
+    try {
+      const userId = req.user?.userId || req.user?.sub || payload.user_id;
+      
+      let cvContent = payload.cv || '';
+      
+      // If resume file is uploaded, read its content
+      if (resumeFile) {
+        try {
+          cvContent = fs.readFileSync(resumeFile.path, 'utf8');
+        } catch (error) {
+          // If it's a PDF or other binary format, use the file path
+          cvContent = resumeFile.path;
+        }
+      }
+      
+      return await this.aiInterviewApi.startInterview({
+        ...payload,
+        user_id: userId,
+        cv: cvContent
+      });
+    } catch (error) {
+      this.logger.error('Start interview with resume failed:', error.message);
+      throw new HttpException(error.message || 'Failed to start interview with resume', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * POST /ai-interview/start-with-cv-text
+   * Start a new interview session with CV text in request body
+   */
+  @Post('start-with-cv-text')
+  async startInterviewWithCvText(
+    @Request() req,
+    @Body() payload: StartInterviewWithResumeDto,
+  ) {
+    try {
+      const userId = req.user?.userId || req.user?.sub || payload.user_id;
+      
+      return await this.aiInterviewApi.startInterview({
+        ...payload,
+        user_id: userId
+      });
+    } catch (error) {
+      this.logger.error('Start interview with CV text failed:', error.message);
+      throw new HttpException(error.message || 'Failed to start interview', HttpStatus.BAD_REQUEST);
+    }
   }
 
   /**
@@ -60,8 +146,13 @@ export class AiInterviewController {
       answer: string;
     },
   ) {
-    const userId = req.user?.userId || req.user?.sub || payload.user_id;
-    return this.aiInterviewApi.submitAnswer({ ...payload, user_id: userId });
+    try {
+      const userId = req.user?.userId || req.user?.sub || payload.user_id;
+      return await this.aiInterviewApi.submitAnswer({ ...payload, user_id: userId });
+    } catch (error) {
+      this.logger.error('Submit answer failed:', error.message);
+      throw new HttpException(error.message || 'Failed to submit answer', HttpStatus.BAD_REQUEST);
+    }
   }
 
   /**
@@ -73,7 +164,12 @@ export class AiInterviewController {
     @Param('userId') userId: string,
     @Param('sessionId') sessionId: string,
   ) {
-    return this.aiInterviewApi.getInterviewState(userId, sessionId);
+    try {
+      return await this.aiInterviewApi.getInterviewState(userId, sessionId);
+    } catch (error) {
+      this.logger.error('Get interview state failed:', error.message);
+      throw new HttpException(error.message || 'Failed to get interview state', HttpStatus.NOT_FOUND);
+    }
   }
 
   /**
@@ -85,7 +181,12 @@ export class AiInterviewController {
     @Param('userId') userId: string,
     @Param('sessionId') sessionId: string,
   ) {
-    return this.aiInterviewApi.getInterviewReport(userId, sessionId);
+    try {
+      return await this.aiInterviewApi.getInterviewReport(userId, sessionId);
+    } catch (error) {
+      this.logger.error('Get interview report failed:', error.message);
+      throw new HttpException(error.message || 'Failed to get interview report', HttpStatus.NOT_FOUND);
+    }
   }
 
   /**
@@ -94,7 +195,12 @@ export class AiInterviewController {
    */
   @Get('sessions/:userId')
   async listSessions(@Param('userId') userId: string) {
-    return this.aiInterviewApi.listUserSessions(userId);
+    try {
+      return await this.aiInterviewApi.listUserSessions(userId);
+    } catch (error) {
+      this.logger.error('List user sessions failed:', error.message);
+      throw new HttpException(error.message || 'Failed to list sessions', HttpStatus.BAD_REQUEST);
+    }
   }
 
   /**
@@ -103,7 +209,12 @@ export class AiInterviewController {
    */
   @Get('sessions')
   async listAllSessions() {
-    return this.aiInterviewApi.listAllSessions();
+    try {
+      return await this.aiInterviewApi.listAllSessions();
+    } catch (error) {
+      this.logger.error('List all sessions failed:', error.message);
+      throw new HttpException(error.message || 'Failed to list all sessions', HttpStatus.BAD_REQUEST);
+    }
   }
 
   /**
@@ -122,7 +233,12 @@ export class AiInterviewController {
       jd_file_id?: string;
     },
   ) {
-    return this.aiInterviewApi.createSession(payload);
+    try {
+      return await this.aiInterviewApi.createSession(payload);
+    } catch (error) {
+      this.logger.error('Create session failed:', error.message);
+      throw new HttpException(error.message || 'Failed to create session', HttpStatus.BAD_REQUEST);
+    }
   }
 
   /**
@@ -131,7 +247,12 @@ export class AiInterviewController {
    */
   @Get('session/:sessionId')
   async getSession(@Param('sessionId') sessionId: string) {
-    return this.aiInterviewApi.getSessionDetails(sessionId);
+    try {
+      return await this.aiInterviewApi.getSessionDetails(sessionId);
+    } catch (error) {
+      this.logger.error('Get session failed:', error.message);
+      throw new HttpException(error.message || 'Failed to get session', HttpStatus.NOT_FOUND);
+    }
   }
 
   /**
@@ -140,7 +261,12 @@ export class AiInterviewController {
    */
   @Get('session/:sessionId/next-question')
   async getNextQuestion(@Param('sessionId') sessionId: string) {
-    return this.aiInterviewApi.getNextQuestion(sessionId);
+    try {
+      return await this.aiInterviewApi.getNextQuestion(sessionId);
+    } catch (error) {
+      this.logger.error('Get next question failed:', error.message);
+      throw new HttpException(error.message || 'Failed to get next question', HttpStatus.BAD_REQUEST);
+    }
   }
 
   /**
@@ -159,7 +285,12 @@ export class AiInterviewController {
       response_duration?: number;
     },
   ) {
-    return this.aiInterviewApi.submitSessionAnswer(sessionId, payload);
+    try {
+      return await this.aiInterviewApi.submitSessionAnswer(sessionId, payload);
+    } catch (error) {
+      this.logger.error('Submit session answer failed:', error.message);
+      throw new HttpException(error.message || 'Failed to submit session answer', HttpStatus.BAD_REQUEST);
+    }
   }
 
   /**
@@ -168,7 +299,12 @@ export class AiInterviewController {
    */
   @Get('session/:sessionId/report')
   async getSessionReport(@Param('sessionId') sessionId: string) {
-    return this.aiInterviewApi.getSessionReport(sessionId);
+    try {
+      return await this.aiInterviewApi.getSessionReport(sessionId);
+    } catch (error) {
+      this.logger.error('Get session report failed:', error.message);
+      throw new HttpException(error.message || 'Failed to get session report', HttpStatus.NOT_FOUND);
+    }
   }
 
   /**
@@ -189,18 +325,23 @@ export class AiInterviewController {
       response_duration?: number;
     },
   ) {
-    const audioFile = files?.find(f => f.mimetype.startsWith('audio/'));
-    const videoFile = files?.find(f => f.mimetype.startsWith('video/'));
-    
-    const response = {
-      question_id: payload.question_id,
-      text: payload.text || '',
-      audio_url: audioFile ? `/uploads/audio/${audioFile.filename}` : undefined,
-      video_url: videoFile ? `/uploads/video/${videoFile.filename}` : undefined,
-      response_duration: payload.response_duration ? parseInt(payload.response_duration.toString()) : undefined,
-    };
-    
-    return this.aiInterviewApi.submitSessionAnswer(sessionId, response);
+    try {
+      const audioFile = files?.find(f => f.mimetype.startsWith('audio/'));
+      const videoFile = files?.find(f => f.mimetype.startsWith('video/'));
+      
+      const response = {
+        question_id: payload.question_id,
+        text: payload.text || '',
+        audio_url: audioFile ? `/uploads/audio/${audioFile.filename}` : undefined,
+        video_url: videoFile ? `/uploads/video/${videoFile.filename}` : undefined,
+        response_duration: payload.response_duration ? parseInt(payload.response_duration.toString()) : undefined,
+      };
+      
+      return await this.aiInterviewApi.submitSessionAnswer(sessionId, response);
+    } catch (error) {
+      this.logger.error('Upload response failed:', error.message);
+      throw new HttpException(error.message || 'Failed to upload response', HttpStatus.BAD_REQUEST);
+    }
   }
 
   /**
@@ -209,6 +350,11 @@ export class AiInterviewController {
    */
   @Delete('session/:sessionId')
   async deleteSession(@Param('sessionId') sessionId: string) {
-    return this.aiInterviewApi.deleteSession(sessionId);
+    try {
+      return await this.aiInterviewApi.deleteSession(sessionId);
+    } catch (error) {
+      this.logger.error('Delete session failed:', error.message);
+      throw new HttpException(error.message || 'Failed to delete session', HttpStatus.BAD_REQUEST);
+    }
   }
 }

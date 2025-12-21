@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Res, UseGuards, Get } from '@nestjs/common';
+import { Body, Controller, Post, Res, UseGuards, Get, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
@@ -8,41 +8,68 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+  
   constructor(private auth: AuthService) {}
 
   @Post('signup')
   async signup(@Body() dto: CreateUserDto, @Res({ passthrough: true }) res: Response) {
-    const result = await this.auth.signup(dto);
-    res.cookie('refresh_token', result.refreshToken, { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 7 * 24 * 3600 * 1000, path: '/' });
-    return { user: result.user, accessToken: result.accessToken };
+    try {
+      const result = await this.auth.signup(dto);
+      res.cookie('refresh_token', result.refreshToken, { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 7 * 24 * 3600 * 1000, path: '/' });
+      return { user: result.user, accessToken: result.accessToken };
+    } catch (error) {
+      this.logger.error('Signup failed:', error.message);
+      throw new HttpException(error.message || 'Signup failed', HttpStatus.BAD_REQUEST);
+    }
   }
 
   @Post('login')
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    const result = await this.auth.login(dto.email, dto.password);
-    res.cookie('refresh_token', result.refreshToken, { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 7 * 24 * 3600 * 1000, path: '/' });
-    return { user: result.user, accessToken: result.accessToken };
+    try {
+      const result = await this.auth.login(dto.email, dto.password);
+      res.cookie('refresh_token', result.refreshToken, { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 7 * 24 * 3600 * 1000, path: '/' });
+      return { user: result.user, accessToken: result.accessToken };
+    } catch (error) {
+      this.logger.error('Login failed:', error.message);
+      throw new HttpException(error.message || 'Login failed', HttpStatus.UNAUTHORIZED);
+    }
   }
 
   @Post('google')
   async googleLogin(@Body() body: { idToken: string }, @Res({ passthrough: true }) res: Response) {
-    const result = await this.auth.googleLogin(body.idToken);
-    res.cookie('refresh_token', result.refreshToken, { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 7 * 24 * 3600 * 1000, path: '/' });
-    return { user: result.user, accessToken: result.accessToken };
+    try {
+      const result = await this.auth.googleLogin(body.idToken);
+      res.cookie('refresh_token', result.refreshToken, { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 7 * 24 * 3600 * 1000, path: '/' });
+      return { user: result.user, accessToken: result.accessToken };
+    } catch (error) {
+      this.logger.error('Google login failed:', error.message);
+      throw new HttpException(error.message || 'Google login failed', HttpStatus.UNAUTHORIZED);
+    }
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('logout')
   async logout(@CurrentUser() user: any, @Res({ passthrough: true }) res: Response) {
-    await this.auth.logout(user.sub);
-    res.clearCookie('refresh_token', { path: '/' });
-    return { success: true };
+    try {
+      await this.auth.logout(user.sub);
+      res.clearCookie('refresh_token', { path: '/' });
+      return { success: true };
+    } catch (error) {
+      this.logger.error('Logout failed:', error.message);
+      throw new HttpException(error.message || 'Logout failed', HttpStatus.BAD_REQUEST);
+    }
   }
 
   @Post('refresh')
   async refresh(@Body() body: { userId: string; email: string }, @Res({ passthrough: true }) res: Response) {
-    const tokens = await this.auth.refresh(body.userId, body.email);
-    res.cookie('refresh_token', tokens.refreshToken, { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 7 * 24 * 3600 * 1000, path: '/' });
-    return { accessToken: tokens.accessToken };
+    try {
+      const tokens = await this.auth.refresh(body.userId, body.email);
+      res.cookie('refresh_token', tokens.refreshToken, { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 7 * 24 * 3600 * 1000, path: '/' });
+      return { accessToken: tokens.accessToken };
+    } catch (error) {
+      this.logger.error('Token refresh failed:', error.message);
+      throw new HttpException(error.message || 'Token refresh failed', HttpStatus.UNAUTHORIZED);
+    }
   }
 }

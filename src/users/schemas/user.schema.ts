@@ -3,6 +3,11 @@ import { Document } from 'mongoose';
 
 export type UserDocument = User & Document;
 
+export enum UserRole {
+  EMPLOYEE = 'employee',
+  EMPLOYER = 'employer'
+}
+
 @Schema({ timestamps: true })
 export class User {
   @Prop({ required: true })
@@ -14,8 +19,8 @@ export class User {
   @Prop()
   passwordHash?: string; // optional for Google users
 
-  @Prop()
-  role?: string;
+  @Prop({ enum: UserRole, default: UserRole.EMPLOYEE })
+  role: UserRole;
 
   @Prop()
   company?: string;

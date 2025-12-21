@@ -9,7 +9,7 @@ export interface StartInterviewPayload {
   company_name: string;
   industry: string;
   jd: string;
-  cv: string;
+  cv?: string;
   round_type: 'technical' | 'behavioral' | 'hr' | 'full';
 }
 

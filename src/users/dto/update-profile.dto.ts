@@ -1,4 +1,5 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsEnum } from 'class-validator';
+import { UserRole } from '../schemas/user.schema';
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -6,8 +7,8 @@ export class UpdateProfileDto {
   name?: string;
 
   @IsOptional()
-  @IsString()
-  role?: string;
+  @IsEnum(UserRole)
+  role?: UserRole;
 
   @IsOptional()
   @IsString()
@@ -20,4 +21,12 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   jobDescription?: string;
+
+  @IsOptional()
+  @IsString()
+  resumeUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  profileImageUrl?: string;
 }

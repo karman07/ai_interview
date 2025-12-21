@@ -24,6 +24,7 @@ import { PaymentModule } from './payments/payment.module';
 import { SubscriptionModule } from './subscriptions/subscription.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { PlaceholderModule } from './common/placeholder';
+import { JobsModule } from './jobs/jobs.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { PlaceholderModule } from './common/placeholder';
     SubscriptionModule,
     AnalyticsModule,
     PlaceholderModule,
+    JobsModule,
   ],
 })
 export class AppModule implements NestModule {

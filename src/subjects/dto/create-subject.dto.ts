@@ -1,5 +1,5 @@
 import { IsString, IsOptional, IsIn, IsArray, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 class ContentBlockDto {
   @IsString()
@@ -46,5 +46,15 @@ export class CreateSubjectDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ContentBlockDto)
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return [];
+      }
+    }
+    return value;
+  })
   content?: ContentBlockDto[];
 }

@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
-import { AllWsExceptionsFilter } from './common/filters/ws-exception.filter';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
 
 async function bootstrap() {
@@ -41,7 +41,7 @@ async function bootstrap() {
     });
 
   // Apply global filters, pipes, and interceptors
-  app.useGlobalFilters(new AllWsExceptionsFilter());
+  app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
