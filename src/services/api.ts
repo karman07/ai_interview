@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 
 // API Base Configuration
-export const API_BASE_URL = 'http://localhost:3000';
+export const API_BASE_URL = 'http://82.112.231.134:9030';
 
 // Helper to build a full URL for images returned by backend.
 // If the provided path is already an absolute URL (http(s)), return as-is.
