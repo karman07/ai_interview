@@ -15,7 +15,9 @@ import {
   Users,
   Code,
   Lightbulb,
-  MessageCircle
+  MessageCircle,
+  Upload,
+  CheckCircle2
 } from "lucide-react";
 
 interface InterviewDetails {
@@ -23,6 +25,8 @@ interface InterviewDetails {
   company: string;
   jobDescription: string;
   experience: string;
+  cvFile?: File;
+  jdFile?: File;
 }
 
 interface InterviewInfo {
@@ -41,6 +45,8 @@ export default function InterviewStart(): JSX.Element {
     company: "",
     jobDescription: "",
     experience: "",
+    cvFile: undefined,
+    jdFile: undefined,
   });
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -89,13 +95,81 @@ export default function InterviewStart(): JSX.Element {
     }
     setLoading(true);
 
-    // Store locally so InterviewRoom can access
-    localStorage.setItem("interview_details", JSON.stringify(details));
-    console.log("Interview details saved:", type, details);
+    // Create a serializable version of details for localStorage
+    const serializableDetails = {
+      role: details.role,
+      company: details.company,
+      jobDescription: details.jobDescription,
+      experience: details.experience,
+      industry: 'Technology', // Default industry
+      // Note: Files cannot be stored in localStorage, they'll be handled differently
+      hasCV: !!details.cvFile,
+      hasJD: !!details.jdFile
+    };
+
+    // Store basic details in localStorage
+    localStorage.setItem("interview_details", JSON.stringify(serializableDetails));
+    
+    // Store files in sessionStorage as base64 if they exist
+    if (details.cvFile) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        sessionStorage.setItem('cvFile', JSON.stringify({
+          name: details.cvFile!.name,
+          type: details.cvFile!.type,
+          data: reader.result
+        }));
+      };
+      reader.readAsDataURL(details.cvFile);
+    }
+    
+    if (details.jdFile) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        sessionStorage.setItem('jdFile', JSON.stringify({
+          name: details.jdFile!.name,
+          type: details.jdFile!.type,
+          data: reader.result
+        }));
+      };
+      reader.readAsDataURL(details.jdFile);
+    }
+
+    console.log("Interview details saved:", type, serializableDetails);
 
     setTimeout(() => {
       navigate(`/interview/room/${type}`);
     }, 500);
+  };
+
+  // File upload component
+  const FileUploadBox = ({ file, setFile, label }: { file: File | null; setFile: (file: File | null) => void; label: string; }) => {
+    const [isDragOver, setIsDragOver] = useState(false);
+    const validateFile = (file: File) => {
+      const validTypes = ['.pdf', '.doc', '.docx', '.txt'];
+      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+      const maxSize = 10 * 1024 * 1024;
+      if (!validTypes.includes(fileExtension)) { alert('Please select a valid file type: PDF, DOC, DOCX, or TXT'); return false; }
+      if (file.size > maxSize) { alert('File size must be less than 10MB'); return false; }
+      return true;
+    };
+    return (
+      <div className={`border-2 border-dashed rounded-lg p-4 text-center transition-all duration-200 ${isDragOver ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20' : file ? 'border-green-400 bg-green-50 dark:bg-green-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 bg-white dark:bg-gray-800'}`} onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }} onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false); }} onDrop={(e) => { e.preventDefault(); setIsDragOver(false); const files = e.dataTransfer.files; if (files.length > 0 && validateFile(files[0])) { setFile(files[0]); } }}>
+        <Upload className={`w-8 h-8 mx-auto mb-2 ${isDragOver ? 'text-blue-500' : file ? 'text-green-500' : 'text-gray-400 dark:text-gray-500'}`} />
+        <input type="file" accept=".pdf,.doc,.docx,.txt" className="hidden" id={`${label.toLowerCase()}-upload`} onChange={(e) => { const selectedFile = e.target.files?.[0]; if (selectedFile && validateFile(selectedFile)) { setFile(selectedFile); } }} />
+        {file ? (
+          <div className="space-y-2">
+            <div className="flex items-center justify-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-600" /><span className="font-medium text-green-800 dark:text-green-400 text-sm">{file.name}</span></div>
+            <label htmlFor={`${label.toLowerCase()}-upload`} className="cursor-pointer inline-block"><span className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">Choose different file</span></label>
+          </div>
+        ) : (
+          <label htmlFor={`${label.toLowerCase()}-upload`} className="cursor-pointer block">
+            <div className="font-medium text-gray-700 dark:text-gray-300 text-sm">{isDragOver ? 'Drop file here' : `Upload ${label} File`}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">PDF, DOC, DOCX, TXT (max 10MB)</div>
+          </label>
+        )}
+      </div>
+    );
   };
 
   const isFormValid: boolean = !!(details.role && details.company && details.jobDescription && details.experience);
@@ -114,7 +188,7 @@ export default function InterviewStart(): JSX.Element {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header Section */}
       <div className="pt-16 pb-8">
         <div className="max-w-4xl mx-auto px-6 text-center">
@@ -122,10 +196,10 @@ export default function InterviewStart(): JSX.Element {
             {interviewInfo.icon}
             <span className="font-semibold text-lg">{interviewInfo.title}</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             Prepare for Your Interview
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
             {interviewInfo.description}
           </p>
         </div>
@@ -140,10 +214,10 @@ export default function InterviewStart(): JSX.Element {
           <CardHeader>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <CardTitle className="text-2xl font-bold text-gray-900">
+                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
                   Interview Details
                 </CardTitle>
-                <p className="text-gray-600 mt-2">
+                <p className="text-gray-600 dark:text-gray-400 mt-2">
                   Provide information about the role to get personalized questions
                 </p>
               </div>
@@ -160,7 +234,7 @@ export default function InterviewStart(): JSX.Element {
             <div className="grid md:grid-cols-2 gap-6">
               {/* Role */}
               <div className="group">
-                <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                   <Briefcase className="w-4 h-4 text-blue-500" />
                   Target Role
                 </label>
@@ -174,7 +248,7 @@ export default function InterviewStart(): JSX.Element {
 
               {/* Company */}
               <div className="group">
-                <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-emerald-500" />
                   Company Name
                 </label>
@@ -189,7 +263,7 @@ export default function InterviewStart(): JSX.Element {
 
             {/* Experience */}
             <div className="group">
-              <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-purple-500" />
                 Your Experience
               </label>
@@ -203,33 +277,72 @@ export default function InterviewStart(): JSX.Element {
 
             {/* Job Description */}
             <div className="group">
-              <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-orange-500" />
                 Job Description
               </label>
-              <Textarea
-                placeholder="Paste the complete job description here. Include responsibilities, requirements, and qualifications to get more relevant questions..."
-                value={details.jobDescription}
-                onChange={handleInputChange('jobDescription')}
-                className="min-h-[150px] group-hover:border-orange-300"
+              <div className="space-y-3">
+                <FileUploadBox 
+                  file={details.jdFile || null} 
+                  setFile={(file) => setDetails({...details, jdFile: file || undefined})} 
+                  label="JD" 
+                />
+                <Textarea
+                  placeholder="Or paste the complete job description here. Include responsibilities, requirements, and qualifications to get more relevant questions..."
+                  value={details.jobDescription}
+                  onChange={handleInputChange('jobDescription')}
+                  className="min-h-[150px] group-hover:border-orange-300"
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                💡 Upload a JD file or paste text - the more detailed, the more personalized your interview questions will be
+              </p>
+            </div>
+
+            {/* CV Upload */}
+            <div className="group">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                <Upload className="w-4 h-4 text-blue-500" />
+                Upload Your CV (Optional)
+              </label>
+              <FileUploadBox 
+                file={details.cvFile || null} 
+                setFile={(file) => setDetails({...details, cvFile: file || undefined})} 
+                label="CV" 
               />
-              <p className="text-xs text-gray-500 mt-2">
-                💡 The more detailed the job description, the more personalized your interview questions will be
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                📄 Upload your resume for more personalized questions based on your background
               </p>
             </div>
 
             {/* Form validation indicators */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-gray-50 rounded-2xl">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl">
               {formFields.map((item) => (
                 <div key={item.field} className="flex items-center gap-2">
                   <CheckCircle 
-                    className={`w-4 h-4 ${details[item.field] ? 'text-green-500' : 'text-gray-300'}`} 
+                    className={`w-4 h-4 ${details[item.field] ? 'text-green-500' : 'text-gray-300 dark:text-gray-600'}`} 
                   />
-                  <span className={`text-sm ${details[item.field] ? 'text-green-700 font-medium' : 'text-gray-500'}`}>
+                  <span className={`text-sm ${details[item.field] ? 'text-green-700 dark:text-green-400 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
                     {item.label}
                   </span>
                 </div>
               ))}
+              <div className="flex items-center gap-2">
+                <CheckCircle 
+                  className={`w-4 h-4 ${details.cvFile ? 'text-green-500' : 'text-gray-300 dark:text-gray-600'}`} 
+                />
+                <span className={`text-sm ${details.cvFile ? 'text-green-700 dark:text-green-400 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
+                  CV File
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle 
+                  className={`w-4 h-4 ${details.jdFile ? 'text-green-500' : 'text-gray-300 dark:text-gray-600'}`} 
+                />
+                <span className={`text-sm ${details.jdFile ? 'text-green-700 dark:text-green-400 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
+                  JD File
+                </span>
+              </div>
             </div>
 
             {/* Start Button */}
@@ -257,7 +370,7 @@ export default function InterviewStart(): JSX.Element {
               </Button>
               
               {!isFormValid && (
-                <p className="text-center text-gray-500 text-sm mt-3">
+                <p className="text-center text-gray-500 dark:text-gray-400 text-sm mt-3">
                   Please complete all fields to continue
                 </p>
               )}
@@ -267,7 +380,7 @@ export default function InterviewStart(): JSX.Element {
 
         {/* Footer info */}
         <div className="mt-12 text-center">
-          <div className="inline-flex items-center gap-2 text-gray-500 text-sm bg-white px-6 py-3 rounded-full shadow-sm border border-gray-100">
+          <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm bg-white dark:bg-gray-800 px-6 py-3 rounded-full shadow-sm border border-gray-100 dark:border-gray-700">
             <div className={`w-2 h-2 bg-gradient-to-r ${interviewInfo.color} rounded-full`}></div>
             <span>Your information is used only to personalize the interview experience</span>
           </div>

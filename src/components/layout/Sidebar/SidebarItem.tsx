@@ -25,12 +25,9 @@ export default function SidebarItem({
         "group relative rounded-lg px-3 py-3 cursor-pointer transition-all duration-200",
         "border border-transparent",
         active
-          ? "border-gray-300 shadow-sm"
-          : "hover:bg-white hover:border-gray-200"
+          ? "border-gray-300 dark:border-gray-600 shadow-sm bg-indigo-50 dark:bg-indigo-900/20"
+          : "hover:bg-white dark:hover:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-600"
       )}
-      style={{
-        backgroundColor: active ? `${colors.primary}10` : undefined
-      }}
       onClick={onClick}
     >
       {/* Active indicator */}
@@ -42,10 +39,9 @@ export default function SidebarItem({
         <div className="flex items-start gap-3 flex-1 min-w-0">
           {/* Icon container */}
           <div
-            className="flex-shrink-0 p-1.5 rounded-md"
-            style={{
-              color: active ? colors.primary : colors.sectionTitle
-            }}
+            className={`flex-shrink-0 p-1.5 rounded-md ${
+              active ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-400'
+            }`}
           >
             {icon}
           </div>
@@ -54,10 +50,9 @@ export default function SidebarItem({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span
-                className="text-sm font-medium truncate"
-                style={{
-                  color: active ? colors.primary : colors.text
-                }}
+                className={`text-sm font-medium truncate ${
+                  active ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-900 dark:text-white'
+                }`}
               >
                 {label}
               </span>
@@ -76,10 +71,9 @@ export default function SidebarItem({
             {/* Description */}
             {description && (
               <p
-                className="text-xs leading-relaxed"
-                style={{
-                  color: active ? colors.primary : colors.sectionTitle
-                }}
+                className={`text-xs leading-relaxed ${
+                  active ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-400'
+                }`}
               >
                 {description}
               </p>

@@ -77,6 +77,21 @@
   html {
     overflow-x: hidden;
   }
+  
+  /* Auto dark mode for common elements */
+  .dark {
+    color-scheme: dark;
+  }
+  
+  .dark input:not([type="range"]),
+  .dark textarea,
+  .dark select {
+    @apply bg-gray-800 border-gray-600 text-white placeholder-gray-400;
+  }
+  
+  .dark button:not(.no-dark) {
+    @apply text-gray-200;
+  }
 }
 
 @layer utilities {

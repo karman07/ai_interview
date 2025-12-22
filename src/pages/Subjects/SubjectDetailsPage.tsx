@@ -43,13 +43,13 @@ const SubjectDetailsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <div className="flex flex-col justify-center items-center h-96 space-y-4">
           <div className="relative">
-            <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-            <div className="absolute inset-0 w-12 h-12 border-4 border-transparent border-t-indigo-400 rounded-full animate-ping"></div>
+            <div className="w-12 h-12 border-4 border-blue-200 dark:border-blue-800 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin"></div>
+            <div className="absolute inset-0 w-12 h-12 border-4 border-transparent border-t-indigo-400 dark:border-t-indigo-300 rounded-full animate-ping"></div>
           </div>
-          <p className="text-gray-600 font-medium animate-pulse">Loading amazing content...</p>
+          <p className="text-gray-600 dark:text-gray-400 font-medium animate-pulse">Loading amazing content...</p>
         </div>
       </div>
     );
@@ -57,12 +57,12 @@ const SubjectDetailsPage: React.FC = () => {
 
   if (!subject) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <div className="flex flex-col items-center justify-center h-96 space-y-6">
           <div className="text-6xl opacity-20">📚</div>
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-gray-800">Subject not found</h2>
-            <p className="text-gray-600">The subject you're looking for doesn't exist or has been moved.</p>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Subject not found</h2>
+            <p className="text-gray-600 dark:text-gray-400">The subject you're looking for doesn't exist or has been moved.</p>
           </div>
           <button
             onClick={() => navigate(-1)}
@@ -77,19 +77,19 @@ const SubjectDetailsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="group flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium transition-all duration-200 hover:gap-3"
+          className="group flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-all duration-200 hover:gap-3"
         >
           <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-200" />
           Back to subjects
         </button>
 
         {/* Subject Header */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden border border-white/50 hover:shadow-2xl transition-all duration-300">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden border border-white/50 dark:border-gray-700/50 hover:shadow-2xl transition-all duration-300">
           {subject.thumbnailUrl && (
             <div className="relative h-80 overflow-hidden">
               <img
@@ -108,37 +108,37 @@ const SubjectDetailsPage: React.FC = () => {
           
           <div className="p-8 space-y-6">
             {!subject.thumbnailUrl && (
-              <h1 className="text-5xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              <h1 className="text-5xl font-bold text-gray-900 dark:text-white bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 {subject.title}
               </h1>
             )}
             
-            <p className="text-gray-700 text-xl leading-relaxed font-light">
+            <p className="text-gray-700 dark:text-gray-300 text-xl leading-relaxed font-light">
               {subject.description}
             </p>
 
             {/* Enhanced Meta Info */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-gray-200">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
               {subject.category && (
-                <div className="group flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-all duration-200">
-                  <div className="p-2 rounded-lg bg-blue-100 group-hover:bg-blue-200 transition-colors duration-200">
-                    <Tag className="h-4 w-4 text-blue-600" />
+                <div className="group flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-800/30 dark:hover:to-indigo-800/30 transition-all duration-200">
+                  <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-800/50 group-hover:bg-blue-200 dark:group-hover:bg-blue-700/50 transition-colors duration-200">
+                    <Tag className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Category</p>
-                    <p className="font-semibold text-gray-800">{subject.category}</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Category</p>
+                    <p className="font-semibold text-gray-800 dark:text-white">{subject.category}</p>
                   </div>
                 </div>
               )}
               
               {subject.level && (
-                <div className="group flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-orange-50 to-red-50 hover:from-orange-100 hover:to-red-100 transition-all duration-200">
-                  <div className="p-2 rounded-lg bg-orange-100 group-hover:bg-orange-200 transition-colors duration-200">
-                    <TrendingUp className="h-4 w-4 text-orange-600" />
+                <div className="group flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 hover:from-orange-100 hover:to-red-100 dark:hover:from-orange-800/30 dark:hover:to-red-800/30 transition-all duration-200">
+                  <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-800/50 group-hover:bg-orange-200 dark:group-hover:bg-orange-700/50 transition-colors duration-200">
+                    <TrendingUp className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Level</p>
-                    <p className="font-semibold text-gray-800">{subject.level}</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Level</p>
+                    <p className="font-semibold text-gray-800 dark:text-white">{subject.level}</p>
                   </div>
                 </div>
               )}
@@ -224,20 +224,20 @@ const SubjectDetailsPage: React.FC = () => {
               {lessons.map((lesson, index) => (
                 <div
                   key={lesson._id}
-                  className="group p-6 border border-gray-200 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-200 transition-all duration-300 cursor-pointer transform hover:-translate-y-0.5 hover:shadow-md"
+                  className="group p-6 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:border-blue-200 dark:hover:border-blue-700 transition-all duration-300 cursor-pointer transform hover:-translate-y-0.5 hover:shadow-md"
                 >
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-sm">
                       {index + 1}
                     </div>
                     <div className="flex-grow">
-                      <h3 className="font-bold text-gray-900 text-xl mb-2 group-hover:text-blue-700 transition-colors duration-200">
+                      <h3 className="font-bold text-gray-900 dark:text-white text-xl mb-2 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors duration-200">
                         {lesson.title}
                       </h3>
-                      <p className="text-gray-600 leading-relaxed">{lesson.description}</p>
+                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{lesson.description}</p>
                     </div>
                     <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <Play className="h-5 w-5 text-blue-600" />
+                      <Play className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
                   </div>
                 </div>

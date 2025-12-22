@@ -101,11 +101,11 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) =>
   return (
     <div
       onClick={handleClick}
-      className="group relative bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 overflow-hidden backdrop-blur-sm cursor-pointer"
+      className="group relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 overflow-hidden backdrop-blur-sm cursor-pointer"
     >
       {/* Gradient border hover effect */}
       <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 p-[1px]">
-        <div className="w-full h-full bg-white rounded-2xl"></div>
+        <div className="w-full h-full bg-white dark:bg-gray-800 rounded-2xl"></div>
       </div>
 
       {/* Thumbnail */}
@@ -180,7 +180,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) =>
       <div className="relative p-6 space-y-4">
         {/* Title + Rating */}
         <div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
             {subject.title}
           </h3>
 
@@ -193,12 +193,12 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) =>
                 }`}
               />
             ))}
-            <span className="text-sm text-gray-500 ml-1">(4.0)</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">(4.0)</span>
           </div>
         </div>
 
         {/* Description */}
-        <p className="text-gray-600 text-sm leading-relaxed line-clamp-2">
+        <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed line-clamp-2">
           {subject.description}
         </p>
 
@@ -228,18 +228,18 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) =>
 
         {/* Progress Section */}
         {(progress || progressPercent >= 0) && (
-          <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-700">
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Learning Progress
               </span>
-              <span className="text-sm font-bold text-gray-900">
+              <span className="text-sm font-bold text-gray-900 dark:text-white">
                 {progressPercent}%
               </span>
             </div>
 
             <div className="relative">
-              <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+              <div className="w-full h-3 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-1000 ease-out ${
                     progress?.status === "completed"
@@ -269,7 +269,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) =>
                   </div>
                 ))}
                 {progress.badges.length > 3 && (
-                  <span className="text-xs text-gray-500 px-2 py-1">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1">
                     +{progress.badges.length - 3} more
                   </span>
                 )}
@@ -280,15 +280,15 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) =>
 
         {/* Time + Lessons */}
         {subject.estimatedTime && (
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-            <div className="flex items-center gap-2 text-gray-600">
+          <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <Clock className="h-4 w-4" />
               <span className="text-sm font-medium">
                 {subject.estimatedTime}
               </span>
             </div>
             {subject.lessons && subject.lessons.length > 0 && (
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                 <BookOpen className="h-4 w-4" />
                 <span className="text-sm font-medium">
                   {subject.lessons.length} lesson

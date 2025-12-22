@@ -175,11 +175,11 @@ const InterviewApp = () => {
 
   // Error Alert Component
   const ErrorAlert = ({ message, onClose }: { message: string; onClose: () => void }) => (
-    <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-xl shadow-lg z-50 max-w-md">
+    <div className="fixed top-4 right-4 bg-red-100 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 px-6 py-4 rounded-xl shadow-lg z-50 max-w-md">
       <div className="flex items-center">
         <AlertCircle className="w-5 h-5 mr-3" />
         <span className="flex-1">{message}</span>
-        <button onClick={onClose} className="ml-3 text-red-500 hover:text-red-700">
+        <button onClick={onClose} className="ml-3 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">
           <XCircle className="w-5 h-5" />
         </button>
       </div>
@@ -189,10 +189,10 @@ const InterviewApp = () => {
   // If there's no authenticated user, show a small prompt and link to the app's login page.
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
-        <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 text-center">
-          <h2 className="text-xl font-semibold mb-4">Please sign in</h2>
-          <p className="text-gray-600 mb-6">You need to sign in to access interviews and results.</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg border border-gray-100 dark:border-gray-700 text-center">
+          <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Please sign in</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">You need to sign in to access interviews and results.</p>
           <div className="flex justify-center gap-4">
             <button
               onClick={() => (window.location.href = '/login')}
@@ -235,16 +235,16 @@ const InterviewApp = () => {
   // Home View
   if (currentView === 'home') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         {error && <ErrorAlert message={error} onClose={() => setError(null)} />}
         {/* <Header /> */}
         
         <div className="container mx-auto px-4 py-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-4">
               Hi {user?.name}!
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Practice interviews with AI-powered questions tailored to your job description
             </p>
           </div>
@@ -252,26 +252,26 @@ const InterviewApp = () => {
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <div 
               onClick={() => setCurrentView('create')}
-              className="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1"
+              className="group bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-600 transform hover:-translate-y-1"
             >
-              <div className="flex items-center justify-center w-16 h-16 bg-blue-100 rounded-2xl mb-6 group-hover:bg-blue-200 transition-colors">
-                <Play className="w-8 h-8 text-blue-600" />
+              <div className="flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-2xl mb-6 group-hover:bg-blue-200 dark:group-hover:bg-blue-800/30 transition-colors">
+                <Play className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">Start Interview</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">Start Interview</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                 Create a new interview session with custom job description and difficulty level
               </p>
             </div>
 
             <div 
               onClick={() => setCurrentView('results')}
-              className="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-purple-200 transform hover:-translate-y-1"
+              className="group bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer border border-gray-100 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-600 transform hover:-translate-y-1"
             >
-              <div className="flex items-center justify-center w-16 h-16 bg-purple-100 rounded-2xl mb-6 group-hover:bg-purple-200 transition-colors">
-                <Trophy className="w-8 h-8 text-purple-600" />
+              <div className="flex items-center justify-center w-16 h-16 bg-purple-100 dark:bg-purple-900/20 rounded-2xl mb-6 group-hover:bg-purple-200 dark:group-hover:bg-purple-800/30 transition-colors">
+                <Trophy className="w-8 h-8 text-purple-600 dark:text-purple-400" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">View Results</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">View Results</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                 Review your past interview performances and track your progress
               </p>
             </div>
@@ -284,7 +284,7 @@ const InterviewApp = () => {
   // Create Interview View
   if (currentView === 'create') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         {error && <ErrorAlert message={error} onClose={() => setError(null)} />}
         {/* <Header /> */}
         
@@ -292,64 +292,64 @@ const InterviewApp = () => {
           <div className="max-w-2xl mx-auto">
             <button 
               onClick={() => setCurrentView('home')}
-              className="flex items-center text-gray-600 hover:text-gray-800 mb-8 transition-colors"
+              className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 mb-8 transition-colors"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />
               Back to Home
             </button>
 
-            <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
-              <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Create Interview</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg border border-gray-100 dark:border-gray-700">
+              <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-8 text-center">Create Interview</h2>
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Position Title (Optional)
                   </label>
                   <input
                     type="text"
                     value={interviewData.positionTitle || ''}
                     onChange={(e) => setInterviewData({...interviewData, positionTitle: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     placeholder="e.g., Senior Frontend Developer"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Candidate Name (Optional)
                   </label>
                   <input
                     type="text"
                     value={interviewData.candidateName || ''}
                     onChange={(e) => setInterviewData({...interviewData, candidateName: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     placeholder="Enter candidate name"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Job Description *
                   </label>
                   <textarea
                     value={interviewData.jobDescription}
                     onChange={(e) => setInterviewData({...interviewData, jobDescription: e.target.value})}
                     rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     placeholder="Describe the job role, required skills, and responsibilities..."
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Difficulty Level
                   </label>
                   <select
                     value={interviewData.difficulty}
                     onChange={(e) => setInterviewData({...interviewData, difficulty: e.target.value as any})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     <option value="junior">Junior Level</option>
                     <option value="mid">Mid Level</option>
@@ -366,8 +366,8 @@ const InterviewApp = () => {
                       onClick={() => setInterviewData({...interviewData, format: 'text'})}
                       className={`p-4 rounded-xl border-2 transition-all ${
                         interviewData.format === 'text' 
-                          ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400' 
+                          : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
                       }`}
                     >
                       <FileText className="w-6 h-6 mx-auto mb-2" />
@@ -377,8 +377,8 @@ const InterviewApp = () => {
                       onClick={() => setInterviewData({...interviewData, format: 'mcq'})}
                       className={`p-4 rounded-xl border-2 transition-all ${
                         interviewData.format === 'mcq' 
-                          ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400' 
+                          : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
                       }`}
                     >
                       <CheckCircle className="w-6 h-6 mx-auto mb-2" />
@@ -415,13 +415,13 @@ const InterviewApp = () => {
     const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         {error && <ErrorAlert message={error} onClose={() => setError(null)} />}
         {/* <Header /> */}
         
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-3xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
               {/* Progress Header */}
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -440,7 +440,7 @@ const InterviewApp = () => {
 
               <div className="p-8">
                 <div className="mb-8">
-                  <h3 className="text-2xl font-semibold text-gray-800 mb-6">
+                  <h3 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6">
                     {currentQuestion?.question}
                   </h3>
 
@@ -457,8 +457,8 @@ const InterviewApp = () => {
                           }}
                           className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
                             answers[currentQuestionIndex] === option
-                              ? 'border-blue-500 bg-blue-50 text-blue-700'
-                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
+                              : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white'
                           }`}
                         >
                           {option}
@@ -475,7 +475,7 @@ const InterviewApp = () => {
                         setAnswers(newAnswers);
                       }}
                       rows={6}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       placeholder="Type your answer here..."
                     />
                   )}
@@ -485,7 +485,7 @@ const InterviewApp = () => {
                   <button
                     onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
                     disabled={currentQuestionIndex === 0}
-                    className="flex items-center px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="flex items-center px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                   >
                     <ArrowLeft className="w-5 h-5 mr-2" />
                     Previous
@@ -530,7 +530,7 @@ const InterviewApp = () => {
   // Results List View
   if (currentView === 'results') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         {error && <ErrorAlert message={error} onClose={() => setError(null)} />}
         {/* <Header /> */}
         
@@ -539,12 +539,12 @@ const InterviewApp = () => {
             <div className="flex items-center justify-between mb-8">
               <button 
                 onClick={() => setCurrentView('home')}
-                className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
+                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 Back to Home
               </button>
-              <h1 className="text-3xl font-bold text-gray-800">Interview Results</h1>
+              <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Interview Results</h1>
               <div></div>
             </div>
 
@@ -554,9 +554,9 @@ const InterviewApp = () => {
               </div>
             ) : ctxResults.length === 0 ? (
               <div className="text-center py-12">
-                <Trophy className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">No Results Yet</h3>
-                <p className="text-gray-500 mb-6">Take your first interview to see results here</p>
+                <Trophy className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">No Results Yet</h3>
+                <p className="text-gray-500 dark:text-gray-500 mb-6">Take your first interview to see results here</p>
                 <button 
                   onClick={() => setCurrentView('create')}
                   className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105"
@@ -570,14 +570,14 @@ const InterviewApp = () => {
                   <div 
             key={result._id}
             onClick={() => loadResultById(result._id)}
-                    className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all cursor-pointer transform hover:-translate-y-1"
+                    className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all cursor-pointer transform hover:-translate-y-1"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
-                        <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
                           {result.jobDescription.substring(0, 100)}...
                         </h3>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
+                        <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
                           <div className="flex items-center">
                             <Calendar className="w-4 h-4 mr-1" />
                             {formatDate(result.createdAt ?? '')}
@@ -596,7 +596,7 @@ const InterviewApp = () => {
                         <div className={`px-4 py-2 rounded-full text-sm font-semibold ${scoreBg(result.overall?.overallScore)} ${scoreColor(result.overall?.overallScore)}`}>
                           {result.overall?.overallScore ?? 0}%
                         </div>
-                        <button className="mt-2 text-blue-600 hover:text-blue-700 text-sm flex items-center">
+                        <button className="mt-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm flex items-center">
                           <Eye className="w-4 h-4 mr-1" />
                           View Details
                         </button>
@@ -615,7 +615,7 @@ const InterviewApp = () => {
   // Result Detail View
   if (currentView === 'result-detail' && selectedResult) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         {error && <ErrorAlert message={error} onClose={() => setError(null)} />}
         {/* <Header /> */}
         
@@ -624,7 +624,7 @@ const InterviewApp = () => {
             <div className="flex items-center justify-between mb-8">
               <button 
                 onClick={() => setCurrentView(interviewComplete ? 'home' : 'results')}
-                className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
+                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 {interviewComplete ? 'Back to Home' : 'Back to Results'}
@@ -632,7 +632,7 @@ const InterviewApp = () => {
               {interviewComplete && (
                 <button 
                   onClick={resetInterview}
-                  className="flex items-center px-4 py-2 text-blue-600 hover:text-blue-700 transition-colors"
+                  className="flex items-center px-4 py-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                 >
                   <RotateCcw className="w-5 h-5 mr-2" />
                   Take Another Interview
@@ -641,56 +641,56 @@ const InterviewApp = () => {
             </div>
 
             {/* Overall Score Card */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 mb-8">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg border border-gray-100 dark:border-gray-700 mb-8">
               <div className="text-center">
                 <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full text-3xl font-bold ${scoreBg(selectedResult.overall?.overallScore)} ${scoreColor(selectedResult.overall?.overallScore)} mb-4`}>
                   {selectedResult.overall?.overallScore ?? 0}%
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
                   {interviewComplete ? 'Interview Complete!' : 'Interview Results'}
                 </h2>
-                <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
                   {selectedResult.overall.summary}
                 </p>
               </div>
 
               <div className="grid md:grid-cols-3 gap-6 mt-8 pt-8 border-t border-gray-200">
                 <div className="text-center">
-                  <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mx-auto mb-3">
-                    <FileText className="w-6 h-6 text-blue-600" />
+                  <div className="flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-full mx-auto mb-3">
+                    <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <div className="font-semibold text-gray-800">{selectedResult.questions.length}</div>
-                  <div className="text-sm text-gray-600">Questions</div>
+                  <div className="font-semibold text-gray-800 dark:text-white">{selectedResult.questions.length}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Questions</div>
                 </div>
                 <div className="text-center">
-                  <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mx-auto mb-3">
-                    <CheckCircle className="w-6 h-6 text-green-600" />
+                  <div className="flex items-center justify-center w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-full mx-auto mb-3">
+                    <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
                   </div>
-                  <div className="font-semibold text-gray-800">
+                  <div className="font-semibold text-gray-800 dark:text-white">
                     {selectedResult.items.filter(item => item.isCorrect).length}
                   </div>
-                  <div className="text-sm text-gray-600">Correct</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Correct</div>
                 </div>
                 <div className="text-center">
-                  <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mx-auto mb-3">
-                    <XCircle className="w-6 h-6 text-red-600" />
+                  <div className="flex items-center justify-center w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full mx-auto mb-3">
+                    <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
                   </div>
-                  <div className="font-semibold text-gray-800">
+                  <div className="font-semibold text-gray-800 dark:text-white">
                     {selectedResult.items.filter(item => !item.isCorrect).length}
                   </div>
-                  <div className="text-sm text-gray-600">Incorrect</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Incorrect</div>
                 </div>
               </div>
             </div>
 
             {/* Detailed Results */}
             <div className="space-y-6">
-              <h3 className="text-2xl font-bold text-gray-800">Detailed Results</h3>
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-white">Detailed Results</h3>
               
               {selectedResult.items.map((item: any, index: number) => (
-                <div key={index} className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                <div key={index} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
                   <div className="flex items-start justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-gray-800 flex-1 pr-4">
+                    <h4 className="text-lg font-semibold text-gray-800 dark:text-white flex-1 pr-4">
                       Question {index + 1}: {item.question}
                     </h4>
                     <div className="flex items-center space-x-3">
@@ -711,18 +711,18 @@ const InterviewApp = () => {
 
                   <div className="space-y-4">
                     <div>
-                      <h5 className="font-medium text-gray-700 mb-2">Your Answer:</h5>
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-gray-800">{item.answer || 'No answer provided'}</p>
+                      <h5 className="font-medium text-gray-700 dark:text-gray-300 mb-2">Your Answer:</h5>
+                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <p className="text-gray-800 dark:text-gray-200">{item.answer || 'No answer provided'}</p>
                       </div>
                     </div>
 
                     <div>
-                      <h5 className="font-medium text-gray-700 mb-2">Feedback:</h5>
+                      <h5 className="font-medium text-gray-700 dark:text-gray-300 mb-2">Feedback:</h5>
                       <div className={`rounded-lg p-4 ${
-                        item.isCorrect ? 'bg-green-50' : 'bg-red-50'
+                        item.isCorrect ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'
                       }`}>
-                        <p className="text-gray-800">{item.explanation}</p>
+                        <p className="text-gray-800 dark:text-gray-200">{item.explanation}</p>
                       </div>
                     </div>
                   </div>
@@ -731,12 +731,12 @@ const InterviewApp = () => {
             </div>
 
             {/* Job Description Reference */}
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 mt-8">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Job Description</h3>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-gray-800 leading-relaxed">{selectedResult.jobDescription}</p>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700 mt-8">
+              <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Job Description</h3>
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <p className="text-gray-800 dark:text-gray-200 leading-relaxed">{selectedResult.jobDescription}</p>
               </div>
-              <div className="mt-4 flex items-center space-x-6 text-sm text-gray-600">
+              <div className="mt-4 flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex items-center">
                   <Briefcase className="w-4 h-4 mr-1" />
                   {selectedResult.difficulty} level
@@ -753,7 +753,7 @@ const InterviewApp = () => {
               <div className="flex justify-center space-x-4 mt-8">
                 <button 
                   onClick={() => setCurrentView('results')}
-                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all"
+                  className="px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
                 >
                   View All Results
                 </button>

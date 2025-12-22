@@ -3,7 +3,7 @@ import { SubjectsList } from "@/components/Subjects/SubjectsList";
 const SubjectsPage: React.FC = () => {
   return (
 
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-gray-900">
         {/* Header Section */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

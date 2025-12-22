@@ -216,39 +216,39 @@ const ResumeDashboard: React.FC = () => {
 
   const getBandColor = (band?: string): string => {
     switch (band?.toLowerCase()) {
-      case 'strong': return 'text-green-600 bg-green-100';
-      case 'good': return 'text-blue-600 bg-blue-100';
-      case 'partial': return 'text-yellow-600 bg-yellow-100';
-      case 'weak': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'strong': return 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/20';
+      case 'good': return 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/20';
+      case 'partial': return 'text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/20';
+      case 'weak': return 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/20';
+      default: return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700';
     }
   };
 
   // ...inline components removed - using imported `StatCard` and `DetailedResumeCard`
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       <div className="max-w-7xl mx-auto p-4 sm:p-6">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 bg-clip-text text-transparent mb-2">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-white dark:via-blue-300 dark:to-purple-300 bg-clip-text text-transparent mb-2">
                 Resume Analytics Dashboard
               </h1>
-              <p className="text-gray-600 text-sm sm:text-base lg:text-lg">Transform your career with data-driven insights</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base lg:text-lg">Transform your career with data-driven insights</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative">
                 <select 
                   onChange={(e) => handleDownload(e.target.value)}
-                  className="appearance-none bg-white border border-gray-300 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Download Data</option>
                   <option value="json">JSON Format</option>
                   <option value="csv">CSV Format</option>
                 </select>
-                <ArrowDownTrayIcon className="absolute right-2 top-2.5 w-4 h-4 text-gray-400 pointer-events-none" />
+                <ArrowDownTrayIcon className="absolute right-2 top-2.5 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
               </div>
               <button
                 onClick={() => setIsUploadOpen(true)}
@@ -294,7 +294,7 @@ const ResumeDashboard: React.FC = () => {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex flex-wrap sm:flex-nowrap space-x-1 bg-gray-100 p-1 rounded-2xl mb-6 sm:mb-8 w-full sm:w-fit overflow-x-auto">
+        <div className="flex flex-wrap sm:flex-nowrap space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl mb-6 sm:mb-8 w-full sm:w-fit overflow-x-auto">
           {[
             { id: 'overview', label: 'Overview', icon: ChartBarIcon },
             { id: 'performance', label: 'Performance', icon: TrendingUpIcon },
@@ -305,8 +305,8 @@ const ResumeDashboard: React.FC = () => {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-xl font-medium transition-all duration-300 whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'bg-white text-blue-600 shadow-md'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-md'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -320,9 +320,9 @@ const ResumeDashboard: React.FC = () => {
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8">
             {/* Performance Trends */}
-            <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 flex items-center gap-3">
-                <TrendingUpIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center gap-3">
+                <TrendingUpIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
                 Performance Trends
               </h3>
               {performanceData.length > 0 ? (
@@ -360,9 +360,9 @@ const ResumeDashboard: React.FC = () => {
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-64 text-gray-500">
+                <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
                   <div className="text-center">
-                    <ChartBarIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <ChartBarIcon className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
                     <p>No performance data available</p>
                   </div>
                 </div>
@@ -370,8 +370,8 @@ const ResumeDashboard: React.FC = () => {
             </div>
 
             {/* Score Distribution */}
-            <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Score Distribution</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">Score Distribution</h3>
               {pieData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
@@ -393,7 +393,7 @@ const ResumeDashboard: React.FC = () => {
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-64 text-gray-500">
+                <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
                   <p>No data available</p>
                 </div>
               )}
@@ -404,8 +404,8 @@ const ResumeDashboard: React.FC = () => {
         {activeTab === 'performance' && radarData.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8">
             {/* Skills Radar */}
-            <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">CV Quality Breakdown</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">CV Quality Breakdown</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <RadarChart data={radarData}>
                   <PolarGrid />
@@ -425,16 +425,16 @@ const ResumeDashboard: React.FC = () => {
             </div>
 
             {/* Detailed Scores */}
-            <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Detailed Breakdown</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">Detailed Breakdown</h3>
               <div className="space-y-4">
                 {radarData.map((item, index) => (
                   <div key={index} className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-700">{item.dimension}</span>
-                      <span className="text-sm font-bold text-gray-900">{Math.round(item.score)}%</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.dimension}</span>
+                      <span className="text-sm font-bold text-gray-900 dark:text-white">{Math.round(item.score)}%</span>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2">
                       <div 
                         className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-1000"
                         style={{ width: `${item.score}%` }}
@@ -457,9 +457,9 @@ const ResumeDashboard: React.FC = () => {
               </div>
             ) : (
               <div className="text-center py-16">
-                <DocumentTextIcon className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Resumes Found</h3>
-                <p className="text-gray-600 mb-6">Upload your first resume to get started with analysis</p>
+                <DocumentTextIcon className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Resumes Found</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">Upload your first resume to get started with analysis</p>
                 <button
                   onClick={() => setIsUploadOpen(true)}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
@@ -476,11 +476,11 @@ const ResumeDashboard: React.FC = () => {
           <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
               <div className="fixed inset-0 transition-opacity bg-black bg-opacity-50" onClick={() => setIsUploadOpen(false)} />
-              <div className="relative inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-2xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6 mx-4">
+              <div className="relative inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white dark:bg-gray-800 rounded-2xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6 mx-4">
                 <div className="absolute top-0 right-0 hidden pt-4 pr-4 sm:block">
                   <button
                     onClick={() => setIsUploadOpen(false)}
-                    className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
                   >
                     <XMarkIcon className="w-6 h-6" />
                   </button>
@@ -488,10 +488,10 @@ const ResumeDashboard: React.FC = () => {
                 
                 <div className="sm:flex sm:items-start">
                   <div className="w-full mt-3 text-center sm:mt-0 sm:text-left">
-                    <h3 className="text-2xl font-bold leading-6 text-gray-900 mb-2">
+                    <h3 className="text-2xl font-bold leading-6 text-gray-900 dark:text-white mb-2">
                       Upload Resume & JD
                     </h3>
-                    <p className="text-sm text-gray-600 mb-6">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                       Upload your resume in PDF, DOC, or DOCX format for analysis. Optionally, upload a Job Description file or paste JD text for better matching.
                     </p>
                     
@@ -499,8 +499,8 @@ const ResumeDashboard: React.FC = () => {
                     <div
                       className={`mt-4 border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 ${
                         isDragOver
-                          ? 'border-blue-400 bg-blue-50'
-                          : 'border-gray-300 hover:border-gray-400'
+                          ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                       }`}
                       onClick={() => resumeInputRef.current?.click()}
                       onDragOver={(e) => {
@@ -510,18 +510,18 @@ const ResumeDashboard: React.FC = () => {
                       onDragLeave={() => setIsDragOver(false)}
                       onDrop={handleResumeDrop}
                     >
-                      <CloudArrowUpIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                      <CloudArrowUpIcon className="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
                       {resumeFile ? (
                         <div>
-                          <p className="text-lg font-medium text-gray-900">{resumeFile.name}</p>
-                          <p className="text-sm text-gray-500">Click to choose a different file</p>
+                          <p className="text-lg font-medium text-gray-900 dark:text-white">{resumeFile.name}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Click to choose a different file</p>
                         </div>
                       ) : (
                         <div>
-                          <p className="text-lg font-medium text-gray-900 mb-2">
+                          <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                             Drop your resume here
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             or click to browse • PDF, DOC, DOCX up to 10MB
                           </p>
                         </div>
@@ -577,7 +577,7 @@ const ResumeDashboard: React.FC = () => {
 
                     {/* JD Text Input */}
                     <div className="mt-4">
-                      <label htmlFor="jdText" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="jdText" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Paste JD Text (optional)
                       </label>
                       <textarea
@@ -585,7 +585,7 @@ const ResumeDashboard: React.FC = () => {
                         value={jdText}
                         onChange={(e) => setJDText(e.target.value)}
                         rows={4}
-                        className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full border border-gray-300 dark:border-gray-600 rounded-xl p-3 text-sm focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                         placeholder="Paste job description text here for better matching..."
                       />
                     </div>
@@ -603,7 +603,7 @@ const ResumeDashboard: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setIsUploadOpen(false)}
-                    className="inline-flex justify-center w-full px-6 py-3 text-sm sm:text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:w-auto transition-all duration-300"
+                    className="inline-flex justify-center w-full px-6 py-3 text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:w-auto transition-all duration-300"
                   >
                     Cancel
                   </button>
@@ -618,11 +618,11 @@ const ResumeDashboard: React.FC = () => {
           <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
               <div className="fixed inset-0 transition-opacity bg-black bg-opacity-50" onClick={() => setSelectedResume(null)} />
-              <div className="relative inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-2xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6 max-h-[90vh] overflow-y-auto mx-4">
+              <div className="relative inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white dark:bg-gray-800 rounded-2xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6 max-h-[90vh] overflow-y-auto mx-4">
                 <div className="absolute top-0 right-0 hidden pt-4 pr-4 sm:block">
                   <button
                     onClick={() => setSelectedResume(null)}
-                    className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
                   >
                     <XMarkIcon className="w-6 h-6" />
                   </button>
@@ -630,12 +630,12 @@ const ResumeDashboard: React.FC = () => {
                 
                 <div className="w-full">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-blue-50 rounded-xl">
-                      <DocumentTextIcon className="w-8 h-8 text-blue-600" />
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                      <DocumentTextIcon className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900">{selectedResume.filename}</h2>
-                      <p className="text-gray-600 flex items-center gap-2">
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedResume.filename}</h2>
+                      <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
                         <CalendarIcon className="w-4 h-4" />
                         {new Date(selectedResume.createdAt).toLocaleDateString('en-US', { 
                           year: 'numeric', 
@@ -675,7 +675,24 @@ const ResumeDashboard: React.FC = () => {
                         icon: StarIcon 
                       }
                     ].map((metric, idx) => (
-                      <div key={idx} className="bg-gradient-to-r from-gray-50 to-white p-4 sm:p-6 rounded-2xl border border-gray-100">
+                      <div key={idx} className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-100 dark:border-gray-600">
+                        <div className="flex items-center gap-3 mb-4">
+                          <metric.icon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-400" />
+                          <h3 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">{metric.label}</h3>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">{Math.round(metric.value || 0)}</p>
+                          <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getBandColor(metric.band)}`}>
+                            {metric.band || 'N/A'}
+                          </span>
+                          <div className="mt-4 w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                            <div 
+                              className={`bg-gradient-to-r ${metric.color} h-2 rounded-full transition-all duration-1000`}
+                              style={{ width: `${Math.min(metric.value || 0, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
                         <div className="flex items-center gap-3 mb-4">
                           <metric.icon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
                           <h3 className="font-semibold text-sm sm:text-base text-gray-900">{metric.label}</h3>

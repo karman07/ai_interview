@@ -19,7 +19,7 @@ import ResumeDashboard from "@/pages/Dashboard/ResumeDashboard";
 import { useAuth } from "@/contexts/AuthContext";
 import InterviewApp from "./pages/Interview/Interview";
 import ResourcesHub from "./pages/Resources/Resources";
-import JobSearchApp from "./pages/Job/JobSearch";
+import JobSearch from "./pages/Job/JobSearch";
 import SubjectsPage from "./pages/Subjects/SubjectsPage";
 import SubjectDetailsPage from "./pages/Subjects/SubjectDetailsPage";
 import { SubjectsProvider } from "./contexts/SubjectsContext";
@@ -31,6 +31,7 @@ import InterviewStart from "./pages/Interview_round/InterviewStart";
 import InterviewRoomPage from "./pages/Interview_round/InterviewRoomPage";
 // import { AnalyticsProvider } from '@/contexts/AnalyticsContext';
 
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { AnalyticsProvider } from "./contexts/AnalyticsContext";
 import AnalyticsTest from "./pages/Test/AnalyticsTest";
 import { DSAQuestionsProvider } from "./contexts/DSAQuestionsContext";
@@ -76,10 +77,11 @@ function App() {
     location.pathname.startsWith("/dsa/");
 
   return (
-    <AnalyticsProvider>
-      <PricingProvider>
-        <div className="bg-gray-50 min-h-screen flex flex-col">
-          {!shouldHideNavbar && <Navbar />}
+    <ThemeProvider>
+      <AnalyticsProvider>
+        <PricingProvider>
+          <div className="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
+            {!shouldHideNavbar && <Navbar />}
 
           <div className="flex-grow">
           <Routes>
@@ -109,7 +111,7 @@ function App() {
                 <div className="flex min-h-screen">
                   <Sidebar />
                   <div className="flex-1">
-                    <JobSearchApp />
+                    <JobSearch />
                   </div>
                 </div>
               }
@@ -307,6 +309,7 @@ function App() {
       </div>
     </PricingProvider>
     </AnalyticsProvider>
+    </ThemeProvider>
   );
 }
 

@@ -9,11 +9,14 @@ import {
   Briefcase,
   X,
   Menu,
+  Moon,
+  Sun,
 } from "lucide-react";
 import colors from "@/constants/colors";
 import { cn } from "@/utils/cn";
 import SidebarItem from "./SidebarItem";
 import SidebarSection from "./SidebarSection";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const sidebarRoutes = [
   {
@@ -62,6 +65,7 @@ const sidebarRoutes = [
 export default function Sidebar() {
   const [_, setActiveItem] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -76,7 +80,7 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
@@ -84,16 +88,16 @@ export default function Sidebar() {
           >
             <Target size={16} className="text-white" />
           </div>
-          <h2 className="text-lg font-semibold" style={{ color: colors.text }}>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             AI Coach
           </h2>
         </div>
         <button
           onClick={toggleMobileMenu}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           aria-label="Toggle menu"
         >
-          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          {isMobileMenuOpen ? <X size={24} className="text-gray-900 dark:text-white" /> : <Menu size={24} className="text-gray-900 dark:text-white" />}
         </button>
       </div>
 
@@ -108,10 +112,9 @@ export default function Sidebar() {
       {/* Mobile Sidebar */}
       <div
         className={cn(
-          "lg:hidden fixed top-0 left-0 h-full w-80 max-w-[85vw] z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto",
+          "lg:hidden fixed top-0 left-0 h-full w-80 max-w-[85vw] z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto bg-white dark:bg-gray-900",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}
-        style={{ backgroundColor: colors.background }}
       >
         <div className="p-6 pt-20">
           {sidebarRoutes.map((section, sectionIndex) => (
@@ -128,13 +131,32 @@ export default function Sidebar() {
               ))}
             </SidebarSection>
           ))}
+          
+          {/* Theme Toggle */}
+          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={toggleTheme}
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-white dark:hover:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-600 border border-transparent transition-all duration-200"
+            >
+              <div className="flex-shrink-0 p-1.5 rounded-md text-gray-600 dark:text-gray-400">
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                </span>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Switch to {theme === 'dark' ? 'light' : 'dark'} theme
+                </p>
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Desktop Sidebar */}
       <div
-        className="hidden lg:block w-64 min-h-screen border-r border-gray-200"
-        style={{ backgroundColor: colors.background }}
+        className="hidden lg:block w-64 min-h-screen border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
       >
         <div className="p-6">
           <div className="flex items-center gap-3 mb-6">
@@ -145,8 +167,7 @@ export default function Sidebar() {
               <Target size={16} className="text-white" />
             </div>
             <h2
-              className="text-xl font-semibold"
-              style={{ color: colors.text }}
+              className="text-xl font-semibold text-gray-900 dark:text-white"
             >
               AI Coach
             </h2>
@@ -166,6 +187,26 @@ export default function Sidebar() {
               ))}
             </SidebarSection>
           ))}
+          
+          {/* Theme Toggle */}
+          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={toggleTheme}
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-white dark:hover:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-600 border border-transparent transition-all duration-200"
+            >
+              <div className="flex-shrink-0 p-1.5 rounded-md text-gray-600 dark:text-gray-400">
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                </span>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Switch to {theme === 'dark' ? 'light' : 'dark'} theme
+                </p>
+              </div>
+            </button>
+          </div>
         </div>
       </div>
     </>

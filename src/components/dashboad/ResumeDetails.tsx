@@ -14,6 +14,7 @@ import {
   Award,
   Star,
   AlertCircle,
+  Play,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Button from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
 } from "../dialog/dialog";
 import { baseURL } from "@/api/http";
 import { resumeService } from "@/api/resumeService";
+import { startInterviewWithResume } from "@/api/aiInterview";
 
 interface ResumeDetailsProps {
   resume: any;
@@ -32,10 +34,20 @@ interface ResumeDetailsProps {
 
 const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
   const [openJDDialog, setOpenJDDialog] = useState(false);
+  const [openInterviewDialog, setOpenInterviewDialog] = useState(false);
   const [jdFile, setJdFile] = useState<File | null>(null);
+  const [cvFile, setCvFile] = useState<File | null>(null);
   const [jdText, setJdText] = useState<string>('');
+  const [interviewData, setInterviewData] = useState({
+    roleTitle: '',
+    companyName: '',
+    industry: '',
+    roundType: 'full' as 'technical' | 'behavioral' | 'hr' | 'full'
+  });
   const [isUploading, setIsUploading] = useState(false);
+  const [isStartingInterview, setIsStartingInterview] = useState(false);
   const [uploadError, setUploadError] = useState<string>('');
+  const [interviewError, setInterviewError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<"evaluation" | "improvement">(
     "evaluation"
   );
@@ -93,34 +105,34 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
   const overallScore = Math.round(resume.stats?.cv_quality?.overall_score);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 sm:p-6 overflow-x-hidden">
       <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
         {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl border border-gray-200 shadow-lg"
+          className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg"
         >
           <div className="p-4 sm:p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
               <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-100 rounded-2xl flex items-center justify-center border border-blue-200 shadow-sm flex-shrink-0">
-                  <FileText className="w-6 h-6 sm:w-7 sm:h-7 text-blue-600" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-100 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center border border-blue-200 dark:border-blue-800 shadow-sm flex-shrink-0">
+                  <FileText className="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
+                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white truncate">
                     {resume?.filename}
                   </h1>
-                  <p className="text-gray-600 mt-1 text-xs sm:text-sm">
+                  <p className="text-gray-600 dark:text-gray-400 mt-1 text-xs sm:text-sm">
                     Resume Analysis Dashboard
                   </p>
                 </div>
               </div>
               <div className="text-center md:text-right">
-                <div className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900">
+                <div className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white">
                   {overallScore}
                 </div>
-                <div className="text-gray-500 text-xs sm:text-sm font-medium mt-1">
+                <div className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-medium mt-1">
                   Overall Score
                 </div>
               </div>
@@ -129,18 +141,18 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
             {/* Progress Bar */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Performance Rating
                 </span>
                 <span
                   className={`text-sm font-semibold px-3 py-1 rounded-full ${
                     overallScore >= 80
-                      ? "bg-green-100 text-green-800"
+                      ? "bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400"
                       : overallScore >= 60
-                      ? "bg-blue-100 text-blue-800"
+                      ? "bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400"
                       : overallScore >= 40
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-red-100 text-red-800"
+                      ? "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400"
+                      : "bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400"
                   }`}
                 >
                   {overallScore >= 80
@@ -153,7 +165,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                 </span>
               </div>
               <div className="relative">
-                <div className="w-full bg-gray-200 rounded-full h-3">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${Math.min(overallScore, 100)}%` }}
@@ -171,7 +183,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                     <div className="absolute right-0 top-0 w-1 h-3 bg-white/40 rounded-full"></div>
                   </motion.div>
                 </div>
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                   <span>0</span>
                   <span>25</span>
                   <span>50</span>
@@ -184,7 +196,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
         </motion.div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ActionCard
             icon={<EyeIcon className="w-5 h-5 text-blue-600" />}
             title="View Resume"
@@ -199,6 +211,19 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
               </a>
             }
             color="blue"
+          />
+
+          <ActionCard
+            icon={<Play className="w-5 h-5 text-purple-600" />}
+            title="Start AI Interview"
+            subtitle={
+              <span className="text-purple-600 text-sm font-medium">
+                Practice Interview →
+              </span>
+            }
+            color="gray"
+            clickable
+            onClick={() => setOpenInterviewDialog(true)}
           />
 
           {!hasImprovement && (
@@ -244,6 +269,18 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                       </div>
                     )}
 
+                    {isUploading && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                          <span className="text-sm text-gray-600">Processing your request...</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
+                        </div>
+                      </div>
+                    )}
+
                     <Button
                       onClick={async () => {
                         if (!jdFile && !jdText.trim()) return;
@@ -285,6 +322,52 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
             </>
           )}
 
+          {/* Interview Dialog */}
+          <Dialog open={openInterviewDialog} onOpenChange={setOpenInterviewDialog}>
+            <DialogContent className="w-full max-w-4xl mx-4">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-semibold">Start AI Interview</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Role Title *</label>
+                    <input type="text" value={interviewData.roleTitle} onChange={(e) => setInterviewData({...interviewData, roleTitle: e.target.value})} placeholder="Software Engineer" className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Company Name *</label>
+                    <input type="text" value={interviewData.companyName} onChange={(e) => setInterviewData({...interviewData, companyName: e.target.value})} placeholder="Tech Corp" className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Industry *</label>
+                    <input type="text" value={interviewData.industry} onChange={(e) => setInterviewData({...interviewData, industry: e.target.value})} placeholder="Technology" className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Round Type</label>
+                    <select value={interviewData.roundType} onChange={(e) => setInterviewData({...interviewData, roundType: e.target.value as any})} className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                      <option value="full">Full Interview</option>
+                      <option value="technical">Technical Only</option>
+                      <option value="behavioral">Behavioral Only</option>
+                      <option value="hr">HR Only</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">Upload CV (Optional)</label>
+                  <FileUploadBox file={cvFile} setFile={setCvFile} label="CV" />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">Job Description *</label>
+                  <FileUploadBox file={jdFile} setFile={setJdFile} label="JD" />
+                  <textarea value={jdText} onChange={(e) => setJdText(e.target.value)} placeholder="Or paste job description text here..." className="w-full h-24 p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
+                </div>
+                {interviewError && <div className="bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-sm text-red-600">{interviewError}</p></div>}
+                {isStartingInterview && <div className="space-y-3"><div className="flex items-center gap-3"><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600"></div><span className="text-sm text-gray-600">Starting interview...</span></div><div className="w-full bg-gray-200 rounded-full h-2"><div className="bg-purple-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div></div></div>}
+                <Button onClick={async () => { if (!interviewData.roleTitle || !interviewData.companyName || (!jdFile && !jdText.trim())) return; setIsStartingInterview(true); setInterviewError(''); try { const sessionId = `session_${Date.now()}`; const userId = 'user123'; await startInterviewWithResume({ resume: cvFile || new File([resume.filename], resume.filename, { type: 'text/plain' }), jd_file: jdFile || undefined, user_id: userId, session_id: sessionId, role_title: interviewData.roleTitle, company_name: interviewData.companyName, industry: interviewData.industry, jd: jdText.trim() || 'Job description from uploaded file', round_type: interviewData.roundType }); setOpenInterviewDialog(false); window.location.href = `/interview/${sessionId}`; } catch (error: any) { setInterviewError(error?.response?.data?.message || error?.message || 'Failed to start interview. Please try again.'); } finally { setIsStartingInterview(false); } }} disabled={!interviewData.roleTitle || !interviewData.companyName || (!jdFile && !jdText.trim()) || isStartingInterview} className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-50">{isStartingInterview ? 'Starting...' : 'Start Interview'}</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           <ActionCard
             icon={<Download className="w-5 h-5 text-gray-600" />}
             title="Export Report"
@@ -301,8 +384,8 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
         </div>
 
         {/* Tabs + Content */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-lg">
-          <div className="border-b border-gray-200">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
+          <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="flex space-x-8 px-6">
               <TabButton
                 label="Resume Evaluation"
@@ -355,22 +438,22 @@ const ActionCard = ({
       <motion.div whileHover={{ scale: 1.02 }}>
         <button
           onClick={onClick}
-          className="w-full bg-white rounded-xl border border-gray-200 p-4 transition-shadow text-left cursor-pointer hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-shadow text-left cursor-pointer hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <div
-              className={`p-2 rounded-lg ${
+              className={`p-3 rounded-lg ${
                 color === "blue"
-                  ? "bg-blue-50"
+                  ? "bg-blue-50 dark:bg-blue-900/20"
                   : color === "green"
-                  ? "bg-green-50"
-                  : "bg-gray-50"
+                  ? "bg-green-50 dark:bg-green-900/20"
+                  : "bg-gray-50 dark:bg-gray-700"
               }`}
             >
               {icon}
             </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">{title}</h3>
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{title}</h3>
               <div>{subtitle}</div>
             </div>
           </div>
@@ -381,26 +464,55 @@ const ActionCard = ({
   
   return (
     <motion.div whileHover={{ scale: 1.02 }}>
-      <div className="w-full bg-white rounded-xl border border-gray-200 p-4 transition-shadow">
-        <div className="flex items-center gap-3">
+      <div className="w-full bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-shadow">
+        <div className="flex items-center gap-4">
           <div
-            className={`p-2 rounded-lg ${
+            className={`p-3 rounded-lg ${
               color === "blue"
-                ? "bg-blue-50"
+                ? "bg-blue-50 dark:bg-blue-900/20"
                 : color === "green"
-                ? "bg-green-50"
-                : "bg-gray-50"
+                ? "bg-green-50 dark:bg-green-900/20"
+                : "bg-gray-50 dark:bg-gray-700"
             }`}
           >
             {icon}
           </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">{title}</h3>
+          <div className="flex-1">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{title}</h3>
             <div>{subtitle}</div>
           </div>
         </div>
       </div>
     </motion.div>
+  );
+};
+
+const FileUploadBox = ({ file, setFile, label }: { file: File | null; setFile: (file: File | null) => void; label: string; }) => {
+  const [isDragOver, setIsDragOver] = useState(false);
+  const validateFile = (file: File) => {
+    const validTypes = ['.pdf', '.doc', '.docx', '.txt'];
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    const maxSize = 10 * 1024 * 1024;
+    if (!validTypes.includes(fileExtension)) { alert('Please select a valid file type: PDF, DOC, DOCX, or TXT'); return false; }
+    if (file.size > maxSize) { alert('File size must be less than 10MB'); return false; }
+    return true;
+  };
+  return (
+    <div className={`border-2 border-dashed rounded-lg p-4 text-center transition-all duration-200 ${isDragOver ? 'border-purple-400 bg-purple-50' : file ? 'border-green-400 bg-green-50' : 'border-gray-300 hover:border-gray-400'}`} onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }} onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false); }} onDrop={(e) => { e.preventDefault(); setIsDragOver(false); const files = e.dataTransfer.files; if (files.length > 0 && validateFile(files[0])) { setFile(files[0]); } }}>
+      <Upload className={`w-8 h-8 mx-auto mb-2 ${isDragOver ? 'text-purple-500' : file ? 'text-green-500' : 'text-gray-400'}`} />
+      <input type="file" accept=".pdf,.doc,.docx,.txt" className="hidden" id={`${label.toLowerCase()}-upload`} onChange={(e) => { const selectedFile = e.target.files?.[0]; if (selectedFile && validateFile(selectedFile)) { setFile(selectedFile); } }} />
+      {file ? (
+        <div className="space-y-2">
+          <div className="flex items-center justify-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-600" /><span className="font-medium text-green-800 text-sm">{file.name}</span></div>
+          <label htmlFor={`${label.toLowerCase()}-upload`} className="cursor-pointer inline-block"><span className="text-xs text-purple-600 hover:text-purple-700 underline">Choose different file</span></label>
+        </div>
+      ) : (
+        <label htmlFor={`${label.toLowerCase()}-upload`} className="cursor-pointer block">
+          <div className="font-medium text-gray-700 text-sm">{isDragOver ? 'Drop file here' : `Upload ${label} File`}</div>
+          <div className="text-xs text-gray-500">PDF, DOC, DOCX, TXT (max 10MB)</div>
+        </label>
+      )}
+    </div>
   );
 };
 
@@ -487,20 +599,20 @@ const UploadBox = ({
         <div className="space-y-3">
           <div className="flex items-center justify-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-green-600" />
-            <span className="font-medium text-green-800">{jdFile.name}</span>
+            <span className="font-medium text-green-800 dark:text-green-400">{jdFile.name}</span>
           </div>
           <label htmlFor="jd-upload" className="cursor-pointer inline-block">
-            <span className="text-sm text-blue-600 hover:text-blue-700 underline">
+            <span className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
               Choose different file
             </span>
           </label>
         </div>
       ) : (
         <label htmlFor="jd-upload" className="cursor-pointer block">
-          <div className="font-medium text-gray-700 mb-1">
+          <div className="font-medium text-gray-700 dark:text-gray-300 mb-1">
             {isDragOver ? 'Drop file here' : 'Click to select or drag & drop'}
           </div>
-          <div className="text-sm text-gray-500">PDF, DOC, DOCX, TXT (max 10MB)</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">PDF, DOC, DOCX, TXT (max 10MB)</div>
         </label>
       )}
     </div>
@@ -522,8 +634,8 @@ const TabButton = ({
     onClick={onClick}
     className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
       active
-        ? "border-blue-500 text-blue-600"
-        : "border-transparent text-gray-500 hover:text-gray-700"
+        ? "border-blue-500 text-blue-600 dark:text-blue-400"
+        : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
     }`}
   >
     <div className="flex items-center gap-2">{icon} {label}</div>
@@ -542,44 +654,45 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume }) => {
     <div className="space-y-8">
       {/* CV Quality Table */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Quality Assessment
         </h3>
-        <div className="overflow-x-auto border border-gray-200 rounded-lg">
-          <table className="w-full">
-            <thead className="bg-gray-50">
+        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+          <div className="overflow-x-hidden">
+            <table className="w-full">
+            <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
                   Dimension
                 </th>
-                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">
+                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900 dark:text-white">
                   Score
                 </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
                   Progress
                 </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
                   Evidence
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
               {resume?.stats?.cv_quality?.subscores?.map((sub: any, idx: number) => {
                 const percentage = (sub.score / sub.max_score) * 100;
                 return (
-                  <tr key={idx} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium text-gray-900 capitalize">
+                  <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900">
+                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white capitalize">
                       {sub.dimension.replace(/_/g, " ")}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <span className="text-lg font-bold text-gray-900">{sub.score}</span>
-                        <span className="text-sm text-gray-500">/ {sub.max_score}</span>
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">{sub.score}</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">/ {sub.max_score}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="relative w-full">
-                        <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${percentage}%` }}
@@ -595,7 +708,7 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume }) => {
                             }`}
                           />
                         </div>
-                        <div className="text-xs text-gray-500 mt-1 text-right">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
                           {Math.round(percentage)}%
                         </div>
                       </div>
@@ -603,7 +716,7 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume }) => {
                     <td className="px-6 py-4">
                       <ul className="space-y-1">
                         {sub.evidence.map((ev: string, i: number) => (
-                          <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
+                          <li key={i} className="text-sm text-gray-600 dark:text-gray-300 flex items-start gap-2">
                             <CheckCircle2 className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
                             {ev}
                           </li>
@@ -615,48 +728,50 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume }) => {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 
       {/* JD Match Table */}
       {showJDMatch && (
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Job Description Match</h3>
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="w-full min-w-[700px]">
-              <thead className="bg-gray-50">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Job Description Match</h3>
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            <div className="overflow-x-hidden">
+              <table className="w-full min-w-[700px]">
+              <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
                     Dimension
                   </th>
-                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">
+                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900 dark:text-white">
                     Score
                   </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
                     Progress
                   </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
                     Evidence
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
                 {resume?.stats?.jd_match?.subscores?.map((sub: any, idx: number) => {
                   const percentage = (sub.score / sub.max_score) * 100;
                   return (
-                    <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 font-medium text-gray-900 capitalize">
+                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900">
+                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white capitalize">
                         {sub.dimension.replace(/_/g, " ")}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <span className="text-lg font-bold text-gray-900">{sub.score}</span>
-                          <span className="text-sm text-gray-500">/ {sub.max_score}</span>
+                          <span className="text-lg font-bold text-gray-900 dark:text-white">{sub.score}</span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">/ {sub.max_score}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="relative w-full">
-                          <div className="w-full bg-gray-200 rounded-full h-3">
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${percentage}%` }}
@@ -672,7 +787,7 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume }) => {
                               }`}
                             />
                           </div>
-                          <div className="text-xs text-gray-500 mt-1 text-right">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
                             {Math.round(percentage)}%
                           </div>
                         </div>
@@ -680,7 +795,7 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume }) => {
                       <td className="px-6 py-4">
                         <ul className="space-y-1">
                           {sub.evidence.map((ev: string, i: number) => (
-                            <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
+                            <li key={i} className="text-sm text-gray-600 dark:text-gray-300 flex items-start gap-2">
                               <CheckCircle2 className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
                               {ev}
                             </li>
@@ -692,6 +807,7 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume }) => {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}
@@ -734,25 +850,29 @@ const InsightsCard = ({
   items: string[];
   itemIcon: React.ReactNode;
 }) => (
-  <div className="border border-gray-200 rounded-lg overflow-hidden">
+  <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
     <div
       className={`px-4 py-3 border-b ${
-        color === "green" ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
+        color === "green" 
+          ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" 
+          : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
       }`}
     >
       <h4
         className={`font-semibold flex items-center gap-2 ${
-          color === "green" ? "text-green-900" : "text-red-900"
+          color === "green" 
+            ? "text-green-900 dark:text-green-100" 
+            : "text-red-900 dark:text-red-100"
         }`}
       >
         {icon} {title} ({count})
       </h4>
     </div>
-    <div className="p-4 space-y-2 max-h-48 overflow-y-auto">
+    <div className="p-4 space-y-2 max-h-48 overflow-y-auto bg-white dark:bg-gray-900">
       {items.map((flag, idx) => (
         <div key={idx} className="flex items-start gap-2 text-sm">
           {itemIcon}
-          <span className="text-gray-700">{flag}</span>
+          <span className="text-gray-700 dark:text-gray-300">{flag}</span>
         </div>
       ))}
     </div>
@@ -761,7 +881,7 @@ const InsightsCard = ({
 
 const ImprovementTab = ({ resume }: { resume: any }) => (
   <div className="space-y-6">
-    <h3 className="text-lg font-semibold text-gray-900">AI-Enhanced Content</h3>
+    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">AI-Enhanced Content</h3>
 
     {/* Summary */}
     <ImprovementCard
@@ -803,8 +923,8 @@ const ImprovementTab = ({ resume }: { resume: any }) => (
       color="indigo"
       icon={<FileText className="w-4 h-4" />}
       content={
-        <div className="bg-gray-50 p-4 rounded-lg max-h-64 overflow-y-auto">
-          <pre className="text-sm text-gray-700 whitespace-pre-line leading-relaxed font-sans">
+        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg max-h-64 overflow-y-auto">
+          <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed font-sans">
             {resume.improvement_resume.cover_letter}
           </pre>
         </div>
@@ -824,15 +944,15 @@ const ImprovementCard = ({
   icon: React.ReactNode;
   content: React.ReactNode;
 }) => (
-  <div className="border border-gray-200 rounded-lg overflow-hidden">
+  <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
     <div
-      className={`px-4 py-3 border-b bg-${color}-50 border-${color}-200`}
+      className={`px-4 py-3 border-b bg-${color}-50 dark:bg-${color}-900/20 border-${color}-200 dark:border-${color}-800`}
     >
-      <h4 className={`font-semibold text-${color}-900 flex items-center gap-2`}>
+      <h4 className={`font-semibold text-${color}-900 dark:text-${color}-100 flex items-center gap-2`}>
         {icon} {title}
       </h4>
     </div>
-    <div className="p-4 text-gray-700 leading-relaxed">{content}</div>
+    <div className="p-4 text-gray-700 dark:text-gray-300 leading-relaxed">{content}</div>
   </div>
 );
 
@@ -849,11 +969,11 @@ const ImprovementList = ({
   items: string[];
   bulletColor: string;
 }) => (
-  <div className="border border-gray-200 rounded-lg overflow-hidden">
+  <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
     <div
-      className={`px-4 py-3 border-b bg-${color}-50 border-${color}-200`}
+      className={`px-4 py-3 border-b bg-${color}-50 dark:bg-${color}-900/20 border-${color}-200 dark:border-${color}-800`}
     >
-      <h4 className={`font-semibold text-${color}-900 flex items-center gap-2`}>
+      <h4 className={`font-semibold text-${color}-900 dark:text-${color}-100 flex items-center gap-2`}>
         {icon} {title}
       </h4>
     </div>
@@ -863,7 +983,7 @@ const ImprovementList = ({
           <div
             className={`w-2 h-2 bg-${bulletColor}-500 rounded-full mt-2 flex-shrink-0`}
           ></div>
-          <span className="text-gray-700 text-sm">{item}</span>
+          <span className="text-gray-700 dark:text-gray-300 text-sm">{item}</span>
         </div>
       ))}
     </div>
@@ -881,11 +1001,11 @@ const ImprovementSkills = ({
   icon: React.ReactNode;
   skills: string[];
 }) => (
-  <div className="border border-gray-200 rounded-lg overflow-hidden">
+  <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
     <div
-      className={`px-4 py-3 border-b bg-${color}-50 border-${color}-200`}
+      className={`px-4 py-3 border-b bg-${color}-50 dark:bg-${color}-900/20 border-${color}-200 dark:border-${color}-800`}
     >
-      <h4 className={`font-semibold text-${color}-900 flex items-center gap-2`}>
+      <h4 className={`font-semibold text-${color}-900 dark:text-${color}-100 flex items-center gap-2`}>
         {icon} {title}
       </h4>
     </div>
@@ -894,7 +1014,7 @@ const ImprovementSkills = ({
         {skills.map((skill, idx) => (
           <span
             key={idx}
-            className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm font-medium border border-gray-200"
+            className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-sm font-medium border border-gray-200 dark:border-gray-600"
           >
             {skill}
           </span>

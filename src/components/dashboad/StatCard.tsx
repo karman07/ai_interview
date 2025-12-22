@@ -11,7 +11,7 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon, color, subtitle }) => (
-  <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+  <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300">
     <div className="flex items-start justify-between">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 sm:gap-3 mb-2">
@@ -19,15 +19,15 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon, color, 
             {icon}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-gray-600 truncate">{title}</p>
-            {subtitle && <p className="text-xs text-gray-400 truncate">{subtitle}</p>}
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{title}</p>
+            {subtitle && <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{subtitle}</p>}
           </div>
         </div>
         <div className="flex items-end gap-2">
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900">{Math.round(value)}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{Math.round(value)}</p>
           {change !== undefined && (
             <div className={`flex items-center gap-1 text-sm font-medium ${
-              change >= 0 ? 'text-green-600' : 'text-red-600'
+              change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
             }`}>
               {change >= 0 ? <TrendingUpIcon className="w-4 h-4" /> : <TrendingDownIcon className="w-4 h-4" />}
               <span className="whitespace-nowrap">{Math.abs(change).toFixed(1)}%</span>
