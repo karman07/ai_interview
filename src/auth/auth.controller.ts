@@ -24,12 +24,24 @@ export class AuthController {
     }
   }
 
+  @Post('register')
+  async register(@Body() dto: CreateUserDto, @Res({ passthrough: true }) res: Response) {
+    try {
+      const result = await this.auth.signup(dto);
+      res.cookie('refresh_token', result.refreshToken, { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 7 * 24 * 3600 * 1000, path: '/' });
+      return { user: result.user, accessToken: result.accessToken, refreshToken: result.refreshToken };
+    } catch (error) {
+      this.logger.error('Registration failed:', error.message);
+      throw new HttpException(error.message || 'Registration failed', HttpStatus.BAD_REQUEST);
+    }
+  }
+
   @Post('login')
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     try {
       const result = await this.auth.login(dto.email, dto.password);
       res.cookie('refresh_token', result.refreshToken, { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 7 * 24 * 3600 * 1000, path: '/' });
-      return { user: result.user, accessToken: result.accessToken };
+      return { user: result.user, accessToken: result.accessToken, refreshToken: result.refreshToken };
     } catch (error) {
       this.logger.error('Login failed:', error.message);
       throw new HttpException(error.message || 'Login failed', HttpStatus.UNAUTHORIZED);

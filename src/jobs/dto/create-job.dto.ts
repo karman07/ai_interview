@@ -1,4 +1,5 @@
-import { IsString, IsArray, IsNumber, IsNotEmpty } from 'class-validator';
+import { IsString, IsArray, IsNumber, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
+import { JobDescriptionType } from '../schemas/job.schema';
 
 export class CreateJobDto {
   @IsString()
@@ -8,6 +9,14 @@ export class CreateJobDto {
   @IsString()
   @IsNotEmpty()
   description: string;
+
+  @IsOptional()
+  @IsEnum(JobDescriptionType)
+  descriptionType?: JobDescriptionType;
+
+  @IsOptional()
+  @IsString()
+  descriptionFileUrl?: string;
 
   @IsArray()
   @IsString({ each: true })

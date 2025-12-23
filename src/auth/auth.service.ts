@@ -3,7 +3,7 @@ import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { CreateUserDto } from '../users/dto/create-user.dto';
-import { UserDocument } from '../users/schemas/user.schema';
+import { UserDocument, UserRole } from '../users/schemas/user.schema';
 import { FirebaseService } from '../common/firebase/firebase.service';
 
 @Injectable()
@@ -15,9 +15,14 @@ export class AuthService {
   ) {}
 
   async signup(dto: CreateUserDto) {
-    const user = await this.usersService.create(dto);
+    // Use passed role or default to 'employee'
+    const userData = {
+      ...dto,
+      role: dto.role || UserRole.EMPLOYEE
+    };
+    const user = await this.usersService.create(userData);
     const userId = user._id.toString();
-    const tokens = await this.issueTokens(userId, user.email);
+    const tokens = await this.issueTokens(userId, user.email, user.role);
     await this.saveRefresh(userId, tokens.refreshToken);
     return this.safeResponse(user, tokens);
   }
@@ -40,7 +45,7 @@ export class AuthService {
     if (!ok) throw new UnauthorizedException('Invalid credentials');
 
     const userId = user._id.toString();
-    const tokens = await this.issueTokens(userId, user.email);
+    const tokens = await this.issueTokens(userId, user.email, user.role);
     await this.saveRefresh(userId, tokens.refreshToken);
     return this.safeResponse(user, tokens);
   }
@@ -66,7 +71,7 @@ async googleLogin(idToken: string) {
   }
 
   const userId = user._id.toString();
-  const tokens = await this.issueTokens(userId, user.email);
+  const tokens = await this.issueTokens(userId, user.email, user.role);
   await this.saveRefresh(userId, tokens.refreshToken);
 
   return this.safeResponse(user, tokens);
@@ -75,7 +80,9 @@ async googleLogin(idToken: string) {
 
 
   async refresh(userId: string, email: string) {
-    const tokens = await this.issueTokens(userId, email);
+    // Get user to include role in new tokens
+    const user = await this.usersService.findById(userId);
+    const tokens = await this.issueTokens(userId, email, user.role);
     await this.saveRefresh(userId, tokens.refreshToken);
     return tokens;
   }
@@ -85,13 +92,13 @@ async googleLogin(idToken: string) {
     return { success: true };
   }
 
-  private async issueTokens(sub: string, email: string) {
+  private async issueTokens(sub: string, email: string, role: string) {
     const accessToken = await this.jwt.signAsync(
-      { sub, email },
+      { sub, email, role },
       { secret: process.env.JWT_ACCESS_SECRET, expiresIn: process.env.JWT_ACCESS_EXPIRES || '15m' },
     );
     const refreshToken = await this.jwt.signAsync(
-      { sub, email },
+      { sub, email, role },
       { secret: process.env.JWT_REFRESH_SECRET, expiresIn: process.env.JWT_REFRESH_EXPIRES || '7d' },
     );
     return { accessToken, refreshToken };

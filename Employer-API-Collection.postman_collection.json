@@ -1,0 +1,484 @@
+{
+  "info": {
+    "name": "Employer API Collection",
+    "description": "Complete API collection for employer functionality including authentication, job management, and AI-powered features",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "jobId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "applicationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "employeeId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register Employer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Employer\",\n  \"email\": \"john@company.com\",\n  \"password\": \"securePassword123\",\n  \"role\": \"employer\",\n  \"company\": \"Tech Corp\",\n  \"industry\": \"Technology\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', response.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@company.com\",\n  \"password\": \"securePassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', response.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{refreshToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile Management",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "John Updated Employer",
+                  "type": "text"
+                },
+                {
+                  "key": "company",
+                  "value": "Updated Tech Corp",
+                  "type": "text"
+                },
+                {
+                  "key": "industry",
+                  "value": "Software Technology",
+                  "type": "text"
+                },
+                {
+                  "key": "jobDescription",
+                  "value": "CEO and Founder",
+                  "type": "text"
+                },
+                {
+                  "key": "profileImage",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Job Management",
+      "item": [
+        {
+          "name": "Create Job",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jobId', response._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Senior Full Stack Developer",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Looking for an experienced full stack developer with expertise in React and Node.js",
+                  "type": "text"
+                },
+                {
+                  "key": "descriptionType",
+                  "value": "text",
+                  "type": "text"
+                },
+                {
+                  "key": "requirements[]",
+                  "value": "5+ years experience",
+                  "type": "text"
+                },
+                {
+                  "key": "requirements[]",
+                  "value": "React expertise",
+                  "type": "text"
+                },
+                {
+                  "key": "requirements[]",
+                  "value": "Node.js experience",
+                  "type": "text"
+                },
+                {
+                  "key": "requirements[]",
+                  "value": "MongoDB knowledge",
+                  "type": "text"
+                },
+                {
+                  "key": "salary",
+                  "value": "120000",
+                  "type": "text"
+                },
+                {
+                  "key": "location",
+                  "value": "Remote",
+                  "type": "text"
+                },
+                {
+                  "key": "descriptionFile",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/jobs",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs"]
+            }
+          }
+        },
+        {
+          "name": "Get My Jobs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/jobs/my-jobs",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "my-jobs"]
+            }
+          }
+        },
+        {
+          "name": "Get All Jobs (Public)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/jobs",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Application Management",
+      "item": [
+        {
+          "name": "Get Job Applications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/jobs/{{jobId}}/applications",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "{{jobId}}", "applications"]
+            }
+          }
+        },
+        {
+          "name": "Get AI-Powered Best Candidates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/jobs/{{jobId}}/best-candidates",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "{{jobId}}", "best-candidates"]
+            }
+          }
+        },
+        {
+          "name": "Update Application Status - Accept",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/jobs/applications/{{applicationId}}/status/accepted",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "applications", "{{applicationId}}", "status", "accepted"]
+            }
+          }
+        },
+        {
+          "name": "Update Application Status - Reject",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/jobs/applications/{{applicationId}}/status/rejected",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "applications", "{{applicationId}}", "status", "rejected"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Employer Request System",
+      "item": [
+        {
+          "name": "Request Specific Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobId\": \"{{jobId}}\",\n  \"employeeId\": \"{{employeeId}}\",\n  \"message\": \"Your React and Node.js experience makes you perfect for this role! We'd love to discuss this opportunity with you.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/jobs/request-employee",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "request-employee"]
+            }
+          }
+        },
+        {
+          "name": "Get My Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/jobs/my-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "my-requests"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "File Serving",
+      "item": [
+        {
+          "name": "Get Job Description File",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/uploads/job-descriptions/filename.pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["uploads", "job-descriptions", "filename.pdf"]
+            }
+          }
+        },
+        {
+          "name": "Get Profile Image",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/uploads/profile-images/filename.jpg",
+              "host": ["{{baseUrl}}"],
+              "path": ["uploads", "profile-images", "filename.jpg"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

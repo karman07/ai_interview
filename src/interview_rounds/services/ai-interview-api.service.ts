@@ -33,6 +33,10 @@ export interface InterviewReport {
   user_id: string;
   session_id: string;
   overall_score: number;
+  communication_score?: number;
+  behavioral_score?: number;
+  technical_score?: number;
+  problem_solving_score?: number;
   feedback: any;
   strengths: string[];
   weaknesses: string[];

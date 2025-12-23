@@ -7,7 +7,9 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Resume, ResumeDocument } from './resume.schema';
+import { User, UserDocument } from '../users/schemas/user.schema';
 import { AiCvApiService } from './ai-cv-api.service';
+import { AiMatcherService } from '../common/services/ai-matcher.service';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -18,7 +20,9 @@ export class ResumeService {
 
   constructor(
     @InjectModel(Resume.name) private resumeModel: Model<ResumeDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     private readonly aiCvApiService: AiCvApiService,
+    private readonly aiMatcherService: AiMatcherService,
   ) {
     this.appBaseUrl = process.env.APP_BASE_URL || process.env.APP_URL || 'http://localhost:3000';
   }
@@ -97,11 +101,12 @@ export class ResumeService {
 
     this.logger.log('💾 Saving resume to database...');
     const normalizedPath = file.path.replace(/\\/g, '/');
+    const resumeUrl = this.buildFileUrl(normalizedPath);
 
     const resume = new this.resumeModel({
       filename: file.originalname,
       path: normalizedPath,
-      url: this.buildFileUrl(normalizedPath),
+      url: resumeUrl,
       stats,
       improvement_resume,
       user: userId,
@@ -109,6 +114,25 @@ export class ResumeService {
 
     await resume.save();
     this.logger.log('✅ Resume saved successfully to database');
+
+    // Update user's resumeUrl to the latest uploaded resume
+    try {
+      await this.userModel.findByIdAndUpdate(userId, { resumeUrl });
+      this.logger.log('✅ User resumeUrl updated');
+    } catch (err) {
+      this.logger.error('⚠️ Failed to update user resumeUrl:', err.message);
+    }
+
+    // Upload to AI matcher service with user ID
+    try {
+      this.logger.log('🔗 Uploading resume to AI matcher service...');
+      await this.aiMatcherService.uploadResume(userId, undefined, file.path);
+      this.logger.log('✅ Resume uploaded to AI matcher service');
+    } catch (err) {
+      this.logger.error('⚠️ Failed to upload to AI matcher service:', err.message);
+      // Don't throw error, continue with normal flow
+    }
+
     return resume;
   }
 
