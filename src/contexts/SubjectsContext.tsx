@@ -80,8 +80,7 @@ const filterSubjects = (subjects: Subject[], filters: SubjectsFilters): Subject[
 
 export const SubjectsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const fetchSubjects = async (): Promise<Subject[]> => {
-    // 👇 API should return subjects along with lessons inside them
-    const res = await axios.get<Subject[]>(`${API_BASE_URL}/subjects?include=lessons`);
+    const res = await axios.get<Subject[]>(`${API_BASE_URL}/subjects`);
     return res.data;
   };
 

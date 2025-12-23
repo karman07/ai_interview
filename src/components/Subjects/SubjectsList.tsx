@@ -42,7 +42,7 @@ export const SubjectsList: React.FC = () => {
   return (
     <div>
       {/* Search and Filters Section */}
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 mb-8 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 mb-8 border border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="h-5 w-5 text-gray-600 dark:text-gray-400" />
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Search & Filter</h2>

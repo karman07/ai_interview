@@ -19,7 +19,7 @@ function InterviewCard({ type, description, icon, color }: InterviewCardProps) {
   const navigate = useNavigate();
 
   return (
-    <div className="group relative bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-2xl hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-300 overflow-hidden">
+    <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-2xl hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-300 overflow-hidden">
       {/* Gradient accent */}
       <div className={`absolute top-0 left-0 right-0 h-1 ${color}`}></div>
 
@@ -47,7 +47,7 @@ function InterviewCard({ type, description, icon, color }: InterviewCardProps) {
           onClick={() =>
             navigate(`/interview/start/${type.toLowerCase()}`)
           }
-          className="mt-8 w-full flex items-center justify-center gap-3 bg-gray-900 dark:bg-gray-700 text-white px-6 py-4 rounded-2xl hover:bg-gray-800 dark:hover:bg-gray-600 transition-all duration-300 group-hover:shadow-lg font-semibold"
+          className="mt-8 w-full flex items-center justify-center gap-3 bg-gray-900 dark:bg-gray-700 text-white px-6 py-4 rounded-2xl hover:bg-gray-800 dark:hover:bg-gray-600 transition-all duration-300 group-hover:shadow-lg font-semibold hover:scale-[1.02]"
         >
           Start Interview
           <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
@@ -55,7 +55,7 @@ function InterviewCard({ type, description, icon, color }: InterviewCardProps) {
       </div>
 
       {/* Hover effect overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-transparent to-gray-50/50 dark:to-gray-800/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent to-gray-50/50 dark:to-gray-900/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
     </div>
   );
 }
@@ -98,14 +98,14 @@ export default function InterviewHome() {
       <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b border-gray-100 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-6 py-16">
           <div className="text-center space-y-6">
-            <div className="inline-flex items-center px-4 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-full text-sm font-medium mb-4">
+            <div className="inline-flex items-center px-4 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-full text-sm font-medium mb-4 shadow-lg">
               <span className="w-2 h-2 bg-emerald-400 rounded-full mr-2 animate-pulse"></span>
               Interview Process
             </div>
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white leading-tight">
               Choose Your
               <br />
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
                 Interview Round
               </span>
             </h1>

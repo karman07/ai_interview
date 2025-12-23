@@ -693,23 +693,6 @@ const ResumeDashboard: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                        <div className="flex items-center gap-3 mb-4">
-                          <metric.icon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
-                          <h3 className="font-semibold text-sm sm:text-base text-gray-900">{metric.label}</h3>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-2xl sm:text-4xl font-bold text-gray-900 mb-2">{Math.round(metric.value || 0)}</p>
-                          <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getBandColor(metric.band)}`}>
-                            {metric.band || 'N/A'}
-                          </span>
-                          <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className={`bg-gradient-to-r ${metric.color} h-2 rounded-full transition-all duration-1000`}
-                              style={{ width: `${Math.min(metric.value || 0, 100)}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
                     ))}
                   </div>
 

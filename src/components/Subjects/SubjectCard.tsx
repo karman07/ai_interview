@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Subject } from "@/contexts/SubjectsContext";
 import { baseURL } from "@/api/http";
@@ -20,11 +20,59 @@ interface SubjectCardProps {
 }
 
 export const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) => {
-  const { getProgressForLesson } = useProgress();
+  const { getProgressForLesson, progress: apiProgress } = useProgress();
   const navigate = useNavigate();
+  const [progressPercent, setProgressPercent] = useState(0);
+  const [progressStatus, setProgressStatus] = useState<'not-started' | 'in-progress' | 'completed'>('not-started');
 
-  const firstLessonId = subject.lessons?.[0]?._id;
-  const progress = firstLessonId ? getProgressForLesson(firstLessonId) : null;
+  // Calculate overall progress for the subject based on all lessons
+  const calculateSubjectProgress = useCallback(() => {
+    if (!subject.lessons || subject.lessons.length === 0) return { percent: 0, status: 'not-started' as const };
+    
+    let completedCount = 0;
+    let inProgressCount = 0;
+    
+    // Check each lesson's progress
+    subject.lessons.forEach(lesson => {
+      // First try API progress
+      const apiProg = apiProgress.find(p => p.lessonId === lesson._id);
+      
+      if (apiProg) {
+        if (apiProg.status === 'completed') completedCount++;
+        else if (apiProg.status === 'in-progress') inProgressCount++;
+      } else {
+        // Fallback to localStorage
+        const stored = localStorage.getItem(`lessonProgress-${subject._id}`);
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            const localProg = parsed.progress?.[lesson._id];
+            if (localProg?.status === 'completed') completedCount++;
+            else if (localProg?.status === 'in-progress') inProgressCount++;
+          } catch (e) {
+            console.error('Failed to parse localStorage progress', e);
+          }
+        }
+      }
+    });
+    
+    const percent = Math.round((completedCount / subject.lessons.length) * 100);
+    const status = completedCount === subject.lessons.length ? 'completed' : 
+                   (completedCount > 0 || inProgressCount > 0) ? 'in-progress' : 'not-started';
+    
+    console.log(`Subject ${subject.title}: ${completedCount}/${subject.lessons.length} completed = ${percent}%`);
+    
+    return { percent, status };
+  }, [apiProgress, subject]);
+
+  // Recalculate progress when API progress changes
+  useEffect(() => {
+    const { percent, status } = calculateSubjectProgress();
+    setProgressPercent(percent);
+    setProgressStatus(status as 'not-started' | 'in-progress' | 'completed');
+  }, [calculateSubjectProgress]);
+
+  const progress = subject.lessons?.[0] ? getProgressForLesson(subject.lessons[0]._id) : null;
 
   // Default click handler → navigate to subject details
   const handleClick = () => {
@@ -38,65 +86,64 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) =>
   const getLevelColor = (level: string) => {
     switch (level?.toLowerCase()) {
       case "beginner":
-        return "bg-gradient-to-r from-green-500 to-emerald-500 text-white";
+        return "bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg";
       case "intermediate":
-        return "bg-gradient-to-r from-yellow-500 to-orange-500 text-white";
+        return "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg";
       case "advanced":
-        return "bg-gradient-to-r from-red-500 to-pink-500 text-white";
+        return "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg";
       default:
-        return "bg-gradient-to-r from-gray-500 to-slate-500 text-white";
+        return "bg-gradient-to-r from-slate-500 to-gray-500 text-white shadow-lg";
     }
   };
 
   const getCategoryColor = (category: string) => {
     switch (category?.toLowerCase()) {
       case "programming":
-        return "bg-gradient-to-r from-blue-600 to-indigo-600 text-white";
+        return "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg";
       case "math":
-        return "bg-gradient-to-r from-purple-600 to-violet-600 text-white";
+        return "bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-lg";
       case "science":
-        return "bg-gradient-to-r from-emerald-600 to-teal-600 text-white";
+        return "bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-lg";
       default:
-        return "bg-gradient-to-r from-gray-600 to-slate-600 text-white";
+        return "bg-gradient-to-r from-gray-600 to-slate-600 text-white shadow-lg";
     }
   };
 
   const getProgressStatus = () => {
-    if (!progress)
+    if (progressPercent === 0)
       return {
         text: "Start Learning",
-        color: "text-gray-600",
-        bgColor: "bg-gray-100",
+        color: "text-slate-700",
+        bgColor: "bg-slate-100 backdrop-blur-sm",
         icon: Play,
       };
 
-    switch (progress.status) {
+    switch (progressStatus) {
       case "completed":
         return {
           text: "Completed",
-          color: "text-green-700",
-          bgColor: "bg-green-50",
+          color: "text-emerald-700",
+          bgColor: "bg-emerald-100 backdrop-blur-sm",
           icon: CheckCircle,
         };
       case "in-progress":
         return {
           text: "Continue",
           color: "text-blue-700",
-          bgColor: "bg-blue-50",
+          bgColor: "bg-blue-100 backdrop-blur-sm",
           icon: Play,
         };
       default:
         return {
           text: "Start Learning",
-          color: "text-gray-600",
-          bgColor: "bg-gray-100",
+          color: "text-slate-700",
+          bgColor: "bg-slate-100 backdrop-blur-sm",
           icon: Play,
         };
     }
   };
 
   const statusInfo = getProgressStatus();
-  const progressPercent = progress ? progress.progressPercent : 0;
 
   return (
     <div
@@ -140,7 +187,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) =>
                       cy="50"
                       r="40"
                       stroke={
-                        progress?.status === "completed" ? "#10B981" : "#3B82F6"
+                        progressStatus === "completed" ? "#10B981" : "#3B82F6"
                       }
                       strokeWidth="6"
                       fill="transparent"
@@ -189,7 +236,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) =>
               <Star
                 key={i}
                 className={`h-4 w-4 ${
-                  i < 4 ? "text-yellow-400 fill-current" : "text-gray-300"
+                  i < 4 ? "text-yellow-400 fill-current" : "text-gray-300 dark:text-gray-600"
                 }`}
               />
             ))}
@@ -228,7 +275,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) =>
 
         {/* Progress Section */}
         {(progress || progressPercent >= 0) && (
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 space-y-3">
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 space-y-3 border border-gray-200 dark:border-gray-600">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Learning Progress
@@ -242,15 +289,17 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) =>
               <div className="w-full h-3 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-1000 ease-out ${
-                    progress?.status === "completed"
-                      ? "bg-gradient-to-r from-green-500 to-emerald-500"
+                    progressStatus === "completed"
+                      ? "bg-gradient-to-r from-emerald-500 to-green-500"
                       : "bg-gradient-to-r from-blue-500 to-indigo-500"
                   }`}
                   style={{
                     width: `${progressPercent}%`,
                     boxShadow:
                       progressPercent > 0
-                        ? "0 0 10px rgba(59, 130, 246, 0.5)"
+                        ? progressStatus === "completed"
+                          ? "0 0 10px rgba(16, 185, 129, 0.5)"
+                          : "0 0 10px rgba(59, 130, 246, 0.5)"
                         : "none",
                   }}
                 />
@@ -262,7 +311,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) =>
                 {progress.badges.slice(0, 3).map((badge, i) => (
                   <div
                     key={i}
-                    className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-yellow-400 to-orange-400 text-white rounded-lg text-xs font-semibold shadow-sm"
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-amber-400 to-orange-400 text-white rounded-lg text-xs font-semibold shadow-sm"
                   >
                     <Award className="h-3 w-3" />
                     {badge}

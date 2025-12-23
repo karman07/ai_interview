@@ -29,6 +29,8 @@ import { LessonsProvider } from "./contexts/LessonsContext";
 import InterviewHome from "./pages/Interview_round/InterviewHome";
 import InterviewStart from "./pages/Interview_round/InterviewStart";
 import InterviewRoomPage from "./pages/Interview_round/InterviewRoomPage";
+import InterviewAnalyticsDashboard from "./pages/Interview_round/InterviewAnalyticsDashboard";
+import InterviewHistory from "./pages/Interview_round/InterviewHistory";
 // import { AnalyticsProvider } from '@/contexts/AnalyticsContext';
 
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -65,6 +67,8 @@ function App() {
     routes.subjectDetails,
     routes.lessonDetails,
     routes.interviewHome,
+    routes.interviewAnalytics,
+    routes.interviewHistory,
     routes.dsaDashboard,
     routes.dsaQuestions,
   ];
@@ -191,6 +195,22 @@ function App() {
                   <Sidebar />
                   <div className="flex-1">
                     <InterviewRoomPage />
+                  </div>
+                </div>
+              } />
+              <Route path={routes.interviewAnalytics} element={
+                <div className="flex min-h-screen">
+                  <Sidebar />
+                  <div className="flex-1">
+                    <InterviewAnalyticsDashboard />
+                  </div>
+                </div>
+              } />
+              <Route path={routes.interviewHistory} element={
+                <div className="flex min-h-screen">
+                  <Sidebar />
+                  <div className="flex-1">
+                    <InterviewHistory />
                   </div>
                 </div>
               } />

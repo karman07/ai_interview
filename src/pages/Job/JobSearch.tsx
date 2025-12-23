@@ -41,8 +41,16 @@ const JobSearch: React.FC = () => {
         const jobsData = await getAllJobs();
         setJobs(jobsData);
       } else if (activeTab === 'applications') {
-        const applicationsData = await getMyApplications();
-        setMyApplications(applicationsData);
+        try {
+          const applicationsData = await getMyApplications();
+          setMyApplications(applicationsData);
+        } catch (error: any) {
+          if (error?.response?.status === 404) {
+            setMyApplications([]);
+          } else {
+            throw error;
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -189,7 +197,7 @@ const JobSearch: React.FC = () => {
                           <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400 mb-3">
                             <div className="flex items-center">
                               <Building2 className="h-4 w-4 mr-1" />
-                              {job.employer.company || job.employer.name}
+                              {job.employer?.company || job.employer?.name || 'N/A'}
                             </div>
                             <div className="flex items-center">
                               <MapPin className="h-4 w-4 mr-1" />

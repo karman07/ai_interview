@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "@/api/http";
 import { useLazyLoading, LoadingState, createLoadingIndicator } from "@/hooks/useLazyLoading";
@@ -104,10 +104,21 @@ export const LessonsProvider: React.FC<{ children: ReactNode }> = ({ children })
     autoLoad: false, // We'll manually trigger loading when subjectId changes
   });
 
+  // Effect to trigger loading when currentSubjectId changes
+  useEffect(() => {
+    if (currentSubjectId && loadingState === LoadingState.IDLE) {
+      console.log("📡 Subject ID changed, triggering load:", currentSubjectId);
+      load();
+    }
+  }, [currentSubjectId]);
+
   const fetchLessons = async (subjectId: string) => {
+    if (currentSubjectId === subjectId) {
+      console.log("⚠️ Already fetching/fetched lessons for:", subjectId);
+      return;
+    }
+    console.log("🔄 Setting subject ID and fetching lessons:", subjectId);
     setCurrentSubjectId(subjectId);
-    // Trigger the lazy loading
-    await load();
   };
 
   const fetchQuizzes = async (lessonId: string) => {

@@ -35,12 +35,10 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setLoading(true);
       setError(null);
 
-      const token = localStorage.getItem("access_token"); 
-      const res = await axios.get(`${API_BASE_URL}/progress`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(`${API_BASE_URL}/progress`);
+      const progressData = res.data.data || res.data || [];
 
-      setProgress(res.data);
+      setProgress(progressData);
     } catch (err: any) {
       setError(err?.response?.data?.message || "Failed to load progress");
     } finally {

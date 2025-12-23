@@ -176,14 +176,14 @@ export default function InterviewRoom({ round }: Props) {
 
   if (error && initializing) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 max-w-md">
           <div className="text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MessageCircle className="w-8 h-8 text-red-600" />
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MessageCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Failed to Start Interview</h2>
-            <p className="text-gray-600 mb-6">{error}</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Failed to Start Interview</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
             <button
               onClick={handleStartNewInterview}
               className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
@@ -197,8 +197,8 @@ export default function InterviewRoom({ round }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      <div className="bg-white border-b border-gray-100 shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-100 dark:border-gray-700 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -206,10 +206,10 @@ export default function InterviewRoom({ round }: Props) {
                 {interviewInfo.icon}
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 capitalize">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white capitalize">
                   {round} Round Interview
                 </h1>
-                <p className="text-gray-600 flex items-center gap-2">
+                <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
                   <User className="w-4 h-4" />
                   {user?.name || 'Candidate'}
                 </p>
@@ -217,15 +217,15 @@ export default function InterviewRoom({ round }: Props) {
             </div>
             
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                 <Clock className="w-4 h-4" />
                 <span className="font-medium">{getElapsedTime()}</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                 <MessageSquare className="w-4 h-4" />
                 <span className="font-medium">{answeredCount} answered</span>
               </div>
-              <div className={`px-4 py-2 rounded-full text-sm font-medium ${interviewInfo.bgColor}`}>
+              <div className={`px-4 py-2 rounded-full text-sm font-medium ${interviewInfo.bgColor} dark:bg-opacity-20 dark:text-white`}>
                 {initializing ? "Starting..." : "In Progress"}
               </div>
             </div>
@@ -235,12 +235,12 @@ export default function InterviewRoom({ round }: Props) {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="space-y-6">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Interview Progress</h3>
-              <span className="text-sm text-gray-500">Question {answeredCount + 1}</span>
+              <h3 className="font-semibold text-gray-900 dark:text-white">Interview Progress</h3>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Question {answeredCount + 1}</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div 
                 className={`h-2 rounded-full bg-gradient-to-r ${interviewInfo.color} transition-all duration-500`}
                 style={{ width: `${Math.min((answeredCount / 5) * 100, 100)}%` }}
@@ -248,7 +248,7 @@ export default function InterviewRoom({ round }: Props) {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
             <div className={`h-1 bg-gradient-to-r ${interviewInfo.color}`} />
             
             <div className="p-8">
@@ -259,16 +259,16 @@ export default function InterviewRoom({ round }: Props) {
                       <Loader2 className="animate-spin w-8 h-8 text-white" />
                     </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Starting Your Interview</h3>
-                  <p className="text-gray-600 text-center max-w-md">
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Starting Your Interview</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-center max-w-md">
                     Our AI interviewer is analyzing your profile and preparing your first question...
                   </p>
                 </div>
               ) : question ? (
                 <div className="space-y-6">
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-3">📋 Interview Instructions</h3>
-                    <div className="space-y-2 text-blue-800">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300 mb-3">📋 Interview Instructions</h3>
+                    <div className="space-y-2 text-blue-800 dark:text-blue-300">
                       <p>• Read the question below carefully</p>
                       <p>• Click "Unmute & Start Recording" when ready to answer</p>
                       <p>• Speak your answer clearly to the camera</p>
@@ -276,20 +276,20 @@ export default function InterviewRoom({ round }: Props) {
                     </div>
                   </div>
 
-                  <div className="bg-white border-2 border-gray-200 rounded-xl p-8">
+                  <div className="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl p-8">
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${interviewInfo.color} flex items-center justify-center text-white font-bold`}>
                           {answeredCount + 1}
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-900">Question {answeredCount + 1}</h3>
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Question {answeredCount + 1}</h3>
                       </div>
                       <button
                         onClick={() => speakQuestion(question)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                           isSpeaking 
-                            ? 'bg-red-100 text-red-700 hover:bg-red-200' 
-                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                            ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50' 
+                            : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50'
                         }`}
                       >
                         {isSpeaking ? (
@@ -306,8 +306,8 @@ export default function InterviewRoom({ round }: Props) {
                       </button>
                     </div>
                     
-                    <div className="bg-gray-50 rounded-xl p-6 border-l-4 border-blue-500">
-                      <p className="text-xl font-medium text-gray-900 leading-relaxed">
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-6 border-l-4 border-blue-500 dark:border-blue-400">
+                      <p className="text-xl font-medium text-gray-900 dark:text-white leading-relaxed">
                         {question}
                       </p>
                     </div>
@@ -326,8 +326,8 @@ export default function InterviewRoom({ round }: Props) {
                       <Loader2 className="animate-spin w-8 h-8 text-white" />
                     </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Preparing Your Question</h3>
-                  <p className="text-gray-600 text-center max-w-md">
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Preparing Your Question</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-center max-w-md">
                     Our AI interviewer is analyzing your profile and preparing a personalized question for you...
                   </p>
                 </div>

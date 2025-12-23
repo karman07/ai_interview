@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE_URL, baseURL } from "@/api/http";
 import { useLessons } from "@/contexts/LessonsContext";
-import { ArrowLeft, BookOpen, Clock, User, Tag, TrendingUp, Play, CheckCircle } from "lucide-react";
+import { ArrowLeft, BookOpen, Clock, User, Tag, TrendingUp, Play, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
 import axios from "axios";
 
 interface Subject {
@@ -17,6 +17,59 @@ interface Subject {
   createdAt: string;
   updatedAt: string;
 }
+
+interface LessonCardProps {
+  lesson: any;
+  index: number;
+}
+
+const LessonCard: React.FC<LessonCardProps> = ({ lesson, index }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const maxLength = 150;
+  const shouldShowReadMore = lesson.description && lesson.description.length > maxLength;
+
+  return (
+    <div className="group p-6 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:border-blue-200 dark:hover:border-blue-700 transition-all duration-300 cursor-pointer transform hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+          {index + 1}
+        </div>
+        <div className="flex-grow">
+          <h3 className="font-bold text-gray-900 dark:text-white text-xl mb-2 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors duration-200">
+            {lesson.title}
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+            {isExpanded || !shouldShowReadMore
+              ? lesson.description
+              : `${lesson.description.substring(0, maxLength)}...`}
+          </p>
+          {shouldShowReadMore && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(!isExpanded);
+              }}
+              className="mt-2 flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium transition-colors"
+            >
+              {isExpanded ? (
+                <>
+                  Show less <ChevronUp className="h-4 w-4" />
+                </>
+              ) : (
+                <>
+                  Read more <ChevronDown className="h-4 w-4" />
+                </>
+              )}
+            </button>
+          )}
+        </div>
+        <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <Play className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const SubjectDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,13 +96,13 @@ const SubjectDetailsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
         <div className="flex flex-col justify-center items-center h-96 space-y-4">
           <div className="relative">
-            <div className="w-12 h-12 border-4 border-blue-200 dark:border-blue-800 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin"></div>
-            <div className="absolute inset-0 w-12 h-12 border-4 border-transparent border-t-indigo-400 dark:border-t-indigo-300 rounded-full animate-ping"></div>
+            <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            <div className="absolute inset-0 w-12 h-12 border-4 border-transparent border-t-indigo-400 rounded-full animate-ping"></div>
           </div>
-          <p className="text-gray-600 dark:text-gray-400 font-medium animate-pulse">Loading amazing content...</p>
+          <p className="text-slate-600 font-medium animate-pulse">Loading amazing content...</p>
         </div>
       </div>
     );
@@ -57,12 +110,12 @@ const SubjectDetailsPage: React.FC = () => {
 
   if (!subject) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
         <div className="flex flex-col items-center justify-center h-96 space-y-6">
           <div className="text-6xl opacity-20">📚</div>
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Subject not found</h2>
-            <p className="text-gray-600 dark:text-gray-400">The subject you're looking for doesn't exist or has been moved.</p>
+            <h2 className="text-2xl font-bold text-slate-800">Subject not found</h2>
+            <p className="text-slate-600">The subject you're looking for doesn't exist or has been moved.</p>
           </div>
           <button
             onClick={() => navigate(-1)}
@@ -144,25 +197,25 @@ const SubjectDetailsPage: React.FC = () => {
               )}
               
               {subject.estimatedTime && (
-                <div className="group flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-all duration-200">
-                  <div className="p-2 rounded-lg bg-green-100 group-hover:bg-green-200 transition-colors duration-200">
-                    <Clock className="h-4 w-4 text-green-600" />
+                <div className="group flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-800/30 dark:hover:to-emerald-800/30 transition-all duration-200">
+                  <div className="p-2 rounded-lg bg-green-100 dark:bg-green-800/50 group-hover:bg-green-200 dark:group-hover:bg-green-700/50 transition-colors duration-200">
+                    <Clock className="h-4 w-4 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Duration</p>
-                    <p className="font-semibold text-gray-800">{subject.estimatedTime}</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Duration</p>
+                    <p className="font-semibold text-gray-800 dark:text-white">{subject.estimatedTime}</p>
                   </div>
                 </div>
               )}
               
               {subject.author && (
-                <div className="group flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 transition-all duration-200">
-                  <div className="p-2 rounded-lg bg-purple-100 group-hover:bg-purple-200 transition-colors duration-200">
-                    <User className="h-4 w-4 text-purple-600" />
+                <div className="group flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-800/30 dark:hover:to-pink-800/30 transition-all duration-200">
+                  <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-800/50 group-hover:bg-purple-200 dark:group-hover:bg-purple-700/50 transition-colors duration-200">
+                    <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Author</p>
-                    <p className="font-semibold text-gray-800">{subject.author}</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Author</p>
+                    <p className="font-semibold text-gray-800 dark:text-white">{subject.author}</p>
                   </div>
                 </div>
               )}
@@ -171,12 +224,19 @@ const SubjectDetailsPage: React.FC = () => {
             {/* Enhanced Start Button */}
             <div className="pt-8">
               <button
-                onClick={() => (lessons[0] ? navigate(`/lessons/${subject._id}`) : null)}
-                className="group relative w-full md:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-bold text-lg shadow-xl hover:shadow-2xl hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 overflow-hidden"
+                onClick={() => {
+                  if (lessons.length > 0) {
+                    navigate(`/lessons/${subject._id}`);
+                  }
+                }}
+                disabled={lessons.length === 0}
+                className="group relative w-full md:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-bold text-lg shadow-xl hover:shadow-2xl hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <Play className="h-6 w-6 relative z-10 group-hover:scale-110 transition-transform duration-200" />
-                <span className="relative z-10">Start Your Learning Journey</span>
+                <span className="relative z-10">
+                  {lessons.length > 0 ? "Start Your Learning Journey" : "Loading Lessons..."}
+                </span>
               </button>
             </div>
           </div>
@@ -190,13 +250,13 @@ const SubjectDetailsPage: React.FC = () => {
                 key={i} 
                 className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-8 hover:shadow-xl hover:bg-white/80 transition-all duration-300 transform hover:-translate-y-1"
               >
-                <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
                   <div className="w-2 h-8 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
                   {block.heading.replace(/\*+/g, '').trim()}
                 </h2>
                 <ul className="space-y-3">
                   {block.points.map((pt, j) => (
-                    <li key={j} className="flex items-start gap-3 text-gray-700 leading-relaxed">
+                    <li key={j} className="flex items-start gap-3 text-gray-700 dark:text-gray-300 leading-relaxed">
                       <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                       <span className="text-lg">{pt}</span>
                     </li>
@@ -209,38 +269,20 @@ const SubjectDetailsPage: React.FC = () => {
 
         {/* Enhanced Lessons Section */}
         {lessons.length > 0 && (
-          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-8 hover:shadow-xl hover:bg-white/80 transition-all duration-300">
+          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 dark:border-gray-700/50 p-8 hover:shadow-xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300">
             <div className="flex items-center gap-3 mb-8">
-              <div className="p-3 rounded-xl bg-gradient-to-r from-indigo-100 to-purple-100">
-                <BookOpen className="h-6 w-6 text-indigo-600" />
+              <div className="p-3 rounded-xl bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50">
+                <BookOpen className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <h2 className="text-3xl font-bold text-gray-900">Course Lessons</h2>
-              <div className="ml-auto px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Course Lessons</h2>
+              <div className="ml-auto px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-sm font-semibold">
                 {lessons.length} lessons
               </div>
             </div>
             
             <div className="grid gap-4">
               {lessons.map((lesson, index) => (
-                <div
-                  key={lesson._id}
-                  className="group p-6 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:border-blue-200 dark:hover:border-blue-700 transition-all duration-300 cursor-pointer transform hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-sm">
-                      {index + 1}
-                    </div>
-                    <div className="flex-grow">
-                      <h3 className="font-bold text-gray-900 dark:text-white text-xl mb-2 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors duration-200">
-                        {lesson.title}
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{lesson.description}</p>
-                    </div>
-                    <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <Play className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                  </div>
-                </div>
+                <LessonCard key={lesson._id} lesson={lesson} index={index} />
               ))}
             </div>
           </div>
