@@ -144,15 +144,29 @@ export const ApplicationManagement = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-4">
                   <div className="text-right">
-                    <div className="flex items-center space-x-2">
-                      <Star className="h-4 w-4 text-yellow-500" />
-                      <span className={`font-semibold ${getScoreColor(85)}`}>
-                        85%
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-500">AI Match Score</p>
+                    {application.aiMatchingScore && (
+                      <div className="mb-2">
+                        <div className="flex items-center space-x-2">
+                          <Star className="h-4 w-4 text-yellow-500" />
+                          <span className={`font-semibold ${getScoreColor(application.aiMatchingScore.overallMatch)}`}>
+                            {application.aiMatchingScore.overallMatch}%
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-500">AI Match</p>
+                      </div>
+                    )}
+                    {application.interviewScores && (
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-semibold text-blue-600 dark:text-blue-400">
+                            {application.interviewScores.overall.toFixed(1)}/10
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-500">Interview</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center space-x-2">

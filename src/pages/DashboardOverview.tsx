@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Briefcase, Users, FileText, Plus } from 'lucide-react';
+import { Briefcase, FileText, Plus, TrendingUp, Clock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 
@@ -9,23 +9,16 @@ interface DashboardOverviewProps {
 
 export const DashboardOverview = ({ onSectionChange }: DashboardOverviewProps) => {
   const { user } = useAuth();
-  const [jobs, setJobs] = useState<any[]>([]);
-  const [requests, setRequests] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [jobsData, requestsData] = await Promise.all([
-          apiService.getMyJobs().catch(() => []),
-          apiService.getMyRequests().catch(() => [])
-        ]);
-        setJobs(Array.isArray(jobsData) ? jobsData : []);
-        setRequests(Array.isArray(requestsData) ? requestsData : []);
+        const dashboardStats = await apiService.getEnhancedDashboardStats();
+        setStats(dashboardStats);
       } catch (error) {
-        console.error('Failed to fetch data:', error);
-        setJobs([]);
-        setRequests([]);
+        console.error('Failed to fetch dashboard stats:', error);
       } finally {
         setLoading(false);
       }
@@ -42,14 +35,13 @@ export const DashboardOverview = ({ onSectionChange }: DashboardOverviewProps) =
     );
   }
 
-  const activeJobs = Array.isArray(jobs) ? jobs.filter((job: any) => job.isActive).length : 0;
-  const totalApplications = Array.isArray(jobs) ? jobs.reduce((sum: number, job: any) => sum + (job.applicationCount || 0), 0) : 0;
-  const pendingRequests = Array.isArray(requests) ? requests.filter((req: any) => req.status === 'pending').length : 0;
+  const activeJobs = stats?.activeJobs || 0;
+  const totalApplications = stats?.totalApplications || 0;
+  const pendingApplications = stats?.pendingApplications || 0;
+  const recentJobs = stats?.recentJobs || [];
 
   return (
     <div className="space-y-8">
-      {/* <AuthDebug /> */}
-      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -68,12 +60,12 @@ export const DashboardOverview = ({ onSectionChange }: DashboardOverviewProps) =
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Jobs</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeJobs}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Jobs</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.totalJobs || 0}</p>
             </div>
             <Briefcase className="h-8 w-8 text-blue-500" />
           </div>
@@ -82,85 +74,77 @@ export const DashboardOverview = ({ onSectionChange }: DashboardOverviewProps) =
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Applications</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalApplications}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Jobs</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeJobs}</p>
             </div>
-            <FileText className="h-8 w-8 text-green-500" />
+            <TrendingUp className="h-8 w-8 text-green-500" />
           </div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Requests</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{pendingRequests}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Applications</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalApplications}</p>
             </div>
-            <Users className="h-8 w-8 text-purple-500" />
+            <FileText className="h-8 w-8 text-purple-500" />
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Reviews</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{pendingApplications}</p>
+            </div>
+            <Clock className="h-8 w-8 text-orange-500" />
           </div>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Jobs</h2>
-            <button
-              onClick={() => onSectionChange('jobs')}
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 text-sm font-medium"
-            >
-              View All
-            </button>
-          </div>
-          <div className="space-y-4">
-            {Array.isArray(jobs) && jobs.slice(0, 3).map((job: any) => (
-              <div key={job._id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                <div>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Jobs</h2>
+          <button
+            onClick={() => onSectionChange('jobs')}
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 text-sm font-medium"
+          >
+            View All
+          </button>
+        </div>
+        <div className="space-y-4">
+          {recentJobs.length > 0 ? (
+            recentJobs.map((job: any) => (
+              <div key={job.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <div className="flex-1">
                   <h3 className="font-medium text-gray-900 dark:text-white">{job.title}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {job.applicationCount || 0} applications
+                  <div className="flex items-center space-x-4 mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{job.location}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {job.applicationCount || 0} applications
+                    </p>
+                    {job.pendingApplications > 0 && (
+                      <span className="text-sm text-orange-600 dark:text-orange-400">
+                        {job.pendingApplications} pending
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    Posted {new Date(job.postedAt).toLocaleDateString()}
                   </p>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                   job.isActive 
                     ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
                 }`}>
-                  {job.isActive ? 'Active' : 'Draft'}
+                  {job.isActive ? 'Active' : 'Inactive'}
                 </span>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Requests</h2>
-            <button
-              onClick={() => onSectionChange('requests')}
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 text-sm font-medium"
-            >
-              View All
-            </button>
-          </div>
-          <div className="space-y-4">
-            {Array.isArray(requests) && requests.slice(0, 3).map((request: any) => (
-              <div key={request._id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                <div>
-                  <h3 className="font-medium text-gray-900 dark:text-white">{request.employeeId?.name}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{request.jobId?.title}</p>
-                </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  request.status === 'accepted' 
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                    : request.status === 'rejected'
-                    ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                }`}>
-                  {request.status}
-                </span>
-              </div>
-            ))}
-          </div>
+            ))
+          ) : (
+            <p className="text-center text-gray-500 dark:text-gray-400 py-8">No jobs posted yet</p>
+          )}
         </div>
       </div>
     </div>

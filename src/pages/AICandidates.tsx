@@ -5,6 +5,7 @@ import { apiService } from '../services/api';
 export const AICandidates = () => {
   const [selectedJob, setSelectedJob] = useState('');
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
   const [requestMessage, setRequestMessage] = useState('');
   const [jobs, setJobs] = useState<any[]>([]);
@@ -37,8 +38,12 @@ export const AICandidates = () => {
 
   const fetchCandidates = async () => {
     try {
-      const candidatesData = await apiService.getBestCandidates(selectedJob);
-      setCandidates(candidatesData);
+      const response = await apiService.getRecommendedEmployees(selectedJob, 25);
+      setCandidates({
+        matches: response.recommendations || [],
+        total: response.totalCandidates || 0,
+        showing: response.recommendations?.length || 0
+      });
     } catch (error) {
       console.error('Failed to fetch candidates:', error);
       setCandidates({ matches: [], total: 0, showing: 0 });
@@ -62,9 +67,11 @@ export const AICandidates = () => {
   const handleRequestCandidate = (candidate: any) => {
     setSelectedCandidate(candidate);
     const jobTitle = jobs.find((j: any) => j._id === selectedJob)?.title || 'this position';
-    setRequestMessage(`Hi,
+    setRequestMessage(`Hi ${candidate.candidateProfile?.name || 'there'},
 
-I came across your profile and was impressed by your experience. Your background seems like a perfect fit for our ${jobTitle} position.
+I came across your profile and was impressed by your background. We have an exciting opportunity for a ${jobTitle} position that seems like a great match for your skills.
+
+Based on our AI analysis, you have a ${candidate.matchScore.toFixed(1)}% match with this role, particularly in areas like ${candidate.matchingKeywords?.slice(0, 3).join(', ')}.
 
 Would you be interested in learning more about this opportunity?
 
@@ -74,10 +81,12 @@ Best regards`);
 
   const sendRequest = async () => {
     try {
-      await apiService.requestEmployee(selectedJob, selectedCandidate?.resume_id, requestMessage);
+      await apiService.inviteCandidate(selectedJob, selectedCandidate?.userId, requestMessage);
       setShowRequestModal(false);
       setRequestMessage('');
       setSelectedCandidate(null);
+      // Refresh candidates to update invite status
+      fetchCandidates();
     } catch (error) {
       console.error('Failed to send request:', error);
     }
@@ -125,82 +134,137 @@ Best regards`);
       <div className="grid gap-6">
         {Array.isArray(candidates.matches) && candidates.matches.length > 0 ? (
           candidates.matches.map((candidate: any) => (
-          <div key={candidate.resume_id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+              <div key={candidate.userId} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
             <div className="flex items-start justify-between mb-4">
-              <div className="flex items-start space-x-4">
+              <div className="flex items-start space-x-4 flex-1">
                 <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
                   <span className="text-white font-semibold">
-                    {candidate.resume_filename?.charAt(0).toUpperCase() || 'C'}
+                    {candidate.candidateProfile?.name?.charAt(0).toUpperCase() || 'C'}
                   </span>
                 </div>
                 
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {candidate.resume_filename?.replace('.pdf', '').replace(/_/g, ' ') || 'Candidate'}
+                      {candidate.candidateProfile?.name || 'Candidate'}
                     </h3>
-                    <div className={`px-3 py-1 rounded-full ${getScoreBg(candidate.match_score)}`}>
+                    <div className={`px-3 py-1 rounded-full ${getScoreBg(candidate.matchScore / 100)}`}>
                       <div className="flex items-center space-x-1">
                         <Star className="h-4 w-4 text-yellow-500" />
-                        <span className={`font-semibold ${getScoreColor(candidate.match_score)}`}>
-                          {Math.round(candidate.match_score * 100)}%
+                        <span className={`font-semibold ${getScoreColor(candidate.matchScore / 100)}`}>
+                          {candidate.matchScore.toFixed(1)}%
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mb-4">
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Resume Summary:</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">
-                      {candidate.resume_content || 'No resume content available'}
-                    </p>
+                  {candidate.candidateProfile?.email && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{candidate.candidateProfile.email}</p>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div className="text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Skills Match: </span>
+                      <span className="font-semibold text-green-600 dark:text-green-400">
+                        {candidate.skillsMatch.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Experience: </span>
+                      <span className="font-semibold text-blue-600 dark:text-blue-400">
+                        {candidate.experienceMatch.toFixed(1)}%
+                      </span>
+                    </div>
                   </div>
+
+                  {candidate.interviewScores && candidate.interviewScores.totalInterviews > 0 && (
+                    <div className="flex items-center space-x-4 mb-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                      <div className="text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">Interview: </span>
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">
+                          {candidate.interviewScores.overall.toFixed(1)}/10
+                        </span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">Technical: </span>
+                        <span className="font-semibold">{candidate.interviewScores.technical.toFixed(1)}/10</span>
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-500">
+                        {candidate.interviewScores.totalInterviews} interviews
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Matching Skills:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {candidate.matchingKeywords?.slice(0, 6).map((skill: string, index: number) => (
+                        <span key={index} className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 rounded text-sm">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {candidate.suggestions && candidate.suggestions.length > 0 && (
+                    <div className="text-sm text-gray-600 dark:text-gray-400 italic">
+                      💡 {candidate.suggestions[0]}
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="flex items-center space-x-2 ml-4">
-                <button className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">
+                <button 
+                  onClick={() => {
+                    setSelectedCandidate(candidate);
+                    setShowViewModal(true);
+                  }}
+                  className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                  title="View Profile"
+                >
                   <Eye className="h-5 w-5" />
                 </button>
-                <button className="p-2 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400">
+                <button 
+                  onClick={() => window.open(candidate.candidateProfile?.profile?.resumeUrl || '#', '_blank')}
+                  className="p-2 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400"
+                  title="Download Resume"
+                >
                   <Download className="h-5 w-5" />
                 </button>
                 <button
                   onClick={() => handleRequestCandidate(candidate)}
-                  className="flex items-center px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm"
+                  disabled={candidate.hasApplied}
+                  className="flex items-center px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  Request
+                  {candidate.hasApplied ? 'Applied' : 'Request'}
                 </button>
               </div>
             </div>
 
             <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
               <div className="grid md:grid-cols-2 gap-4">
-                {candidate.missing_keywords?.length > 0 && (
+                {candidate.missingSkills?.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Missing Keywords:</h4>
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Skills to Develop:</h4>
                     <div className="flex flex-wrap gap-2">
-                      {candidate.missing_keywords.map((keyword: string, index: number) => (
-                        <span key={index} className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 rounded text-sm">
-                          {keyword}
+                      {candidate.missingSkills.map((skill: string, index: number) => (
+                        <span key={index} className="px-2 py-1 bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 rounded text-sm">
+                          {skill}
                         </span>
                       ))}
                     </div>
                   </div>
                 )}
 
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">AI Suggestions:</h4>
-                  <ul className="space-y-1">
-                    {candidate.suggestions?.slice(0, 2).map((suggestion: string, index: number) => (
-                      <li key={index} className="text-sm text-gray-600 dark:text-gray-400 flex items-start">
-                        <span className="text-purple-500 mr-2">•</span>
-                        {suggestion}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {candidate.hasApplied && (
+                  <div className="flex items-center space-x-2">
+                    <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                      Already Applied
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -222,7 +286,7 @@ Best regards`);
                 </h2>
                 <button
                   onClick={() => setShowRequestModal(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl"
                 >
                   ×
                 </button>
@@ -253,6 +317,142 @@ Best regards`);
                 >
                   Send Request
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showViewModal && selectedCandidate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Candidate Profile
+                </h2>
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex items-start space-x-4">
+                  <div className="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-bold text-2xl">
+                      {selectedCandidate.candidateProfile?.name?.charAt(0).toUpperCase() || 'C'}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {selectedCandidate.candidateProfile?.name || 'Candidate'}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400">{selectedCandidate.candidateProfile?.email}</p>
+                    <p className="text-gray-600 dark:text-gray-400">{selectedCandidate.candidateProfile?.profile?.experience}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-3xl font-bold text-purple-600">{selectedCandidate.matchScore.toFixed(1)}%</div>
+                    <p className="text-sm text-gray-500">Match Score</p>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Match Breakdown</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Skills Match:</span>
+                        <span className="font-semibold text-green-600">{selectedCandidate.skillsMatch.toFixed(1)}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Experience Match:</span>
+                        <span className="font-semibold text-blue-600">{selectedCandidate.experienceMatch.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedCandidate.interviewScores && selectedCandidate.interviewScores.totalInterviews > 0 && (
+                    <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Interview Performance</h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Overall:</span>
+                          <span className="font-semibold">{selectedCandidate.interviewScores.overall.toFixed(1)}/10</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Technical:</span>
+                          <span className="font-semibold">{selectedCandidate.interviewScores.technical.toFixed(1)}/10</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Behavioral:</span>
+                          <span className="font-semibold">{selectedCandidate.interviewScores.behavioral.toFixed(1)}/10</span>
+                        </div>
+                        <div className="text-sm text-gray-500 mt-2">
+                          {selectedCandidate.interviewScores.totalInterviews} interviews completed
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Matching Skills</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedCandidate.matchingKeywords?.map((skill: string, index: number) => (
+                      <span key={index} className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 rounded-full text-sm">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {selectedCandidate.missingSkills?.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Skills to Develop</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedCandidate.missingSkills.map((skill: string, index: number) => (
+                        <span key={index} className="px-3 py-1 bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 rounded-full text-sm">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selectedCandidate.suggestions && selectedCandidate.suggestions.length > 0 && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">AI Insights</h4>
+                    <ul className="space-y-1">
+                      {selectedCandidate.suggestions.map((suggestion: string, index: number) => (
+                        <li key={index} className="text-gray-700 dark:text-gray-300 text-sm">
+                          💡 {suggestion}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={() => setShowViewModal(false)}
+                    className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      handleRequestCandidate(selectedCandidate);
+                    }}
+                    disabled={selectedCandidate.hasApplied}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {selectedCandidate.hasApplied ? 'Already Applied' : 'Send Request'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
