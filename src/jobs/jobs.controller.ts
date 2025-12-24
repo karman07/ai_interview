@@ -46,9 +46,19 @@ export class JobsController {
     return this.jobsService.getAllJobs();
   }
 
+  @Get(':id')
+  getJobById(@Param('id') jobId: string, @CurrentUser() user: any) {
+    return this.jobsService.getJobById(jobId, user.sub);
+  }
+
   @Get('my-applications')
   getMyApplications(@CurrentUser() user: any) {
     return this.jobsService.getMyApplications(user.sub);
+  }
+
+  @Get('applications/:id')
+  getApplicationById(@Param('id') applicationId: string, @CurrentUser() user: any) {
+    return this.jobsService.getApplicationById(applicationId, user.sub);
   }
 
   @Get('my-jobs')

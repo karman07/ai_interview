@@ -3,8 +3,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Job, JobDocument } from './schemas/job.schema';
 import { JobApplication, JobApplicationDocument, ApplicationStatus } from './schemas/job-application.schema';
+import { EmployerRequest, EmployerRequestDocument } from './schemas/employer-request.schema';
+import { User, UserDocument } from '../users/schemas/user.schema';
+import { MessageType } from './schemas/chat.schema';
 import { AiMatcherService } from '../common/services/ai-matcher.service';
 import { EnhancedInterviewService } from '../interview_rounds/services/enhanced-interview.service';
+import { ChatService } from './chat.service';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -15,8 +19,11 @@ export class EnhancedJobService {
   constructor(
     @InjectModel(Job.name) private jobModel: Model<JobDocument>,
     @InjectModel(JobApplication.name) private applicationModel: Model<JobApplicationDocument>,
+    @InjectModel(EmployerRequest.name) private requestModel: Model<EmployerRequestDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     private aiMatcherService: AiMatcherService,
     private interviewService: EnhancedInterviewService,
+    private chatService: ChatService,
   ) {}
 
   async createJob(employerId: string, jobData: {
@@ -252,6 +259,158 @@ export class EnhancedJobService {
       })
       .limit(limit)
       .exec();
+  }
+
+  async getRecommendedEmployees(jobId: string, employerId: string, limit = 10): Promise<any> {
+    const job = await this.jobModel.findOne({ 
+      _id: new Types.ObjectId(jobId), 
+      employerId: new Types.ObjectId(employerId) 
+    });
+
+    if (!job) {
+      throw new NotFoundException('Job not found or unauthorized');
+    }
+
+    try {
+      // Get recommendations from AI matcher service
+      const recommendations = await this.aiMatcherService.getBestResumesForJob(
+        job.description,
+        null,
+        limit
+      );
+
+      console.log('🔍 FULL AI MATCHER RESPONSE:', JSON.stringify(recommendations, null, 2));
+
+      // Handle AI matcher response format
+      let candidates = [];
+      let total = 0;
+
+      if (recommendations && recommendations.matches) {
+        total = recommendations.total || recommendations.matches.length;
+        
+        // Transform AI matches to our format and enrich with user data
+        for (const match of recommendations.matches) {
+          try {
+            // Get user data from database
+            const user = await this.userModel.findById(match.user_id);
+            if (!user) continue;
+
+            // Get interview analytics
+            const analytics = await this.interviewService.getUserAnalytics(match.user_id);
+            
+            // Check if user has already applied
+            const hasApplied = await this.applicationModel.findOne({
+              jobId: new Types.ObjectId(jobId),
+              applicantId: new Types.ObjectId(match.user_id)
+            });
+
+            const enrichedCandidate = {
+              userId: match.user_id,
+              matchScore: match.match_score || 0,
+              skillsMatch: match.match_score || 0, // Use same score for now
+              experienceMatch: match.match_score || 0, // Use same score for now
+              matchingKeywords: match.strengths || [],
+              missingSkills: match.weaknesses || [],
+              suggestions: match.strengths || [],
+              candidateProfile: {
+                name: user.name,
+                email: user.email,
+                profile: {
+                  company: user.company,
+                  industry: user.industry,
+                  jobDescription: user.jobDescription,
+                  resumeUrl: user.resumeUrl
+                }
+              },
+              interviewScores: {
+                overall: analytics?.overall?.bestOverallScore || 0,
+                technical: analytics?.technical?.bestScore || 0,
+                behavioral: analytics?.behavioral?.bestScore || 0,
+                problemSolving: analytics?.problemSolving?.bestScore || 0,
+                hr: analytics?.hr?.bestScore || 0,
+                totalInterviews: analytics?.overall?.totalInterviews || 0,
+                lastInterviewDate: analytics?.overall?.lastInterviewDate
+              },
+              hasApplied: !!hasApplied,
+              inviteSent: false // TODO: Check employer requests
+            };
+
+            candidates.push(enrichedCandidate);
+          } catch (error) {
+            this.logger.warn(`Failed to enrich candidate ${match.user_id}: ${error.message}`);
+          }
+        }
+      }
+
+      return {
+        success: true,
+        recommendations: candidates,
+        totalCandidates: total
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get AI recommendations: ${error.message}`);
+      return {
+        success: false,
+        recommendations: [],
+        totalCandidates: 0,
+        error: 'AI service temporarily unavailable'
+      };
+    }
+  }
+
+  async inviteCandidate(
+    jobId: string,
+    employerId: string,
+    inviteData: {
+      candidateId: string;
+      message?: string;
+      autoApply?: boolean;
+    }
+  ): Promise<any> {
+    const job = await this.jobModel.findOne({ 
+      _id: new Types.ObjectId(jobId), 
+      employerId: new Types.ObjectId(employerId) 
+    });
+
+    if (!job) {
+      throw new NotFoundException('Job not found or unauthorized');
+    }
+
+    // Create employer request
+    const request = new this.requestModel({
+      jobId: new Types.ObjectId(jobId),
+      employerId: new Types.ObjectId(employerId),
+      employeeId: new Types.ObjectId(inviteData.candidateId),
+      message: inviteData.message || `Invitation for ${job.title} position`,
+      status: 'pending'
+    });
+
+    const savedRequest = await request.save();
+
+    // Create or get chat for communication
+    const chat = await this.chatService.createOrGetChat(
+      employerId,
+      inviteData.candidateId,
+      jobId,
+      savedRequest._id.toString()
+    );
+
+    // Send initial message if provided
+    if (inviteData.message) {
+      await this.chatService.sendMessage(
+        chat._id.toString(),
+        employerId,
+        inviteData.message,
+        MessageType.TEXT
+      );
+    }
+
+    return {
+      success: true,
+      request: savedRequest,
+      chatId: chat._id,
+      message: 'Invitation sent successfully'
+    };
   }
 
   private async generateJobDescriptionPDF(job: JobDocument): Promise<string> {

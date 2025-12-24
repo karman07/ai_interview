@@ -60,6 +60,57 @@ export class AIMatchingScore {
   aiRecommendation?: string;
 }
 
+@Schema({ _id: false })
+export class ApplicationDetails {
+  @Prop()
+  phone?: string;
+
+  @Prop()
+  linkedinUrl?: string;
+
+  @Prop()
+  portfolioUrl?: string;
+
+  @Prop()
+  githubUrl?: string;
+
+  @Prop()
+  currentSalary?: number;
+
+  @Prop()
+  expectedSalary?: number;
+
+  @Prop()
+  noticePeriod?: string;
+
+  @Prop()
+  availability?: string;
+
+  @Prop({ type: [String], default: [] })
+  skills: string[];
+
+  @Prop()
+  experience?: string;
+
+  @Prop()
+  education?: string;
+
+  @Prop({ type: [String], default: [] })
+  certifications: string[];
+
+  @Prop({ type: [String], default: [] })
+  languages: string[];
+
+  @Prop()
+  relocateWilling?: boolean;
+
+  @Prop()
+  remoteWork?: boolean;
+
+  @Prop()
+  additionalInfo?: string;
+}
+
 @Schema({ timestamps: true })
 export class JobApplication {
   @Prop({ type: Types.ObjectId, ref: 'Job', required: true })
@@ -81,6 +132,10 @@ export class JobApplication {
   @Prop()
   coverLetter?: string;
 
+  // Enhanced Application Details
+  @Prop({ type: ApplicationDetails })
+  applicationDetails?: ApplicationDetails;
+
   // AI Matching Results
   @Prop({ type: AIMatchingScore })
   aiMatchingScore?: AIMatchingScore;
@@ -97,7 +152,7 @@ export class JobApplication {
   rejectionReason?: string;
 
   // Timeline
-  @Prop()
+  @Prop({ default: Date.now })
   appliedAt: Date;
 
   @Prop()

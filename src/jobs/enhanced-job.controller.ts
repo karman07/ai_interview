@@ -94,6 +94,22 @@ export class EnhancedJobController {
     return this.enhancedJobService.getEmployerJobs(user.sub, filters);
   }
 
+  @Get('employer')
+  @Roles(UserRole.EMPLOYER)
+  async getEmployerJobs(
+    @CurrentUser() user: any,
+    @Query('isActive') isActive?: string,
+    @Query('jobType') jobType?: string,
+    @Query('experienceLevel') experienceLevel?: string
+  ) {
+    const filters: any = {};
+    if (isActive !== undefined) filters.isActive = isActive === 'true';
+    if (jobType) filters.jobType = jobType;
+    if (experienceLevel) filters.experienceLevel = experienceLevel;
+
+    return this.enhancedJobService.getEmployerJobs(user.sub, filters);
+  }
+
   // ==================== APPLICATION MANAGEMENT ====================
 
   @Get(':jobId/applications')
@@ -113,6 +129,30 @@ export class EnhancedJobController {
     @Query('limit') limit = 10
   ) {
     return this.enhancedJobService.getTopCandidates(jobId, user.sub, Number(limit));
+  }
+
+  @Get(':jobId/recommended-employees')
+  @Roles(UserRole.EMPLOYER)
+  async getRecommendedEmployees(
+    @Param('jobId') jobId: string,
+    @CurrentUser() user: any,
+    @Query('limit') limit = 10
+  ) {
+    return this.enhancedJobService.getRecommendedEmployees(jobId, user.sub, Number(limit));
+  }
+
+  @Post(':jobId/invite-candidate')
+  @Roles(UserRole.EMPLOYER)
+  async inviteCandidate(
+    @Param('jobId') jobId: string,
+    @CurrentUser() user: any,
+    @Body() inviteData: {
+      candidateId: string;
+      message?: string;
+      autoApply?: boolean;
+    }
+  ) {
+    return this.enhancedJobService.inviteCandidate(jobId, user.sub, inviteData);
   }
 
   @Put('applications/:applicationId/status')

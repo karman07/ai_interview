@@ -73,6 +73,19 @@ export class AuthController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  async logoutPost(@CurrentUser() user: any, @Res({ passthrough: true }) res: Response) {
+    try {
+      await this.auth.logout(user.sub);
+      res.clearCookie('refresh_token', { path: '/' });
+      return { success: true };
+    } catch (error) {
+      this.logger.error('Logout failed:', error.message);
+      throw new HttpException(error.message || 'Logout failed', HttpStatus.BAD_REQUEST);
+    }
+  }
+
   @Post('refresh')
   async refresh(@Body() body: { userId: string; email: string }, @Res({ passthrough: true }) res: Response) {
     try {

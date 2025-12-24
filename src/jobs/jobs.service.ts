@@ -9,6 +9,7 @@ import { CreateJobDto } from './dto/create-job.dto';
 import { ApplyJobDto } from './dto/apply-job.dto';
 import { CreateEmployerRequestDto, RespondToRequestDto } from './dto/employer-request.dto';
 import { AiMatcherService } from '../common/services/ai-matcher.service';
+import { EnhancedInterviewService } from '../interview_rounds/services/enhanced-interview.service';
 
 @Injectable()
 export class JobsService {
@@ -18,6 +19,7 @@ export class JobsService {
     @InjectModel(EmployerRequest.name) private employerRequestModel: Model<EmployerRequestDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private aiMatcherService: AiMatcherService,
+    private enhancedInterviewService: EnhancedInterviewService,
   ) {}
 
   async createJob(createJobDto: CreateJobDto, employerId: string, descriptionFileUrl?: string): Promise<Job> {
@@ -48,7 +50,26 @@ export class JobsService {
     return this.jobApplicationModel
       .find({ applicantId: new Types.ObjectId(userId) })
       .populate('jobId', 'title description salary location')
+      .populate('employerId', 'name company')
+      .sort({ appliedAt: -1 })
       .exec();
+  }
+
+  async getApplicationById(applicationId: string, userId: string): Promise<JobApplication> {
+    const application = await this.jobApplicationModel
+      .findOne({ 
+        _id: new Types.ObjectId(applicationId),
+        applicantId: new Types.ObjectId(userId)
+      })
+      .populate('jobId', 'title description salary location requirements skills benefits')
+      .populate('employerId', 'name company')
+      .exec();
+
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
+
+    return application;
   }
 
   async getJobsByEmployer(employerId: string): Promise<Job[]> {
@@ -57,6 +78,32 @@ export class JobsService {
 
   async getAllJobs(): Promise<Job[]> {
     return this.jobModel.find({ isActive: true }).populate('employerId', 'name company').exec();
+  }
+
+  async getJobById(jobId: string, userId?: string): Promise<Job> {
+    const job = await this.jobModel
+      .findOne({ _id: new Types.ObjectId(jobId), isActive: true })
+      .populate('employerId', 'name company')
+      .exec();
+
+    if (!job) {
+      throw new NotFoundException('Job not found');
+    }
+
+    // Check if user has applied (if userId provided)
+    let hasApplied = false;
+    if (userId) {
+      const application = await this.jobApplicationModel.findOne({
+        jobId: new Types.ObjectId(jobId),
+        applicantId: new Types.ObjectId(userId)
+      });
+      hasApplied = !!application;
+    }
+
+    return {
+      ...job.toObject(),
+      hasApplied
+    } as any;
   }
 
   async applyForJob(jobId: string, employeeId: string, applyJobDto: ApplyJobDto): Promise<JobApplication> {
@@ -69,12 +116,43 @@ export class JobsService {
       throw new BadRequestException('Already applied for this job');
     }
 
+    const job = await this.jobModel.findById(jobId);
+    if (!job) {
+      throw new NotFoundException('Job not found');
+    }
+
+    const user = await this.userModel.findById(employeeId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     const application = new this.jobApplicationModel({
       jobId: new Types.ObjectId(jobId),
       applicantId: new Types.ObjectId(employeeId),
-      employerId: new Types.ObjectId((await this.jobModel.findById(jobId)).employerId),
-      ...applyJobDto,
+      employerId: new Types.ObjectId(job.employerId),
+      coverLetter: applyJobDto.coverLetter,
+      resumeUrl: user.resumeUrl,
+      appliedAt: new Date(),
+      applicationDetails: {
+        phone: applyJobDto.phone,
+        linkedinUrl: applyJobDto.linkedinUrl,
+        portfolioUrl: applyJobDto.portfolioUrl,
+        githubUrl: applyJobDto.githubUrl,
+        currentSalary: applyJobDto.currentSalary,
+        expectedSalary: applyJobDto.expectedSalary,
+        noticePeriod: applyJobDto.noticePeriod,
+        availability: applyJobDto.availability,
+        skills: applyJobDto.skills || [],
+        experience: applyJobDto.experience,
+        education: applyJobDto.education,
+        certifications: applyJobDto.certifications || [],
+        languages: applyJobDto.languages || [],
+        relocateWilling: applyJobDto.relocateWilling,
+        remoteWork: applyJobDto.remoteWork,
+        additionalInfo: applyJobDto.additionalInfo
+      }
     });
+    
     return application.save();
   }
 
@@ -102,16 +180,150 @@ export class JobsService {
     }
 
     try {
+      // Get AI matcher results
       const aiResults = await this.aiMatcherService.getBestResumesForJob(
         job.description,
         job.descriptionFileUrl ? `.${job.descriptionFileUrl}` : undefined,
         20
       );
-      return aiResults.matches || [];
+      
+      const matches = aiResults.matches || [];
+      
+      // Enhance each match with comprehensive user data
+      const enhancedCandidates = await Promise.all(
+        matches.map(async (match: any) => {
+          try {
+            // Get user details
+            const user = await this.userModel.findById(match.user_id).select('-passwordHash -refreshTokenHash');
+            if (!user) {
+              console.warn(`User not found: ${match.user_id}`);
+              return null;
+            }
+
+            // Get interview analytics
+            let interviewScores = null;
+            try {
+              const analytics = await this.enhancedInterviewService.getUserAnalytics(match.user_id);
+              
+              interviewScores = {
+                overall: analytics.overall.bestOverallScore || 0,
+                technical: analytics.technical.bestScore || 0,
+                behavioral: analytics.behavioral.bestScore || 0,
+                problemSolving: analytics.problemSolving.bestScore || 0,
+                hr: analytics.hr.bestScore || 0,
+                totalInterviews: analytics.overall.totalInterviews || 0,
+                lastInterviewDate: analytics.overall.lastInterviewDate,
+                currentStreak: analytics.overall.currentStreak || 0,
+                averageScore: analytics.overall.overallAverageScore || 0,
+                completedInterviews: analytics.overall.completedInterviews || 0,
+                totalTimeSpent: analytics.overall.totalTimeSpent || 0
+              };
+            } catch (interviewError) {
+              console.warn(`Failed to get interview scores for user ${match.user_id}:`, interviewError.message);
+              // Set default interview scores
+              interviewScores = {
+                overall: 0,
+                technical: 0,
+                behavioral: 0,
+                problemSolving: 0,
+                hr: 0,
+                totalInterviews: 0,
+                lastInterviewDate: null,
+                currentStreak: 0,
+                averageScore: 0,
+                completedInterviews: 0,
+                totalTimeSpent: 0
+              };
+            }
+
+            // Get resume details
+            const resumeDetails = {
+              resumeId: match.resume_id,
+              resumeFilename: match.resume_filename,
+              resumeUrl: user.resumeUrl,
+              uploadedAt: user.updatedAt // Approximate upload time
+            };
+
+            // Check if user has applied to this job
+            const existingApplication = await this.jobApplicationModel.findOne({
+              jobId: new Types.ObjectId(jobId),
+              applicantId: new Types.ObjectId(match.user_id)
+            });
+
+            return {
+              // AI Matcher Data
+              userId: match.user_id,
+              resumeId: match.resume_id,
+              resumeFilename: match.resume_filename,
+              matchScore: match.match_score,
+              strengths: match.strengths || [],
+              weaknesses: match.weaknesses || [],
+              
+              // User Profile Data
+              userProfile: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                company: user.company,
+                industry: user.industry,
+                jobDescription: user.jobDescription,
+                profileImageUrl: user.profileImageUrl,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt
+              },
+              
+              // Resume Details
+              resumeDetails,
+              
+              // Interview Performance
+              interviewScores,
+              
+              // Application Status
+              applicationStatus: existingApplication ? {
+                id: existingApplication._id,
+                status: existingApplication.status,
+                appliedAt: existingApplication.appliedAt,
+                employerNotes: existingApplication.employerNotes
+              } : null,
+              
+              // Computed Fields
+              hasApplied: !!existingApplication,
+              overallRating: this.calculateOverallRating(match.match_score, interviewScores),
+              
+              // Metadata
+              fetchedAt: new Date()
+            };
+          } catch (error) {
+            console.error(`Error enhancing candidate ${match.user_id}:`, error.message);
+            return null;
+          }
+        })
+      );
+      
+      // Filter out null results and sort by overall rating
+      return enhancedCandidates
+        .filter(candidate => candidate !== null)
+        .sort((a, b) => b.overallRating - a.overallRating);
+        
     } catch (error) {
       console.error('AI matcher failed, falling back to basic scoring:', error.message);
       return this.getFallbackBestCandidates(jobId, employerId);
     }
+  }
+  
+  private calculateOverallRating(matchScore: number, interviewScores: any): number {
+    if (!interviewScores || interviewScores.totalInterviews === 0) {
+      return matchScore; // Only AI match score available
+    }
+    
+    // Weighted average: 60% AI match, 40% interview performance
+    const interviewWeight = 0.4;
+    const matchWeight = 0.6;
+    
+    const normalizedInterviewScore = (interviewScores.overall / 10) * 100; // Convert 0-10 to 0-100
+    
+    return Math.round((matchScore * matchWeight) + (normalizedInterviewScore * interviewWeight));
   }
 
   private async getFallbackBestCandidates(jobId: string, employerId: string): Promise<any[]> {

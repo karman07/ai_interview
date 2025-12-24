@@ -42,6 +42,13 @@ export class User {
 
   @Prop()
   googleId?: string;
+
+  // Timestamps (automatically added by Mongoose)
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+// Ensure timestamps are properly typed
+UserSchema.set('timestamps', true);
