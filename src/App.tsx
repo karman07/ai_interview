@@ -43,6 +43,8 @@ import DSADashboard from "./pages/DSA/DSADashboard";
 import DSAQuestionsList from "./pages/DSA/DSAQuestionsList";
 import DSAQuestionSolvePage from "./pages/DSA/DSAQuestionSolvePage";
 import ContactPage from "./pages/contact/ContactPage";
+import JobsPublicPage from "./pages/JobsPublic";
+import EmployeePortal from "./pages/Employee/EmployeePortal";
 
 const RedirectIfLoggedIn = ({ children }: { children: JSX.Element }) => {
   const { user } = useAuth();
@@ -63,6 +65,7 @@ function App() {
     routes.interview,
     routes.resources,
     routes.jobListings,
+    '/employee',
     routes.subjects,
     routes.subjectDetails,
     routes.lessonDetails,
@@ -78,6 +81,7 @@ function App() {
     location.pathname.startsWith("/lessons/") ||
     location.pathname.startsWith("/interview/start/") ||
     location.pathname.startsWith("/interview/room/") ||
+    location.pathname.startsWith("/employee/") ||
     location.pathname.startsWith("/dsa/");
 
   return (
@@ -93,6 +97,7 @@ function App() {
             <Route path={routes.home} element={<Home />} />
             <Route path={routes.about} element={<About />} />
             <Route path={routes.contact} element={<ContactPage />} />
+            <Route path={routes.jobsPublic} element={<JobsPublicPage />} />
             <Route
               path={routes.interview}
               element={
@@ -166,6 +171,9 @@ function App() {
                   </div>
                 }
               />
+
+              {/* Employee Portal - Single Route */}
+              <Route path="/employee" element={<div className="flex min-h-screen"><Sidebar /><div className="flex-1"><EmployeePortal /></div></div>} />
 
               <Route path={routes.profile} element={<Profile />} />
               <Route

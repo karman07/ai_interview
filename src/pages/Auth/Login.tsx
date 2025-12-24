@@ -12,10 +12,11 @@ import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/firebase";
 
 export default function Login() {
-  const { login, googleLogin } = useAuth(); // added googleLogin from context
+  const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const redirect = params.get("redirect") || routes.completeProfile;
+  const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
+  const redirect = params.get("redirect") || redirectAfterLogin || routes.completeProfile;
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
@@ -27,6 +28,7 @@ export default function Login() {
     setLoading(true);
     try {
       await login(form);
+      localStorage.removeItem('redirectAfterLogin');
       navigate(redirect, { replace: true });
     } catch (error: any) {
       setErr(
@@ -37,7 +39,6 @@ export default function Login() {
     }
   };
 
-  // 👇 Google Login handler
   const handleGoogleLogin = async () => {
     setErr(undefined);
     setLoading(true);
@@ -45,9 +46,8 @@ export default function Login() {
       const result = await signInWithPopup(auth, googleProvider);
       const idToken = await result.user.getIdToken();
 
-      // call your NestJS backend via context
       await googleLogin(idToken);
-
+      localStorage.removeItem('redirectAfterLogin');
       navigate(redirect, { replace: true });
     } catch (error: any) {
       console.error("Google login error:", error);

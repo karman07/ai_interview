@@ -4,16 +4,25 @@ import routes from "@/constants/routes";
 import Button from "../ui/button";
 import colors from "@/constants/colors";
 import { useAuth } from "@/contexts/AuthContext";
+import { Moon, Sun } from "lucide-react";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeLink, setActiveLink] = useState(routes.home);
   const [scrolled, setScrolled] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isAuthenticated = !!user || !!localStorage.getItem('access_token');
 
-  // Handle scroll effect
+  useEffect(() => {
+    const saved = localStorage.getItem('theme') as 'light' | 'dark';
+    if (saved) {
+      setTheme(saved);
+      document.documentElement.classList.toggle('dark', saved === 'dark');
+    }
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -22,10 +31,18 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+  };
+
   const navLinks = [
     { to: routes.home, label: "Home" },
     { to: routes.about, label: "About" },
     { to: routes.pricing, label: "Team" },
+    { to: routes.jobsPublic, label: "Jobs" },
     { to: routes.contact, label: "Contact" }
   ];
 
@@ -38,8 +55,8 @@ export default function Navbar() {
   return (
     <nav 
       className={`w-full fixed top-0 z-50 backdrop-blur-md border-b transition-all duration-300 ${
-        scrolled ? 'shadow-lg' : 'shadow-sm'
-      } bg-white/95 dark:bg-gray-900/95 border-gray-200/20 dark:border-gray-700/20`}
+        scrolled ? 'shadow-lg bg-white/95 dark:bg-gray-900/95' : 'shadow-sm bg-white/80 dark:bg-gray-900/80'
+      } border-gray-200/20 dark:border-gray-700/20`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -50,10 +67,7 @@ export default function Navbar() {
             onClick={() => setActiveLink(routes.home)}
           >
             <div 
-              className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold shadow-md transition-all duration-300 group-hover:shadow-lg group-hover:scale-105"
-              style={{ 
-                background: `linear-gradient(135deg, ${colors.primary} 0%, #7c3aed 100%)`
-              }}
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold shadow-md transition-all duration-300 group-hover:shadow-lg group-hover:scale-105 bg-gradient-to-br from-indigo-600 to-purple-600"
             >
               <span className="text-base">AI</span>
             </div>
@@ -76,36 +90,47 @@ export default function Navbar() {
                 onClick={() => setActiveLink(link.to)}
                 className={`relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
                   activeLink === link.to 
-                    ? 'text-indigo-600 dark:text-indigo-400' 
+                    ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' 
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
                 }`}
               >
                 {link.label}
                 {activeLink === link.to && (
                   <span 
-                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
-                    style={{ backgroundColor: colors.primary }}
+                    className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-indigo-600 dark:bg-indigo-400"
                   />
                 )}
               </Link>
             ))}
           </div>
 
-          {/* Desktop Auth Buttons */}
+          {/* Desktop Auth Buttons + Theme Toggle */}
           <div className="hidden md:flex items-center space-x-3">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 group"
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? (
+                <Moon className="w-5 h-5 text-gray-600 group-hover:text-indigo-600 transition-colors" />
+              ) : (
+                <Sun className="w-5 h-5 text-gray-400 group-hover:text-yellow-500 transition-colors" />
+              )}
+            </button>
+            
             {isAuthenticated ? (
               <>
                 <Button 
                   variant="ghost"
                   onClick={() => navigate(routes.dashboard)}
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   Dashboard
                 </Button>
                 <Button 
                   variant="outline"
                   onClick={handleLogout}
-                  className="text-sm font-medium border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-500"
+                  className="text-sm font-medium border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 dark:hover:border-red-500 transition-all"
                 >
                   Logout
                 </Button>
@@ -114,17 +139,14 @@ export default function Navbar() {
               <>
                 <Button 
                   variant="ghost"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   onClick={() => navigate('/login')}
                 >
                   Login
                 </Button>
                 <Button 
                   variant="primary"
-                  className="text-sm font-medium shadow-sm hover:shadow"
-                  style={{
-                    background: `linear-gradient(135deg, ${colors.primary} 0%, #7c3aed 100%)`
-                  }}
+                  className="text-sm font-medium shadow-sm hover:shadow-lg bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 hover:from-indigo-700 hover:to-purple-700 dark:hover:from-indigo-600 dark:hover:to-purple-600 text-white transition-all"
                   onClick={() => navigate('/signup')}
                 >
                   Get Started
@@ -184,6 +206,19 @@ export default function Navbar() {
               </Link>
             ))}
             
+            {/* Mobile Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg font-medium text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <span>Theme</span>
+              {theme === 'light' ? (
+                <Moon className="w-5 h-5" />
+              ) : (
+                <Sun className="w-5 h-5" />
+              )}
+            </button>
+            
             {/* Mobile Auth Buttons */}
             <div className="pt-3 mt-3 border-t border-gray-100 dark:border-gray-700 space-y-2">
               {isAuthenticated ? (
@@ -194,7 +229,7 @@ export default function Navbar() {
                       navigate(routes.dashboard);
                       setIsMenuOpen(false);
                     }}
-                    className="w-full text-sm font-medium border-gray-200 text-gray-700 hover:bg-gray-50"
+                    className="w-full text-sm font-medium border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all"
                   >
                     Dashboard
                   </Button>
@@ -204,7 +239,7 @@ export default function Navbar() {
                       handleLogout();
                       setIsMenuOpen(false);
                     }}
-                    className="w-full text-sm font-medium border-gray-200 text-gray-700 hover:bg-gray-50"
+                    className="w-full text-sm font-medium border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 dark:hover:border-red-500 transition-all"
                   >
                     Logout
                   </Button>
@@ -217,7 +252,7 @@ export default function Navbar() {
                       navigate('/login');
                       setIsMenuOpen(false);
                     }}
-                    className="w-full text-sm font-medium border-gray-200 text-gray-700 hover:bg-gray-50"
+                    className="w-full text-sm font-medium border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all"
                   >
                     Login
                   </Button>
@@ -227,10 +262,7 @@ export default function Navbar() {
                       navigate('/signup');
                       setIsMenuOpen(false);
                     }}
-                    className="w-full text-sm font-medium"
-                    style={{
-                      background: `linear-gradient(135deg, ${colors.primary} 0%, #7c3aed 100%)`
-                    }}
+                    className="w-full text-sm font-medium bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 hover:from-indigo-700 hover:to-purple-700 dark:hover:from-indigo-600 dark:hover:to-purple-600 text-white transition-all"
                   >
                     Get Started
                   </Button>

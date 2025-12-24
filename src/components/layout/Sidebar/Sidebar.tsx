@@ -7,6 +7,11 @@ import {
   Target,
   Layers,
   Briefcase,
+  FileText,
+  Calendar,
+  MessageSquare,
+  Mail,
+  User,
   X,
   Menu,
   Moon,
@@ -40,7 +45,6 @@ const sidebarRoutes = [
         description: "Resources & study materials",
         path: "/subjects",
       },
-   
       {
         label: "Resources",
         icon: <Layers size={18} />,
@@ -48,10 +52,10 @@ const sidebarRoutes = [
         path: "/resources",
       },
       {
-        label: "Job Search",
+        label: "Job Portal",
         icon: <Briefcase size={18} />,
-        description: "Job Search",
-        path: "/jobs",
+        description: "Browse jobs & applications",
+        path: "/employee",
       },
     ],
   },
