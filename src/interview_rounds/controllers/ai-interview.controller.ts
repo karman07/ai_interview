@@ -4,6 +4,9 @@ import { AiInterviewApiService } from '../services/ai-interview-api.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { TimeoutInterceptor } from 'src/common/interceptors/timeout.interceptor';
 import { StartInterviewWithResumeDto } from '../dto/start-interview-with-resume.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Resume, ResumeDocument } from '../../resume/resume.schema';
 import * as multer from 'multer';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -40,7 +43,44 @@ const resumeStorage = multer.diskStorage({
 export class AiInterviewController {
   private readonly logger = new Logger(AiInterviewController.name);
   
-  constructor(private readonly aiInterviewApi: AiInterviewApiService) {}
+  constructor(
+    private readonly aiInterviewApi: AiInterviewApiService,
+    @InjectModel(Resume.name) private resumeModel: Model<ResumeDocument>,
+  ) {}
+
+  // Get user's best CV based on highest overall score
+  private async getBestUserCV(userId: string): Promise<{ path: string; filename: string } | null> {
+    try {
+      const resumes = await this.resumeModel.find({ user: userId }).sort({ createdAt: -1 });
+      
+      if (!resumes.length) return null;
+      
+      // Find resume with highest overall score
+      let bestResume = resumes[0];
+      let highestScore = 0;
+      
+      for (const resume of resumes) {
+        const overallScore = resume.stats?.overall_score || resume.stats?.score || 0;
+        if (overallScore > highestScore) {
+          highestScore = overallScore;
+          bestResume = resume;
+        }
+      }
+      
+      // Check if file exists
+      if (fs.existsSync(bestResume.path)) {
+        return {
+          path: bestResume.path,
+          filename: bestResume.filename
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting best CV:', error);
+      return null;
+    }
+  }
 
   /**
    * POST /ai-interview/start
@@ -61,9 +101,24 @@ export class AiInterviewController {
       round_type: 'technical' | 'behavioral' | 'hr' | 'full';
     },
   ) {
+    const userId = req.user?.userId || req.user?.sub || payload.user_id;
+    console.log(`🤖 AI Interview API started - start endpoint called for user: ${userId}`);
+    console.log('📋 Request data:', JSON.stringify(payload, null, 2));
     try {
-      const userId = req.user?.userId || req.user?.sub || payload.user_id;
-      return await this.aiInterviewApi.startInterview({ ...payload, user_id: userId });
+      // Always get best CV from database
+      const bestCV = await this.getBestUserCV(userId);
+      let cvContent = '';
+      
+      if (bestCV) {
+        cvContent = bestCV.path;
+        console.log('📄 Using best CV from database:', bestCV.filename);
+      }
+      
+      return await this.aiInterviewApi.startInterview({ 
+        ...payload, 
+        user_id: userId,
+        cv: cvContent
+      });
     } catch (error) {
       this.logger.error('Start interview failed:', error.message);
       throw new HttpException(error.message || 'Failed to start interview', HttpStatus.BAD_REQUEST);
@@ -84,18 +139,22 @@ export class AiInterviewController {
     @UploadedFile() resumeFile: Express.Multer.File,
     @Body() payload: StartInterviewWithResumeDto,
   ) {
+    const userId = req.user?.userId || req.user?.sub || payload.user_id;
+    console.log(`🤖 AI Interview API started - start-with-resume endpoint called for user: ${userId}`);
+    console.log('📋 Request data:', JSON.stringify(payload, null, 2));
+    console.log('📄 Resume file:', resumeFile ? resumeFile.originalname : 'No file uploaded');
     try {
-      const userId = req.user?.userId || req.user?.sub || payload.user_id;
+      let cvContent = '';
       
-      let cvContent = payload.cv || '';
-      
-      // If resume file is uploaded, read its content
       if (resumeFile) {
-        try {
-          cvContent = fs.readFileSync(resumeFile.path, 'utf8');
-        } catch (error) {
-          // If it's a PDF or other binary format, use the file path
-          cvContent = resumeFile.path;
+        cvContent = resumeFile.path;
+        console.log('📄 Using uploaded resume file:', resumeFile.originalname);
+      } else {
+        // Get best CV from database if no file uploaded
+        const bestCV = await this.getBestUserCV(userId);
+        if (bestCV) {
+          cvContent = bestCV.path;
+          console.log('📄 Using best CV from database:', bestCV.filename);
         }
       }
       
@@ -119,12 +178,23 @@ export class AiInterviewController {
     @Request() req,
     @Body() payload: StartInterviewWithResumeDto,
   ) {
+    const userId = req.user?.userId || req.user?.sub || payload.user_id;
+    console.log(`🤖 AI Interview API started - start-with-cv-text endpoint called for user: ${userId}`);
+    console.log('📋 Request data:', JSON.stringify(payload, null, 2));
     try {
-      const userId = req.user?.userId || req.user?.sub || payload.user_id;
+      // Always get best CV from database
+      const bestCV = await this.getBestUserCV(userId);
+      let cvContent = '';
+      
+      if (bestCV) {
+        cvContent = bestCV.path;
+        console.log('📄 Using best CV from database:', bestCV.filename);
+      }
       
       return await this.aiInterviewApi.startInterview({
         ...payload,
-        user_id: userId
+        user_id: userId,
+        cv: cvContent
       });
     } catch (error) {
       this.logger.error('Start interview with CV text failed:', error.message);
@@ -233,6 +303,8 @@ export class AiInterviewController {
       jd_file_id?: string;
     },
   ) {
+    console.log(`🤖 AI Interview API started - session/create endpoint called`);
+    console.log('📋 Request data:', JSON.stringify(payload, null, 2));
     try {
       return await this.aiInterviewApi.createSession(payload);
     } catch (error) {

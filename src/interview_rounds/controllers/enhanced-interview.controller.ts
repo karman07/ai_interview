@@ -21,6 +21,8 @@ export class EnhancedInterviewController {
     },
     @CurrentUser() user: any
   ) {
+    console.log(`🚀 Interview Rounds API started - start endpoint called for user: ${user.sub}`);
+    console.log('📋 Request data:', JSON.stringify(body, null, 2));
     return this.interviewService.startSession({
       userId: user.sub,
       ...body,

@@ -3,13 +3,50 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { InterviewSession, InterviewSessionDocument, InterviewRound, SessionStatus } from '../schemas/interview-session.schema';
 import { UserInterviewAnalytics, UserInterviewAnalyticsDocument } from '../schemas/user-interview-analytics.schema';
+import { Resume, ResumeDocument } from '../../resume/resume.schema';
+import * as fs from 'fs';
 
 @Injectable()
 export class EnhancedInterviewService {
   constructor(
     @InjectModel(InterviewSession.name) private sessionModel: Model<InterviewSessionDocument>,
     @InjectModel(UserInterviewAnalytics.name) private analyticsModel: Model<UserInterviewAnalyticsDocument>,
+    @InjectModel(Resume.name) private resumeModel: Model<ResumeDocument>,
   ) {}
+
+  // Get user's best CV based on highest overall score
+  private async getBestUserCV(userId: string): Promise<{ path: string; filename: string } | null> {
+    try {
+      const resumes = await this.resumeModel.find({ user: userId }).sort({ createdAt: -1 });
+      
+      if (!resumes.length) return null;
+      
+      // Find resume with highest overall score
+      let bestResume = resumes[0];
+      let highestScore = 0;
+      
+      for (const resume of resumes) {
+        const overallScore = resume.stats?.overall_score || resume.stats?.score || 0;
+        if (overallScore > highestScore) {
+          highestScore = overallScore;
+          bestResume = resume;
+        }
+      }
+      
+      // Check if file exists
+      if (fs.existsSync(bestResume.path)) {
+        return {
+          path: bestResume.path,
+          filename: bestResume.filename
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting best CV:', error);
+      return null;
+    }
+  }
 
   async startSession(data: {
     userId: string;
@@ -20,6 +57,9 @@ export class EnhancedInterviewService {
     experience?: string;
     industry?: string;
   }): Promise<InterviewSessionDocument> {
+    console.log(`🚀 Interview Rounds API started - startSession called for user: ${data.userId}`);
+    const bestCV = await this.getBestUserCV(data.userId);
+    
     const sessionId = `${data.round}-${data.userId}-${Date.now()}`;
     
     const session = new this.sessionModel({
@@ -38,7 +78,13 @@ export class EnhancedInterviewService {
     const savedSession = await session.save();
     await this.updateAnalytics(data.userId, 'session_started', { round: data.round });
     
-    return savedSession;
+    return {
+      ...savedSession.toObject(),
+      bestCV: bestCV ? {
+        filename: bestCV.filename,
+        path: bestCV.path
+      } : null
+    } as any;
   }
 
   async addQuestionAnswer(

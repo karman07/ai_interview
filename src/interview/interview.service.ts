@@ -5,6 +5,8 @@ import { Model, Types } from 'mongoose';
 import { firstValueFrom } from 'rxjs';
 import { CreateInterviewDto } from './dto/create-interview.dto';
 import { Result, ResultDocument } from '../results/schemas/result.schema';
+import { Resume, ResumeDocument } from '../resume/resume.schema';
+import * as fs from 'fs';
 
 @Injectable()
 export class InterviewService {
@@ -15,6 +17,7 @@ export class InterviewService {
   constructor(
     private readonly http: HttpService,
     @InjectModel(Result.name) private resultModel: Model<ResultDocument>,
+    @InjectModel(Resume.name) private resumeModel: Model<ResumeDocument>,
   ) {
     this.apiKey = process.env.GEMINI_API_KEY ?? '';
     this.model = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash';
@@ -68,8 +71,44 @@ ${dto.questions.map((q, i) => `${i + 1}. Q: ${q} A: ${dto.answers?.[i] ?? ''}`).
 `;
   }
 
+  // Get user's best CV based on highest overall score
+  private async getBestUserCV(userId: string): Promise<{ path: string; filename: string } | null> {
+    try {
+      const resumes = await this.resumeModel.find({ user: userId }).sort({ createdAt: -1 });
+      
+      if (!resumes.length) return null;
+      
+      // Find resume with highest overall score
+      let bestResume = resumes[0];
+      let highestScore = 0;
+      
+      for (const resume of resumes) {
+        const overallScore = resume.stats?.overall_score || resume.stats?.score || 0;
+        if (overallScore > highestScore) {
+          highestScore = overallScore;
+          bestResume = resume;
+        }
+      }
+      
+      // Check if file exists
+      if (fs.existsSync(bestResume.path)) {
+        return {
+          path: bestResume.path,
+          filename: bestResume.filename
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting best CV:', error);
+      return null;
+    }
+  }
+
   // Generate interview questions
   async generate(ownerId: string, dto: CreateInterviewDto) {
+    console.log(`🚀 Interview API started - generate endpoint called for user: ${ownerId}`);
+    const bestCV = await this.getBestUserCV(ownerId);
     const url = `${this.baseUrl}/models/${this.model}:generateContent?key=${this.apiKey}`;
     const prompt = this.buildQuestionPrompt(dto);
 
@@ -89,7 +128,14 @@ ${dto.questions.map((q, i) => `${i + 1}. Q: ${q} A: ${dto.answers?.[i] ?? ''}`).
         parsed = { questions: [] };
       }
 
-      return { raw: text, structured: parsed };
+      return { 
+        raw: text, 
+        structured: parsed,
+        bestCV: bestCV ? {
+          filename: bestCV.filename,
+          path: bestCV.path
+        } : null
+      };
     } catch (e: any) {
       throw new InternalServerErrorException({
         message: 'Gemini question generation failed',
@@ -100,6 +146,8 @@ ${dto.questions.map((q, i) => `${i + 1}. Q: ${q} A: ${dto.answers?.[i] ?? ''}`).
 
   // Run full interview (evaluation + save)
   async run(ownerId: string, dto: CreateInterviewDto) {
+    console.log(`🚀 Interview API started - run endpoint called for user: ${ownerId}`);
+    const bestCV = await this.getBestUserCV(ownerId);
     const url = `${this.baseUrl}/models/${this.model}:generateContent?key=${this.apiKey}`;
     const prompt = this.buildEvaluationPrompt(dto);
 
@@ -126,7 +174,15 @@ ${dto.questions.map((q, i) => `${i + 1}. Q: ${q} A: ${dto.answers?.[i] ?? ''}`).
         rawOutput: text,
       });
 
-      return created.save();
+      const savedResult = await created.save();
+      
+      return {
+        ...savedResult.toObject(),
+        bestCV: bestCV ? {
+          filename: bestCV.filename,
+          path: bestCV.path
+        } : null
+      };
     } catch (e: any) {
       throw new InternalServerErrorException({
         message: 'Gemini evaluation failed',

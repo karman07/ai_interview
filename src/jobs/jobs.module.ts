@@ -12,6 +12,7 @@ import { JobApplication, JobApplicationSchema } from './schemas/job-application.
 import { EmployerRequest, EmployerRequestSchema } from './schemas/employer-request.schema';
 import { Chat, ChatSchema } from './schemas/chat.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
+import { Resume, ResumeSchema } from '../resume/resume.schema';
 import { AiMatcherService } from '../common/services/ai-matcher.service';
 import { EnhancedInterviewService } from '../interview_rounds/services/enhanced-interview.service';
 import { InterviewSession, InterviewSessionSchema } from '../interview_rounds/schemas/interview-session.schema';
@@ -25,6 +26,7 @@ import { UserInterviewAnalytics, UserInterviewAnalyticsSchema } from '../intervi
       { name: EmployerRequest.name, schema: EmployerRequestSchema },
       { name: Chat.name, schema: ChatSchema },
       { name: User.name, schema: UserSchema },
+      { name: Resume.name, schema: ResumeSchema },
       { name: InterviewSession.name, schema: InterviewSessionSchema },
       { name: UserInterviewAnalytics.name, schema: UserInterviewAnalyticsSchema },
     ]),

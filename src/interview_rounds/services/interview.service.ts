@@ -48,6 +48,7 @@ export class InterviewService {
     jobDescription?: string;
     experience?: string;
   }): Promise<InterviewDocument> {
+    console.log(`🚀 Interview Service - startWithContext called for user: ${data.userId}`);
     const rec = await this.interviewModel.create({
       userId: data.userId,
       round: data.round,

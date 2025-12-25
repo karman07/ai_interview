@@ -20,6 +20,8 @@ export class InterviewController {
       experience?: string;
     },
   ) {
+    console.log(`🚀 Interview Rounds API started - start endpoint called for user: ${body.userId}`);
+    console.log('📋 Request data:', JSON.stringify(body, null, 2));
     return this.interviewService.startWithContext(body);
   }
 

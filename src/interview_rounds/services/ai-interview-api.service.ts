@@ -1,6 +1,8 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance, AxiosError } from 'axios';
+import FormData = require('form-data');
+import * as fs from 'fs';
 
 export interface StartInterviewPayload {
   user_id: string;
@@ -106,8 +108,41 @@ export class AiInterviewApiService {
   async startInterview(payload: StartInterviewPayload): Promise<any> {
     try {
       const endpoint = this.configService.get<string>('AI_INTERVIEW_START_ENDPOINT', '/start');
-      const response = await this.axiosInstance.post(endpoint, payload);
-      return response.data;
+      
+      // If CV is a file path, send as multipart form data
+      if (payload.cv && fs.existsSync(payload.cv)) {
+        console.log('📤 Sending CV file to AI interview service:', payload.cv);
+        
+        const formData = new FormData();
+        formData.append('user_id', payload.user_id);
+        formData.append('session_id', payload.session_id);
+        formData.append('role_title', payload.role_title);
+        formData.append('company_name', payload.company_name);
+        formData.append('industry', payload.industry);
+        formData.append('jd', payload.jd);
+        formData.append('round_type', payload.round_type);
+        
+        // Append CV file
+        formData.append('cv_file', fs.createReadStream(payload.cv), {
+          filename: payload.cv.split('/').pop() || 'resume.pdf',
+          contentType: 'application/pdf',
+        });
+        
+        const response = await this.axiosInstance.post(endpoint, formData, {
+          headers: {
+            ...formData.getHeaders(),
+            'Accept': 'application/json',
+          },
+          maxBodyLength: Infinity,
+          maxContentLength: Infinity,
+        });
+        
+        return response.data;
+      } else {
+        // Send as JSON if CV is text or not provided
+        const response = await this.axiosInstance.post(endpoint, payload);
+        return response.data;
+      }
     } catch (error) {
       this.logger.error('Failed to start interview session', error);
       throw new HttpException(

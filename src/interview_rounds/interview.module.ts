@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Interview, InterviewSchema } from './schemas/interview.schema';
 import { InterviewSession, InterviewSessionSchema } from './schemas/interview-session.schema';
 import { UserInterviewAnalytics, UserInterviewAnalyticsSchema } from './schemas/user-interview-analytics.schema';
+import { Resume, ResumeSchema } from '../resume/resume.schema';
 import { InterviewService } from './services/interview.service';
 import { EnhancedInterviewService } from './services/enhanced-interview.service';
 import { AiInterviewApiService } from './services/ai-interview-api.service';
@@ -25,6 +26,7 @@ import { ProblemSolvingGateway } from './gateways/problemsolving.gateway';
       { name: Interview.name, schema: InterviewSchema },
       { name: InterviewSession.name, schema: InterviewSessionSchema },
       { name: UserInterviewAnalytics.name, schema: UserInterviewAnalyticsSchema },
+      { name: Resume.name, schema: ResumeSchema },
     ]),
   ],
   providers: [
