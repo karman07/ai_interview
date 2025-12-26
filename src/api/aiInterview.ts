@@ -6,8 +6,10 @@ export interface StartInterviewRequest {
   role_title: string;
   company_name: string;
   industry: string;
-  jd: string;
+  jd?: string;
   cv?: string;
+  cv_id?: string;
+  jd_id?: string;
   round_type: 'technical' | 'behavioral' | 'hr' | 'full';
 }
 
@@ -30,10 +32,33 @@ export interface SubmitAnswerRequest {
 }
 
 export interface Evaluation {
-  clarity: number;
-  confidence: number;
-  technical_depth: number;
-  summary: string;
+  score: number;
+  feedback: string;
+  suggestions: string[];
+  breakdown: {
+    relevance: number;
+    depth: number;
+    structure: number;
+    examples: number;
+    technical: number;
+    alignment: number;
+    fluency?: number;
+    clarity?: number;
+    confidence?: number;
+    pace?: number;
+  };
+  voice_metrics?: {
+    duration: number;
+    speech_rate: number;
+    avg_pitch: number;
+    pitch_variation: number;
+    avg_energy: number;
+    pause_ratio: number;
+    speech_segments: number;
+  };
+  total_possible: number;
+  transcribed_text?: string;
+  has_audio?: boolean;
 }
 
 export interface HistoryItem {
@@ -63,6 +88,8 @@ export interface SubmitAnswerResponse {
   evaluation: Evaluation;
   next_question: string | null;
   state: InterviewState;
+  has_next_question: boolean;
+  interview_status: 'active' | 'completed';
 }
 
 export interface AverageScores {
@@ -129,12 +156,21 @@ export const startInterviewWithResume = async (
 };
 
 /**
- * Submit an answer to the current question
+ * Submit an answer with audio file
  */
 export const submitAnswer = async (
-  data: SubmitAnswerRequest
+  userId: string,
+  sessionId: string,
+  audioFile: File
 ): Promise<SubmitAnswerResponse> => {
-  const response = await axios.post('/ai-interview/answer', data);
+  const formData = new FormData();
+  formData.append('user_id', userId);
+  formData.append('session_id', sessionId);
+  formData.append('audio_file', audioFile);
+  
+  const response = await axios.post('/ai-interview/answer', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
   return response.data;
 };
 
