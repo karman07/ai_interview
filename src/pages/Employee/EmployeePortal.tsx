@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Briefcase, FileText, Calendar, MessageSquare, Mail, TrendingUp, Award, Clock, CheckCircle, MapPin, DollarSign, Building2, ArrowLeft, Search, Filter, Bookmark, Grid3x3, List } from 'lucide-react';
+import { Briefcase, FileText, Calendar, MessageSquare, Mail, TrendingUp, Clock, MapPin, DollarSign, ArrowLeft, Search, Bookmark, Grid3x3, List } from 'lucide-react';
 import { employeeService } from '../../services/employeeService';
 
 const EmployeePortal = () => {
@@ -11,7 +11,6 @@ const EmployeePortal = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [coverLetter, setCoverLetter] = useState('');
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [showApplyPage, setShowApplyPage] = useState(false);
   const [bookmarked, setBookmarked] = useState<Set<string>>(new Set());

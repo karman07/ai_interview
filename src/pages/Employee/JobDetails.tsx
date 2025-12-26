@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Briefcase, MapPin, DollarSign, Clock, Building2, CheckCircle, ArrowLeft } from 'lucide-react';
+import { MapPin, DollarSign, Clock, Building2, CheckCircle, ArrowLeft } from 'lucide-react';
 
 const JobDetails = () => {
   const { jobId } = useParams();

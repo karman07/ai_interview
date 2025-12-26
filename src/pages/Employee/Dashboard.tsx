@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, FileText, Calendar, TrendingUp, MessageSquare, Award, Clock, CheckCircle } from 'lucide-react';
+import { Briefcase, FileText, Calendar, TrendingUp, MessageSquare, Award, Clock } from 'lucide-react';
 
 const EmployeeDashboard = () => {
   const [stats, setStats] = useState<any>(null);

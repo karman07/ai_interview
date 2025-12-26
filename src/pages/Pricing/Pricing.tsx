@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Github, Linkedin, Twitter, Globe, Users, Heart, Zap, Target } from 'lucide-react';
 import Mee from '../../assets/mee.png';
 import GG from '../../assets/gg.jpeg';

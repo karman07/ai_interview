@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Video, Mic, MicOff, Square, Upload, Loader2, Play } from 'lucide-react';
+import { Video, Mic, MicOff, Square, Upload, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import http from '@/api/http';
 

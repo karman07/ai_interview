@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, MapPin, DollarSign, Clock, Search, Filter } from 'lucide-react';
+import { Briefcase, MapPin, DollarSign, Clock, Search } from 'lucide-react';
 
 const EmployeeJobs = () => {
   const [jobs, setJobs] = useState<any[]>([]);

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { FileText } from 'lucide-react';
 
 const Applications = () => {
   const navigate = useNavigate();

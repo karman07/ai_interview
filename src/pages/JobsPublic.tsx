@@ -97,7 +97,7 @@ const JobsPublicPage = () => {
     }
   };
 
-  const handleApply = (job: Job) => {
+  const handleApply = () => {
     if (!isAuthenticated) {
       localStorage.setItem('redirectAfterLogin', '/jobs');
       navigate(routes.login);

@@ -10,7 +10,7 @@ interface InterviewRecorderProps {
   onNextQuestion: () => void;
 }
 
-const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSubmit, onNextQuestion }) => {
+const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSubmit }) => {
   const { user } = useAuth();
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);

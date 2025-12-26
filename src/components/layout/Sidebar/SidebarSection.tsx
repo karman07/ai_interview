@@ -1,5 +1,4 @@
 import { ReactNode } from "react";
-import colors from "@/constants/colors";
 
 interface SidebarSectionProps {
   title?: string;
