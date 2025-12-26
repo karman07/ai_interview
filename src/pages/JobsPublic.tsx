@@ -198,7 +198,7 @@ const JobsPublicPage = () => {
                     
                     <div className="flex flex-col gap-2 md:ml-4">
                       <button
-                        onClick={() => handleApply(job)}
+                        onClick={() => handleApply()}
                         className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 hover:from-indigo-700 hover:to-purple-700 dark:hover:from-indigo-600 dark:hover:to-purple-600 text-white font-semibold rounded-xl transition-all hover:shadow-lg hover:scale-105 flex items-center justify-center gap-2"
                       >
                         {!isAuthenticated && <Lock className="w-4 h-4" />}
