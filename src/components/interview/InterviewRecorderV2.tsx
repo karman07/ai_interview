@@ -139,6 +139,30 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
     }
   };
 
+  const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
+    return new Promise((resolve) => {
+      const recognition = new (window as any).webkitSpeechRecognition() || new (window as any).SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        resolve(transcript);
+      };
+
+      recognition.onerror = () => {
+        resolve('');
+      };
+
+      recognition.start();
+      audio.play();
+    });
+  };
+
   const uploadResponse = async (audioBlob: Blob) => {
     if (!audioBlob || !user) return;
     
@@ -146,11 +170,32 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
     setError('');
     
     try {
-      const audioFile = new File([audioBlob], `answer_${Date.now()}.wav`, { type: 'audio/wav' });
+      // Transcribe audio locally
+      const localTranscript = await transcribeAudio(audioBlob);
+      console.log('Local transcription:', localTranscript);
+      
+      // Convert webm to wav format
+      const audioFile = new File([audioBlob], `answer_${Date.now()}.wav`, { 
+        type: 'audio/wav' 
+      });
+      
+      console.log('Audio file details:', {
+        name: audioFile.name,
+        type: audioFile.type,
+        size: audioFile.size,
+        transcription: localTranscript
+      });
       
       const response = await submitAnswer(user._id, sessionId, audioFile);
       
+      console.log('Full API response:', response);
+      
       if (response) {
+        const transcribedText = localTranscript || 
+                               response.evaluation?.transcribed_text || 
+                               response.transcribed_text || 
+                               response.state?.history?.[response.state.history.length - 1]?.transcribed_text;
+        console.log('Final transcribed text:', transcribedText || 'No transcription available');
         onSubmit(response);
       }
     } catch (error: any) {

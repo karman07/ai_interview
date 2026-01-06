@@ -6,32 +6,53 @@ import { Textarea } from "@/components/ui/Textarea";
 import Button from "@/components/ui/button";
 import { 
   Briefcase, Building2, FileText, Layers, Loader2, ArrowRight,
-  Users, Code, Lightbulb, MessageCircle, Upload, CheckCircle2,
+  Users, Code, Lightbulb, MessageCircle,
   Award, BarChart3, Eye
 } from "lucide-react";
 import { InterviewAnalyticsApi, type Analytics, type RoundStats } from "@/api/interviewAnalytics";
+import http from "@/api/http";
 
 interface InterviewDetails {
   role: string;
   company: string;
   jobDescription: string;
   experience: string;
-  cvFile?: File;
-  jdFile?: File;
+  cvId?: string;
+  jdId?: string;
+}
+
+interface UserFile {
+  id: string;
+  name: string;
+  url: string;
 }
 
 export default function InterviewStart() {
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
   const [details, setDetails] = useState<InterviewDetails>({
-    role: "", company: "", jobDescription: "", experience: "", cvFile: undefined, jdFile: undefined,
+    role: "", company: "", jobDescription: "", experience: "", cvId: undefined, jdId: undefined,
   });
   const [loading, setLoading] = useState(false);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [resumes, setResumes] = useState<UserFile[]>([]);
+  const [jobDescriptions, setJobDescriptions] = useState<UserFile[]>([]);
 
   useEffect(() => {
     InterviewAnalyticsApi.getAnalytics().then(setAnalytics).catch(console.error);
+    fetchUserFiles();
   }, []);
+
+  const fetchUserFiles = async () => {
+    try {
+      const { data } = await http.get('/resume/files');
+      console.log('Resume/JD API Response:', data);
+      setResumes(data.resumes || []);
+      setJobDescriptions(data.jobDescriptions || []);
+    } catch (error) {
+      console.error('Failed to fetch user files:', error);
+    }
+  };
 
   const types = {
     technical: { icon: <Code className="w-6 h-6" />, color: "from-blue-500 to-blue-600", title: "Technical Round" },
@@ -50,24 +71,11 @@ export default function InterviewStart() {
       alert("Please fill in all fields"); return;
     }
     setLoading(true);
-    localStorage.setItem("interview_details", JSON.stringify({ ...details, industry: 'Technology', hasCV: !!details.cvFile, hasJD: !!details.jdFile }));
+    localStorage.setItem("interview_details", JSON.stringify({ ...details, industry: 'Technology', hasCV: !!details.cvId, hasJD: !!details.jdId }));
     setTimeout(() => navigate(`/interview/room/${type}`), 500);
   };
 
-  const FileUpload = ({ file, setFile, label }: { file: File | null; setFile: (f: File | null) => void; label: string }) => (
-    <div className="border-2 border-dashed rounded-lg p-4 text-center bg-white dark:bg-gray-800">
-      <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-      <input type="file" accept=".pdf,.doc,.docx,.txt" className="hidden" id={`${label}-upload`} 
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) setFile(f); }} />
-      {file ? (
-        <div><CheckCircle2 className="w-4 h-4 inline text-green-600" /> <span className="text-sm">{file.name}</span></div>
-      ) : (
-        <label htmlFor={`${label}-upload`} className="cursor-pointer">
-          <div className="text-sm text-gray-700 dark:text-gray-300">Upload {label}</div>
-        </label>
-      )}
-    </div>
-  );
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -161,8 +169,50 @@ export default function InterviewStart() {
                   <Textarea placeholder="Paste job description..." value={details.jobDescription} onChange={(e) => setDetails({...details, jobDescription: e.target.value})} className="min-h-[100px]" />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
-                  <FileUpload file={details.cvFile || null} setFile={(f) => setDetails({...details, cvFile: f || undefined})} label="CV" />
-                  <FileUpload file={details.jdFile || null} setFile={(f) => setDetails({...details, jdFile: f || undefined})} label="JD" />
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                      <FileText className="w-4 h-4" /> Resume
+                    </label>
+                    <select 
+                      value={details.cvId || ''} 
+                      onChange={(e) => {
+                        if (e.target.value === 'upload') {
+                          navigate('/dashboard');
+                        } else {
+                          setDetails({...details, cvId: e.target.value || undefined});
+                        }
+                      }}
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-indigo-500 outline-none text-gray-900 dark:text-white"
+                    >
+                      <option value="">Select Resume (Optional)</option>
+                      {resumes.map(resume => (
+                        <option key={resume.id} value={resume.id}>{resume.name}</option>
+                      ))}
+                      <option value="upload">+ Upload New Resume</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                      <FileText className="w-4 h-4" /> Job Description
+                    </label>
+                    <select 
+                      value={details.jdId || ''}
+                      onChange={(e) => {
+                        if (e.target.value === 'upload') {
+                          navigate('/dashboard');
+                        } else {
+                          setDetails({...details, jdId: e.target.value || undefined});
+                        }
+                      }}
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-indigo-500 outline-none text-gray-900 dark:text-white"
+                    >
+                      <option value="">Select JD (Optional)</option>
+                      {jobDescriptions.map(jd => (
+                        <option key={jd.id} value={jd.id}>{jd.name}</option>
+                      ))}
+                      <option value="upload">+ Upload New JD</option>
+                    </select>
+                  </div>
                 </div>
                 <Button onClick={handleStart} disabled={loading || !details.role || !details.company || !details.jobDescription || !details.experience}
                   className={`w-full flex items-center justify-center gap-3 ${details.role && details.company && details.jobDescription && details.experience ? `bg-gradient-to-r ${info.color}` : 'bg-gray-300'} text-white font-bold py-4 rounded-2xl`}>

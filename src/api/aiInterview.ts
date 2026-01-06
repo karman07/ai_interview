@@ -67,6 +67,8 @@ export interface HistoryItem {
   evaluation: Evaluation | null;
   stage: string;
   is_followup: boolean;
+  transcribed_text?: string;
+  has_audio?: boolean;
 }
 
 export interface InterviewState {
@@ -90,6 +92,7 @@ export interface SubmitAnswerResponse {
   state: InterviewState;
   has_next_question: boolean;
   interview_status: 'active' | 'completed';
+  transcribed_text?: string;
 }
 
 export interface AverageScores {

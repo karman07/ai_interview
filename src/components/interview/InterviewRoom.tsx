@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import InterviewRecorderV2 from "./InterviewRecorderV2";
+import InterviewCompletionScreen from "./InterviewCompletionScreen";
 import { 
   Loader2, 
   Volume2, 
@@ -14,6 +15,7 @@ import {
   startInterviewWithResume,
   getInterviewReport,
   type InterviewState,
+  type Evaluation,
 } from "@/api/aiInterview";
 
 type Props = { round: string };
@@ -30,6 +32,8 @@ export default function InterviewRoom({ round }: Props) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [interviewStartTime] = useState(new Date());
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
+  const [finalEvaluation, setFinalEvaluation] = useState<Evaluation | null>(null);
 
   const handleStartNewInterview = () => {
     navigate('/interview_round')
@@ -53,13 +57,13 @@ export default function InterviewRoom({ round }: Props) {
       setQuestion(response.next_question);
       setCurrentQuestionIndex(prev => prev + 1);
       setInterviewState(response.state);
-    } else if (!response.has_next_question) {
+    } else if (!response.has_next_question || response.state?.status === 'completed') {
+      setFinalEvaluation(response.evaluation);
+      setIsComplete(true);
       try {
         await getInterviewReport(user?._id || '', sessionId);
-        navigate('/interview_round/analytics', { state: { sessionId } });
       } catch (error) {
         console.error('Error fetching report:', error);
-        navigate('/interview_round/analytics', { state: { sessionId } });
       }
     }
   };
@@ -151,6 +155,10 @@ export default function InterviewRoom({ round }: Props) {
 
   const currentHistory = interviewState?.history || [];
   const answeredCount = currentHistory.filter(h => h.answer !== null).length;
+
+  if (isComplete && finalEvaluation) {
+    return <InterviewCompletionScreen evaluation={finalEvaluation} sessionId={sessionId} />;
+  }
 
   if (error && initializing) {
     return (
