@@ -348,7 +348,7 @@ export class EnhancedAiInterviewController {
       }
 
       // Check if interview is complete
-      if (aiResponse.interview_complete || aiResponse.continue_interview === false) {
+      if (aiResponse.interview_complete || aiResponse.continue_interview === false || !aiResponse.next_question) {
         await this.analyticsService.completeSession(
           payload.session_id,
           scores,
