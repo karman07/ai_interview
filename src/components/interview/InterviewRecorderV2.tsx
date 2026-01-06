@@ -172,7 +172,7 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
     setError('');
     
     try {
-      const localTranscript = await transcribeAudio(audioBlob);
+      await transcribeAudio(audioBlob);
       
       const audioFile = new File([audioBlob], `answer_${Date.now()}.wav`, { 
         type: 'audio/wav' 
