@@ -17,6 +17,7 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string>('');
   const [silenceTimer, setSilenceTimer] = useState<number>(0);
+  const [canRecord, setCanRecord] = useState(false);
 
   const audioRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -28,7 +29,9 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
 
   useEffect(() => {
     startCamera();
+    const timer = setTimeout(() => setCanRecord(true), 2000);
     return () => {
+      clearTimeout(timer);
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
@@ -97,7 +100,6 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
       setError('');
       audioChunksRef.current = [];
       
-      // Record audio only for backend
       const audioStream = new MediaStream(streamRef.current.getAudioTracks());
       const audioRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
       audioRecorderRef.current = audioRecorder;
@@ -170,32 +172,15 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
     setError('');
     
     try {
-      // Transcribe audio locally
       const localTranscript = await transcribeAudio(audioBlob);
-      console.log('Local transcription:', localTranscript);
       
-      // Convert webm to wav format
       const audioFile = new File([audioBlob], `answer_${Date.now()}.wav`, { 
         type: 'audio/wav' 
       });
       
-      console.log('Audio file details:', {
-        name: audioFile.name,
-        type: audioFile.type,
-        size: audioFile.size,
-        transcription: localTranscript
-      });
-      
       const response = await submitAnswer(user._id, sessionId, audioFile);
       
-      console.log('Full API response:', response);
-      
       if (response) {
-        const transcribedText = localTranscript || 
-                               response.evaluation?.transcribed_text || 
-                               response.transcribed_text || 
-                               response.state?.history?.[response.state.history.length - 1]?.transcribed_text;
-        console.log('Final transcribed text:', transcribedText || 'No transcription available');
         onSubmit(response);
       }
     } catch (error: any) {
@@ -254,7 +239,7 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
       <div className="flex items-center justify-center gap-4">
         <button
           onClick={isRecording ? stopRecordingAndSubmit : startRecording}
-          disabled={isUploading}
+          disabled={isUploading || !canRecord}
           className={`flex items-center gap-3 px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-lg ${
             isRecording
               ? 'bg-red-500 hover:bg-red-600 text-white'
@@ -269,7 +254,7 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
           ) : (
             <>
               <Mic className="w-6 h-6" />
-              Start Recording
+              {canRecord ? 'Start Recording' : 'Please wait...'}
             </>
           )}
         </button>

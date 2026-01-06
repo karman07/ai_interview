@@ -3,9 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import InterviewRecorderV2 from "./InterviewRecorderV2";
 import InterviewCompletionScreen from "./InterviewCompletionScreen";
 import { 
-  Loader2, 
-  Volume2, 
-  VolumeX,
+  Loader2,
   Clock,
   MessageSquare
 } from "lucide-react";
@@ -29,30 +27,29 @@ export default function InterviewRoom({ round }: Props) {
   const [question, setQuestion] = useState("");
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const [interviewStartTime] = useState(new Date());
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [finalEvaluation, setFinalEvaluation] = useState<Evaluation | null>(null);
+  const [isQuestionSpeaking, setIsQuestionSpeaking] = useState(false);
 
   const handleStartNewInterview = () => {
     navigate('/interview_round')
   }
 
-  const speakQuestion = (text: string) => {
-    if (isSpeaking) {
+  useEffect(() => {
+    if (question && !initializing) {
       window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    } else {
-      const utterance = new SpeechSynthesisUtterance(text);
+      const utterance = new SpeechSynthesisUtterance(question);
       utterance.rate = 0.9;
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
+      utterance.onstart = () => setIsQuestionSpeaking(true);
+      utterance.onend = () => setIsQuestionSpeaking(false);
       window.speechSynthesis.speak(utterance);
     }
-  };
+  }, [question, initializing]);
 
   const handleAnswerSubmit = async (response: any) => {
+    window.speechSynthesis.cancel();
     if (response.next_question) {
       setQuestion(response.next_question);
       setCurrentQuestionIndex(prev => prev + 1);
@@ -226,16 +223,12 @@ export default function InterviewRoom({ round }: Props) {
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Question {currentQuestionIndex + 1}</h3>
-                  <button
-                    onClick={() => speakQuestion(question)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      isSpeaking 
-                        ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' 
-                        : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400'
-                    }`}
-                  >
-                    {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                  </button>
+                  {isQuestionSpeaking && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                      <div className="w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full animate-pulse"></div>
+                      <span className="text-xs text-indigo-700 dark:text-indigo-400 font-medium">Speaking...</span>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-6 border-l-4 border-indigo-500">

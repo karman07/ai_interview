@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import {
   LineChart, Line, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import { EnhancedInterviewApi, type EnhancedAnalytics, type SessionListItem } from '@/api/enhancedInterviewAnalytics';
 
@@ -15,7 +15,6 @@ export default function EnhancedAnalyticsDashboard() {
   const [analytics, setAnalytics] = useState<EnhancedAnalytics | null>(null);
   const [sessions, setSessions] = useState<SessionListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedRound, setSelectedRound] = useState<string>('all');
 
   useEffect(() => {
     loadData();
@@ -240,7 +239,6 @@ export default function EnhancedAnalyticsDashboard() {
               <div 
                 key={key}
                 className={`p-5 bg-gradient-to-br from-${color}-50 to-${color}-100 dark:from-${color}-900/20 dark:to-${color}-900/10 rounded-xl border-2 border-${color}-200 dark:border-${color}-800 hover:shadow-lg transition-all cursor-pointer`}
-                onClick={() => setSelectedRound(key)}
               >
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-bold text-gray-900 dark:text-white">{label}</h4>
