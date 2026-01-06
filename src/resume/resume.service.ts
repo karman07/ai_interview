@@ -54,8 +54,8 @@ export class ResumeService {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
 
-    // ✅ Use AI CV API service to evaluate CV
-    let stats: any;
+    // ✅ Use AI CV API service to evaluate CV (optional)
+    let stats: any = null;
     try {
       this.logger.log('🤖 Calling AI CV evaluation API...');
       const startTime = Date.now();
@@ -70,13 +70,13 @@ export class ResumeService {
       this.logger.log(`✅ CV evaluation completed in ${duration}ms`);
     } catch (err) {
       this.logger.error('💥 Error calling cv_evaluate:', err.message);
-      this.logger.error('Full error:', err);
-      throw new BadRequestException('Failed to evaluate CV');
+      this.logger.warn('⚠️ CV evaluation failed, continuing without evaluation');
+      // Continue without evaluation instead of throwing error
     }
 
     let improvement_resume: any = null;
 
-    // ✅ If JD is provided, also call cv_improvement API
+    // ✅ If JD is provided, also call cv_improvement API (optional)
     if (jdFile || jdText) {
       try {
         this.logger.log('🔄 Calling AI CV improvement API...');
@@ -94,8 +94,8 @@ export class ResumeService {
         this.logger.log(`✅ CV improvement completed in ${duration}ms`);
       } catch (err) {
         this.logger.error('💥 Error calling cv_improvement:', err.message);
-        this.logger.error('Full error:', err);
-        throw new BadRequestException('Failed to improve CV');
+        this.logger.warn('⚠️ CV improvement failed, continuing without improvement');
+        // Continue without improvement instead of throwing error
       }
     }
 
@@ -188,7 +188,16 @@ export class ResumeService {
       };
     } catch (err) {
       this.logger.error('💥 Error improving resume:', err.message);
-      this.logger.error('Full error:', err);
+      
+      if (err.message.includes('ECONNREFUSED') || err.message.includes('connect')) {
+        this.logger.warn('⚠️ AI service unavailable, returning resume without improvement');
+        return {
+          ...resume.toObject(),
+          url: this.buildFileUrl(resume.path),
+          improvement_status: 'AI service unavailable'
+        };
+      }
+      
       throw new BadRequestException('Failed to improve CV');
     }
   }

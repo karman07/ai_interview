@@ -58,8 +58,8 @@ export class TechnicalGateway {
         role_title: data.role || 'Software Engineer',
         company_name: data.company || 'Tech Company',
         industry: 'Software',
-        jd: data.jobDescription || 'Technical role requiring strong programming skills',
-        cv: data.cv || data.experience || 'Experienced developer',
+        cv: data.cv || data.experience || 'default_cv_id',
+        jd: data.jobDescription || 'default_jd_id',
         round_type: 'technical',
       });
 
@@ -96,12 +96,18 @@ export class TechnicalGateway {
 
   @SubscribeMessage('answer')
   async handleAnswer(
-    @MessageBody() data: { id: string; userId: string; answer: string },
+    @MessageBody() data: { 
+      id: string; 
+      userId: string; 
+      answer: string;
+      audioFilePath?: string; // Path to uploaded audio file
+    },
   ) {
     try {
       this.logger.log(
         `Answer received for record ${data.id} from user ${data.userId}`,
       );
+      console.log(`🎤 Technical Gateway - answer received with audio: ${data.audioFilePath ? 'Yes' : 'No'}`);
 
       const interview = await this.interviewService.findById(data.id);
       if (!interview) throw new WsException('Interview record not found');
@@ -109,12 +115,24 @@ export class TechnicalGateway {
       const sessionId = this.sessionMap.get(data.userId);
       if (!sessionId) throw new WsException('No active session found');
 
-      // Submit answer to AI API
-      const aiResponse = await this.aiInterviewApi.submitAnswer({
-        user_id: data.userId,
-        session_id: sessionId,
-        answer: data.answer,
-      });
+      let aiResponse;
+      
+      // Submit answer to AI API - prefer audio if available
+      if (data.audioFilePath) {
+        console.log(`🎤 Submitting audio answer: ${data.audioFilePath}`);
+        aiResponse = await this.aiInterviewApi.submitVoiceAnswer({
+          user_id: data.userId,
+          session_id: sessionId,
+          audio_file_path: data.audioFilePath,
+        });
+      } else {
+        console.log(`📝 Submitting text answer: ${data.answer}`);
+        aiResponse = await this.aiInterviewApi.submitAnswer({
+          user_id: data.userId,
+          session_id: sessionId,
+          answer: data.answer,
+        });
+      }
 
       // Update local record with feedback
       const record = await this.interviewService.submitAnswer(

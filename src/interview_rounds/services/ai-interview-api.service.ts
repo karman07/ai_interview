@@ -10,8 +10,8 @@ export interface StartInterviewPayload {
   role_title: string;
   company_name: string;
   industry: string;
-  jd: string;
-  cv?: string;
+  cv: string;      // CV ID (renamed from cv_id)
+  jd: string;      // JD ID (renamed from jd_id)
   round_type: 'technical' | 'behavioral' | 'hr' | 'full';
 }
 
@@ -19,6 +19,12 @@ export interface SubmitAnswerPayload {
   user_id: string;
   session_id: string;
   answer: string;
+}
+
+export interface SubmitVoiceAnswerPayload {
+  user_id: string;
+  session_id: string;
+  audio_file_path: string;
 }
 
 export interface InterviewState {
@@ -53,7 +59,7 @@ export class AiInterviewApiService {
   private readonly timeout: number;
 
   constructor(private readonly configService: ConfigService) {
-    this.baseUrl = this.configService.get<string>('AI_INTERVIEW_API_BASE_URL', 'http://34.27.237.113:8000');
+    this.baseUrl = this.configService.get<string>('AI_INTERVIEW_API_BASE_URL', 'http://localhost:8080');
     this.timeout = this.configService.get<number>('AI_INTERVIEW_API_TIMEOUT', 60000);
 
     this.axiosInstance = axios.create({
@@ -103,47 +109,41 @@ export class AiInterviewApiService {
   }
 
   /**
-   * Start a new interview session
+   * Start a new interview session with required CV/JD IDs
    */
   async startInterview(payload: StartInterviewPayload): Promise<any> {
     try {
-      const endpoint = this.configService.get<string>('AI_INTERVIEW_START_ENDPOINT', '/start');
+      const endpoint = this.configService.get<string>('AI_INTERVIEW_START_ENDPOINT', '/interview/start');
       
-      // If CV is a file path, send as multipart form data
-      if (payload.cv && fs.existsSync(payload.cv)) {
-        console.log('📤 Sending CV file to AI interview service:', payload.cv);
-        
-        const formData = new FormData();
-        formData.append('user_id', payload.user_id);
-        formData.append('session_id', payload.session_id);
-        formData.append('role_title', payload.role_title);
-        formData.append('company_name', payload.company_name);
-        formData.append('industry', payload.industry);
-        formData.append('jd', payload.jd);
-        formData.append('round_type', payload.round_type);
-        
-        // Append CV file
-        formData.append('cv_file', fs.createReadStream(payload.cv), {
-          filename: payload.cv.split('/').pop() || 'resume.pdf',
-          contentType: 'application/pdf',
-        });
-        
-        const response = await this.axiosInstance.post(endpoint, formData, {
-          headers: {
-            ...formData.getHeaders(),
-            'Accept': 'application/json',
-          },
-          maxBodyLength: Infinity,
-          maxContentLength: Infinity,
-        });
-        
-        return response.data;
-      } else {
-        // Send as JSON if CV is text or not provided
-        const response = await this.axiosInstance.post(endpoint, payload);
-        return response.data;
-      }
+      console.log('🔍 === AI INTERVIEW START DEBUG ===');
+      console.log('📍 Base URL:', this.baseUrl);
+      console.log('📍 Endpoint:', endpoint);
+      console.log('📍 Full URL:', `${this.baseUrl}${endpoint}`);
+      console.log('📋 Input Payload:', JSON.stringify(payload, null, 2));
+      
+      // Send only IDs and metadata - no file attachments
+      const requestPayload = {
+        user_id: payload.user_id,
+        session_id: payload.session_id,
+        role_title: payload.role_title,
+        company_name: payload.company_name,
+        industry: payload.industry,
+        round_type: payload.round_type,
+        cv: payload.cv,
+        jd: payload.jd
+      };
+      
+      console.log('📋 Final Request Payload:', JSON.stringify(requestPayload, null, 2));
+      console.log('🚀 Sending JSON request...');
+      
+      const response = await this.axiosInstance.post(endpoint, requestPayload);
+      console.log('✅ AI Service Response:', JSON.stringify(response.data, null, 2));
+      return response.data;
     } catch (error) {
+      console.log('❌ === AI INTERVIEW START ERROR ===');
+      console.log('Error details:', error.response?.data || error.message);
+      console.log('Status:', error.response?.status);
+      console.log('Headers:', error.response?.headers);
       this.logger.error('Failed to start interview session', error);
       throw new HttpException(
         'Failed to start interview session',
@@ -153,7 +153,95 @@ export class AiInterviewApiService {
   }
 
   /**
-   * Submit an answer to the current question
+   * Submit a voice answer with audio file
+   */
+  async submitVoiceAnswer(payload: SubmitVoiceAnswerPayload): Promise<any> {
+    try {
+      const endpoint = this.configService.get<string>('AI_INTERVIEW_ANSWER_ENDPOINT', '/interview/answer');
+      
+      console.log('🔍 === AI VOICE ANSWER SUBMISSION DEBUG ===');
+      console.log('📍 Base URL:', this.baseUrl);
+      console.log('📍 Endpoint:', endpoint);
+      console.log('📍 Full URL:', `${this.baseUrl}${endpoint}`);
+      console.log('📋 Input Payload:', JSON.stringify(payload, null, 2));
+      console.log('🎤 Audio file path:', payload.audio_file_path);
+      console.log('📁 Audio file exists:', fs.existsSync(payload.audio_file_path));
+      
+      if (fs.existsSync(payload.audio_file_path)) {
+        const stats = fs.statSync(payload.audio_file_path);
+        console.log('📁 Audio file stats:', {
+          size: stats.size,
+          created: stats.birthtime,
+          modified: stats.mtime
+        });
+      }
+      
+      const formData = new FormData();
+      formData.append('user_id', payload.user_id);
+      formData.append('session_id', payload.session_id);
+      
+      console.log('📝 FormData fields:');
+      console.log('  - user_id:', payload.user_id);
+      console.log('  - session_id:', payload.session_id);
+      
+      // Append audio file
+      if (fs.existsSync(payload.audio_file_path)) {
+        const filename = payload.audio_file_path.split('/').pop() || 'audio.wav';
+        formData.append('audio_file', fs.createReadStream(payload.audio_file_path), {
+          filename: filename,
+          contentType: 'audio/wav',
+        });
+        console.log('  - audio_file:', filename, '(file stream attached)');
+      } else {
+        throw new Error('Audio file not found: ' + payload.audio_file_path);
+      }
+      
+      console.log('🚀 Sending FormData request to AI service...');
+      console.log('🔗 Request headers will include:', {
+        ...formData.getHeaders(),
+        'Accept': 'application/json',
+      });
+      
+      const response = await this.axiosInstance.post(endpoint, formData, {
+        headers: {
+          ...formData.getHeaders(),
+          'Accept': 'application/json',
+        },
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity,
+        timeout: 180000, // 3 minutes for voice processing
+      });
+      
+      console.log('✅ AI Service Response Status:', response.status);
+      console.log('✅ AI Service Response Data:', JSON.stringify(response.data, null, 2));
+      
+      return response.data;
+    } catch (error) {
+      console.log('❌ === AI VOICE ANSWER ERROR ===');
+      console.log('Error type:', error.constructor.name);
+      console.log('Error message:', error.message);
+      if (error.response) {
+        console.log('Response status:', error.response.status);
+        console.log('Response data:', JSON.stringify(error.response.data, null, 2));
+        console.log('Response headers:', error.response.headers);
+      } else if (error.request) {
+        console.log('No response received. Request details:', {
+          method: error.request.method,
+          url: error.request.url,
+          timeout: error.request.timeout
+        });
+      }
+      
+      this.logger.error('Failed to submit voice answer', error);
+      throw new HttpException(
+        'Failed to submit voice answer',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  /**
+   * Submit a text answer (fallback for gateways)
    */
   async submitAnswer(payload: SubmitAnswerPayload): Promise<any> {
     try {

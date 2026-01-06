@@ -5,6 +5,7 @@ import { ResumeController } from './resume.controller';
 import { AiCvController } from './ai-cv.controller';
 import { Resume, ResumeSchema } from './resume.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
+import { JobDescriptionModule } from '../job-description/job-description.module';
 import { HttpModule } from '@nestjs/axios';
 import { AiCvApiService } from './ai-cv-api.service';
 import { AiMatcherService } from '../common/services/ai-matcher.service';
@@ -16,6 +17,7 @@ import { AiMatcherService } from '../common/services/ai-matcher.service';
       { name: User.name, schema: UserSchema },
     ]),
     HttpModule, // For calling Python API
+    JobDescriptionModule, // Import JD module for service access
   ],
   controllers: [ResumeController, AiCvController],
   providers: [ResumeService, AiCvApiService, AiMatcherService],

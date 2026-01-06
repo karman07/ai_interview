@@ -45,8 +45,8 @@ export class HrGateway {
         role_title: data.role || 'Candidate',
         company_name: data.company || 'Company',
         industry: 'Software',
-        jd: 'Final HR round',
-        cv: data.cv || 'Candidate profile',
+        cv: data.cv || 'default_cv_id',
+        jd: 'default_jd_id',
         round_type: 'hr',
       });
 

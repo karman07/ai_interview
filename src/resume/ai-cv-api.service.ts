@@ -46,7 +46,7 @@ export class AiCvApiService {
   private readonly timeout: number;
 
   constructor(private readonly configService: ConfigService) {
-    this.baseUrl = this.configService.get<string>('AI_INTERVIEW_API_BASE_URL', 'http://34.27.237.113:8000');
+    this.baseUrl = this.configService.get<string>('AI_INTERVIEW_API_BASE_URL', 'http://localhost:8080');
     this.timeout = this.configService.get<number>('AI_INTERVIEW_API_TIMEOUT', 60000);
 
     this.axiosInstance = axios.create({

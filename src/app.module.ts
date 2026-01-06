@@ -8,6 +8,7 @@ import { LoggingMiddleware } from './common/middleware/logging.middleware';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ResumeModule } from './resume/resume.module';
+import { JobDescriptionModule } from './job-description/job-description.module';
 import { ResultsModule } from './results/results.module';
 import { InterviewModule } from './interview/interview.module';
 import { LessonsModule } from './lessons/lessons.module';
@@ -48,6 +49,7 @@ import { JobsModule } from './jobs/jobs.module';
     AuthModule,
     UsersModule,
     ResumeModule,
+    JobDescriptionModule,
     ResultsModule,
     InterviewModule,
     LessonsModule,

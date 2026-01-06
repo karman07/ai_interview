@@ -70,8 +70,8 @@ export class BehaviorGateway {
         role_title: data.role || 'Software Engineer',
         company_name: data.company || 'Tech Company',
         industry: data.industry || 'Software',
-        jd: data.jobDescription || 'Role requiring strong behavioral competencies',
-        cv: data.cv || data.experience || 'Experienced professional',
+        cv: data.cv || 'default_cv_id',
+        jd: data.jobDescription || 'default_jd_id',
         round_type: 'behavioral',
       });
 
@@ -118,10 +118,12 @@ export class BehaviorGateway {
       audioUrl?: string;
       videoUrl?: string;
       responseDuration?: number;
+      audioFilePath?: string; // Path to uploaded audio file
     },
   ) {
     try {
       this.logger.log(`Answer received for ${data.id} from ${data.userId}`);
+      console.log(`🎤 Behavioral Gateway - answer received with audio: ${data.audioFilePath ? 'Yes' : 'No'}`);
 
       const interview = await this.interviewService.findById(data.id);
       if (!interview) throw new WsException('Interview record not found');
@@ -129,20 +131,35 @@ export class BehaviorGateway {
       const sessionId = this.sessionMap.get(data.userId);
       if (!sessionId) throw new WsException('No active session found');
 
-      const aiResponse = await this.aiInterviewApi.submitAnswer({
-        user_id: data.userId,
-        session_id: sessionId,
-        answer: data.answer,
-      });
+      let aiResponse;
+      
+      // Submit answer to AI API - prefer audio if available
+      if (data.audioFilePath) {
+        console.log(`🎤 Submitting audio answer: ${data.audioFilePath}`);
+        aiResponse = await this.aiInterviewApi.submitVoiceAnswer({
+          user_id: data.userId,
+          session_id: sessionId,
+          audio_file_path: data.audioFilePath,
+        });
+      } else {
+        console.log(`📝 Submitting text answer: ${data.answer}`);
+        aiResponse = await this.aiInterviewApi.submitAnswer({
+          user_id: data.userId,
+          session_id: sessionId,
+          answer: data.answer,
+        });
+      }
+
+      console.log('🔍 Gateway AI Response:', JSON.stringify(aiResponse, null, 2));
 
       const record = await this.interviewService.submitAnswer(
         data.id,
         data.answer,
-        aiResponse.feedback || aiResponse.evaluation || 'Answer recorded',
+        aiResponse.feedback || aiResponse.evaluation?.feedback || 'Answer recorded',
       );
 
-      // Extract score from AI response (assuming it's provided)
-      const score = aiResponse.score || this.extractScoreFromFeedback(aiResponse.feedback);
+      // Extract score from AI response
+      const score = aiResponse.evaluation?.score || aiResponse.score || this.extractScoreFromFeedback(aiResponse.feedback);
 
       // Update enhanced session with answer and feedback
       await this.enhancedInterviewService.addQuestionAnswer(
@@ -154,6 +171,9 @@ export class BehaviorGateway {
         data.responseDuration,
         record.feedback,
         score,
+        aiResponse.evaluation,
+        aiResponse.transcribed_text,
+        data.audioUrl
       );
 
       this.server.to(data.userId).emit('feedback', {
@@ -161,30 +181,31 @@ export class BehaviorGateway {
         feedback: record.feedback,
         score: score,
         aiResponse: aiResponse,
+        evaluation: aiResponse.evaluation
       });
 
-      if (aiResponse.next_question || aiResponse.question) {
-        const nextQuestion = aiResponse.next_question || aiResponse.question;
+      // Check for next question or completion
+      if (aiResponse.next_question && aiResponse.continue_interview !== false) {
         const nextRecord = await this.interviewService.create(
           data.userId,
           'behavioral',
-          nextQuestion,
+          aiResponse.next_question,
         );
 
         // Add next question to enhanced session
         await this.enhancedInterviewService.addQuestionAnswer(
           sessionId,
-          nextQuestion,
+          aiResponse.next_question,
         );
 
         this.server.to(data.userId).emit('question', {
           id: nextRecord._id,
           question: nextRecord.question,
         });
-      } else {
+      } else if (aiResponse.continue_interview === false || aiResponse.interview_completed) {
         // Interview completed
         try {
-          const finalReport = await this.aiInterviewApi.getInterviewReport(
+          const finalReport = aiResponse.final_report || await this.aiInterviewApi.getInterviewReport(
             data.userId,
             sessionId,
           );
@@ -194,9 +215,9 @@ export class BehaviorGateway {
             sessionId,
             finalReport,
             {
-              overall: finalReport.overall_score || score,
-              communication: finalReport.communication_score,
-              behavioral: finalReport.behavioral_score,
+              overall: finalReport.overall_score || finalReport.avg_scores?.overall || score,
+              communication: finalReport.communication_score || finalReport.avg_scores?.communication,
+              behavioral: finalReport.behavioral_score || finalReport.avg_scores?.behavioral,
             }
           );
 
@@ -204,6 +225,7 @@ export class BehaviorGateway {
             ...finalReport,
             round: 'behavioral',
             sessionId: sessionId,
+            completed: true
           });
           
           this.sessionMap.delete(data.userId);

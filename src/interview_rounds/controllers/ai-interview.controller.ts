@@ -1,9 +1,8 @@
-import { Controller, Post, Get, Delete, Body, Param, UseGuards, Request, UseInterceptors, UploadedFiles, UploadedFile, HttpException, HttpStatus, Logger } from '@nestjs/common';
-import { FilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
+import { Controller, Post, Get, Body, Param, UseGuards, Request, UseInterceptors, UploadedFile, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AiInterviewApiService } from '../services/ai-interview-api.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { TimeoutInterceptor } from 'src/common/interceptors/timeout.interceptor';
-import { StartInterviewWithResumeDto } from '../dto/start-interview-with-resume.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Resume, ResumeDocument } from '../../resume/resume.schema';
@@ -11,22 +10,10 @@ import * as multer from 'multer';
 import * as path from 'path';
 import * as fs from 'fs';
 
-// Configure multer for audio/video uploads
+// Configure multer for audio uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadPath = file.mimetype.startsWith('audio/') ? './uploads/audio' : './uploads/video';
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-// Configure multer for resume uploads
-const resumeStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = './uploads/resumes';
+    const uploadPath = './uploads/audio';
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
@@ -34,22 +21,32 @@ const resumeStorage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    const ext = path.extname(file.originalname) || '.wav';
+    cb(null, `audio-${uniqueSuffix}${ext}`);
   }
 });
 
-@Controller('ai-interview')
-@UseGuards(JwtAuthGuard)
-export class AiInterviewController {
-  private readonly logger = new Logger(AiInterviewController.name);
+const fileFilter = (req, file, cb) => {
+  // Accept audio files
+  if (file.mimetype.startsWith('audio/') || 
+      file.originalname.match(/\.(wav|mp3|m4a|ogg|webm|flac)$/i)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only audio files are allowed'), false);
+  }
+};
+
+// Base class with shared methods
+class BaseInterviewController {
+  protected readonly logger = new Logger(BaseInterviewController.name);
   
   constructor(
-    private readonly aiInterviewApi: AiInterviewApiService,
-    @InjectModel(Resume.name) private resumeModel: Model<ResumeDocument>,
+    protected readonly aiInterviewApi: AiInterviewApiService,
+    protected readonly resumeModel: Model<ResumeDocument>,
   ) {}
 
   // Get user's best CV based on highest overall score
-  private async getBestUserCV(userId: string): Promise<{ path: string; filename: string } | null> {
+  protected async getBestUserCV(userId: string): Promise<{ path: string; filename: string } | null> {
     try {
       const resumes = await this.resumeModel.find({ user: userId }).sort({ createdAt: -1 });
       
@@ -81,10 +78,21 @@ export class AiInterviewController {
       return null;
     }
   }
+}
+
+@Controller('interview')
+@UseGuards(JwtAuthGuard)
+export class AiInterviewController extends BaseInterviewController {
+  constructor(
+    aiInterviewApi: AiInterviewApiService,
+    @InjectModel(Resume.name) resumeModel: Model<ResumeDocument>,
+  ) {
+    super(aiInterviewApi, resumeModel);
+  }
 
   /**
-   * POST /ai-interview/start
-   * Start a new interview session
+   * POST /interview/start
+   * Start a new interview session with CV/JD IDs
    */
   @Post('start')
   async startInterview(
@@ -96,16 +104,16 @@ export class AiInterviewController {
       role_title: string;
       company_name: string;
       industry: string;
-      jd: string;
-      cv: string;
+      cv_id: string;  // Required MongoDB ObjectId for resume
+      jd_id: string;  // Required MongoDB ObjectId for job description
       round_type: 'technical' | 'behavioral' | 'hr' | 'full';
     },
   ) {
     const userId = req.user?.userId || req.user?.sub || payload.user_id;
-    console.log(`🤖 AI Interview API started - start endpoint called for user: ${userId}`);
+    console.log(`🤖 Interview API started - start endpoint called for user: ${userId}`);
     console.log('📋 Request data:', JSON.stringify(payload, null, 2));
     try {
-      // Always get best CV from database
+      // Fetch CV content by cv_id
       const bestCV = await this.getBestUserCV(userId);
       let cvContent = '';
       
@@ -114,10 +122,15 @@ export class AiInterviewController {
         console.log('📄 Using best CV from database:', bestCV.filename);
       }
       
+      // TODO: Implement JD content fetching by jd_id
+      // For now, use empty JD content
+      const jdContent = '';
+      
       return await this.aiInterviewApi.startInterview({ 
         ...payload, 
         user_id: userId,
-        cv: cvContent
+        cv: cvContent,
+        jd: jdContent
       });
     } catch (error) {
       this.logger.error('Start interview failed:', error.message);
@@ -126,107 +139,63 @@ export class AiInterviewController {
   }
 
   /**
-   * POST /ai-interview/start-with-resume
-   * Start a new interview session with resume upload
-   */
-  @Post('start-with-resume')
-  @UseInterceptors(
-    FileInterceptor('resume', { storage: resumeStorage }),
-    new TimeoutInterceptor(180000) // 3 minutes timeout for resume upload
-  )
-  async startInterviewWithResume(
-    @Request() req,
-    @UploadedFile() resumeFile: Express.Multer.File,
-    @Body() payload: StartInterviewWithResumeDto,
-  ) {
-    const userId = req.user?.userId || req.user?.sub || payload.user_id;
-    console.log(`🤖 AI Interview API started - start-with-resume endpoint called for user: ${userId}`);
-    console.log('📋 Request data:', JSON.stringify(payload, null, 2));
-    console.log('📄 Resume file:', resumeFile ? resumeFile.originalname : 'No file uploaded');
-    try {
-      let cvContent = '';
-      
-      if (resumeFile) {
-        cvContent = resumeFile.path;
-        console.log('📄 Using uploaded resume file:', resumeFile.originalname);
-      } else {
-        // Get best CV from database if no file uploaded
-        const bestCV = await this.getBestUserCV(userId);
-        if (bestCV) {
-          cvContent = bestCV.path;
-          console.log('📄 Using best CV from database:', bestCV.filename);
-        }
-      }
-      
-      return await this.aiInterviewApi.startInterview({
-        ...payload,
-        user_id: userId,
-        cv: cvContent
-      });
-    } catch (error) {
-      this.logger.error('Start interview with resume failed:', error.message);
-      throw new HttpException(error.message || 'Failed to start interview with resume', HttpStatus.BAD_REQUEST);
-    }
-  }
-
-  /**
-   * POST /ai-interview/start-with-cv-text
-   * Start a new interview session with CV text in request body
-   */
-  @Post('start-with-cv-text')
-  async startInterviewWithCvText(
-    @Request() req,
-    @Body() payload: StartInterviewWithResumeDto,
-  ) {
-    const userId = req.user?.userId || req.user?.sub || payload.user_id;
-    console.log(`🤖 AI Interview API started - start-with-cv-text endpoint called for user: ${userId}`);
-    console.log('📋 Request data:', JSON.stringify(payload, null, 2));
-    try {
-      // Always get best CV from database
-      const bestCV = await this.getBestUserCV(userId);
-      let cvContent = '';
-      
-      if (bestCV) {
-        cvContent = bestCV.path;
-        console.log('📄 Using best CV from database:', bestCV.filename);
-      }
-      
-      return await this.aiInterviewApi.startInterview({
-        ...payload,
-        user_id: userId,
-        cv: cvContent
-      });
-    } catch (error) {
-      this.logger.error('Start interview with CV text failed:', error.message);
-      throw new HttpException(error.message || 'Failed to start interview', HttpStatus.BAD_REQUEST);
-    }
-  }
-
-  /**
-   * POST /ai-interview/answer
-   * Submit an answer to the current question
+   * POST /interview/answer
+   * Submit an answer with audio file (voice analysis integration)
    */
   @Post('answer')
+  @UseInterceptors(
+    FileInterceptor('audio_file', { 
+      storage,
+      fileFilter,
+      limits: {
+        fileSize: 50 * 1024 * 1024, // 50MB limit
+        files: 1
+      }
+    }),
+    new TimeoutInterceptor(180000) // 3 minutes timeout for audio processing
+  )
   async submitAnswer(
     @Request() req,
+    @UploadedFile() audioFile: Express.Multer.File,
     @Body()
     payload: {
       user_id: string;
       session_id: string;
-      answer: string;
     },
   ) {
     try {
       const userId = req.user?.userId || req.user?.sub || payload.user_id;
-      return await this.aiInterviewApi.submitAnswer({ ...payload, user_id: userId });
+      console.log(`🎤 Audio answer submission for user: ${userId}`);
+      console.log('📁 Audio file details:', {
+        originalname: audioFile?.originalname,
+        mimetype: audioFile?.mimetype,
+        size: audioFile?.size,
+        path: audioFile?.path
+      });
+      
+      if (!audioFile) {
+        throw new HttpException('Audio file is required for voice analysis', HttpStatus.BAD_REQUEST);
+      }
+      
+      // Validate audio file
+      if (!audioFile.mimetype.startsWith('audio/') && 
+          !audioFile.originalname.match(/\.(wav|mp3|m4a|ogg|webm|flac)$/i)) {
+        throw new HttpException('Invalid audio file format. Supported: wav, mp3, m4a, ogg, webm, flac', HttpStatus.BAD_REQUEST);
+      }
+      
+      return await this.aiInterviewApi.submitVoiceAnswer({
+        user_id: userId,
+        session_id: payload.session_id,
+        audio_file_path: audioFile.path
+      });
     } catch (error) {
-      this.logger.error('Submit answer failed:', error.message);
-      throw new HttpException(error.message || 'Failed to submit answer', HttpStatus.BAD_REQUEST);
+      this.logger.error('Submit voice answer failed:', error.message);
+      throw new HttpException(error.message || 'Failed to submit voice answer', HttpStatus.BAD_REQUEST);
     }
   }
 
   /**
-   * GET /ai-interview/state/:userId/:sessionId
+   * GET /interview/state/:userId/:sessionId
    * Get current interview state
    */
   @Get('state/:userId/:sessionId')
@@ -243,7 +212,7 @@ export class AiInterviewController {
   }
 
   /**
-   * GET /ai-interview/report/:userId/:sessionId
+   * GET /interview/report/:userId/:sessionId
    * Get final interview report
    */
   @Get('report/:userId/:sessionId')
@@ -260,7 +229,7 @@ export class AiInterviewController {
   }
 
   /**
-   * GET /ai-interview/sessions/:userId
+   * GET /interview/sessions/:userId
    * List all sessions for a user
    */
   @Get('sessions/:userId')
@@ -272,66 +241,62 @@ export class AiInterviewController {
       throw new HttpException(error.message || 'Failed to list sessions', HttpStatus.BAD_REQUEST);
     }
   }
+}
 
-  /**
-   * GET /ai-interview/sessions
-   * List all sessions
-   */
-  @Get('sessions')
-  async listAllSessions() {
-    try {
-      return await this.aiInterviewApi.listAllSessions();
-    } catch (error) {
-      this.logger.error('List all sessions failed:', error.message);
-      throw new HttpException(error.message || 'Failed to list all sessions', HttpStatus.BAD_REQUEST);
-    }
+// Backward compatibility controller for old /ai-interview/ endpoints
+@Controller('ai-interview')
+@UseGuards(JwtAuthGuard)
+export class AiInterviewLegacyController extends BaseInterviewController {
+  constructor(
+    aiInterviewApi: AiInterviewApiService,
+    @InjectModel(Resume.name) resumeModel: Model<ResumeDocument>,
+  ) {
+    super(aiInterviewApi, resumeModel);
   }
 
   /**
-   * POST /ai-interview/session/create
-   * Create a new session
+   * POST /ai-interview/start (Legacy endpoint)
    */
-  @Post('session/create')
-  async createSession(
+  @Post('start')
+  async startInterview(
     @Request() req,
     @Body()
     payload: {
-      role: string;
+      user_id: string;
+      session_id: string;
+      role_title: string;
+      company_name: string;
       industry: string;
-      company: string;
-      cv_file_id?: string;
-      jd_file_id?: string;
+      cv: string;  // CV ID
+      jd: string;  // JD ID
+      round_type: 'technical' | 'behavioral' | 'hr' | 'full';
     },
   ) {
-    console.log(`🤖 AI Interview API started - session/create endpoint called`);
-    console.log('📋 Request data:', JSON.stringify(payload, null, 2));
+    const userId = req.user?.userId || req.user?.sub || payload.user_id;
+    console.log('🤖 === LEGACY INTERVIEW START DEBUG ===');
+    console.log('👤 User ID from request:', userId);
+    console.log('📋 Frontend payload:', JSON.stringify(payload, null, 2));
+    
     try {
-      return await this.aiInterviewApi.createSession(payload);
+      const finalPayload = { 
+        ...payload, 
+        user_id: userId
+      };
+      
+      console.log('🚀 Sending to AI service:', JSON.stringify(finalPayload, null, 2));
+      
+      return await this.aiInterviewApi.startInterview(finalPayload);
     } catch (error) {
-      this.logger.error('Create session failed:', error.message);
-      throw new HttpException(error.message || 'Failed to create session', HttpStatus.BAD_REQUEST);
+      console.log('❌ Legacy start interview error:', error.message);
+      this.logger.error('Start interview failed:', error.message);
+      throw new HttpException(error.message || 'Failed to start interview', HttpStatus.BAD_REQUEST);
     }
   }
 
   /**
-   * GET /ai-interview/session/:sessionId
-   * Get session details
+   * POST /ai-interview/session/:sessionId/next-question (Legacy endpoint)
    */
-  @Get('session/:sessionId')
-  async getSession(@Param('sessionId') sessionId: string) {
-    try {
-      return await this.aiInterviewApi.getSessionDetails(sessionId);
-    } catch (error) {
-      this.logger.error('Get session failed:', error.message);
-      throw new HttpException(error.message || 'Failed to get session', HttpStatus.NOT_FOUND);
-    }
-  }
-
-  /**
-   * GET /ai-interview/session/:sessionId/next-question
-   * Get next question in session
-   */
-  @Get('session/:sessionId/next-question')
+  @Post('session/:sessionId/next-question')
   async getNextQuestion(@Param('sessionId') sessionId: string) {
     try {
       return await this.aiInterviewApi.getNextQuestion(sessionId);
@@ -342,91 +307,120 @@ export class AiInterviewController {
   }
 
   /**
-   * POST /ai-interview/session/:sessionId/answer
-   * Submit answer to a session question with optional audio/video
+   * POST /ai-interview/answer (Legacy endpoint)
    */
-  @Post('session/:sessionId/answer')
-  async submitSessionAnswer(
-    @Param('sessionId') sessionId: string,
+  @Post('answer')
+  @UseInterceptors(
+    FileInterceptor('audio_file', { 
+      storage,
+      fileFilter,
+      limits: {
+        fileSize: 50 * 1024 * 1024, // 50MB limit
+        files: 1
+      }
+    }),
+    new TimeoutInterceptor(180000)
+  )
+  async submitAnswer(
+    @Request() req,
+    @UploadedFile() audioFile: Express.Multer.File,
     @Body()
     payload: {
-      question_id: string;
-      text: string;
-      audio_url?: string;
-      video_url?: string;
-      response_duration?: number;
+      user_id: string;
+      session_id: string;
     },
   ) {
     try {
-      return await this.aiInterviewApi.submitSessionAnswer(sessionId, payload);
-    } catch (error) {
-      this.logger.error('Submit session answer failed:', error.message);
-      throw new HttpException(error.message || 'Failed to submit session answer', HttpStatus.BAD_REQUEST);
-    }
-  }
-
-  /**
-   * GET /ai-interview/session/:sessionId/report
-   * Get session report
-   */
-  @Get('session/:sessionId/report')
-  async getSessionReport(@Param('sessionId') sessionId: string) {
-    try {
-      return await this.aiInterviewApi.getSessionReport(sessionId);
-    } catch (error) {
-      this.logger.error('Get session report failed:', error.message);
-      throw new HttpException(error.message || 'Failed to get session report', HttpStatus.NOT_FOUND);
-    }
-  }
-
-  /**
-   * POST /ai-interview/session/:sessionId/upload-response
-   * Upload audio/video response for a question
-   */
-  @Post('session/:sessionId/upload-response')
-  @UseInterceptors(
-    FilesInterceptor('files', 2, { storage }),
-    new TimeoutInterceptor(300000) // 5 minutes for media upload
-  )
-  async uploadResponse(
-    @Param('sessionId') sessionId: string,
-    @UploadedFiles() files: Express.Multer.File[],
-    @Body() payload: {
-      question_id: string;
-      text?: string;
-      response_duration?: number;
-    },
-  ) {
-    try {
-      const audioFile = files?.find(f => f.mimetype.startsWith('audio/'));
-      const videoFile = files?.find(f => f.mimetype.startsWith('video/'));
+      const userId = req.user?.userId || req.user?.sub || payload.user_id;
+      console.log(`🎤 Legacy audio answer submission for user: ${userId}`);
+      console.log('📁 Audio file details:', {
+        originalname: audioFile?.originalname,
+        mimetype: audioFile?.mimetype,
+        size: audioFile?.size,
+        path: audioFile?.path
+      });
       
+      if (!audioFile) {
+        throw new HttpException('Audio file is required for voice analysis', HttpStatus.BAD_REQUEST);
+      }
+      
+      // Validate audio file
+      if (!audioFile.mimetype.startsWith('audio/') && 
+          !audioFile.originalname.match(/\.(wav|mp3|m4a|ogg|webm|flac)$/i)) {
+        throw new HttpException('Invalid audio file format. Supported: wav, mp3, m4a, ogg, webm, flac', HttpStatus.BAD_REQUEST);
+      }
+      
+      const aiResponse = await this.aiInterviewApi.submitVoiceAnswer({
+        user_id: userId,
+        session_id: payload.session_id,
+        audio_file_path: audioFile.path
+      });
+      
+      console.log('🔍 AI Response received:', JSON.stringify(aiResponse, null, 2));
+      
+      // Save analytics data
+      if (aiResponse.evaluation) {
+        console.log('💾 Saving evaluation data for analytics...');
+        // TODO: Save to analytics collection
+      }
+      
+      // Handle next question or completion
       const response = {
-        question_id: payload.question_id,
-        text: payload.text || '',
-        audio_url: audioFile ? `/uploads/audio/${audioFile.filename}` : undefined,
-        video_url: videoFile ? `/uploads/video/${videoFile.filename}` : undefined,
-        response_duration: payload.response_duration ? parseInt(payload.response_duration.toString()) : undefined,
+        ...aiResponse,
+        has_next_question: !!aiResponse.next_question,
+        interview_status: aiResponse.continue_interview === false ? 'completed' : 'active'
       };
       
-      return await this.aiInterviewApi.submitSessionAnswer(sessionId, response);
+      console.log('📤 Sending response to frontend:', JSON.stringify(response, null, 2));
+      return response;
     } catch (error) {
-      this.logger.error('Upload response failed:', error.message);
-      throw new HttpException(error.message || 'Failed to upload response', HttpStatus.BAD_REQUEST);
+      this.logger.error('Submit voice answer failed:', error.message);
+      throw new HttpException(error.message || 'Failed to submit voice answer', HttpStatus.BAD_REQUEST);
     }
   }
 
   /**
-   * DELETE /ai-interview/session/:sessionId
-   * Delete a session
+   * GET /ai-interview/state/:userId/:sessionId (Legacy endpoint)
    */
-  @Delete('session/:sessionId')
-  async deleteSession(@Param('sessionId') sessionId: string) {
+  @Get('state/:userId/:sessionId')
+  async getState(
+    @Param('userId') userId: string,
+    @Param('sessionId') sessionId: string,
+  ) {
     try {
-      return await this.aiInterviewApi.deleteSession(sessionId);
+      return await this.aiInterviewApi.getInterviewState(userId, sessionId);
     } catch (error) {
-      this.logger.error('Delete session failed:', error.message);
-      throw new HttpException(error.message || 'Failed to delete session', HttpStatus.BAD_REQUEST);
+      this.logger.error('Get interview state failed:', error.message);
+      throw new HttpException(error.message || 'Failed to get interview state', HttpStatus.NOT_FOUND);
+    }
+  }
+
+  /**
+   * GET /ai-interview/report/:userId/:sessionId (Legacy endpoint)
+   */
+  @Get('report/:userId/:sessionId')
+  async getReport(
+    @Param('userId') userId: string,
+    @Param('sessionId') sessionId: string,
+  ) {
+    try {
+      return await this.aiInterviewApi.getInterviewReport(userId, sessionId);
+    } catch (error) {
+      this.logger.error('Get interview report failed:', error.message);
+      throw new HttpException(error.message || 'Failed to get interview report', HttpStatus.NOT_FOUND);
+    }
+  }
+
+  /**
+   * GET /ai-interview/sessions/:userId (Legacy endpoint)
+   */
+  @Get('sessions/:userId')
+  async listSessions(@Param('userId') userId: string) {
+    try {
+      return await this.aiInterviewApi.listUserSessions(userId);
+    } catch (error) {
+      this.logger.error('List user sessions failed:', error.message);
+      throw new HttpException(error.message || 'Failed to list sessions', HttpStatus.BAD_REQUEST);
     }
   }
 }

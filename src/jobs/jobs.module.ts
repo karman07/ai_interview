@@ -14,6 +14,7 @@ import { Chat, ChatSchema } from './schemas/chat.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { Resume, ResumeSchema } from '../resume/resume.schema';
 import { AiMatcherService } from '../common/services/ai-matcher.service';
+import { InterviewRoundsModule } from '../interview_rounds/interview.module';
 import { EnhancedInterviewService } from '../interview_rounds/services/enhanced-interview.service';
 import { InterviewSession, InterviewSessionSchema } from '../interview_rounds/schemas/interview-session.schema';
 import { UserInterviewAnalytics, UserInterviewAnalyticsSchema } from '../interview_rounds/schemas/user-interview-analytics.schema';
@@ -31,9 +32,10 @@ import { UserInterviewAnalytics, UserInterviewAnalyticsSchema } from '../intervi
       { name: UserInterviewAnalytics.name, schema: UserInterviewAnalyticsSchema },
     ]),
     HttpModule,
+    InterviewRoundsModule,
   ],
   controllers: [JobsController, EnhancedJobController, ChatController],
-  providers: [JobsService, EnhancedJobService, ChatService, AiMatcherService, EnhancedInterviewService],
+  providers: [JobsService, EnhancedJobService, ChatService, AiMatcherService],
   exports: [JobsService, EnhancedJobService, ChatService],
 })
 export class JobsModule {}

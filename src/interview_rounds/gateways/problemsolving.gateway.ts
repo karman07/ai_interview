@@ -55,8 +55,8 @@ export class ProblemSolvingGateway {
         role_title: data.role || 'Problem Solver',
         company_name: data.company || 'Tech Company',
         industry: 'Software',
-        jd: data.jobDescription || 'Role requiring strong problem-solving skills',
-        cv: data.cv || data.experience || 'Experienced problem solver',
+        cv: data.cv || data.experience || 'default_cv_id',
+        jd: data.jobDescription || 'default_jd_id',
         round_type: 'full',
       });
 

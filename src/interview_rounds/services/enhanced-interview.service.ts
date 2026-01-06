@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import { InterviewSession, InterviewSessionDocument, InterviewRound, SessionStatus } from '../schemas/interview-session.schema';
 import { UserInterviewAnalytics, UserInterviewAnalyticsDocument } from '../schemas/user-interview-analytics.schema';
 import { Resume, ResumeDocument } from '../../resume/resume.schema';
+import { InterviewAnalyticsService, InterviewAnalyticsData } from './interview-analytics.service';
 import * as fs from 'fs';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class EnhancedInterviewService {
     @InjectModel(InterviewSession.name) private sessionModel: Model<InterviewSessionDocument>,
     @InjectModel(UserInterviewAnalytics.name) private analyticsModel: Model<UserInterviewAnalyticsDocument>,
     @InjectModel(Resume.name) private resumeModel: Model<ResumeDocument>,
+    private interviewAnalyticsService: InterviewAnalyticsService,
   ) {}
 
   // Get user's best CV based on highest overall score
@@ -95,7 +97,10 @@ export class EnhancedInterviewService {
     videoUrl?: string,
     responseDuration?: number,
     feedback?: string,
-    score?: number
+    score?: number,
+    evaluation?: any,
+    transcribedText?: string,
+    audioFilePath?: string
   ): Promise<InterviewSessionDocument> {
     const session = await this.sessionModel.findOne({ sessionId });
     if (!session) {
@@ -129,6 +134,35 @@ export class EnhancedInterviewService {
     if (score) {
       const scores = session.questionsAnswers.filter(qa => qa.score).map(qa => qa.score!);
       session.metrics.overallScore = scores.reduce((sum, s) => sum + s, 0) / scores.length;
+    }
+
+    // Save detailed analytics if answer is provided
+    if (answer && evaluation) {
+      const analyticsData: InterviewAnalyticsData = {
+        userId: session.userId.toString(),
+        sessionId: session.sessionId,
+        question,
+        answer,
+        transcribedText,
+        hasAudio: !!audioUrl || !!audioFilePath,
+        audioFilePath,
+        evaluation: {
+          score: evaluation.score || score || 0,
+          feedback: evaluation.feedback || feedback || '',
+          suggestions: evaluation.suggestions || [],
+          breakdown: evaluation.breakdown || {},
+          voice_metrics: evaluation.voice_metrics,
+          total_possible: evaluation.total_possible || 10
+        },
+        stage: this.determineStage(session.questionsAnswers.length),
+        roundType: session.round,
+        roleTitle: session.role || 'Unknown',
+        companyName: session.company || 'Unknown',
+        industry: session.industry || 'Unknown',
+        timestamp: new Date()
+      };
+
+      await this.interviewAnalyticsService.saveQuestionAnalytics(analyticsData);
     }
 
     return session.save();
@@ -166,6 +200,15 @@ export class EnhancedInterviewService {
     }
 
     const savedSession = await session.save();
+    
+    // Save session completion analytics
+    await this.interviewAnalyticsService.saveSessionCompletion(
+      session.userId.toString(),
+      sessionId,
+      finalReport,
+      session.questionsAnswers.length,
+      session.metrics.totalDuration || 0
+    );
     
     await this.updateAnalytics(session.userId.toString(), 'session_completed', {
       round: session.round,
@@ -407,5 +450,13 @@ export class EnhancedInterviewService {
     }
 
     return insights;
+  }
+
+  private determineStage(questionNumber: number): string {
+    if (questionNumber <= 1) return 'intro';
+    if (questionNumber <= 3) return 'background';
+    if (questionNumber <= 6) return 'technical';
+    if (questionNumber <= 8) return 'behavioral';
+    return 'closing';
   }
 }
