@@ -11,6 +11,7 @@ import { InterviewService } from './services/interview.service';
 import { EnhancedInterviewService } from './services/enhanced-interview.service';
 import { EnhancedInterviewAnalyticsService } from './services/enhanced-interview-analytics.service';
 import { AiInterviewApiService } from './services/ai-interview-api.service';
+import { InterviewSessionService } from './services/interview-session.service';
 import { JwtModule } from '@nestjs/jwt';
 import { AiInterviewController, AiInterviewLegacyController } from './controllers/ai-interview.controller';
 import { EnhancedAiInterviewController } from './controllers/enhanced-ai-interview.controller';
@@ -44,6 +45,7 @@ import { ProblemSolvingGateway } from './gateways/problemsolving.gateway';
     EnhancedInterviewAnalyticsService,
     AiInterviewApiService,
     InterviewAnalyticsService,
+    InterviewSessionService,
     BehaviorGateway,
     TechnicalGateway,
     HrGateway,
@@ -62,6 +64,7 @@ import { ProblemSolvingGateway } from './gateways/problemsolving.gateway';
     EnhancedInterviewAnalyticsService,
     AiInterviewApiService,
     InterviewAnalyticsService,
+    InterviewSessionService,
   ],
 })
 export class InterviewRoundsModule {}

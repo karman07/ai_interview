@@ -24,7 +24,10 @@ export interface SubmitAnswerPayload {
 export interface SubmitVoiceAnswerPayload {
   user_id: string;
   session_id: string;
-  audio_file_path: string;
+  audio_buffer?: Buffer;
+  audio_mimetype?: string;
+  audio_originalname?: string;
+  audio_file_path?: string; // Fallback for file path
 }
 
 export interface InterviewState {
@@ -163,18 +166,7 @@ export class AiInterviewApiService {
       console.log('📍 Base URL:', this.baseUrl);
       console.log('📍 Endpoint:', endpoint);
       console.log('📍 Full URL:', `${this.baseUrl}${endpoint}`);
-      console.log('📋 Input Payload:', JSON.stringify(payload, null, 2));
-      console.log('🎤 Audio file path:', payload.audio_file_path);
-      console.log('📁 Audio file exists:', fs.existsSync(payload.audio_file_path));
-      
-      if (fs.existsSync(payload.audio_file_path)) {
-        const stats = fs.statSync(payload.audio_file_path);
-        console.log('📁 Audio file stats:', {
-          size: stats.size,
-          created: stats.birthtime,
-          modified: stats.mtime
-        });
-      }
+      console.log('📋 Input Payload:', JSON.stringify({ user_id: payload.user_id, session_id: payload.session_id }, null, 2));
       
       const formData = new FormData();
       formData.append('user_id', payload.user_id);
@@ -184,32 +176,38 @@ export class AiInterviewApiService {
       console.log('  - user_id:', payload.user_id);
       console.log('  - session_id:', payload.session_id);
       
-      // Append audio file
-      if (fs.existsSync(payload.audio_file_path)) {
-        const filename = payload.audio_file_path.split('/').pop() || 'audio.wav';
+      let filename = 'audio.wav';
+      
+      // Append audio from buffer or file path
+      if (payload.audio_buffer) {
+        filename = payload.audio_originalname || 'audio.wav';
+        formData.append('audio_file', payload.audio_buffer, {
+          filename: filename,
+          contentType: payload.audio_mimetype || 'audio/wav',
+        });
+        console.log('  - audio_file:', filename, '(buffer attached, size:', payload.audio_buffer.length, 'bytes)');
+      } else if (payload.audio_file_path && fs.existsSync(payload.audio_file_path)) {
+        filename = payload.audio_file_path.split('/').pop() || 'audio.wav';
         formData.append('audio_file', fs.createReadStream(payload.audio_file_path), {
           filename: filename,
           contentType: 'audio/wav',
         });
         console.log('  - audio_file:', filename, '(file stream attached)');
       } else {
-        throw new Error('Audio file not found: ' + payload.audio_file_path);
+        throw new Error('No audio data provided');
       }
       
       console.log('🚀 Sending FormData request to AI service...');
-      console.log('🔗 Request headers will include:', {
-        ...formData.getHeaders(),
-        'Accept': 'application/json',
-      });
       
       const response = await this.axiosInstance.post(endpoint, formData, {
         headers: {
-          ...formData.getHeaders(),
           'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data',
+          ...formData.getHeaders(),
         },
         maxBodyLength: Infinity,
         maxContentLength: Infinity,
-        timeout: 180000, // 3 minutes for voice processing
+        timeout: 180000,
       });
       
       console.log('✅ AI Service Response Status:', response.status);
@@ -223,13 +221,6 @@ export class AiInterviewApiService {
       if (error.response) {
         console.log('Response status:', error.response.status);
         console.log('Response data:', JSON.stringify(error.response.data, null, 2));
-        console.log('Response headers:', error.response.headers);
-      } else if (error.request) {
-        console.log('No response received. Request details:', {
-          method: error.request.method,
-          url: error.request.url,
-          timeout: error.request.timeout
-        });
       }
       
       this.logger.error('Failed to submit voice answer', error);
@@ -297,9 +288,19 @@ export class AiInterviewApiService {
   async listUserSessions(userId: string): Promise<any[]> {
     try {
       const endpoint = this.configService.get<string>('AI_INTERVIEW_SESSIONS_ENDPOINT', '/sessions');
+      console.log('🔍 listUserSessions called for userId:', userId);
+      console.log('🔍 Endpoint:', endpoint);
+      console.log('🔍 Full URL:', `${this.baseUrl}${endpoint}/${userId}`);
       const response = await this.axiosInstance.get(`${endpoint}/${userId}`);
+      console.log('✅ Response status:', response.status);
+      console.log('✅ Response data:', JSON.stringify(response.data, null, 2));
       return response.data;
     } catch (error) {
+      console.log('❌ listUserSessions error:', error.message);
+      if (error.response) {
+        console.log('❌ Response status:', error.response.status);
+        console.log('❌ Response data:', JSON.stringify(error.response.data, null, 2));
+      }
       this.logger.error('Failed to list user sessions', error);
       throw new HttpException(
         'Failed to list user sessions',

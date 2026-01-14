@@ -230,4 +230,57 @@ export class InterviewAnalyticsService {
       return [];
     }
   }
+
+  /**
+   * Save interview failure analytics
+   */
+  async saveInterviewFailure(
+    userId: string,
+    sessionId: string,
+    failureType: 'start_failed' | 'answer_submission_failed' | 'audio_upload_failed' | 'network_error' | 'timeout',
+    errorMessage: string,
+    metadata?: any
+  ): Promise<void> {
+    try {
+      console.log('❌ Saving interview failure analytics:', {
+        userId,
+        sessionId,
+        failureType,
+        errorMessage
+      });
+
+      const failureRecord = new this.analyticsModel({
+        userId,
+        sessionId,
+        question: 'INTERVIEW_FAILURE',
+        answer: failureType,
+        hasAudio: false,
+        evaluation: {
+          score: 0,
+          feedback: errorMessage,
+          suggestions: [],
+          breakdown: {},
+          total_possible: 0
+        },
+        stage: 'failure',
+        roundType: metadata?.roundType || 'unknown',
+        roleTitle: metadata?.roleTitle || 'Unknown',
+        companyName: metadata?.companyName || 'Unknown',
+        industry: metadata?.industry || 'Unknown',
+        failureMetadata: {
+          failureType,
+          errorMessage,
+          timestamp: new Date(),
+          ...metadata
+        },
+        timestamp: new Date(),
+        createdAt: new Date(),
+      });
+
+      await failureRecord.save();
+      this.logger.log(`Interview failure analytics saved for ${sessionId}`);
+    } catch (error) {
+      this.logger.error('Failed to save interview failure analytics:', error);
+    }
+  }
 }
