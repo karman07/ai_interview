@@ -36,7 +36,9 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
         streamRef.current.getTracks().forEach(track => track.stop());
       }
       if (timerRef.current) clearInterval(timerRef.current);
-      if (audioContextRef.current) audioContextRef.current.close();
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close();
+      }
     };
   }, []);
 
@@ -137,31 +139,33 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
       audioRecorderRef.current.stop();
       setIsRecording(false);
       if (timerRef.current) clearInterval(timerRef.current);
-      if (audioContextRef.current) audioContextRef.current.close();
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close();
+      }
     }
   };
 
   const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
     return new Promise((resolve) => {
-      const recognition = new (window as any).webkitSpeechRecognition() || new (window as any).SpeechRecognition();
-      recognition.lang = 'en-US';
-      recognition.continuous = false;
-      recognition.interimResults = false;
+      try {
+        const recognition = new (window as any).webkitSpeechRecognition() || new (window as any).SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.continuous = false;
+        recognition.interimResults = false;
 
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
+        recognition.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          resolve(transcript);
+        };
 
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        resolve(transcript);
-      };
+        recognition.onerror = () => {
+          resolve('');
+        };
 
-      recognition.onerror = () => {
+        recognition.start();
+      } catch (error) {
         resolve('');
-      };
-
-      recognition.start();
-      audio.play();
+      }
     });
   };
 
@@ -172,8 +176,6 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
     setError('');
     
     try {
-      await transcribeAudio(audioBlob);
-      
       const audioFile = new File([audioBlob], `answer_${Date.now()}.wav`, { 
         type: 'audio/wav' 
       });

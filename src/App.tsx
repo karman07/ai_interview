@@ -29,7 +29,7 @@ import { LessonsProvider } from "./contexts/LessonsContext";
 import InterviewHome from "./pages/Interview_round/InterviewHome";
 import InterviewStart from "./pages/Interview_round/InterviewStart";
 import InterviewRoomPage from "./pages/Interview_round/InterviewRoomPage";
-import InterviewAnalyticsDashboard from "./pages/Interview_round/InterviewAnalyticsDashboard";
+import InterviewAnalyticsDashboardNew from "./pages/Interview_round/InterviewAnalyticsDashboardNew";
 import InterviewHistory from "./pages/Interview_round/InterviewHistory";
 // import { AnalyticsProvider } from '@/contexts/AnalyticsContext';
 
@@ -210,7 +210,7 @@ function App() {
                 <div className="flex min-h-screen">
                   <Sidebar />
                   <div className="flex-1">
-                    <InterviewAnalyticsDashboard />
+                    <InterviewAnalyticsDashboardNew/>
                   </div>
                 </div>
               } />

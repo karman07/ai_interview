@@ -32,10 +32,11 @@ export interface SubmitAnswerRequest {
 }
 
 export interface Evaluation {
-  score: number;
+  score?: number;
+  total_score?: number;
   feedback: string;
   suggestions: string[];
-  breakdown: {
+  breakdown?: {
     relevance: number;
     depth: number;
     structure: number;
@@ -56,7 +57,7 @@ export interface Evaluation {
     pause_ratio: number;
     speech_segments: number;
   };
-  total_possible: number;
+  total_possible?: number;
   transcribed_text?: string;
   has_audio?: boolean;
 }

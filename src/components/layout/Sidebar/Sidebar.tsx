@@ -6,7 +6,6 @@ import {
   BookOpen,
   Target,
   Layers,
-  Briefcase,
   X,
   Menu,
   Moon,
@@ -45,13 +44,13 @@ const sidebarRoutes = [
         icon: <Layers size={18} />,
         description: "Resources & study materials",
         path: "/resources",
-      },
-      {
-        label: "Job Portal",
-        icon: <Briefcase size={18} />,
-        description: "Browse jobs & applications",
-        path: "/employee",
-      },
+      }
+      // {
+      //   label: "Job Portal",
+      //   icon: <Briefcase size={18} />,
+      //   description: "Browse jobs & applications",
+      //   path: "/employee",
+      // },
     ],
   },
 ];

@@ -154,7 +154,7 @@ export default function InterviewRoom({ round }: Props) {
   const answeredCount = currentHistory.filter(h => h.answer !== null).length;
 
   if (isComplete && finalEvaluation) {
-    return <InterviewCompletionScreen evaluation={finalEvaluation} sessionId={sessionId} />;
+    return <InterviewCompletionScreen evaluation={finalEvaluation} sessionId={sessionId} interviewState={interviewState} />;
   }
 
   if (error && initializing) {
