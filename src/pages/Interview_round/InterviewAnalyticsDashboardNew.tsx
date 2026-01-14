@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp, Award, Target, BarChart3, Zap, Trophy, Eye, Calendar } from 'lucide-react';
-import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line, Area, AreaChart } from 'recharts';
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, AreaChart } from 'recharts';
 import { DashboardApi, type DashboardAnalytics } from '@/api/dashboard';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -27,13 +27,6 @@ export default function InterviewAnalyticsDashboard() {
   };
 
   const hasInterviews = (dashboard?.overall?.totalInterviews || 0) > 0;
-
-  const radarData = [
-    { subject: 'Technical', score: dashboard?.technical?.averageScore || 0, fullMark: 10 },
-    { subject: 'Behavioral', score: dashboard?.behavioral?.averageScore || 0, fullMark: 10 },
-    { subject: 'Problem Solving', score: dashboard?.problemSolving?.averageScore || 0, fullMark: 10 },
-    { subject: 'HR', score: dashboard?.hr?.averageScore || 0, fullMark: 10 }
-  ];
 
   const displayRadarData = [
     { subject: 'Technical', score: 6.5, fullMark: 10 },

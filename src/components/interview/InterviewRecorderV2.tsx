@@ -145,31 +145,7 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
     }
   };
 
-  const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
-    return new Promise((resolve) => {
-      try {
-        const recognition = new (window as any).webkitSpeechRecognition() || new (window as any).SpeechRecognition();
-        recognition.lang = 'en-US';
-        recognition.continuous = false;
-        recognition.interimResults = false;
-
-        recognition.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript;
-          resolve(transcript);
-        };
-
-        recognition.onerror = () => {
-          resolve('');
-        };
-
-        recognition.start();
-      } catch (error) {
-        resolve('');
-      }
-    });
-  };
-
-  const uploadResponse = async (audioBlob: Blob) => {
+const uploadResponse = async (audioBlob: Blob) => {
     if (!audioBlob || !user) return;
     
     setIsUploading(true);

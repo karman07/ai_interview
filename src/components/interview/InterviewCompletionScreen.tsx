@@ -1,4 +1,4 @@
-import { CheckCircle2, TrendingUp, Award, BarChart3, MessageSquare, Clock, Target } from "lucide-react";
+import { CheckCircle2, TrendingUp, Award, BarChart3, MessageSquare, Target } from "lucide-react";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import type { Evaluation } from "@/api/aiInterview";
 
@@ -8,7 +8,7 @@ interface Props {
   interviewState?: any;
 }
 
-export default function InterviewCompletionScreen({ evaluation, sessionId, interviewState }: Props) {
+export default function InterviewCompletionScreen({ evaluation, interviewState }: Props) {
   const score = evaluation?.total_score || evaluation?.score || 0;
   const totalPossible = evaluation?.total_possible || 11;
   const percentage = ((score / totalPossible) * 100).toFixed(0);
