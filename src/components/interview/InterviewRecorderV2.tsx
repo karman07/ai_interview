@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Send, Loader2 } from 'lucide-react';
+import { Mic, Send, Loader2, Video } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { submitAnswer } from '@/api/aiInterview';
+import http from '@/api/http';
 
 interface InterviewRecorderProps {
   questionId: string;
@@ -19,12 +19,13 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
   const [silenceTimer, setSilenceTimer] = useState<number>(0);
   const [canRecord, setCanRecord] = useState(false);
 
-  const audioRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const videoChunksRef = useRef<BlobPart[]>([]);
   const audioChunksRef = useRef<BlobPart[]>([]);
 
   useEffect(() => {
@@ -100,23 +101,29 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
     
     try {
       setError('');
+      videoChunksRef.current = [];
       audioChunksRef.current = [];
       
-      const audioStream = new MediaStream(streamRef.current.getAudioTracks());
-      const audioRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
-      audioRecorderRef.current = audioRecorder;
+      const videoRecorder = new MediaRecorder(streamRef.current, { mimeType: 'video/webm' });
+      const audioRecorder = new MediaRecorder(new MediaStream(streamRef.current.getAudioTracks()), { mimeType: 'audio/webm' });
+      
+      mediaRecorderRef.current = videoRecorder;
+      
+      videoRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) videoChunksRef.current.push(event.data);
+      };
       
       audioRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
       
-      audioRecorder.onstop = () => {
+      videoRecorder.onstop = () => {
+        const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        uploadResponse(audioBlob);
+        uploadResponse(videoBlob, audioBlob);
       };
       
+      videoRecorder.start();
       audioRecorder.start();
       setIsRecording(true);
       setDuration(0);
@@ -135,8 +142,8 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
   };
 
   const stopRecordingAndSubmit = () => {
-    if (audioRecorderRef.current && isRecording) {
-      audioRecorderRef.current.stop();
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
       setIsRecording(false);
       if (timerRef.current) clearInterval(timerRef.current);
       if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
@@ -145,22 +152,24 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
     }
   };
 
-const uploadResponse = async (audioBlob: Blob) => {
-    if (!audioBlob || !user) return;
+const uploadResponse = async (videoBlob: Blob, audioBlob: Blob) => {
+    if (!videoBlob || !user) return;
     
     setIsUploading(true);
     setError('');
     
     try {
-      const audioFile = new File([audioBlob], `answer_${Date.now()}.wav`, { 
-        type: 'audio/wav' 
+      const formData = new FormData();
+      formData.append('session_id', sessionId);
+      formData.append('video_file', new File([videoBlob], `answer_${Date.now()}.mp4`, { type: 'video/mp4' }));
+      formData.append('audio_file', new File([audioBlob], `answer_${Date.now()}.mp3`, { type: 'audio/mp3' }));
+      
+      const { data } = await http.post('/enhanced-interview/answer', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 300000
       });
       
-      const response = await submitAnswer(user._id, sessionId, audioFile);
-      
-      if (response) {
-        onSubmit(response);
-      }
+      if (data) onSubmit(data);
     } catch (error: any) {
       console.error('Upload error:', error);
       setError(error.response?.data?.message || 'Failed to upload response');
@@ -231,7 +240,7 @@ const uploadResponse = async (audioBlob: Blob) => {
             </>
           ) : (
             <>
-              <Mic className="w-6 h-6" />
+              <Video className="w-6 h-6" />
               {canRecord ? 'Start Recording' : 'Please wait...'}
             </>
           )}

@@ -16,6 +16,10 @@ export default function InterviewCompletionScreen({ evaluation, interviewState }
   const history = interviewState?.history || [];
   const totalQuestions = history.length;
   
+  const analytics = (interviewState as any)?.analytics;
+  const videoAnalysis = analytics?.videoAnalysis || (interviewState as any)?.video_analysis;
+  const audioAnalysis = analytics?.audioAnalysis;
+  
   const scoreData = history.map((item: any, idx: number) => ({
     question: `Q${idx + 1}`,
     score: item.evaluation?.total_score || 0,
@@ -152,6 +156,68 @@ export default function InterviewCompletionScreen({ evaluation, interviewState }
             </div>
           </div>
         </div>
+
+        {videoAnalysis && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 mb-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Video Analysis</h3>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Face Presence</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{videoAnalysis.facePresence || videoAnalysis.face_metrics?.face_presence_percentage || 0}%</p>
+              </div>
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Eye Contact</p>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{(videoAnalysis.eyeContact || videoAnalysis.eye_contact?.average_score || 0).toFixed(1)}/10</p>
+              </div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Head Stability</p>
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{(videoAnalysis.headStability || videoAnalysis.head_movement?.stability_score || 0).toFixed(1)}/10</p>
+              </div>
+              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Behavior Score</p>
+                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{(videoAnalysis.behaviorScore || videoAnalysis.overall_behavior_score?.score || 0).toFixed(1)}/100</p>
+              </div>
+              <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Duration</p>
+                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{(videoAnalysis.duration || videoAnalysis.duration_seconds || 0).toFixed(1)}s</p>
+              </div>
+            </div>
+            {(videoAnalysis.cheatingRisk !== 'NONE' || videoAnalysis.cheating_detection?.risk_level !== 'NONE') && (
+              <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                <p className="text-sm text-red-600 dark:text-red-400">⚠️ Attention Required: {videoAnalysis.cheatingRisk || videoAnalysis.cheating_detection?.risk_level}</p>
+              </div>
+            )}
+            {videoAnalysis.blink_analysis && (
+              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                <p className="text-sm text-gray-700 dark:text-gray-300">Blinks: {videoAnalysis.blink_analysis.total_blinks} ({videoAnalysis.blink_analysis.blinks_per_minute.toFixed(1)}/min) - {videoAnalysis.blink_analysis.rating}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {audioAnalysis && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 mb-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Audio Analysis</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Speech Clarity</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{audioAnalysis.speechClarity}/10</p>
+              </div>
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pace Score</p>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{audioAnalysis.paceScore}/10</p>
+              </div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Confidence</p>
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{audioAnalysis.confidenceLevel}/10</p>
+              </div>
+              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Filler Words</p>
+                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{audioAnalysis.fillerWords}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Question Details</h3>

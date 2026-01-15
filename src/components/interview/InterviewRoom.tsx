@@ -50,12 +50,23 @@ export default function InterviewRoom({ round }: Props) {
 
   const handleAnswerSubmit = async (response: any) => {
     window.speechSynthesis.cancel();
-    if (response.next_question) {
+    
+    if (response.state?.status === 'completed' || response.state?.completed) {
+      setFinalEvaluation(response.evaluation || { total_score: 0, feedback: 'Interview completed', suggestions: [] });
+      setInterviewState(response.state || response);
+      setIsComplete(true);
+      try {
+        await getInterviewReport(user?._id || '', sessionId);
+      } catch (error) {
+        console.error('Error fetching report:', error);
+      }
+    } else if (response.next_question) {
       setQuestion(response.next_question);
       setCurrentQuestionIndex(prev => prev + 1);
       setInterviewState(response.state);
-    } else if (!response.has_next_question || response.state?.status === 'completed') {
-      setFinalEvaluation(response.evaluation);
+    } else if (!response.has_next_question) {
+      setFinalEvaluation(response.evaluation || { total_score: 0, feedback: 'Interview completed', suggestions: [] });
+      setInterviewState(response.state || response);
       setIsComplete(true);
       try {
         await getInterviewReport(user?._id || '', sessionId);
@@ -129,6 +140,8 @@ export default function InterviewRoom({ round }: Props) {
             industry: parsedDetails.industry || 'Technology',
             jd: parsedDetails.jobDescription || 'General software development role',
             cv: parsedDetails.experience || user.email || 'Candidate profile',
+            cv_id: parsedDetails.cvId,
+            jd_id: parsedDetails.jdId,
             round_type: (round as any) || 'full'
           });
         }
@@ -153,8 +166,8 @@ export default function InterviewRoom({ round }: Props) {
   const currentHistory = interviewState?.history || [];
   const answeredCount = currentHistory.filter(h => h.answer !== null).length;
 
-  if (isComplete && finalEvaluation) {
-    return <InterviewCompletionScreen evaluation={finalEvaluation} sessionId={sessionId} interviewState={interviewState} />;
+  if (isComplete && interviewState) {
+    return <InterviewCompletionScreen evaluation={finalEvaluation || { total_score: 0, feedback: 'Interview completed', suggestions: [] }} sessionId={sessionId} interviewState={interviewState} />;
   }
 
   if (error && initializing) {
