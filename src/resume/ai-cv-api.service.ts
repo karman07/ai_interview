@@ -250,10 +250,10 @@ export class AiCvApiService {
         contentType: 'application/pdf',
       });
       
-      if (jdText) {
-        this.logger.log(`📝 JD text length: ${jdText.length} characters`);
-        formData.append('jd_text', jdText);
-      }
+      // Always add jd_text field (empty string if not provided)
+      const jdTextValue = jdText || '';
+      formData.append('jd_text', jdTextValue);
+      this.logger.log(`📝 JD text: ${jdTextValue ? `${jdTextValue.length} characters` : 'empty'}`);
 
       if (jdFilePath && jdFileName) {
         this.logger.log(`📋 JD file: ${jdFileName}`);
@@ -262,9 +262,16 @@ export class AiCvApiService {
         }
         formData.append('jd_file', fs.createReadStream(jdFilePath), {
           filename: jdFileName,
+          contentType: 'application/pdf',
         });
       }
 
+      // Log FormData details
+      this.logger.log('📦 FormData contents:');
+      this.logger.log(`  - file: ${originalName} (application/pdf)`);
+      this.logger.log(`  - jd_text: ${jdTextValue ? 'provided' : 'empty'}`);
+      this.logger.log(`  - jd_file: ${jdFilePath ? jdFileName : 'not provided'}`);
+      
       this.logger.log('📤 Sending improvement request to AI service...');
       const response = await this.axiosInstance.post(endpoint, formData, {
         headers: {

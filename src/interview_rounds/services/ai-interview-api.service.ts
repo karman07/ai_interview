@@ -28,6 +28,10 @@ export interface SubmitVoiceAnswerPayload {
   audio_mimetype?: string;
   audio_originalname?: string;
   audio_file_path?: string; // Fallback for file path
+  video_buffer?: Buffer;
+  video_mimetype?: string;
+  video_originalname?: string;
+  video_file_path?: string; // Fallback for video file path
 }
 
 export interface InterviewState {
@@ -193,8 +197,28 @@ export class AiInterviewApiService {
           contentType: 'audio/wav',
         });
         console.log('  - audio_file:', filename, '(file stream attached)');
-      } else {
-        throw new Error('No audio data provided');
+      }
+      
+      // Append video from buffer or file path
+      if (payload.video_buffer) {
+        const videoFilename = payload.video_originalname || 'video.mp4';
+        formData.append('video_file', payload.video_buffer, {
+          filename: videoFilename,
+          contentType: payload.video_mimetype || 'video/mp4',
+        });
+        console.log('  - video_file:', videoFilename, '(buffer attached, size:', payload.video_buffer.length, 'bytes)');
+      } else if (payload.video_file_path && fs.existsSync(payload.video_file_path)) {
+        const videoFilename = payload.video_file_path.split('/').pop() || 'video.mp4';
+        formData.append('video_file', fs.createReadStream(payload.video_file_path), {
+          filename: videoFilename,
+          contentType: 'video/mp4',
+        });
+        console.log('  - video_file:', videoFilename, '(file stream attached)');
+      }
+      
+      // Check if at least audio or video is provided
+      if (!payload.audio_buffer && !payload.audio_file_path && !payload.video_buffer && !payload.video_file_path) {
+        throw new Error('No audio or video data provided');
       }
       
       console.log('🚀 Sending FormData request to AI service...');

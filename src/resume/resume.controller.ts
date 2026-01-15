@@ -64,6 +64,20 @@ export class ResumeController {
     this.logger.log(`📁 Files received: ${files?.length || 0}`);
     this.logger.log(`📝 JD text provided: ${!!jdText}`);
     
+    // Log FormData received from frontend
+    this.logger.log('📦 FormData received from frontend:');
+    if (files && files.length > 0) {
+      files.forEach((file, index) => {
+        this.logger.log(`  File ${index + 1}:`);
+        this.logger.log(`    - fieldname: ${file.fieldname}`);
+        this.logger.log(`    - originalname: ${file.originalname}`);
+        this.logger.log(`    - mimetype: ${file.mimetype}`);
+        this.logger.log(`    - size: ${file.size} bytes`);
+        this.logger.log(`    - path: ${file.path}`);
+      });
+    }
+    this.logger.log(`  jd_text: ${jdText ? `${jdText.length} characters` : 'not provided'}`);
+    
     try {
       if (!files || files.length === 0) {
         this.logger.error('❌ No files uploaded');
@@ -107,7 +121,18 @@ export class ResumeController {
       );
 
       this.logger.log('✅ Resume uploaded and processed successfully');
-      return { message: 'Resume uploaded successfully', resume };
+      
+      // Return clean response for frontend
+      return {
+        message: 'Resume uploaded successfully',
+        resume: {
+          id: resume._id,
+          filename: resume.filename,
+          url: this.buildFileUrl(resume.path),
+          stats: resume.stats,
+          improvement_resume: resume.improvement_resume
+        }
+      };
     } catch (error) {
       this.logger.error('💥 Resume upload failed:', error.message);
       this.logger.error('Stack trace:', error.stack);
@@ -191,7 +216,16 @@ export class ResumeController {
       );
       
       this.logger.log('✅ Resume improved successfully');
-      return { message: 'Resume improved successfully', resume: updatedResume };
+      return {
+        message: 'Resume improved successfully',
+        resume: {
+          id: updatedResume._id,
+          filename: updatedResume.filename,
+          url: updatedResume.url,
+          stats: updatedResume.stats,
+          improvement_resume: updatedResume.improvement_resume
+        }
+      };
     } catch (error) {
       this.logger.error('💥 Resume improvement failed:', error.message);
       throw error;

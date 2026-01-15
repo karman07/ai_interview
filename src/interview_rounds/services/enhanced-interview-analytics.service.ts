@@ -43,7 +43,10 @@ export interface AnswerData {
   answerText?: string;
   audioFilePath?: string;
   audioUrl?: string;
+  videoFilePath?: string;
+  videoUrl?: string;
   audioAnalysis?: AudioAnalysis;
+  videoAnalysis?: any;
   scores?: QuestionScores;
   feedback?: string;
   strengths?: string[];
@@ -136,20 +139,40 @@ export class EnhancedInterviewAnalyticsService {
   async recordAnswer(data: AnswerData): Promise<InterviewQuestionDocument> {
     this.logger.log(`💬 Recording answer for session: ${data.sessionId}`);
 
-    // Find the session and latest question
+    // Find the session
     const session = await this.sessionModel.findOne({ sessionId: data.sessionId });
     if (!session) {
       throw new Error(`Session not found: ${data.sessionId}`);
     }
 
-    // Find the latest unanswered question
-    const question = await this.questionModel.findOne({
+    // Find the latest unanswered question OR create one if none exists
+    let question = await this.questionModel.findOne({
       sessionId: session._id,
       answerText: { $exists: false }
     }).sort({ createdAt: -1 });
 
+    // If no unanswered question found, create a placeholder question
     if (!question) {
-      throw new Error(`No unanswered question found for session: ${data.sessionId}`);
+      this.logger.log(`No unanswered question found, creating placeholder for session: ${data.sessionId}`);
+      
+      // Extract question from AI response if available
+      const questionText = data.aiResponse?.state?.history?.slice(-2, -1)?.[0]?.question || 'Question not recorded';
+      
+      question = new this.questionModel({
+        sessionId: session._id,
+        userId: new Types.ObjectId(data.userId),
+        questionText,
+        questionType: data.aiResponse?.state?.round_type || 'unknown',
+        questionAskedAt: new Date()
+      });
+      
+      await question.save();
+      
+      // Update session metrics
+      await this.sessionModel.findByIdAndUpdate(session._id, {
+        $push: { questions: question._id },
+        $inc: { 'metrics.totalQuestions': 1 }
+      });
     }
 
     // Update question with answer data
@@ -157,7 +180,10 @@ export class EnhancedInterviewAnalyticsService {
       answerText: data.answerText,
       audioFilePath: data.audioFilePath,
       audioUrl: data.audioUrl,
+      videoFilePath: data.videoFilePath,
+      videoUrl: data.videoUrl,
       audioAnalysis: data.audioAnalysis,
+      videoAnalysis: data.videoAnalysis,
       scores: data.scores,
       feedback: data.feedback,
       strengths: data.strengths || [],

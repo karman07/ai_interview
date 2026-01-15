@@ -12,9 +12,9 @@ export class Resume {
   @Prop({ required: true })
   path: string;
 
-  // ✅ CV evaluation stats
-  @Prop({ type: Object, required: true })
-  stats: Record<string, any>;
+  // ✅ CV evaluation stats (optional since AI service might be unavailable)
+  @Prop({ type: Object, required: false, default: null })
+  stats: Record<string, any> | null;
 
   // ✅ New improvement_resume field
   @Prop({ type: Object, default: null })
