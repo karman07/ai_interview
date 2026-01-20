@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Send, Loader2, Video } from 'lucide-react';
+import { Send, Loader2, Video } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import http from '@/api/http';
 
@@ -20,6 +20,7 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
   const [canRecord, setCanRecord] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -108,6 +109,7 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
       const audioRecorder = new MediaRecorder(new MediaStream(streamRef.current.getAudioTracks()), { mimeType: 'audio/webm' });
       
       mediaRecorderRef.current = videoRecorder;
+      audioRecorderRef.current = audioRecorder;
       
       videoRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) videoChunksRef.current.push(event.data);
@@ -120,6 +122,11 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
       videoRecorder.onstop = () => {
         const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        console.log('Video blob size:', videoBlob.size);
+        console.log('Audio blob size:', audioBlob.size);
+        if (audioBlob.size === 0) {
+          console.error('Audio blob is empty!');
+        }
         uploadResponse(videoBlob, audioBlob);
       };
       
@@ -144,6 +151,9 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
   const stopRecordingAndSubmit = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
+      if (audioRecorderRef.current) {
+        audioRecorderRef.current.stop();
+      }
       setIsRecording(false);
       if (timerRef.current) clearInterval(timerRef.current);
       if (audioContextRef.current && audioContextRef.current.state !== 'closed') {

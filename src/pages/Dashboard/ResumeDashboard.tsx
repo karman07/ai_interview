@@ -117,13 +117,13 @@ const ResumeDashboard: React.FC = () => {
 
   // Calculate statistics
   const totalResumes = safeResumes.length;
-  const totalFlags = totalResumes ? safeResumes.reduce((acc, r) => acc + ((r.stats.key_takeaways?.green_flags?.length || 0) + (r.stats.key_takeaways?.red_flags?.length || 0)), 0) : 0;
+  const totalFlags = totalResumes ? safeResumes.reduce((acc, r) => acc + ((r.analytics?.key_takeaways?.green_flags?.length || 0) + (r.analytics?.key_takeaways?.red_flags?.length || 0)), 0) : 0;
 
   // Chart data preparation
   const performanceData = safeResumes.map((r, index) => {
-    const cvQualityScore = Math.round(r.stats.cv_quality?.overall_score || 0);
-    const jdMatchScore = Math.round(r.stats.jd_match?.overall_score || 0);
-    const greenFlags = r.stats.key_takeaways?.green_flags?.length || 0;
+    const cvQualityScore = Math.round(r.analytics?.cv_quality?.overall_score || 0);
+    const jdMatchScore = Math.round(r.analytics?.jd_match?.overall_score || 0);
+    const greenFlags = r.analytics?.key_takeaways?.green_flags?.length || 0;
     return {
       name: `Resume ${index + 1}`,
       date: new Date(r.createdAt).toLocaleDateString(),
@@ -133,7 +133,7 @@ const ResumeDashboard: React.FC = () => {
     };
   });
 
-  const radarData = safeResumes.length > 0 && safeResumes[0].stats.cv_quality?.subscores ? safeResumes[0].stats.cv_quality.subscores.map(sub => ({
+  const radarData = safeResumes.length > 0 && safeResumes[0].analytics?.cv_quality?.subscores ? safeResumes[0].analytics.cv_quality.subscores.map(sub => ({
     dimension: sub.dimension.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
     score: (sub.score / sub.max_score) * 100,
     maxScore: 100,
@@ -141,9 +141,9 @@ const ResumeDashboard: React.FC = () => {
   })) : [];
 
   const pieData = safeResumes.length > 0 ? [
-    { name: 'CV Quality', value: safeResumes[0].stats.cv_quality?.overall_score || 0, color: COLORS[0] },
-    { name: 'JD Match', value: safeResumes[0].stats.jd_match?.overall_score || 0, color: COLORS[1] },
-    { name: 'Green Flags', value: safeResumes[0].stats.key_takeaways?.green_flags?.length || 0, color: COLORS[2] }
+    { name: 'CV Quality', value: safeResumes[0].analytics?.cv_quality?.overall_score || 0, color: COLORS[0] },
+    { name: 'JD Match', value: safeResumes[0].analytics?.jd_match?.overall_score || 0, color: COLORS[1] },
+    { name: 'Green Flags', value: safeResumes[0].analytics?.key_takeaways?.green_flags?.length || 0, color: COLORS[2] }
   ] : [];
 
   const handleUpload = async (): Promise<void> => {
@@ -186,10 +186,10 @@ const ResumeDashboard: React.FC = () => {
   const csvData = safeResumes.map(r => ({
           filename: r.filename,
           date: new Date(r.createdAt).toLocaleDateString(),
-          cv_quality: r.stats.cv_quality?.overall_score || 0,
-          jd_match: r.stats.jd_match?.overall_score || 0,
-          green_flags: r.stats.key_takeaways?.green_flags?.length || 0,
-          red_flags: r.stats.key_takeaways?.red_flags?.length || 0
+          cv_quality: r.analytics?.cv_quality?.overall_score || 0,
+          jd_match: r.analytics?.jd_match?.overall_score || 0,
+          green_flags: r.analytics?.key_takeaways?.green_flags?.length || 0,
+          red_flags: r.analytics?.key_takeaways?.red_flags?.length || 0
         }));
         const csvContent = [
           Object.keys(csvData[0]).join(','),
@@ -279,14 +279,14 @@ const ResumeDashboard: React.FC = () => {
           />
           <StatCard
             title="CV Quality"
-            value={safeResumes[0]?.stats.cv_quality?.overall_score || 0}
+            value={safeResumes[0]?.analytics?.cv_quality?.overall_score || 0}
             icon={<AcademicCapIcon className="w-5 h-5 text-purple-600" />}
             color="bg-purple-50"
             subtitle="Content & structure"
           />
           <StatCard
             title="JD Match"
-            value={safeResumes[0]?.stats.jd_match?.overall_score || 0}
+            value={safeResumes[0]?.analytics?.jd_match?.overall_score || 0}
             icon={<BriefcaseIcon className="w-5 h-5 text-orange-600" />}
             color="bg-orange-50"
             subtitle="Requirements alignment"
@@ -653,24 +653,24 @@ const ResumeDashboard: React.FC = () => {
                     {[
                       { 
                         label: 'CV Quality', 
-                        value: Math.round(selectedResume.stats.cv_quality?.overall_score || 0), 
-                        band: selectedResume.stats.cv_quality?.overall_score >= 70 ? 'Strong' : 
-                              selectedResume.stats.cv_quality?.overall_score >= 50 ? 'Good' : 'Needs Improvement', 
+                        value: Math.round(selectedResume.analytics?.cv_quality?.overall_score || 0), 
+                        band: selectedResume.analytics?.cv_quality?.overall_score >= 70 ? 'Strong' : 
+                              selectedResume.analytics?.cv_quality?.overall_score >= 50 ? 'Good' : 'Needs Improvement', 
                         color: 'from-green-500 to-green-600',
                         icon: DocumentTextIcon 
                       },
                       { 
                         label: 'JD Match', 
-                        value: Math.round(selectedResume.stats.jd_match?.overall_score || 0), 
-                        band: selectedResume.stats.jd_match?.overall_score >= 70 ? 'Strong' : 
-                              selectedResume.stats.jd_match?.overall_score >= 50 ? 'Good' : 'Needs Improvement',
+                        value: Math.round(selectedResume.analytics?.jd_match?.overall_score || 0), 
+                        band: (selectedResume.analytics?.jd_match?.overall_score || 0) >= 70 ? 'Strong' : 
+                              (selectedResume.analytics?.jd_match?.overall_score || 0) >= 50 ? 'Good' : 'Needs Improvement',
                         color: 'from-purple-500 to-purple-600',
                         icon: BriefcaseIcon 
                       },
                       { 
                         label: 'Insights', 
-                        value: selectedResume.stats.key_takeaways?.green_flags?.length || 0,
-                        band: `${selectedResume.stats.key_takeaways?.green_flags?.length || 0} Green Flags`, 
+                        value: selectedResume.analytics?.key_takeaways?.green_flags?.length || 0,
+                        band: `${selectedResume.analytics?.key_takeaways?.green_flags?.length || 0} Green Flags`, 
                         color: 'from-blue-500 to-blue-600',
                         icon: StarIcon 
                       }
@@ -699,14 +699,14 @@ const ResumeDashboard: React.FC = () => {
                   {/* Detailed Breakdown */}
                   <div className="space-y-8">
                     {/* CV Quality Subscores */}
-                    {selectedResume?.stats?.cv_quality?.subscores && (
+                    {selectedResume?.analytics?.cv_quality?.subscores && (
                       <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6">
                         <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 flex items-center gap-3">
                           <AcademicCapIcon className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
                           CV Quality Breakdown
                         </h3>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                          {(selectedResume?.stats?.cv_quality?.subscores || []).map((subscore, idx) => (
+                          {(selectedResume?.analytics?.cv_quality?.subscores || []).map((subscore, idx) => (
                             <div key={idx} className="bg-gray-50 rounded-xl p-4">
                               <div className="flex justify-between items-start mb-3">
                                 <h4 className="font-medium text-gray-900 capitalize">
@@ -734,14 +734,14 @@ const ResumeDashboard: React.FC = () => {
                     )}
 
                     {/* JD Match Subscores */}
-                    {selectedResume?.stats?.jd_match?.subscores && (
+                    {selectedResume?.analytics?.jd_match?.subscores && (
                       <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6">
                         <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 flex items-center gap-3">
                           <BriefcaseIcon className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
                           Job Description Match Breakdown
                         </h3>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                          {(selectedResume?.stats?.jd_match?.subscores || []).map((subscore, idx) => (
+                          {(selectedResume?.analytics?.jd_match?.subscores || []).map((subscore, idx) => (
                             <div key={idx} className="bg-gray-50 rounded-xl p-4">
                               <div className="flex justify-between items-start mb-3">
                                 <h4 className="font-medium text-gray-900 capitalize">
@@ -774,13 +774,13 @@ const ResumeDashboard: React.FC = () => {
                         <div>
                           <h4 className="font-medium text-gray-900 mb-3">Technical Skills</h4>
                           <div className="space-y-2 text-sm">
-                            {(selectedResume.stats.cv_quality?.subscores?.find(s => s.dimension === 'technical_depth')?.evidence || []).map((skill, idx) => (
+                            {(selectedResume.analytics?.cv_quality?.subscores?.find(s => s.dimension === 'technical_depth')?.evidence || []).map((skill, idx) => (
                               <div key={idx} className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-blue-500" />
                                 <span className="text-gray-700">{skill}</span>
                               </div>
                             ))}
-                            {(selectedResume.stats.cv_quality?.subscores?.find(s => s.dimension === 'technical_depth')?.evidence || []).length === 0 && (
+                            {(selectedResume.analytics?.cv_quality?.subscores?.find(s => s.dimension === 'technical_depth')?.evidence || []).length === 0 && (
                               <p className="text-sm text-gray-500">No technical skills found in analysis.</p>
                             )}
                           </div>
@@ -788,13 +788,13 @@ const ResumeDashboard: React.FC = () => {
                         <div>
                           <h4 className="font-medium text-gray-900 mb-3">Career Highlights</h4>
                           <div className="space-y-2 text-sm">
-                            {(selectedResume.stats.cv_quality?.subscores?.find(s => s.dimension === 'career_progression')?.evidence || []).map((item, idx) => (
+                            {(selectedResume.analytics?.cv_quality?.subscores?.find(s => s.dimension === 'career_progression')?.evidence || []).map((item, idx) => (
                               <div key={idx} className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-green-500" />
                                 <span className="text-gray-700">{item}</span>
                               </div>
                             ))}
-                            {(selectedResume.stats.cv_quality?.subscores?.find(s => s.dimension === 'career_progression')?.evidence || []).length === 0 && (
+                            {(selectedResume.analytics?.cv_quality?.subscores?.find(s => s.dimension === 'career_progression')?.evidence || []).length === 0 && (
                               <p className="text-sm text-gray-500">No career progression info found.</p>
                             )}
                           </div>
@@ -810,10 +810,10 @@ const ResumeDashboard: React.FC = () => {
                               Strengths
                             </h4>
                             <ul className="list-disc list-inside space-y-2 text-sm text-gray-600">
-                              {(selectedResume.stats.key_takeaways?.green_flags || []).map((flag, idx) => (
+                              {(selectedResume.analytics?.key_takeaways?.green_flags || []).map((flag, idx) => (
                                 <li key={idx} className="text-green-600">{flag}</li>
                               ))}
-                              {(selectedResume.stats.key_takeaways?.green_flags || []).length === 0 && (
+                              {(selectedResume.analytics?.key_takeaways?.green_flags || []).length === 0 && (
                                 <li className="text-sm text-gray-500">No green flags identified.</li>
                               )}
                             </ul>
@@ -824,10 +824,10 @@ const ResumeDashboard: React.FC = () => {
                               Areas for Improvement
                             </h4>
                             <ul className="list-disc list-inside space-y-2 text-sm text-gray-600">
-                              {(selectedResume.stats.key_takeaways?.red_flags || []).map((flag, idx) => (
+                              {(selectedResume.analytics?.key_takeaways?.red_flags || []).map((flag, idx) => (
                                 <li key={idx} className="text-red-600">{flag}</li>
                               ))}
-                              {(selectedResume.stats.key_takeaways?.red_flags || []).length === 0 && (
+                              {(selectedResume.analytics?.key_takeaways?.red_flags || []).length === 0 && (
                                 <li className="text-sm text-gray-500">No red flags identified.</li>
                               )}
                             </ul>

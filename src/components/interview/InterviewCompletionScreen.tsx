@@ -9,33 +9,33 @@ interface Props {
 }
 
 export default function InterviewCompletionScreen({ evaluation, interviewState }: Props) {
-  const score = evaluation?.total_score || evaluation?.score || 0;
-  const totalPossible = evaluation?.total_possible || 11;
-  const percentage = ((score / totalPossible) * 100).toFixed(0);
-  
   const history = interviewState?.history || [];
   const totalQuestions = history.length;
-  
-  const analytics = (interviewState as any)?.analytics;
-  const videoAnalysis = analytics?.videoAnalysis || (interviewState as any)?.video_analysis;
-  const audioAnalysis = analytics?.audioAnalysis;
+  const videoAnalysis = (interviewState as any)?.video_analysis;
   
   const scoreData = history.map((item: any, idx: number) => ({
     question: `Q${idx + 1}`,
-    score: item.evaluation?.total_score || 0,
+    score: (item.evaluation?.total_score || 0) * 10,
     technical: item.technical_evaluation?.technical_depth || 0,
     communication: item.communication_evaluation?.voice_scores?.total || 0
   }));
 
+  const avgScore = scoreData.reduce((sum: number, d: any) => sum + d.score, 0) / (scoreData.length || 1);
   const avgTechnical = scoreData.reduce((sum: number, d: any) => sum + d.technical, 0) / (scoreData.length || 1);
   const avgCommunication = scoreData.reduce((sum: number, d: any) => sum + d.communication, 0) / (scoreData.length || 1);
+  const avgClarity = history.reduce((sum: number, h: any) => sum + (h.technical_evaluation?.raw?.clarity || 0), 0) / (history.length || 1);
+  const avgConfidence = history.reduce((sum: number, h: any) => sum + (h.technical_evaluation?.raw?.confidence || 0), 0) / (history.length || 1);
 
   const performanceData = [
     { subject: 'Technical', score: avgTechnical, fullMark: 10 },
     { subject: 'Communication', score: avgCommunication, fullMark: 10 },
-    { subject: 'Clarity', score: history[0]?.technical_evaluation?.raw?.clarity || 0, fullMark: 10 },
-    { subject: 'Confidence', score: history[0]?.technical_evaluation?.raw?.confidence || 0, fullMark: 10 }
+    { subject: 'Clarity', score: avgClarity, fullMark: 10 },
+    { subject: 'Confidence', score: avgConfidence, fullMark: 10 }
   ];
+
+  const score = avgScore;
+  const totalPossible = 10;
+  const percentage = ((score / totalPossible) * 100).toFixed(0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
@@ -56,7 +56,7 @@ export default function InterviewCompletionScreen({ evaluation, interviewState }
                 <span className="text-sm font-medium text-blue-900 dark:text-blue-300">Final Score</span>
               </div>
               <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{score.toFixed(1)}</div>
-              <div className="text-xs text-blue-700 dark:text-blue-400">out of {totalPossible}</div>
+              <div className="text-xs text-blue-700 dark:text-blue-400">out of 10</div>
             </div>
 
             <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
@@ -82,7 +82,7 @@ export default function InterviewCompletionScreen({ evaluation, interviewState }
                 <BarChart3 className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                 <span className="text-sm font-medium text-amber-900 dark:text-amber-300">Avg Score</span>
               </div>
-              <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{(score / totalQuestions).toFixed(1)}</div>
+              <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{avgScore.toFixed(1)}</div>
               <div className="text-xs text-amber-700 dark:text-amber-400">per question</div>
             </div>
           </div>
@@ -163,61 +163,80 @@ export default function InterviewCompletionScreen({ evaluation, interviewState }
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Face Presence</p>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{videoAnalysis.facePresence || videoAnalysis.face_metrics?.face_presence_percentage || 0}%</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{videoAnalysis.face_metrics?.face_presence_percentage || 0}%</p>
               </div>
               <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Eye Contact</p>
-                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{(videoAnalysis.eyeContact || videoAnalysis.eye_contact?.average_score || 0).toFixed(1)}/10</p>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{videoAnalysis.eye_contact?.average_score?.toFixed(2) || '0.00'}</p>
+                <p className="text-xs text-emerald-700 dark:text-emerald-400">{videoAnalysis.eye_contact?.rating || 'N/A'}</p>
               </div>
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Head Stability</p>
-                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{(videoAnalysis.headStability || videoAnalysis.head_movement?.stability_score || 0).toFixed(1)}/10</p>
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{videoAnalysis.head_movement?.stability_score?.toFixed(2) || '0.00'}</p>
+                <p className="text-xs text-purple-700 dark:text-purple-400">{videoAnalysis.head_movement?.rating || 'N/A'}</p>
               </div>
               <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Behavior Score</p>
-                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{(videoAnalysis.behaviorScore || videoAnalysis.overall_behavior_score?.score || 0).toFixed(1)}/100</p>
+                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{videoAnalysis.overall_behavior_score?.score?.toFixed(1) || '0.0'}</p>
+                <p className="text-xs text-amber-700 dark:text-amber-400">{videoAnalysis.overall_behavior_score?.rating || 'N/A'}</p>
               </div>
               <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Duration</p>
-                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{(videoAnalysis.duration || videoAnalysis.duration_seconds || 0).toFixed(1)}s</p>
+                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{videoAnalysis.duration_seconds?.toFixed(1) || '0.0'}s</p>
+                <p className="text-xs text-indigo-700 dark:text-indigo-400">{videoAnalysis.total_frames || 0} frames</p>
               </div>
             </div>
-            {(videoAnalysis.cheatingRisk !== 'NONE' || videoAnalysis.cheating_detection?.risk_level !== 'NONE') && (
+            {videoAnalysis.cheating_detection?.risk_level !== 'NONE' && (
               <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
-                <p className="text-sm text-red-600 dark:text-red-400">⚠️ Attention Required: {videoAnalysis.cheatingRisk || videoAnalysis.cheating_detection?.risk_level}</p>
+                <p className="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">⚠️ Risk Level: {videoAnalysis.cheating_detection.risk_level}</p>
+                <p className="text-xs text-red-600 dark:text-red-400">Risk Score: {videoAnalysis.cheating_detection.risk_score}</p>
               </div>
             )}
-            {videoAnalysis.blink_analysis && (
-              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
-                <p className="text-sm text-gray-700 dark:text-gray-300">Blinks: {videoAnalysis.blink_analysis.total_blinks} ({videoAnalysis.blink_analysis.blinks_per_minute.toFixed(1)}/min) - {videoAnalysis.blink_analysis.rating}</p>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Blink Analysis</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Total: {videoAnalysis.blink_analysis?.total_blinks || 0} blinks</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Rate: {videoAnalysis.blink_analysis?.blinks_per_minute?.toFixed(1) || '0.0'}/min</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Rating: {videoAnalysis.blink_analysis?.rating || 'N/A'}</p>
               </div>
-            )}
+              <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Face Detection</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Frames with face: {videoAnalysis.face_metrics?.face_detected_frames || 0}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Multiple faces: {videoAnalysis.face_metrics?.multiple_faces_detected_percentage || 0}%</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">FPS: {videoAnalysis.fps?.toFixed(2) || '0.00'}</p>
+              </div>
+            </div>
           </div>
         )}
 
-        {audioAnalysis && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 mb-6">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Audio Analysis</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Speech Clarity</p>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{audioAnalysis.speechClarity}/10</p>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 mb-6">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Communication Metrics</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {history.map((item: any, idx: number) => (
+              <div key={idx} className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/50 dark:to-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Question {idx + 1}</p>
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">Fluency</span>
+                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{item.communication_evaluation?.voice_scores?.fluency || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">Clarity</span>
+                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{item.communication_evaluation?.voice_scores?.clarity || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">Confidence</span>
+                    <span className="text-sm font-bold text-purple-600 dark:text-purple-400">{item.communication_evaluation?.voice_scores?.confidence || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">Pace</span>
+                    <span className="text-sm font-bold text-amber-600 dark:text-amber-400">{item.communication_evaluation?.voice_scores?.pace || 0}</span>
+                  </div>
+                </div>
               </div>
-              <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pace Score</p>
-                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{audioAnalysis.paceScore}/10</p>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Confidence</p>
-                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{audioAnalysis.confidenceLevel}/10</p>
-              </div>
-              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Filler Words</p>
-                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{audioAnalysis.fillerWords}</p>
-              </div>
-            </div>
+            ))}
           </div>
-        )}
+        </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Question Details</h3>

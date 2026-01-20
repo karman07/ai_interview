@@ -7,9 +7,7 @@ import {
   Upload,
   Download,
   BarChart3,
-  Target,
   Users,
-  Clock,
   Brain,
   Award,
   Star,
@@ -26,7 +24,6 @@ import {
 } from "../dialog/dialog";
 import { baseURL } from "@/api/http";
 import { resumeService } from "@/api/resumeService";
-import { startInterviewWithResume } from "@/api/aiInterview";
 
 interface ResumeDetailsProps {
   resume: any;
@@ -34,75 +31,17 @@ interface ResumeDetailsProps {
 
 const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
   const [openJDDialog, setOpenJDDialog] = useState(false);
-  const [openInterviewDialog, setOpenInterviewDialog] = useState(false);
   const [jdFile, setJdFile] = useState<File | null>(null);
-  const [cvFile, setCvFile] = useState<File | null>(null);
   const [jdText, setJdText] = useState<string>('');
-  const [interviewData, setInterviewData] = useState({
-    roleTitle: '',
-    companyName: '',
-    industry: '',
-    roundType: 'full' as 'technical' | 'behavioral' | 'hr' | 'full'
-  });
   const [isUploading, setIsUploading] = useState(false);
-  const [isStartingInterview, setIsStartingInterview] = useState(false);
   const [uploadError, setUploadError] = useState<string>('');
-  const [interviewError, setInterviewError] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<"evaluation" | "improvement">(
-    "evaluation"
-  );
+  const [activeTab, setActiveTab] = useState<"evaluation" | "improvement">("evaluation");
   
-  const hasImprovement = Boolean(resume?.improvement_resume);
-
-  const handleDownload = () => {
-    let content = `Resume Report for ${resume?.filename}\n\n`;
-    content += `Overall Score: ${overallScore}\n\n`;
-
-    if (resume?.stats?.cv_quality?.subscores) {
-      content += "=== Quality Assessment ===\n";
-      resume.stats.cv_quality.subscores.forEach((sub: any) => {
-        content += `\n${sub.dimension.replace(/_/g, " ")}: ${sub.score}/${sub.max_score}\nEvidence:\n${sub.evidence.map((e: string) => "- " + e).join("\n")}\n`;
-      });
-    }
-
-    content += "\n=== Strengths ===\n";
-    (resume?.stats?.key_takeaways?.green_flags || []).forEach((g: string) => {
-      content += "- " + g + "\n";
-    });
-
-    content += "\n=== Areas for Improvement ===\n";
-    (resume?.stats?.key_takeaways?.red_flags || []).forEach((r: string) => {
-      content += "- " + r + "\n";
-    });
-
-    if (hasImprovement) {
-      content += "\n=== AI-Enhanced Content ===\n";
-      content += "\nSummary:\n" + resume.improvement_resume.tailored_resume.summary + "\n";
-      content += "\nExperience Highlights:\n";
-      resume.improvement_resume.tailored_resume.experience.forEach((exp: string) => {
-        content += "- " + exp + "\n";
-      });
-      content += "\nSkills:\n";
-      resume.improvement_resume.tailored_resume.skills.forEach((s: string) => {
-        content += "- " + s + "\n";
-      });
-      content += "\nProjects:\n";
-      resume.improvement_resume.tailored_resume.projects.forEach((p: string) => {
-        content += "- " + p + "\n";
-      });
-      content += "\nCover Letter:\n" + resume.improvement_resume.cover_letter + "\n";
-    }
-
-    const blob = new Blob([content], { type: "text/plain" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${resume?.filename || "resume-report"}.txt`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  const overallScore = Math.round(resume.stats?.cv_quality?.overall_score);
+  const hasImprovement = Boolean(resume?.enhancement);
+  const overallScore = Math.round(resume.analytics?.overall_score || resume.analytics?.cv_quality?.overall_score || 0);
+  const sections = resume.analytics?.sections || resume.analytics?.cv_quality?.subscores || [];
+  const strengths = resume.analytics?.strengths || resume.analytics?.key_takeaways?.green_flags || [];
+  const weaknesses = resume.analytics?.weaknesses || resume.analytics?.key_takeaways?.red_flags || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 sm:p-6 overflow-x-hidden">
@@ -223,7 +162,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
             }
             color="gray"
             clickable
-            onClick={() => setOpenInterviewDialog(true)}
+            onClick={() => window.location.href = `/interview_round`}
           />
 
           {!hasImprovement && (
@@ -249,10 +188,41 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                     </DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 pt-2">
-                    <UploadBox jdFile={jdFile} setJdFile={setJdFile} />
-                    
+                    <div
+                      className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 ${
+                        jdFile ? 'border-green-400 bg-green-50 dark:bg-green-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                      }`}
+                    >
+                      <Upload className={`w-10 h-10 mx-auto mb-3 ${jdFile ? 'text-green-500' : 'text-gray-400 dark:text-gray-500'}`} />
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.txt"
+                        className="hidden"
+                        id="jd-upload"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setJdFile(file);
+                        }}
+                      />
+                      {jdFile ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-center gap-2">
+                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            <span className="font-medium text-green-800 dark:text-green-400">{jdFile.name}</span>
+                          </div>
+                          <label htmlFor="jd-upload" className="cursor-pointer inline-block">
+                            <span className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">Choose different file</span>
+                          </label>
+                        </div>
+                      ) : (
+                        <label htmlFor="jd-upload" className="cursor-pointer block">
+                          <div className="font-medium text-gray-700 dark:text-gray-300 mb-1">Click to select or drag & drop</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">PDF, DOC, DOCX, TXT (max 10MB)</div>
+                        </label>
+                      )}
+                    </div>
                     <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Or paste job description text:
                       </label>
                       <textarea
@@ -322,62 +292,17 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
             </>
           )}
 
-          {/* Interview Dialog */}
-          <Dialog open={openInterviewDialog} onOpenChange={setOpenInterviewDialog}>
-            <DialogContent className="w-full max-w-4xl mx-4">
-              <DialogHeader>
-                <DialogTitle className="text-xl font-semibold">Start AI Interview</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Role Title *</label>
-                    <input type="text" value={interviewData.roleTitle} onChange={(e) => setInterviewData({...interviewData, roleTitle: e.target.value})} placeholder="Software Engineer" className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Company Name *</label>
-                    <input type="text" value={interviewData.companyName} onChange={(e) => setInterviewData({...interviewData, companyName: e.target.value})} placeholder="Tech Corp" className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Industry *</label>
-                    <input type="text" value={interviewData.industry} onChange={(e) => setInterviewData({...interviewData, industry: e.target.value})} placeholder="Technology" className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Round Type</label>
-                    <select value={interviewData.roundType} onChange={(e) => setInterviewData({...interviewData, roundType: e.target.value as any})} className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
-                      <option value="full">Full Interview</option>
-                      <option value="technical">Technical Only</option>
-                      <option value="behavioral">Behavioral Only</option>
-                      <option value="hr">HR Only</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Upload CV (Optional)</label>
-                  <FileUploadBox file={cvFile} setFile={setCvFile} label="CV" />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Job Description *</label>
-                  <FileUploadBox file={jdFile} setFile={setJdFile} label="JD" />
-                  <textarea value={jdText} onChange={(e) => setJdText(e.target.value)} placeholder="Or paste job description text here..." className="w-full h-24 p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
-                </div>
-                {interviewError && <div className="bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-sm text-red-600">{interviewError}</p></div>}
-                {isStartingInterview && <div className="space-y-3"><div className="flex items-center gap-3"><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600"></div><span className="text-sm text-gray-600">Starting interview...</span></div><div className="w-full bg-gray-200 rounded-full h-2"><div className="bg-purple-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div></div></div>}
-                <Button onClick={async () => { if (!interviewData.roleTitle || !interviewData.companyName || (!jdFile && !jdText.trim())) return; setIsStartingInterview(true); setInterviewError(''); try { const sessionId = `session_${Date.now()}`; const userId = 'user123'; await startInterviewWithResume({ resume: cvFile || new File([resume.filename], resume.filename, { type: 'text/plain' }), jd_file: jdFile || undefined, user_id: userId, session_id: sessionId, role_title: interviewData.roleTitle, company_name: interviewData.companyName, industry: interviewData.industry, jd: jdText.trim() || 'Job description from uploaded file', round_type: interviewData.roundType }); setOpenInterviewDialog(false); window.location.href = `/interview/${sessionId}`; } catch (error: any) { setInterviewError(error?.response?.data?.message || error?.message || 'Failed to start interview. Please try again.'); } finally { setIsStartingInterview(false); } }} disabled={!interviewData.roleTitle || !interviewData.companyName || (!jdFile && !jdText.trim()) || isStartingInterview} className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-50">{isStartingInterview ? 'Starting...' : 'Start Interview'}</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
           <ActionCard
             icon={<Download className="w-5 h-5 text-gray-600" />}
             title="Export Report"
             subtitle={
-              <button
-                onClick={handleDownload}
+              <a
+                href={`${baseURL}/${resume?.path}`}
+                download
                 className="text-gray-600 hover:text-gray-800 text-sm font-medium"
               >
-                Download TXT →
-              </button>
+                Download PDF →
+              </a>
             }
             color="gray"
           />
@@ -405,7 +330,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
           </div>
 
           <div className="p-4 sm:p-6">
-            {activeTab === "evaluation" && <EvaluationTab resume={resume} />}
+            {activeTab === "evaluation" && <EvaluationTab resume={resume} sections={sections} strengths={strengths} weaknesses={weaknesses} />}
             {activeTab === "improvement" && hasImprovement && (
               <ImprovementTab resume={resume} />
             )}
@@ -487,137 +412,6 @@ const ActionCard = ({
   );
 };
 
-const FileUploadBox = ({ file, setFile, label }: { file: File | null; setFile: (file: File | null) => void; label: string; }) => {
-  const [isDragOver, setIsDragOver] = useState(false);
-  const validateFile = (file: File) => {
-    const validTypes = ['.pdf', '.doc', '.docx', '.txt'];
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-    const maxSize = 10 * 1024 * 1024;
-    if (!validTypes.includes(fileExtension)) { alert('Please select a valid file type: PDF, DOC, DOCX, or TXT'); return false; }
-    if (file.size > maxSize) { alert('File size must be less than 10MB'); return false; }
-    return true;
-  };
-  return (
-    <div className={`border-2 border-dashed rounded-lg p-4 text-center transition-all duration-200 ${isDragOver ? 'border-purple-400 bg-purple-50' : file ? 'border-green-400 bg-green-50' : 'border-gray-300 hover:border-gray-400'}`} onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }} onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false); }} onDrop={(e) => { e.preventDefault(); setIsDragOver(false); const files = e.dataTransfer.files; if (files.length > 0 && validateFile(files[0])) { setFile(files[0]); } }}>
-      <Upload className={`w-8 h-8 mx-auto mb-2 ${isDragOver ? 'text-purple-500' : file ? 'text-green-500' : 'text-gray-400'}`} />
-      <input type="file" accept=".pdf,.doc,.docx,.txt" className="hidden" id={`${label.toLowerCase()}-upload`} onChange={(e) => { const selectedFile = e.target.files?.[0]; if (selectedFile && validateFile(selectedFile)) { setFile(selectedFile); } }} />
-      {file ? (
-        <div className="space-y-2">
-          <div className="flex items-center justify-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-600" /><span className="font-medium text-green-800 text-sm">{file.name}</span></div>
-          <label htmlFor={`${label.toLowerCase()}-upload`} className="cursor-pointer inline-block"><span className="text-xs text-purple-600 hover:text-purple-700 underline">Choose different file</span></label>
-        </div>
-      ) : (
-        <label htmlFor={`${label.toLowerCase()}-upload`} className="cursor-pointer block">
-          <div className="font-medium text-gray-700 text-sm">{isDragOver ? 'Drop file here' : `Upload ${label} File`}</div>
-          <div className="text-xs text-gray-500">PDF, DOC, DOCX, TXT (max 10MB)</div>
-        </label>
-      )}
-    </div>
-  );
-};
-
-const UploadBox = ({
-  jdFile,
-  setJdFile,
-}: {
-  jdFile: File | null;
-  setJdFile: (file: File | null) => void;
-}) => {
-  const [isDragOver, setIsDragOver] = useState(false);
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      const file = files[0];
-      if (validateFile(file)) {
-        setJdFile(file);
-      }
-    }
-  };
-
-  const validateFile = (file: File) => {
-    const validTypes = ['.pdf', '.doc', '.docx', '.txt'];
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    
-    if (!validTypes.includes(fileExtension)) {
-      alert('Please select a valid file type: PDF, DOC, DOCX, or TXT');
-      return false;
-    }
-    
-    if (file.size > maxSize) {
-      alert('File size must be less than 10MB');
-      return false;
-    }
-    
-    return true;
-  };
-
-  return (
-    <div
-      className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 ${
-        isDragOver
-          ? 'border-blue-400 bg-blue-50'
-          : jdFile
-          ? 'border-green-400 bg-green-50'
-          : 'border-gray-300 hover:border-gray-400'
-      }`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <Upload className={`w-10 h-10 mx-auto mb-3 ${
-        isDragOver ? 'text-blue-500' : jdFile ? 'text-green-500' : 'text-gray-400'
-      }`} />
-      
-      <input
-        type="file"
-        accept=".pdf,.doc,.docx,.txt"
-        className="hidden"
-        id="jd-upload"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file && validateFile(file)) {
-            setJdFile(file);
-          }
-        }}
-      />
-      
-      {jdFile ? (
-        <div className="space-y-3">
-          <div className="flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-green-600" />
-            <span className="font-medium text-green-800 dark:text-green-400">{jdFile.name}</span>
-          </div>
-          <label htmlFor="jd-upload" className="cursor-pointer inline-block">
-            <span className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
-              Choose different file
-            </span>
-          </label>
-        </div>
-      ) : (
-        <label htmlFor="jd-upload" className="cursor-pointer block">
-          <div className="font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {isDragOver ? 'Drop file here' : 'Click to select or drag & drop'}
-          </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">PDF, DOC, DOCX, TXT (max 10MB)</div>
-        </label>
-      )}
-    </div>
-  );
-};
 
 const TabButton = ({
   label,
@@ -644,14 +438,14 @@ const TabButton = ({
 
 interface EvaluationTabProps {
   resume: any;
+  sections: any[];
+  strengths: string[];
+  weaknesses: string[];
 }
 
-
-const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume }) => {
-  const showJDMatch = Boolean(resume?.stats?.jd_match);
-
+const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume, sections, strengths, weaknesses }) => {
   return (
-    <div className="space-y-8">
+  <div className="space-y-8">
       {/* CV Quality Table */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -672,12 +466,12 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume }) => {
                   Progress
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
-                  Evidence
+                  Evidence/Feedback
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
-              {resume?.stats?.cv_quality?.subscores?.map((sub: any, idx: number) => {
+              {Array.isArray(sections) ? sections.map((sub: any, idx: number) => {
                 const percentage = (sub.score / sub.max_score) * 100;
                 return (
                   <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900">
@@ -715,13 +509,54 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume }) => {
                     </td>
                     <td className="px-6 py-4">
                       <ul className="space-y-1">
-                        {sub.evidence.map((ev: string, i: number) => (
+                        {sub.evidence?.map((ev: string, i: number) => (
                           <li key={i} className="text-sm text-gray-600 dark:text-gray-300 flex items-start gap-2">
                             <CheckCircle2 className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
                             {ev}
                           </li>
                         ))}
                       </ul>
+                    </td>
+                  </tr>
+                );
+              }) : Object.entries(sections).map(([key, section]: [string, any], idx: number) => {
+                const percentage = (section.score / 10) * 100;
+                return (
+                  <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900">
+                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white capitalize">
+                      {key.replace(/_/g, " ")}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">{section.score.toFixed(1)}</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">/ 10</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="relative w-full">
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${percentage}%` }}
+                            transition={{ duration: 0.7 }}
+                            className={`h-3 rounded-full ${
+                              percentage >= 80
+                                ? "bg-gradient-to-r from-green-400 to-green-500"
+                                : percentage >= 60
+                                ? "bg-gradient-to-r from-blue-400 to-blue-500"
+                                : percentage >= 40
+                                ? "bg-gradient-to-r from-yellow-400 to-yellow-500"
+                                : "bg-gradient-to-r from-red-400 to-red-500"
+                            }`}
+                          />
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
+                          {Math.round(percentage)}%
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-600 dark:text-gray-300">{section.feedback}</span>
                     </td>
                   </tr>
                 );
@@ -732,81 +567,28 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume }) => {
         </div>
       </div>
 
-      {/* JD Match Table */}
-      {showJDMatch && (
+      {/* JD Match - Fit Score */}
+      {resume?.enhancement?.fit_score && (
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Job Description Match</h3>
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-            <div className="overflow-x-hidden">
-              <table className="w-full min-w-[700px]">
-              <thead className="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
-                    Dimension
-                  </th>
-                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900 dark:text-white">
-                    Score
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
-                    Progress
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
-                    Evidence
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
-                {resume?.stats?.jd_match?.subscores?.map((sub: any, idx: number) => {
-                  const percentage = (sub.score / sub.max_score) * 100;
-                  return (
-                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900">
-                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white capitalize">
-                        {sub.dimension.replace(/_/g, " ")}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <span className="text-lg font-bold text-gray-900 dark:text-white">{sub.score}</span>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">/ {sub.max_score}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="relative w-full">
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${percentage}%` }}
-                              transition={{ duration: 0.7 }}
-                              className={`h-3 rounded-full ${
-                                percentage >= 80
-                                  ? "bg-gradient-to-r from-green-400 to-green-500"
-                                  : percentage >= 60
-                                  ? "bg-gradient-to-r from-blue-400 to-blue-500"
-                                  : percentage >= 40
-                                  ? "bg-gradient-to-r from-yellow-400 to-yellow-500"
-                                  : "bg-gradient-to-r from-red-400 to-red-500"
-                              }`}
-                            />
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
-                            {Math.round(percentage)}%
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <ul className="space-y-1">
-                          {sub.evidence.map((ev: string, i: number) => (
-                            <li key={i} className="text-sm text-gray-600 dark:text-gray-300 flex items-start gap-2">
-                              <CheckCircle2 className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
-                              {ev}
-                            </li>
-                          ))}
-                        </ul>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Job Match Analysis</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-900">
+              <div className="text-center">
+                <div className="text-5xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                  {resume.enhancement.fit_score}%
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Job Fit Score</div>
+              </div>
+            </div>
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-900">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Matching Skills</h4>
+              <div className="flex flex-wrap gap-2">
+                {resume.enhancement.matching_skills?.slice(0, 5).map((skill: string, i: number) => (
+                  <span key={i} className="px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400 rounded text-xs">
+                    {skill}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -816,18 +598,18 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <InsightsCard
           title="Strengths"
-          count={resume?.stats?.key_takeaways?.green_flags?.length || 0}
+          count={strengths.length}
           color="green"
           icon={<Star className="w-4 h-4" />}
-          items={resume?.stats?.key_takeaways?.green_flags || []}
+          items={strengths}
           itemIcon={<CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />}
         />
         <InsightsCard
           title="Areas for Improvement"
-          count={resume?.stats?.key_takeaways?.red_flags?.length || 0}
+          count={weaknesses.length}
           color="red"
           icon={<AlertCircle className="w-4 h-4" />}
-          items={resume?.stats?.key_takeaways?.red_flags || []}
+          items={weaknesses}
           itemIcon={<XCircle className="w-4 h-4 text-red-500 mt-0.5" />}
         />
       </div>
@@ -883,53 +665,127 @@ const ImprovementTab = ({ resume }: { resume: any }) => (
   <div className="space-y-6">
     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">AI-Enhanced Content</h3>
 
-    {/* Summary */}
-    <ImprovementCard
-      title="Professional Summary"
-      color="blue"
-      icon={<Users className="w-4 h-4" />}
-      content={resume.improvement_resume.tailored_resume.summary}
-    />
+    {resume.enhancement?.tailored_resume?.summary && (
+      <ImprovementCard
+        title="Professional Summary"
+        color="blue"
+        icon={<Users className="w-4 h-4" />}
+        content={resume.enhancement.tailored_resume.summary}
+      />
+    )}
 
-    {/* Experience */}
-    <ImprovementList
-      title="Experience Highlights"
-      color="green"
-      icon={<Clock className="w-4 h-4" />}
-      items={resume.improvement_resume.tailored_resume.experience}
-      bulletColor="green"
-    />
-
-    {/* Skills */}
-    <ImprovementSkills
-      title="Key Skills"
-      color="purple"
-      icon={<Brain className="w-4 h-4" />}
-      skills={resume.improvement_resume.tailored_resume.skills}
-    />
-
-    {/* Projects */}
-    <ImprovementList
-      title="Project Highlights"
-      color="orange"
-      icon={<Target className="w-4 h-4" />}
-      items={resume.improvement_resume.tailored_resume.projects}
-      bulletColor="orange"
-    />
-
-    {/* Cover Letter */}
-    <ImprovementCard
-      title="Tailored Cover Letter"
-      color="indigo"
-      icon={<FileText className="w-4 h-4" />}
-      content={
-        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg max-h-64 overflow-y-auto">
-          <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed font-sans">
-            {resume.improvement_resume.cover_letter}
-          </pre>
+    {resume.enhancement?.tailored_resume?.experience && (
+      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
+        <div className="px-4 py-3 border-b bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+          <h4 className="font-semibold text-green-900 dark:text-green-100 flex items-center gap-2">
+            <Award className="w-4 h-4" /> Experience Highlights
+          </h4>
         </div>
-      }
-    />
+        <div className="p-4 space-y-2">
+          {resume.enhancement.tailored_resume.experience.map((exp: string, idx: number) => (
+            <div key={idx} className="flex items-start gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+              <span className="text-gray-700 dark:text-gray-300 text-sm">{exp}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {resume.enhancement?.tailored_resume?.skills && (
+      <ImprovementSkills
+        title="Key Skills"
+        color="purple"
+        icon={<Brain className="w-4 h-4" />}
+        skills={resume.enhancement.tailored_resume.skills}
+      />
+    )}
+
+    {resume.enhancement?.tailored_resume?.projects && (
+      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
+        <div className="px-4 py-3 border-b bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
+          <h4 className="font-semibold text-orange-900 dark:text-orange-100 flex items-center gap-2">
+            <Star className="w-4 h-4" /> Project Highlights
+          </h4>
+        </div>
+        <div className="p-4 space-y-2">
+          {resume.enhancement.tailored_resume.projects.map((proj: string, idx: number) => (
+            <div key={idx} className="flex items-start gap-2">
+              <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+              <span className="text-gray-700 dark:text-gray-300 text-sm">{proj}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {resume.enhancement?.top_1_percent_gap && (
+      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
+        <div className="px-4 py-3 border-b bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
+          <h4 className="font-semibold text-purple-900 dark:text-purple-100 flex items-center gap-2">
+            <Award className="w-4 h-4" /> Top 1% Gap Analysis
+          </h4>
+        </div>
+        <div className="p-4 space-y-4">
+          {resume.enhancement.top_1_percent_gap.strengths && (
+            <div>
+              <h5 className="font-medium text-gray-900 dark:text-white mb-2">Strengths</h5>
+              <div className="space-y-1">
+                {resume.enhancement.top_1_percent_gap.strengths.map((s: string, i: number) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{s}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {resume.enhancement.top_1_percent_gap.gaps && (
+            <div>
+              <h5 className="font-medium text-gray-900 dark:text-white mb-2">Gaps</h5>
+              <div className="space-y-1">
+                {resume.enhancement.top_1_percent_gap.gaps.map((g: string, i: number) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <XCircle className="w-4 h-4 text-red-500 mt-0.5" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{g}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {resume.enhancement.top_1_percent_gap.actionable_next_steps && (
+            <div>
+              <h5 className="font-medium text-gray-900 dark:text-white mb-2">Actionable Next Steps</h5>
+              <div className="space-y-1">
+                {resume.enhancement.top_1_percent_gap.actionable_next_steps.map((step: string, i: number) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{step}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+
+    {resume.enhancement?.cover_letter && (
+      <ImprovementCard
+        title="Tailored Cover Letter"
+        color="indigo"
+        icon={<FileText className="w-4 h-4" />}
+        content={
+          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg max-h-64 overflow-y-auto">
+            <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed font-sans">
+              {typeof resume.enhancement.cover_letter === 'object' 
+                ? resume.enhancement.cover_letter.content 
+                : resume.enhancement.cover_letter}
+            </pre>
+          </div>
+        }
+      />
+    )}
   </div>
 );
 
@@ -956,40 +812,6 @@ const ImprovementCard = ({
   </div>
 );
 
-const ImprovementList = ({
-  title,
-  color,
-  icon,
-  items,
-  bulletColor,
-}: {
-  title: string;
-  color: string;
-  icon: React.ReactNode;
-  items: string[];
-  bulletColor: string;
-}) => (
-  <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
-    <div
-      className={`px-4 py-3 border-b bg-${color}-50 dark:bg-${color}-900/20 border-${color}-200 dark:border-${color}-800`}
-    >
-      <h4 className={`font-semibold text-${color}-900 dark:text-${color}-100 flex items-center gap-2`}>
-        {icon} {title}
-      </h4>
-    </div>
-    <div className="p-4 space-y-2">
-      {items.map((item, idx) => (
-        <div key={idx} className="flex items-start gap-2">
-          <div
-            className={`w-2 h-2 bg-${bulletColor}-500 rounded-full mt-2 flex-shrink-0`}
-          ></div>
-          <span className="text-gray-700 dark:text-gray-300 text-sm">{item}</span>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
 const ImprovementSkills = ({
   title,
   color,
@@ -1011,7 +833,7 @@ const ImprovementSkills = ({
     </div>
     <div className="p-4">
       <div className="flex flex-wrap gap-2">
-        {skills.map((skill, idx) => (
+        {skills?.map((skill, idx) => (
           <span
             key={idx}
             className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-sm font-medium border border-gray-200 dark:border-gray-600"

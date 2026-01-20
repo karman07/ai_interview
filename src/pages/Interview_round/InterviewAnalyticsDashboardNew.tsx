@@ -1,18 +1,23 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, Award, Target, BarChart3, Zap, Trophy, Eye, Calendar } from 'lucide-react';
+import { TrendingUp, Award, Target, BarChart3, Zap, Trophy, Eye, Calendar, Clock, MessageSquare } from 'lucide-react';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, AreaChart } from 'recharts';
 import { DashboardApi, type DashboardAnalytics } from '@/api/dashboard';
+import { InterviewAnalyticsApi, type InterviewSession } from '@/api/interviewAnalytics';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function InterviewAnalyticsDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState<DashboardAnalytics | null>(null);
+  const [sessions, setSessions] = useState<InterviewSession[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) loadData();
+    if (user) {
+      loadData();
+      loadSessions();
+    }
   }, [user]);
 
   const loadData = async () => {
@@ -26,45 +31,38 @@ export default function InterviewAnalyticsDashboard() {
     }
   };
 
-  const hasInterviews = (dashboard?.overall?.totalInterviews || 0) > 0;
+  const loadSessions = async () => {
+    try {
+      const data = await InterviewAnalyticsApi.getMySessions({ limit: 10, offset: 0 });
+      setSessions(data);
+    } catch (error) {
+      console.error('Failed to load sessions:', error);
+    }
+  };
 
   const displayRadarData = [
-    { subject: 'Technical', score: 6.5, fullMark: 10 },
-    { subject: 'Behavioral', score: 7.2, fullMark: 10 },
-    { subject: 'Problem Solving', score: 5.8, fullMark: 10 },
-    { subject: 'HR', score: 6.9, fullMark: 10 }
+    { subject: 'Technical', score: dashboard?.technical?.averageScore || 0, fullMark: 10 },
+    { subject: 'Behavioral', score: dashboard?.behavioral?.averageScore || 0, fullMark: 10 },
+    { subject: 'Problem Solving', score: dashboard?.problemSolving?.averageScore || 0, fullMark: 10 },
+    { subject: 'HR', score: dashboard?.hr?.averageScore || 0, fullMark: 10 }
   ];
 
   const roundStatsData = [
-    { name: 'Technical', sessions: dashboard?.technical?.totalSessions || 2, avgScore: dashboard?.technical?.averageScore || 6.5, bestScore: dashboard?.technical?.bestScore || 8.2 },
-    { name: 'Behavioral', sessions: dashboard?.behavioral?.totalSessions || 1, avgScore: dashboard?.behavioral?.averageScore || 7.2, bestScore: dashboard?.behavioral?.bestScore || 7.8 },
-    { name: 'Problem Solving', sessions: dashboard?.problemSolving?.totalSessions || 1, avgScore: dashboard?.problemSolving?.averageScore || 5.8, bestScore: dashboard?.problemSolving?.bestScore || 6.5 },
-    { name: 'HR', sessions: dashboard?.hr?.totalSessions || 2, avgScore: dashboard?.hr?.averageScore || 6.9, bestScore: dashboard?.hr?.bestScore || 8.0 }
+    { name: 'Technical', sessions: dashboard?.technical?.totalSessions || 0, avgScore: dashboard?.technical?.averageScore || 0, bestScore: dashboard?.technical?.bestScore || 0 },
+    { name: 'Behavioral', sessions: dashboard?.behavioral?.totalSessions || 0, avgScore: dashboard?.behavioral?.averageScore || 0, bestScore: dashboard?.behavioral?.bestScore || 0 },
+    { name: 'Problem Solving', sessions: dashboard?.problemSolving?.totalSessions || 0, avgScore: dashboard?.problemSolving?.averageScore || 0, bestScore: dashboard?.problemSolving?.bestScore || 0 },
+    { name: 'HR', sessions: dashboard?.hr?.totalSessions || 0, avgScore: dashboard?.hr?.averageScore || 0, bestScore: dashboard?.hr?.bestScore || 0 }
   ];
 
-  const progressData = [
-    { month: 'Jan', score: 5.2 },
-    { month: 'Feb', score: 6.1 },
-    { month: 'Mar', score: 6.5 },
-    { month: 'Apr', score: 6.8 },
-    { month: 'May', score: 7.2 },
-    { month: 'Jun', score: 7.5 }
-  ];
+  const progressData = dashboard?.monthlyProgress?.map(m => ({
+    month: m.month,
+    score: m.averageScore
+  })) || [];
 
-  const avgScore = hasInterviews && dashboard?.overall?.overallAverageScore && dashboard.overall.overallAverageScore > 0 
-    ? dashboard.overall.overallAverageScore 
-    : 6.8;
-  const bestScore = hasInterviews && dashboard?.overall?.bestOverallScore && dashboard.overall.bestOverallScore > 0 
-    ? dashboard.overall.bestOverallScore 
-    : 8.5;
-
-  const strengths = (dashboard?.overall?.strengths && dashboard.overall.strengths.length > 0) 
-    ? dashboard.overall.strengths 
-    : ['Strong communication skills', 'Good problem-solving approach', 'Clear technical explanations'];
-  
-  const improvements = (dashboard?.overall?.areasForImprovement && dashboard.overall.areasForImprovement.length > 0) 
-    ? dashboard.overall.areasForImprovement 
-    : ['Practice more coding challenges', 'Improve time management', 'Work on system design concepts'];
+  const avgScore = dashboard?.overall?.overallAverageScore || 0;
+  const bestScore = dashboard?.overall?.bestOverallScore || 0;
+  const strengths = dashboard?.overall?.strengths || [];
+  const improvements = dashboard?.overall?.areasForImprovement || [];
 
   if (loading) {
     return (
@@ -196,75 +194,97 @@ export default function InterviewAnalyticsDashboard() {
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <Calendar className="w-5 h-5" />
-              Recent Sessions
+              Recent Interview Sessions
             </h3>
           </div>
           <div className="space-y-3">
-            {dashboard?.recentSessions && dashboard.recentSessions.length > 0 ? dashboard.recentSessions.map((session) => (
+            {sessions.length > 0 ? sessions.map((session) => (
               <div 
-                key={session.session_id} 
-                onClick={() => navigate(`/interview/report/${user?._id}/${session.session_id}`)}
-                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 transition-colors cursor-pointer"
+                key={session.sessionId} 
+                onClick={() => navigate(`/interview/report/${user?._id}/${session.sessionId}`)}
+                className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 transition-colors cursor-pointer"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
-                    {session.overall_score.toFixed(1)}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-semibold text-gray-900 dark:text-white capitalize">{session.round} Round</h4>
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        session.status === 'completed' 
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
+                          : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                      }`}>
+                        {session.status}
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{session.role} at {session.company}</p>
+                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {Math.floor(session.metrics.totalDuration / 60)} min
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MessageSquare className="w-3 h-3" />
+                        {session.metrics.questionsAnswered} questions
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {new Date(session.startedAt).toLocaleDateString()}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white capitalize">{session.round_type} Round</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{session.role_title} at {session.company_name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500">{new Date(session.created_at).toLocaleDateString()}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{session.metrics.overallScore.toFixed(1)}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">score</div>
+                    </div>
+                    <Eye className="w-5 h-5 text-gray-400" />
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    session.status === 'completed' 
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
-                      : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                  }`}>
-                    {session.status}
-                  </div>
-                  <Eye className="w-5 h-5 text-gray-400" />
-                </div>
+                
+
               </div>
             )) : (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                No recent sessions found. Start your first interview!
+                No sessions found. Start your first interview!
               </div>
             )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-green-500" />
-              Strengths
-            </h3>
-            <div className="space-y-2">
-              {strengths.map((strength, i) => (
-                <div key={i} className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                  <span className="text-green-600 dark:text-green-400">✓</span>
-                  <span className="text-gray-900 dark:text-white">{strength}</span>
-                </div>
-              ))}
+          {strengths.length > 0 && (
+            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-green-500" />
+                Strengths
+              </h3>
+              <div className="space-y-2">
+                {strengths.map((strength, i) => (
+                  <div key={i} className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <span className="text-green-600 dark:text-green-400">✓</span>
+                    <span className="text-gray-900 dark:text-white">{strength}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <Target className="w-5 h-5 text-orange-500" />
-              Areas for Improvement
-            </h3>
-            <div className="space-y-2">
-              {improvements.map((improvement, i) => (
-                <div key={i} className="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                  <span className="text-orange-600 dark:text-orange-400">→</span>
-                  <span className="text-gray-900 dark:text-white">{improvement}</span>
-                </div>
-              ))}
+          {improvements.length > 0 && (
+            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <Target className="w-5 h-5 text-orange-500" />
+                Areas for Improvement
+              </h3>
+              <div className="space-y-2">
+                {improvements.map((improvement, i) => (
+                  <div key={i} className="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <span className="text-orange-600 dark:text-orange-400">→</span>
+                    <span className="text-gray-900 dark:text-white">{improvement}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

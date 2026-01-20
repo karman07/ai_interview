@@ -45,6 +45,7 @@ const sidebarRoutes = [
         description: "Resources & study materials",
         path: "/resources",
       }
+      // ,
       // {
       //   label: "Job Portal",
       //   icon: <Briefcase size={18} />,

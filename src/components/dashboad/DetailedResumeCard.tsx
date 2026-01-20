@@ -24,8 +24,8 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume }) => {
   const [open, setOpen] = useState(false);
 
   const overallScore = Math.round(
-    ((resume.stats?.cv_quality?.overall_score || 0) +
-      (resume.stats?.jd_match?.overall_score || 0)) /
+    ((resume.analytics?.cv_quality?.overall_score || 0) +
+      (resume.analytics?.jd_match?.overall_score || 0)) /
       2
   );
 
@@ -68,29 +68,29 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume }) => {
             {[
               {
                 label: "CV Quality",
-                value: resume.stats?.cv_quality?.overall_score ?? 0,
+                value: resume.analytics?.cv_quality?.overall_score ?? 0,
                 band:
-                  (resume.stats?.cv_quality?.overall_score ?? 0) >= 70
+                  (resume.analytics?.cv_quality?.overall_score ?? 0) >= 70
                     ? "Strong"
-                    : (resume.stats?.cv_quality?.overall_score ?? 0) >= 50
+                    : (resume.analytics?.cv_quality?.overall_score ?? 0) >= 50
                     ? "Good"
                     : "Needs Work",
                 icon: DocumentTextIcon,
               },
               {
                 label: "JD Match",
-                value: resume.stats?.jd_match?.overall_score ?? 0,
+                value: resume.analytics?.jd_match?.overall_score ?? 0,
                 band:
-                  (resume.stats?.jd_match?.overall_score ?? 0) >= 70
+                  (resume.analytics?.jd_match?.overall_score ?? 0) >= 70
                     ? "Strong"
-                    : (resume.stats?.jd_match?.overall_score ?? 0) >= 50
+                    : (resume.analytics?.jd_match?.overall_score ?? 0) >= 50
                     ? "Good"
                     : "Needs Work",
                 icon: BriefcaseIcon,
               },
               {
                 label: "Green Flags",
-                value: resume.stats?.key_takeaways?.green_flags?.length ?? 0,
+                value: resume.analytics?.key_takeaways?.green_flags?.length ?? 0,
                 band: "Total",
                 icon: StarIcon,
               },
