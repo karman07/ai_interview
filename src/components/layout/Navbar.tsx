@@ -40,7 +40,6 @@ export default function Navbar() {
   const navLinks = [
     { to: routes.home, label: "Home" },
     { to: routes.about, label: "About" },
-    { to: routes.pricing, label: "Team" },
     { to: routes.jobsPublic, label: "Jobs" },
     { to: routes.contact, label: "Contact" }
   ];

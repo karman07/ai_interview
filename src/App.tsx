@@ -15,7 +15,6 @@ import CompleteProfile from "./pages/Profile/CompleteProfile";
 import { PricingProvider } from "@/contexts/PricingContext";
 import Footer from "./components/layout/Footer";
 import ResumeDashboard from "@/pages/Dashboard/ResumeDashboard";
-// import { userStore } from "@/api/http";
 import { useAuth } from "@/contexts/AuthContext";
 import InterviewApp from "./pages/Interview/Interview";
 import ResourcesHub from "./pages/Resources/Resources";
@@ -31,9 +30,6 @@ import InterviewStart from "./pages/Interview_round/InterviewStart";
 import InterviewRoomPage from "./pages/Interview_round/InterviewRoomPage";
 import InterviewAnalyticsDashboardNew from "./pages/Interview_round/InterviewAnalyticsDashboardNew";
 import InterviewHistory from "./pages/Interview_round/InterviewHistory";
-// import { AnalyticsProvider } from '@/contexts/AnalyticsContext';
-
-import { ThemeProvider } from "./contexts/ThemeContext";
 import { AnalyticsProvider } from "./contexts/AnalyticsContext";
 import AnalyticsTest from "./pages/Test/AnalyticsTest";
 import { DSAQuestionsProvider } from "./contexts/DSAQuestionsContext";
@@ -85,11 +81,10 @@ function App() {
     location.pathname.startsWith("/dsa/");
 
   return (
-    <ThemeProvider>
-      <AnalyticsProvider>
-        <PricingProvider>
-          <div className="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
-            {!shouldHideNavbar && <Navbar />}
+    <AnalyticsProvider>
+      <PricingProvider>
+        <div className="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
+          {!shouldHideNavbar && <Navbar />}
 
           <div className="flex-grow">
           <Routes>
@@ -337,7 +332,6 @@ function App() {
       </div>
     </PricingProvider>
     </AnalyticsProvider>
-    </ThemeProvider>
   );
 }
 

@@ -16,6 +16,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   useEffect(() => {
+    const saved = localStorage.getItem('theme') as Theme;
+    if (saved) {
+      document.documentElement.classList.toggle('dark', saved === 'dark');
+    }
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem('theme', theme);
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);

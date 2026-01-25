@@ -196,7 +196,7 @@ const ContactPage = () => {
                   </div>
                   <div>
                     <p className="font-semibold text-lg mb-1">Phone</p>
-                    <p className="text-white/90">+91 8813947793</p>
+                    <p className="text-white/90">+918813947793</p>
                   </div>
                 </div>
 
