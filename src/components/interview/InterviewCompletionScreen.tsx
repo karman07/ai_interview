@@ -12,19 +12,19 @@ export default function InterviewCompletionScreen({ evaluation, interviewState }
   const history = interviewState?.history || [];
   const totalQuestions = history.length;
   const videoAnalysis = (interviewState as any)?.video_analysis;
-  
+
   const scoreData = history.map((item: any, idx: number) => ({
     question: `Q${idx + 1}`,
-    score: (item.evaluation?.total_score || 0) * 10,
-    technical: item.technical_evaluation?.technical_depth || 0,
-    communication: item.communication_evaluation?.voice_scores?.total || 0
+    score: Math.min(item.evaluation?.total_score || 0, 10),
+    technical: Math.min(item.technical_evaluation?.technical_depth || 0, 10),
+    communication: Math.min(item.communication_evaluation?.voice_scores?.scaled_out_of_10?.total || item.communication_evaluation?.voice_scores?.total || 0, 10)
   }));
 
   const avgScore = scoreData.reduce((sum: number, d: any) => sum + d.score, 0) / (scoreData.length || 1);
   const avgTechnical = scoreData.reduce((sum: number, d: any) => sum + d.technical, 0) / (scoreData.length || 1);
   const avgCommunication = scoreData.reduce((sum: number, d: any) => sum + d.communication, 0) / (scoreData.length || 1);
-  const avgClarity = history.reduce((sum: number, h: any) => sum + (h.technical_evaluation?.raw?.clarity || 0), 0) / (history.length || 1);
-  const avgConfidence = history.reduce((sum: number, h: any) => sum + (h.technical_evaluation?.raw?.confidence || 0), 0) / (history.length || 1);
+  const avgClarity = history.reduce((sum: number, h: any) => sum + Math.min(h.communication_evaluation?.voice_scores?.scaled_out_of_10?.clarity || h.technical_evaluation?.raw?.clarity || 0, 10), 0) / (history.length || 1);
+  const avgConfidence = history.reduce((sum: number, h: any) => sum + Math.min(h.communication_evaluation?.voice_scores?.scaled_out_of_10?.confidence || h.technical_evaluation?.raw?.confidence || 0, 10), 0) / (history.length || 1);
 
   const performanceData = [
     { subject: 'Technical', score: avgTechnical, fullMark: 10 },
@@ -88,7 +88,7 @@ export default function InterviewCompletionScreen({ evaluation, interviewState }
           </div>
 
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 mb-2">
-            <div 
+            <div
               className="bg-gradient-to-r from-indigo-600 to-purple-600 h-4 rounded-full transition-all duration-1000"
               style={{ width: `${percentage}%` }}
             />
@@ -218,19 +218,19 @@ export default function InterviewCompletionScreen({ evaluation, interviewState }
                 <div className="space-y-1">
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-600 dark:text-gray-400">Fluency</span>
-                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{item.communication_evaluation?.voice_scores?.fluency || 0}</span>
+                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{Math.min(item.communication_evaluation?.voice_scores?.scaled_out_of_10?.fluency || 0, 10).toFixed(1)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-600 dark:text-gray-400">Clarity</span>
-                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{item.communication_evaluation?.voice_scores?.clarity || 0}</span>
+                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{Math.min(item.communication_evaluation?.voice_scores?.scaled_out_of_10?.clarity || 0, 10).toFixed(1)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-600 dark:text-gray-400">Confidence</span>
-                    <span className="text-sm font-bold text-purple-600 dark:text-purple-400">{item.communication_evaluation?.voice_scores?.confidence || 0}</span>
+                    <span className="text-sm font-bold text-purple-600 dark:text-purple-400">{Math.min(item.communication_evaluation?.voice_scores?.scaled_out_of_10?.confidence || 0, 10).toFixed(1)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-600 dark:text-gray-400">Pace</span>
-                    <span className="text-sm font-bold text-amber-600 dark:text-amber-400">{item.communication_evaluation?.voice_scores?.pace || 0}</span>
+                    <span className="text-sm font-bold text-amber-600 dark:text-amber-400">{Math.min(item.communication_evaluation?.voice_scores?.scaled_out_of_10?.pace || 0, 10).toFixed(1)}</span>
                   </div>
                 </div>
               </div>
