@@ -3,6 +3,7 @@ export interface Resume {
   _id: string;
   id: string;
   filename: string;
+  path: string;
   url: string;
   analytics: {
     cv_quality: {
