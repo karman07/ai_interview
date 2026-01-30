@@ -10,6 +10,7 @@ import {
   Menu,
   Moon,
   Sun,
+  Briefcase,
 } from "lucide-react";
 import colors from "@/constants/colors";
 import { cn } from "@/utils/cn";
@@ -45,13 +46,13 @@ const sidebarRoutes = [
         description: "Resources & study materials",
         path: "/resources",
       }
-      // ,
-      // {
-      //   label: "Job Portal",
-      //   icon: <Briefcase size={18} />,
-      //   description: "Browse jobs & applications",
-      //   path: "/employee",
-      // },
+      ,
+      {
+        label: "Job Portal",
+        icon: <Briefcase size={18} />,
+        description: "Browse jobs & applications",
+        path: "/employee",
+      },
     ],
   },
 ];

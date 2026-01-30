@@ -10,8 +10,9 @@ interface ResumeContextType {
    * Upload resume and optional JD file/text
    * @param files Array of File objects: [resumeFile, jdFile?]
    * @param jdText Optional JD text
+   * @returns The uploaded resume with analytics
    */
-  uploadResume: (files: File[], jdText?: string) => Promise<void>;
+  uploadResume: (files: File[], jdText?: string) => Promise<Resume>;
 }
 
 const ResumeContext = createContext<ResumeContextType | undefined>(undefined);
@@ -32,10 +33,11 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setResumes(data);
   };
 
-  const uploadResume = async (files: File[], jdText?: string) => {
-    if (!user) return;
+  const uploadResume = async (files: File[], jdText?: string): Promise<Resume> => {
+    if (!user) throw new Error('User not authenticated');
     const newResume = await resumeService.uploadResume(files, jdText);
     setResumes((prev) => [newResume, ...prev]);
+    return newResume;
   };
 
   useEffect(() => {

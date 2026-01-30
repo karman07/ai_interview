@@ -37,9 +37,10 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
   const [jdText, setJdText] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<"evaluation" | "improvement">("evaluation");
+  const [activeTab, setActiveTab] = useState<"evaluation" | "improvement" | "jdMatch">("evaluation");
 
   const hasImprovement = Boolean(resume?.enhancement);
+  const hasJDMatch = Boolean(resume?.analytics?.jd_match?.subscores?.length > 0);
   const overallScore = Math.round(resume.analytics?.overall_score || resume.analytics?.cv_quality?.overall_score || 0);
   const sections = resume.analytics?.sections || resume.analytics?.cv_quality?.subscores || [];
   const strengths = resume.analytics?.strengths || resume.analytics?.key_takeaways?.green_flags || [];
@@ -316,6 +317,14 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                 active={activeTab === "evaluation"}
                 onClick={() => setActiveTab("evaluation")}
               />
+              {hasJDMatch && (
+                <TabButton
+                  label="JD Match Analysis"
+                  icon={<Brain className="w-4 h-4" />}
+                  active={activeTab === "jdMatch"}
+                  onClick={() => setActiveTab("jdMatch")}
+                />
+              )}
               {hasImprovement && (
                 <TabButton
                   label="AI Enhancement"
@@ -329,6 +338,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
 
           <div className="p-4 sm:p-6">
             {activeTab === "evaluation" && <EvaluationTab resume={resume} sections={sections} strengths={strengths} weaknesses={weaknesses} />}
+            {activeTab === "jdMatch" && hasJDMatch && <JDMatchTab resume={resume} />}
             {activeTab === "improvement" && hasImprovement && (
               <ImprovementTab resume={resume} />
             )}
@@ -444,7 +454,7 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume, sections, strengt
       {/* CV Quality Table */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Quality Assessment
+          CV Quality Assessment
         </h3>
         <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
           <div className="overflow-x-hidden">
@@ -652,11 +662,147 @@ const InsightsCard = ({
   </div>
 );
 
-const ImprovementTab = ({ resume }: { resume: any }) => (
-  <div className="space-y-6">
-    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">AI-Enhanced Content</h3>
+const JDMatchTab = ({ resume }: { resume: any }) => {
+  const jdMatchData = resume?.analytics?.jd_match;
 
-    {resume.enhancement?.tailored_resume?.summary && (
+  return (
+    <div className="space-y-6">
+      {/* Overall Score Card */}
+      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+              Job Description Match Score
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Your resume's compatibility with the job requirements
+            </p>
+          </div>
+          <div className="text-center">
+            <div className="text-5xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              {jdMatchData.overall_score}
+            </div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium mt-1">out of 100</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Match Analysis Table */}
+      <div className="border border-indigo-200 dark:border-indigo-800 rounded-xl overflow-hidden bg-white dark:bg-gray-900 shadow-sm">
+        <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-b border-indigo-200 dark:border-indigo-800">
+          <h4 className="font-semibold text-indigo-900 dark:text-indigo-100 text-lg flex items-center gap-2">
+            <Brain className="w-5 h-5" /> Detailed Match Analysis
+          </h4>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/10 dark:to-purple-900/10">
+              <tr>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                  Match Dimension
+                </th>
+                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900 dark:text-white">
+                  Score
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white w-64">
+                  Match Strength
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                  Evidence & Details
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {jdMatchData.subscores.map((sub: any, idx: number) => {
+                const percentage = (sub.score / sub.max_score) * 100;
+                return (
+                  <tr key={idx} className="hover:bg-indigo-50/30 dark:hover:bg-indigo-900/5 transition-colors">
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${
+                          percentage >= 80 ? "bg-indigo-500" :
+                          percentage >= 60 ? "bg-blue-500" :
+                          percentage >= 40 ? "bg-yellow-500" : "bg-red-500"
+                        }`} />
+                        <span className="font-medium text-gray-900 dark:text-white capitalize">
+                          {sub.dimension.replace(/_/g, " ")}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-center">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30">
+                        <span className="text-xl font-bold text-indigo-700 dark:text-indigo-400">{sub.score}</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">/ {sub.max_score}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="space-y-2">
+                        <div className="relative w-full">
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${percentage}%` }}
+                              transition={{ duration: 0.8, ease: "easeOut" }}
+                              className={`h-4 rounded-full shadow-sm ${
+                                percentage >= 80
+                                  ? "bg-gradient-to-r from-indigo-500 to-purple-500"
+                                  : percentage >= 60
+                                  ? "bg-gradient-to-r from-blue-500 to-indigo-500"
+                                  : percentage >= 40
+                                  ? "bg-gradient-to-r from-yellow-500 to-orange-500"
+                                  : "bg-gradient-to-r from-red-500 to-pink-500"
+                              }`}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className={`text-xs font-semibold ${
+                            percentage >= 80 ? "text-indigo-600 dark:text-indigo-400" :
+                            percentage >= 60 ? "text-blue-600 dark:text-blue-400" :
+                            percentage >= 40 ? "text-yellow-600 dark:text-yellow-400" :
+                            "text-red-600 dark:text-red-400"
+                          }`}>
+                            {percentage >= 80 ? "Excellent Match" :
+                             percentage >= 60 ? "Good Match" :
+                             percentage >= 40 ? "Moderate Match" : "Needs Improvement"}
+                          </span>
+                          <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                            {Math.round(percentage)}%
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      {Array.isArray(sub.evidence) ? (
+                        <ul className="space-y-2">
+                          {sub.evidence.map((ev: string, i: number) => (
+                            <li key={i} className="flex items-start gap-2 text-sm">
+                              <CheckCircle2 className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" />
+                              <span className="text-gray-700 dark:text-gray-300">{ev}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{sub.evidence}</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ImprovementTab = ({ resume }: { resume: any }) => {
+  return (
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">AI-Enhanced Content</h3>
+
+      {resume.enhancement?.tailored_resume?.summary && (
       <ImprovementCard
         title="Professional Summary"
         color="blue"
@@ -777,8 +923,9 @@ const ImprovementTab = ({ resume }: { resume: any }) => (
         }
       />
     )}
-  </div>
-);
+    </div>
+  );
+};
 
 const ImprovementCard = ({
   title,

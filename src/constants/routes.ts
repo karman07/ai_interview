@@ -29,7 +29,6 @@ const routes = {
   interviewStart: (type: string) => `/interview/start/${type}`,
   interviewRoom: (type: string) => `/interview/room/${type}`,
   interviewResults: '/interview/results',
-  interviewAnalytics: '/interview/analytics',
   interviewHistory: '/interview/history',
   // DSA Routes
   dsaDashboard: '/dsa',

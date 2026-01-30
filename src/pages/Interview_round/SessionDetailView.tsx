@@ -46,11 +46,11 @@ export default function SessionDetailView() {
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <button
-            onClick={() => navigate('/interview/analytics')}
+            onClick={() => navigate('/interview/history')}
             className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Analytics
+            Back to History
           </button>
           <div className="flex items-center justify-between">
             <div>

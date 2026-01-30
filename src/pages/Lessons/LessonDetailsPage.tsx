@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import Plyr from "plyr-react";
 import "plyr-react/plyr.css";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
 import axios from "axios";
 import { API_BASE_URL } from "@/api/http";
 import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis } from "recharts";
@@ -518,28 +519,56 @@ const LessonDetailsPage: React.FC = () => {
                 </div>
 
                 {/* Enhanced Video Player */}
+                {/* Video player with validation and error boundary */}
                 <div className="mb-8 rounded-2xl overflow-hidden shadow-xl border border-white/50 bg-black">
-                  <Plyr
-                    source={{
-                      type: "video",
-                      sources: [
-                        {
-                          src: (() => {
-                            const url = currentSubLesson.videoUrl || currentLesson.videoUrl || "UmnCZ7-9yDY";
-                            if (url.includes('youtube.com') || url.includes('youtu.be')) {
-                              const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
-                              return match ? match[1] : url;
-                            }
-                            return url;
-                          })(),
-                          provider: (() => {
-                            const url = currentSubLesson.videoUrl || currentLesson.videoUrl || "";
-                            return url.includes('youtube.com') || url.includes('youtu.be') || !url.startsWith('http') ? "youtube" : "html5";
-                          })(),
-                        },
-                      ],
-                    }}
-                  />
+                  {
+                    (() => {
+                      const rawUrl = currentSubLesson.videoUrl || currentLesson.videoUrl || "";
+                      let videoSrc = rawUrl;
+                      let provider: "youtube" | "html5" = "html5";
+
+                      if (!rawUrl) {
+                        videoSrc = "UmnCZ7-9yDY"; // sensible default
+                        provider = "youtube";
+                      } else if (rawUrl.includes("youtube.com") || rawUrl.includes("youtu.be")) {
+                        const match = rawUrl.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+                        videoSrc = match ? match[1] : rawUrl;
+                        provider = "youtube";
+                      } else {
+                        videoSrc = rawUrl;
+                        provider = "html5";
+                      }
+
+                      const isYouTube = provider === "youtube";
+                      const isValidYoutubeId = isYouTube ? /^[A-Za-z0-9_-]{11}$/.test(videoSrc) : true;
+
+                      if (isYouTube && !isValidYoutubeId) {
+                        console.warn("Invalid YouTube ID detected for lesson video:", videoSrc);
+                        return (
+                          <div className="p-8 text-center bg-black text-white">
+                            <h3 className="text-lg font-bold">Invalid video</h3>
+                            <p className="text-sm mt-2">The configured YouTube video ID is invalid. Please check the lesson settings.</p>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <ErrorBoundary>
+                          <Plyr
+                            source={{
+                              type: "video",
+                              sources: [
+                                {
+                                  src: videoSrc,
+                                  provider,
+                                },
+                              ],
+                            }}
+                          />
+                        </ErrorBoundary>
+                      );
+                    })()
+                  }
                 </div>
 
                 {/* Enhanced Content Sections */}

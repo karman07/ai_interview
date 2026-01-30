@@ -127,8 +127,8 @@ export default function InterviewStart() {
                     <p className="text-sm text-gray-600 dark:text-gray-400">No data yet</p>
                   </div>
                 )}
-                <Link to="/interview/analytics" className="flex items-center justify-center gap-2 w-full py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium">
-                  <Eye className="w-4 h-4" /> View Analytics
+                <Link to="/interview/history" className="flex items-center justify-center gap-2 w-full py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium">
+                  <Eye className="w-4 h-4" /> View History
                 </Link>
               </CardContent>
             </Card>

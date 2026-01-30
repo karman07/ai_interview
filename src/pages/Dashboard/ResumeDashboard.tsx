@@ -19,8 +19,16 @@ import {
 } from "recharts";
 
 import { useResume } from "@/contexts/ResumeContext";
+import { useNotification } from "@/contexts/NotificationContext";
 import StatCard from "@/components/dashboad/StatCard";
 import DetailedResumeCard from "@/components/dashboad/DetailedResumeCard";
+import ResumeDetails from "@/components/dashboad/ResumeDetails";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/dialog/dialog";
 
 import { Resume } from '@/types/Resume';
 
@@ -65,18 +73,6 @@ const StarIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) =
   </svg>
 );
 
-const CalendarIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-  </svg>
-);
-
-const UserIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-  </svg>
-);
-
 const BriefcaseIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -99,6 +95,7 @@ const XMarkIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) 
 
 const ResumeDashboard: React.FC = () => {
   const { resumes, uploadResume } = useResume();
+  const { addNotification } = useNotification();
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [selectedResume, setSelectedResume] = useState<Resume | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -151,14 +148,30 @@ const ResumeDashboard: React.FC = () => {
     try {
       const files: File[] = [resumeFile];
       if (jdFile) files.push(jdFile);
-      await uploadResume(files, jdText);
+      const uploadedResumeData = await uploadResume(files, jdText);
+      
+      // Show success notification
+      addNotification({
+        type: 'success',
+        title: 'Resume uploaded successfully',
+        message: `${resumeFile.name} has been analyzed and processed.`,
+      });
+      
+      // Close upload modal and open detailed view with the uploaded resume
       setIsUploadOpen(false);
       setResumeFile(null);
       setJDFile(null);
       setJDText('');
+      
+      // Show the detailed resume view (same as clicking eye button)
+      setSelectedResume(uploadedResumeData);
     } catch (err) {
       console.error('Upload failed', err);
-      // TODO: show user-facing error
+      addNotification({
+        type: 'error',
+        title: 'Upload failed',
+        message: 'Failed to upload and analyze resume. Please try again.',
+      });
     }
   };
 
@@ -212,16 +225,6 @@ const ResumeDashboard: React.FC = () => {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-  };
-
-  const getBandColor = (band?: string): string => {
-    switch (band?.toLowerCase()) {
-      case 'strong': return 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/20';
-      case 'good': return 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/20';
-      case 'partial': return 'text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/20';
-      case 'weak': return 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/20';
-      default: return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700';
-    }
   };
 
   // ...inline components removed - using imported `StatCard` and `DetailedResumeCard`
@@ -613,234 +616,15 @@ const ResumeDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Resume Detail Modal */}
-        {selectedResume && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-              <div className="fixed inset-0 transition-opacity bg-black bg-opacity-50" onClick={() => setSelectedResume(null)} />
-              <div className="relative inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white dark:bg-gray-800 rounded-2xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6 max-h-[90vh] overflow-y-auto mx-4">
-                <div className="absolute top-0 right-0 hidden pt-4 pr-4 sm:block">
-                  <button
-                    onClick={() => setSelectedResume(null)}
-                    className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
-                  >
-                    <XMarkIcon className="w-6 h-6" />
-                  </button>
-                </div>
-                
-                <div className="w-full">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                      <DocumentTextIcon className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedResume.filename}</h2>
-                      <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4" />
-                        {new Date(selectedResume.createdAt).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Main Scores */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                    {[
-                      { 
-                        label: 'CV Quality', 
-                        value: Math.round(selectedResume.analytics?.cv_quality?.overall_score || 0), 
-                        band: selectedResume.analytics?.cv_quality?.overall_score >= 70 ? 'Strong' : 
-                              selectedResume.analytics?.cv_quality?.overall_score >= 50 ? 'Good' : 'Needs Improvement', 
-                        color: 'from-green-500 to-green-600',
-                        icon: DocumentTextIcon 
-                      },
-                      { 
-                        label: 'JD Match', 
-                        value: Math.round(selectedResume.analytics?.jd_match?.overall_score || 0), 
-                        band: (selectedResume.analytics?.jd_match?.overall_score || 0) >= 70 ? 'Strong' : 
-                              (selectedResume.analytics?.jd_match?.overall_score || 0) >= 50 ? 'Good' : 'Needs Improvement',
-                        color: 'from-purple-500 to-purple-600',
-                        icon: BriefcaseIcon 
-                      },
-                      { 
-                        label: 'Insights', 
-                        value: selectedResume.analytics?.key_takeaways?.green_flags?.length || 0,
-                        band: `${selectedResume.analytics?.key_takeaways?.green_flags?.length || 0} Green Flags`, 
-                        color: 'from-blue-500 to-blue-600',
-                        icon: StarIcon 
-                      }
-                    ].map((metric, idx) => (
-                      <div key={idx} className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-100 dark:border-gray-600">
-                        <div className="flex items-center gap-3 mb-4">
-                          <metric.icon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-400" />
-                          <h3 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">{metric.label}</h3>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-2xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">{Math.round(metric.value || 0)}</p>
-                          <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getBandColor(metric.band)}`}>
-                            {metric.band || 'N/A'}
-                          </span>
-                          <div className="mt-4 w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                            <div 
-                              className={`bg-gradient-to-r ${metric.color} h-2 rounded-full transition-all duration-1000`}
-                              style={{ width: `${Math.min(metric.value || 0, 100)}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Detailed Breakdown */}
-                  <div className="space-y-8">
-                    {/* CV Quality Subscores */}
-                    {selectedResume?.analytics?.cv_quality?.subscores && (
-                      <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6">
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 flex items-center gap-3">
-                          <AcademicCapIcon className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
-                          CV Quality Breakdown
-                        </h3>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                          {(selectedResume?.analytics?.cv_quality?.subscores || []).map((subscore, idx) => (
-                            <div key={idx} className="bg-gray-50 rounded-xl p-4">
-                              <div className="flex justify-between items-start mb-3">
-                                <h4 className="font-medium text-gray-900 capitalize">
-                                  {subscore.dimension.replace(/_/g, ' ')}
-                                </h4>
-                                <span className="text-sm font-bold text-gray-700">
-                                  {subscore.score}/{subscore.max_score}
-                                </span>
-                              </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
-                                <div 
-                                  className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all duration-1000"
-                                  style={{ width: `${(subscore.score / subscore.max_score) * 100}%` }}
-                                />
-                              </div>
-                              <div className="text-xs text-gray-600">
-                                {subscore.evidence.map((evidence, i) => (
-                                  <p key={i} className="mb-1">{evidence}</p>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* JD Match Subscores */}
-                    {selectedResume?.analytics?.jd_match?.subscores && (
-                      <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6">
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 flex items-center gap-3">
-                          <BriefcaseIcon className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
-                          Job Description Match Breakdown
-                        </h3>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                          {(selectedResume?.analytics?.jd_match?.subscores || []).map((subscore, idx) => (
-                            <div key={idx} className="bg-gray-50 rounded-xl p-4">
-                              <div className="flex justify-between items-start mb-3">
-                                <h4 className="font-medium text-gray-900 capitalize">
-                                  {subscore.dimension.replace(/_/g, ' ')}
-                                </h4>
-                                <span className="text-sm font-bold text-gray-700">
-                                  {subscore.score.toFixed(1)}/{subscore.max_score}
-                                </span>
-                              </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
-                                <div 
-                                  className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-1000"
-                                  style={{ width: `${(subscore.score / subscore.max_score) * 100}%` }}
-                                />
-                              </div>
-                              <p className="text-xs text-gray-600">{subscore.evidence}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Resume Analysis */}
-                    <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6">
-                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 flex items-center gap-3">
-                        <UserIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-                        Resume Analysis
-                      </h3>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div>
-                          <h4 className="font-medium text-gray-900 mb-3">Technical Skills</h4>
-                          <div className="space-y-2 text-sm">
-                            {(selectedResume.analytics?.cv_quality?.subscores?.find(s => s.dimension === 'technical_depth')?.evidence || []).map((skill, idx) => (
-                              <div key={idx} className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-blue-500" />
-                                <span className="text-gray-700">{skill}</span>
-                              </div>
-                            ))}
-                            {(selectedResume.analytics?.cv_quality?.subscores?.find(s => s.dimension === 'technical_depth')?.evidence || []).length === 0 && (
-                              <p className="text-sm text-gray-500">No technical skills found in analysis.</p>
-                            )}
-                          </div>
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-900 mb-3">Career Highlights</h4>
-                          <div className="space-y-2 text-sm">
-                            {(selectedResume.analytics?.cv_quality?.subscores?.find(s => s.dimension === 'career_progression')?.evidence || []).map((item, idx) => (
-                              <div key={idx} className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-green-500" />
-                                <span className="text-gray-700">{item}</span>
-                              </div>
-                            ))}
-                            {(selectedResume.analytics?.cv_quality?.subscores?.find(s => s.dimension === 'career_progression')?.evidence || []).length === 0 && (
-                              <p className="text-sm text-gray-500">No career progression info found.</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Key Takeaways */}
-                      <div className="mt-6">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                          <div>
-                            <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-green-500" />
-                              Strengths
-                            </h4>
-                            <ul className="list-disc list-inside space-y-2 text-sm text-gray-600">
-                              {(selectedResume.analytics?.key_takeaways?.green_flags || []).map((flag, idx) => (
-                                <li key={idx} className="text-green-600">{flag}</li>
-                              ))}
-                              {(selectedResume.analytics?.key_takeaways?.green_flags || []).length === 0 && (
-                                <li className="text-sm text-gray-500">No green flags identified.</li>
-                              )}
-                            </ul>
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-red-500" />
-                              Areas for Improvement
-                            </h4>
-                            <ul className="list-disc list-inside space-y-2 text-sm text-gray-600">
-                              {(selectedResume.analytics?.key_takeaways?.red_flags || []).map((flag, idx) => (
-                                <li key={idx} className="text-red-600">{flag}</li>
-                              ))}
-                              {(selectedResume.analytics?.key_takeaways?.red_flags || []).length === 0 && (
-                                <li className="text-sm text-gray-500">No red flags identified.</li>
-                              )}
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Resume Detail View */}
+        <Dialog open={!!selectedResume} onOpenChange={(open) => !open && setSelectedResume(null)}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto mx-4">
+            <DialogHeader>
+              <DialogTitle>Resume Details</DialogTitle>
+            </DialogHeader>
+            {selectedResume && <ResumeDetails resume={selectedResume} />}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

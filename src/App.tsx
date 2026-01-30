@@ -5,6 +5,8 @@ import About from "@/pages/About";
 import Sidebar from "@/components/layout/Sidebar/Sidebar";
 import { InterviewProvider } from "@/contexts/InterviewContext";
 import { ResultsProvider } from "@/contexts/ResultsContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
+import NotificationToast from "@/components/common/NotificationToast";
 import PricingPage from "@/pages/Pricing/Pricing";
 import routes from "@/constants/routes";
 import Login from "./pages/Auth/Login";
@@ -28,7 +30,6 @@ import { LessonsProvider } from "./contexts/LessonsContext";
 import InterviewHome from "./pages/Interview_round/InterviewHome";
 import InterviewStart from "./pages/Interview_round/InterviewStart";
 import InterviewRoomPage from "./pages/Interview_round/InterviewRoomPage";
-import InterviewAnalyticsDashboardNew from "./pages/Interview_round/InterviewAnalyticsDashboardNew";
 import InterviewHistory from "./pages/Interview_round/InterviewHistory";
 import { AnalyticsProvider } from "./contexts/AnalyticsContext";
 import AnalyticsTest from "./pages/Test/AnalyticsTest";
@@ -66,7 +67,6 @@ function App() {
     routes.subjectDetails,
     routes.lessonDetails,
     routes.interviewHome,
-    routes.interviewAnalytics,
     routes.interviewHistory,
     routes.dsaDashboard,
     routes.dsaQuestions,
@@ -81,12 +81,15 @@ function App() {
     location.pathname.startsWith("/dsa/");
 
   return (
-    <AnalyticsProvider>
-      <PricingProvider>
-        <div className="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
-          {!shouldHideNavbar && <Navbar />}
+    <NotificationProvider>
+      <AnalyticsProvider>
+        <PricingProvider>
+          <div className="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
+            {!shouldHideNavbar && <Navbar />}
 
-          <div className="flex-grow">
+            <NotificationToast />
+
+            <div className="flex-grow">
           <Routes>
             {/* Public Routes */}
             <Route path={routes.home} element={<Home />} />
@@ -201,14 +204,7 @@ function App() {
                   </div>
                 </div>
               } />
-              <Route path={routes.interviewAnalytics} element={
-                <div className="flex min-h-screen">
-                  <Sidebar />
-                  <div className="flex-1">
-                    <InterviewAnalyticsDashboardNew/>
-                  </div>
-                </div>
-              } />
+
               <Route path={routes.interviewHistory} element={
                 <div className="flex min-h-screen">
                   <Sidebar />
@@ -332,6 +328,7 @@ function App() {
       </div>
     </PricingProvider>
     </AnalyticsProvider>
+    </NotificationProvider>
   );
 }
 
