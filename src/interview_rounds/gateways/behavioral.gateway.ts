@@ -11,6 +11,8 @@ import { Server, Socket } from 'socket.io';
 import { InterviewService } from '../services/interview.service';
 import { EnhancedInterviewService } from '../services/enhanced-interview.service';
 import { AiInterviewApiService } from '../services/ai-interview-api.service';
+import { InterviewResultService } from '../services/interview-result.service';
+import { InterviewQuestionService } from '../services/interview-question.service';
 import { AllWsExceptionsFilter } from 'src/common/filters/ws-exception.filter';
 import { WsJwtGuard } from 'src/common/guards/ws-jwt.guard';
 import { InterviewRound } from '../schemas/interview-session.schema';
@@ -28,6 +30,8 @@ export class BehaviorGateway {
     private interviewService: InterviewService,
     private enhancedInterviewService: EnhancedInterviewService,
     private aiInterviewApi: AiInterviewApiService,
+    private interviewResultService: InterviewResultService,
+    private interviewQuestionService: InterviewQuestionService,
   ) {}
 
   @SubscribeMessage('start')
@@ -184,8 +188,46 @@ export class BehaviorGateway {
         evaluation: aiResponse.evaluation
       });
 
+      // 💾 SAVE EACH QUESTION IMMEDIATELY TO DATABASE
+      this.logger.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      this.logger.log('📥 ANSWER RECEIVED - TRIGGERING MONGODB SAVE (BEHAVIORAL ROUND)');
+      this.logger.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      if (aiResponse.state && aiResponse.state.history && aiResponse.state.history.length > 0) {
+        const latestQuestion = aiResponse.state.history[aiResponse.state.history.length - 1];
+        const questionNumber = aiResponse.state.history.length;
+        
+        this.logger.log(`🔍 Extracted question ${questionNumber} from AI response history`);
+        this.logger.log(`💬 Question preview: ${latestQuestion.question?.substring(0, 80)}...`);
+        this.logger.log(`🗨️ Answer preview: ${latestQuestion.answer?.substring(0, 80)}...`);
+        this.logger.log(`🔽 Calling InterviewQuestionService.saveQuestion()...\n`);
+        
+        try {
+          await this.interviewQuestionService.saveQuestion(
+            data.userId,
+            sessionId,
+            latestQuestion,
+            questionNumber,
+            'behavioral',
+            {
+              roleTitle: aiResponse.state.role_title,
+              companyName: aiResponse.state.company_name,
+              industry: aiResponse.state.industry,
+            }
+          );
+          
+          this.logger.log(`✅ Gateway confirmed: Question ${questionNumber} saved to MongoDB successfully!\n`);
+        } catch (saveError) {
+          this.logger.error(`❌ Gateway error: Failed to save question ${questionNumber}`);
+          this.logger.error(`❌ Error message: ${saveError.message}`);
+          this.logger.error(`❌ Stack: ${saveError.stack}\n`);
+        }
+      } else {
+        this.logger.warn('⚠️ No question history found in AI response - skipping save');
+      }
+
       // Check for next question or completion
-      if (aiResponse.next_question && aiResponse.continue_interview !== false) {
+      if (aiResponse.next_question !== null && aiResponse.next_question !== undefined && aiResponse.continue_interview !== false) {
         const nextRecord = await this.interviewService.create(
           data.userId,
           'behavioral',
@@ -203,7 +245,22 @@ export class BehaviorGateway {
           question: nextRecord.question,
         });
       } else if (aiResponse.continue_interview === false || aiResponse.interview_completed) {
-        // Interview completed
+        // Interview completed - save complete results
+        this.logger.log('🎉 Behavioral interview completed! Saving complete results...');
+        
+        try {
+          // Save complete interview result
+          await this.interviewResultService.saveInterviewResult(
+            data.userId,
+            aiResponse
+          );
+          
+          this.logger.log('✅ Complete behavioral interview results saved to MongoDB');
+        } catch (saveError) {
+          this.logger.error('💥 Failed to save complete interview results:', saveError.message);
+          // Continue with final report even if save fails
+        }
+        
         try {
           const finalReport = aiResponse.final_report || await this.aiInterviewApi.getInterviewReport(
             data.userId,

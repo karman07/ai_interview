@@ -20,7 +20,7 @@ import { EnhancedInterviewAnalyticsService } from '../services/enhanced-intervie
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { TimeoutInterceptor } from 'src/common/interceptors/timeout.interceptor';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Resume, ResumeDocument } from '../../resume/resume.schema';
 import { JobDescription, JobDescriptionDocument } from '../../job-description/job-description.schema';
 import { RoundType } from '../schemas/enhanced-interview-session.schema';
@@ -76,7 +76,7 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-@Controller('enhanced-interview')
+@Controller(['enhanced-interview', 'v1/interview'])
 @UseGuards(JwtAuthGuard)
 export class EnhancedAiInterviewController {
   private readonly logger = new Logger(EnhancedAiInterviewController.name);
@@ -606,9 +606,46 @@ export class EnhancedAiInterviewController {
     const userId = req.user?.userId || req.user?.sub;
     this.logger.log(`🎤📹 Answer submission for user: ${userId}`);
 
+    // Validate userId format
+    if (!userId || (typeof userId === 'string' && userId.length !== 24)) {
+      throw new HttpException(
+        'Invalid user ID format', 
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
     try {
       const audioFile = files?.audio_file?.[0];
       const videoFile = files?.video_file?.[0];
+
+      // Debug file information
+      this.logger.log('📁 FILES DEBUG:');
+      this.logger.log(`  Audio file: ${audioFile ? `${audioFile.originalname} (${audioFile.size} bytes)` : 'none'}`);
+      this.logger.log(`  Video file: ${videoFile ? `${videoFile.originalname} (${videoFile.size} bytes)` : 'none'}`);
+      
+      if (audioFile) {
+        this.logger.log(`  Audio path: ${audioFile.path}`);
+        this.logger.log(`  Audio mimetype: ${audioFile.mimetype}`);
+        // Check if file exists on disk
+        if (fs.existsSync(audioFile.path)) {
+          const stats = fs.statSync(audioFile.path);
+          this.logger.log(`  Audio file on disk: ${stats.size} bytes`);
+        } else {
+          this.logger.error(`  Audio file does not exist at path: ${audioFile.path}`);
+        }
+      }
+      
+      if (videoFile) {
+        this.logger.log(`  Video path: ${videoFile.path}`);
+        this.logger.log(`  Video mimetype: ${videoFile.mimetype}`);
+        // Check if file exists on disk
+        if (fs.existsSync(videoFile.path)) {
+          const stats = fs.statSync(videoFile.path);
+          this.logger.log(`  Video file on disk: ${stats.size} bytes`);
+        } else {
+          this.logger.error(`  Video file does not exist at path: ${videoFile.path}`);
+        }
+      }
 
       if (!audioFile && !videoFile && !payload.text_answer) {
         throw new HttpException(
@@ -637,23 +674,81 @@ export class EnhancedAiInterviewController {
 
       // Submit to AI service (pass both files if available)
       if (videoFile && audioFile) {
-        aiResponse = await this.aiInterviewApi.submitVoiceAnswer({
-          user_id: userId,
-          session_id: payload.session_id,
-          video_file_path: videoFile.path,
-          audio_file_path: audioFile.path
-        });
+        // Check if audio file has content
+        if (audioFile.size === 0 || !fs.existsSync(audioFile.path)) {
+          this.logger.warn('⚠️ Audio file is empty or missing, using video only');
+          if (!fs.existsSync(videoFile.path) || videoFile.size === 0) {
+            throw new HttpException('Video file is also empty or missing', HttpStatus.BAD_REQUEST);
+          }
+          const videoBuffer = fs.readFileSync(videoFile.path);
+          this.logger.log(`📹 Reading video buffer: ${videoBuffer.length} bytes`);
+          aiResponse = await this.aiInterviewApi.submitVoiceAnswer({
+            user_id: userId,
+            session_id: payload.session_id,
+            video_buffer: videoBuffer,
+            video_mimetype: videoFile.mimetype,
+            video_originalname: videoFile.originalname
+          });
+        } else {
+          const videoBuffer = fs.readFileSync(videoFile.path);
+          const audioBuffer = fs.readFileSync(audioFile.path);
+          this.logger.log(`📹 Reading video buffer: ${videoBuffer.length} bytes`);
+          this.logger.log(`🎤 Reading audio buffer: ${audioBuffer.length} bytes`);
+          aiResponse = await this.aiInterviewApi.submitVoiceAnswer({
+            user_id: userId,
+            session_id: payload.session_id,
+            video_buffer: videoBuffer,
+            video_mimetype: videoFile.mimetype,
+            video_originalname: videoFile.originalname,
+            audio_buffer: audioBuffer,
+            audio_mimetype: audioFile.mimetype,
+            audio_originalname: audioFile.originalname
+          });
+        }
       } else if (videoFile) {
-        aiResponse = await this.aiInterviewApi.submitVoiceAnswer({
-          user_id: userId,
-          session_id: payload.session_id,
-          video_file_path: videoFile.path
-        });
+        try {
+          if (!fs.existsSync(videoFile.path) || videoFile.size === 0) {
+            throw new HttpException('Video file is empty or missing', HttpStatus.BAD_REQUEST);
+          }
+          const videoBuffer = fs.readFileSync(videoFile.path);
+          this.logger.log(`📹 Reading video buffer: ${videoBuffer.length} bytes`);
+          aiResponse = await this.aiInterviewApi.submitVoiceAnswer({
+            user_id: userId,
+            session_id: payload.session_id,
+            video_buffer: videoBuffer,
+            video_mimetype: videoFile.mimetype,
+            video_originalname: videoFile.originalname
+          });
+        } catch (error) {
+          // If video has no audio, fall back to text answer or throw error
+          if (error.message?.includes('No audio data') && payload.text_answer) {
+            aiResponse = await this.aiInterviewApi.submitAnswer({
+              user_id: userId,
+              session_id: payload.session_id,
+              answer: payload.text_answer
+            });
+          } else {
+            throw error;
+          }
+        }
       } else if (audioFile) {
+        // Check if audio file has content
+        if (audioFile.size === 0 || !fs.existsSync(audioFile.path)) {
+          this.logger.error('❌ Audio file is empty or missing');
+          throw new HttpException(
+            'Audio file is empty, corrupted, or missing', 
+            HttpStatus.BAD_REQUEST
+          );
+        }
+        
+        const audioBuffer = fs.readFileSync(audioFile.path);
+        this.logger.log(`🎤 Reading audio buffer: ${audioBuffer.length} bytes`);
         aiResponse = await this.aiInterviewApi.submitVoiceAnswer({
           user_id: userId,
           session_id: payload.session_id,
-          audio_file_path: audioFile.path
+          audio_buffer: audioBuffer,
+          audio_mimetype: audioFile.mimetype,
+          audio_originalname: audioFile.originalname
         });
       } else {
         aiResponse = await this.aiInterviewApi.submitAnswer({
@@ -665,29 +760,40 @@ export class EnhancedAiInterviewController {
 
       const responseTime = Math.floor((Date.now() - startTime) / 1000);
 
+      // Extract the latest history item to get the answer and evaluations
+      const latestHistory = aiResponse.state?.history?.[aiResponse.state.history.length - 1];
+
       // Extract scores and analysis from AI response
       const scores = {
-        overall: aiResponse.evaluation?.overall_score || 0,
-        communication: aiResponse.evaluation?.communication_score || 0,
-        technical: aiResponse.evaluation?.technical_score || 0,
+        overall: aiResponse.evaluation?.total_score || latestHistory?.evaluation?.total_score || 0,
+        communication: latestHistory?.communication_evaluation?.voice_scores?.total || 0,
+        technical: latestHistory?.technical_evaluation?.technical_depth || 0,
         behavioral: aiResponse.evaluation?.behavioral_score || 0,
         problemSolving: aiResponse.evaluation?.problem_solving_score || 0,
-        clarity: aiResponse.evaluation?.clarity_score || 0,
-        confidence: aiResponse.evaluation?.confidence_score || 0
+        clarity: latestHistory?.technical_evaluation?.raw?.clarity || latestHistory?.communication_evaluation?.voice_scores?.clarity || 0,
+        confidence: latestHistory?.technical_evaluation?.raw?.confidence || latestHistory?.communication_evaluation?.voice_scores?.confidence || 0
       };
 
       const audioAnalysis = audioFile ? {
-        transcription: aiResponse.transcription || '',
-        speechClarity: aiResponse.audio_analysis?.speech_clarity || 0,
-        paceScore: aiResponse.audio_analysis?.pace_score || 0,
-        confidenceLevel: aiResponse.audio_analysis?.confidence_level || 0,
-        duration: aiResponse.audio_analysis?.duration || 0,
+        transcription: latestHistory?.transcribed_text || aiResponse.transcription || '',
+        speechClarity: latestHistory?.communication_evaluation?.voice_scores?.clarity || 0,
+        paceScore: latestHistory?.communication_evaluation?.voice_scores?.pace || 0,
+        confidenceLevel: latestHistory?.communication_evaluation?.voice_scores?.confidence || 0,
+        duration: latestHistory?.communication_evaluation?.voice_metrics?.duration || 0,
         pauseCount: aiResponse.audio_analysis?.pause_count || 0,
         fillerWords: aiResponse.audio_analysis?.filler_words || 0
-      } : undefined;
+      } : {
+        transcription: latestHistory?.transcribed_text || '',
+        speechClarity: latestHistory?.communication_evaluation?.voice_scores?.clarity || 0,
+        paceScore: latestHistory?.communication_evaluation?.voice_scores?.pace || 0,
+        confidenceLevel: latestHistory?.communication_evaluation?.voice_scores?.confidence || 0,
+        duration: latestHistory?.communication_evaluation?.voice_metrics?.duration || 0,
+        pauseCount: 0,
+        fillerWords: 0
+      };
 
       const videoAnalysis = videoFile ? {
-        transcription: aiResponse.transcription || '',
+        transcription: latestHistory?.transcribed_text || aiResponse.transcription || '',
         duration: aiResponse.video_analysis?.duration_seconds || 0,
         facePresence: aiResponse.video_analysis?.face_metrics?.face_presence_percentage || 0,
         eyeContact: aiResponse.video_analysis?.eye_contact?.average_score || 0,
@@ -697,10 +803,10 @@ export class EnhancedAiInterviewController {
       } : undefined;
 
       // Record answer in analytics
-      await this.analyticsService.recordAnswer({
+      const savedAnswer = await this.analyticsService.recordAnswer({
         sessionId: payload.session_id,
         userId,
-        answerText: payload.text_answer || aiResponse.transcription,
+        answerText: latestHistory?.answer || payload.text_answer || aiResponse.transcription,
         audioFilePath: process.env.NODE_ENV === 'development' ? audioFile?.path : undefined,
         audioUrl: process.env.NODE_ENV === 'development' && audioFile ? `/uploads/audio/${audioFile.filename}` : undefined,
         videoFilePath: process.env.NODE_ENV === 'development' ? videoFile?.path : undefined,
@@ -708,12 +814,15 @@ export class EnhancedAiInterviewController {
         audioAnalysis,
         videoAnalysis,
         scores,
-        feedback: aiResponse.feedback,
-        strengths: aiResponse.strengths || [],
-        improvements: aiResponse.improvements || [],
+        feedback: aiResponse.evaluation?.feedback || latestHistory?.evaluation?.feedback,
+        strengths: latestHistory?.evaluation?.strengths || aiResponse.strengths || [],
+        improvements: latestHistory?.evaluation?.suggestions || aiResponse.improvements || [],
         responseTime,
         aiResponse
       });
+
+      // Get session details from MongoDB
+      const sessionDetails = await this.analyticsService.getSessionDetails(payload.session_id);
 
       // Clean up files in production
       if (process.env.NODE_ENV !== 'development') {
@@ -721,22 +830,93 @@ export class EnhancedAiInterviewController {
         if (videoFile) fs.unlink(videoFile.path, () => {});
       }
 
-      // Record next question if provided
+      // Sync all questions from AI history to MongoDB with complete data
+      if (aiResponse.state?.history) {
+        for (let i = 0; i < aiResponse.state.history.length; i++) {
+          const historyItem = aiResponse.state.history[i];
+          if (!historyItem.question) continue;
+
+          try {
+            // Check if this question already exists
+            const session = await this.analyticsService['sessionModel'].findOne({ 
+              sessionId: payload.session_id 
+            });
+            
+            if (session) {
+              const existingQuestion = await this.analyticsService['questionModel'].findOne({
+                sessionId: session._id,
+                questionNumber: i + 1
+              });
+
+              if (!existingQuestion && historyItem.answer) {
+                // Save complete question with answer data
+                this.logger.log(`💾 Saving question #${i + 1} from history with answer`);
+                
+                await this.analyticsService['questionModel'].create({
+                  sessionId: session._id,
+                  userId: new Types.ObjectId(userId),
+                  questionNumber: i + 1,
+                  questionText: historyItem.question,
+                  questionType: historyItem.stage || aiResponse.state.round_type,
+                  answerText: historyItem.answer,
+                  scores: {
+                    overall: historyItem.evaluation?.total_score || 0,
+                    technical: historyItem.technical_evaluation?.technical_depth || 0,
+                    clarity: historyItem.technical_evaluation?.raw?.clarity || 0,
+                    confidence: historyItem.technical_evaluation?.raw?.confidence || 0,
+                    communication: historyItem.communication_evaluation?.voice_scores?.clarity || 0
+                  },
+                  audioAnalysis: {
+                    transcription: historyItem.transcribed_text,
+                    speechClarity: historyItem.communication_evaluation?.voice_scores?.clarity || 0,
+                    paceScore: historyItem.communication_evaluation?.voice_scores?.pace || 0,
+                    confidenceLevel: historyItem.communication_evaluation?.voice_scores?.confidence || 0,
+                    duration: historyItem.communication_evaluation?.voice_metrics?.duration || 0
+                  },
+                  feedback: historyItem.evaluation?.feedback,
+                  strengths: historyItem.evaluation?.strengths || [],
+                  improvements: historyItem.evaluation?.suggestions || [],
+                  questionAskedAt: historyItem.timestamp ? new Date(historyItem.timestamp) : new Date(),
+                  answerSubmittedAt: historyItem.timestamp ? new Date(historyItem.timestamp) : new Date(),
+                  aiResponse: historyItem
+                });
+              } else if (!existingQuestion) {
+                // Save unanswered question
+                await this.analyticsService['questionModel'].create({
+                  sessionId: session._id,
+                  userId: new Types.ObjectId(userId),
+                  questionNumber: i + 1,
+                  questionText: historyItem.question,
+                  questionType: historyItem.stage || aiResponse.state.round_type,
+                  questionAskedAt: historyItem.timestamp ? new Date(historyItem.timestamp) : new Date()
+                });
+              }
+            }
+          } catch (error) {
+            // Skip duplicates silently
+            if (error.code !== 11000) {
+              this.logger.error(`Failed to save question #${i + 1}:`, error.message);
+            }
+          }
+        }
+      }
+
+      // Record next question if provided and not already in history
+      let nextQuestionRecord = null;
       if (aiResponse.next_question) {
-        await this.analyticsService.recordQuestion({
+        nextQuestionRecord = await this.analyticsService.recordQuestion({
           sessionId: payload.session_id,
           userId,
           questionText: aiResponse.next_question,
-          questionType: aiResponse.question_type,
-          competency: aiResponse.competency,
-          difficulty: aiResponse.difficulty,
+          questionType: aiResponse.question_type || aiResponse.state?.round_type,
           questionAskedAt: new Date()
         });
       }
 
       // Check if interview is complete
+      let completedSession = null;
       if (aiResponse.interview_complete || aiResponse.continue_interview === false || !aiResponse.next_question) {
-        await this.analyticsService.completeSession(
+        completedSession = await this.analyticsService.completeSession(
           payload.session_id,
           scores,
           aiResponse
@@ -753,6 +933,44 @@ export class EnhancedAiInterviewController {
           feedback: aiResponse.feedback,
           strengths: aiResponse.strengths || [],
           improvements: aiResponse.improvements || []
+        },
+        // MongoDB objects
+        mongodb: {
+          savedAnswer: savedAnswer ? {
+            id: savedAnswer._id,
+            questionId: savedAnswer._id,
+            answerText: savedAnswer.answerText,
+            scores: savedAnswer.scores,
+            audioAnalysis: savedAnswer.audioAnalysis,
+            videoAnalysis: savedAnswer.videoAnalysis,
+            feedback: savedAnswer.feedback,
+            createdAt: savedAnswer.createdAt
+          } : null,
+          sessionDetails: sessionDetails ? {
+            id: sessionDetails._id,
+            sessionId: sessionDetails.sessionId,
+            status: sessionDetails.status,
+            roundType: sessionDetails.roundType,
+            totalQuestions: sessionDetails.questions?.length || 0,
+            scores: sessionDetails.scores,
+            metrics: sessionDetails.metrics
+          } : null,
+          nextQuestion: nextQuestionRecord ? {
+            id: nextQuestionRecord._id,
+            questionText: nextQuestionRecord.questionText,
+            questionType: nextQuestionRecord.questionType,
+            createdAt: nextQuestionRecord.createdAt
+          } : null,
+          completedSession: completedSession ? {
+            id: completedSession._id,
+            sessionId: completedSession.sessionId,
+            status: completedSession.status,
+            completedAt: completedSession.completedAt,
+            finalScores: completedSession.scores,
+            strengths: completedSession.strengths,
+            areasForImprovement: completedSession.areasForImprovement,
+            recommendations: completedSession.recommendations
+          } : null
         }
       };
 
@@ -828,6 +1046,44 @@ export class EnhancedAiInterviewController {
       throw new HttpException(
         error.message || 'Failed to get analytics dashboard', 
         HttpStatus.BAD_REQUEST
+      );
+    }
+  }
+
+  /**
+   * GET /enhanced-interview/analytics/average
+   * Get average analytics across all user interviews
+   */
+  @Get('analytics/average')
+  async getAverageAnalytics(@Request() req) {
+    const userId = req.user?.userId || req.user?.sub;
+    
+    try {
+      return await this.analyticsService.getAverageAnalytics(userId);
+    } catch (error) {
+      this.logger.error('Get average analytics failed:', error.message);
+      throw new HttpException(
+        error.message || 'Failed to get average analytics', 
+        HttpStatus.BAD_REQUEST
+      );
+    }
+  }
+
+  /**
+   * GET /enhanced-interview/analytics/session/:sessionId
+   * Get complete analytics for a specific session
+   */
+  @Get('analytics/session/:sessionId')
+  async getSessionAnalytics(@Param('sessionId') sessionId: string, @Request() req) {
+    const userId = req.user?.userId || req.user?.sub;
+    
+    try {
+      return await this.analyticsService.getSessionAnalytics(sessionId, userId);
+    } catch (error) {
+      this.logger.error('Get session analytics failed:', error.message);
+      throw new HttpException(
+        error.message || 'Failed to get session analytics', 
+        HttpStatus.NOT_FOUND
       );
     }
   }

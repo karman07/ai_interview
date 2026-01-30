@@ -10,6 +10,8 @@ import { UseGuards, Logger, UseFilters } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { InterviewService } from '../services/interview.service';
 import { AiInterviewApiService } from '../services/ai-interview-api.service';
+import { InterviewResultService } from '../services/interview-result.service';
+import { InterviewQuestionService } from '../services/interview-question.service';
 import { AllWsExceptionsFilter } from 'src/common/filters/ws-exception.filter';
 import { WsJwtGuard } from 'src/common/guards/ws-jwt.guard';
 
@@ -25,6 +27,8 @@ export class ProblemSolvingGateway {
   constructor(
     private interviewService: InterviewService,
     private aiInterviewApi: AiInterviewApiService,
+    private interviewResultService: InterviewResultService,
+    private interviewQuestionService: InterviewQuestionService,
   ) {}
 
   @SubscribeMessage('start')
@@ -121,8 +125,47 @@ export class ProblemSolvingGateway {
         aiResponse: aiResponse,
       });
 
-      if (aiResponse.next_question || aiResponse.question) {
-        const nextQuestion = aiResponse.next_question || aiResponse.question;
+      // 💾 SAVE EACH QUESTION IMMEDIATELY TO DATABASE
+      this.logger.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      this.logger.log('📥 ANSWER RECEIVED - TRIGGERING MONGODB SAVE (PROBLEM-SOLVING ROUND)');
+      this.logger.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      if (aiResponse.state && aiResponse.state.history && aiResponse.state.history.length > 0) {
+        const latestQuestion = aiResponse.state.history[aiResponse.state.history.length - 1];
+        const questionNumber = aiResponse.state.history.length;
+        
+        this.logger.log(`🔍 Extracted question ${questionNumber} from AI response history`);
+        this.logger.log(`💬 Question preview: ${latestQuestion.question?.substring(0, 80)}...`);
+        this.logger.log(`🗨️ Answer preview: ${latestQuestion.answer?.substring(0, 80)}...`);
+        this.logger.log(`🔽 Calling InterviewQuestionService.saveQuestion()...\n`);
+        
+        try {
+          await this.interviewQuestionService.saveQuestion(
+            data.userId,
+            sessionId,
+            latestQuestion,
+            questionNumber,
+            'problem-solving',
+            {
+              roleTitle: aiResponse.state.role_title,
+              companyName: aiResponse.state.company_name,
+              industry: aiResponse.state.industry,
+            }
+          );
+          
+          this.logger.log(`✅ Gateway confirmed: Question ${questionNumber} saved to MongoDB successfully!\n`);
+        } catch (saveError) {
+          this.logger.error(`❌ Gateway error: Failed to save question ${questionNumber}`);
+          this.logger.error(`❌ Error message: ${saveError.message}`);
+          this.logger.error(`❌ Stack: ${saveError.stack}\n`);
+        }
+      } else {
+        this.logger.warn('⚠️ No question history found in AI response - skipping save');
+      }
+
+      // Check if interview is complete (next_question is null or undefined)
+      if (aiResponse.next_question !== null && aiResponse.next_question !== undefined) {
+        const nextQuestion = aiResponse.next_question;
         const nextRecord = await this.interviewService.create(
           data.userId,
           'problem-solving',

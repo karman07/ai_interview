@@ -46,7 +46,7 @@ export class AiCvApiService {
   private readonly timeout: number;
 
   constructor(private readonly configService: ConfigService) {
-    this.baseUrl = this.configService.get<string>('AI_INTERVIEW_API_BASE_URL', 'http://localhost:8080');
+    this.baseUrl = this.configService.get<string>('AI_INTERVIEW_API_BASE_URL', 'http://localhost:8000');
     this.timeout = this.configService.get<number>('AI_INTERVIEW_API_TIMEOUT', 60000);
 
     this.axiosInstance = axios.create({
@@ -160,12 +160,18 @@ export class AiCvApiService {
   /**
    * Upload and evaluate CV file
    */
-  async uploadAndEvaluateCv(filePath: string, originalName: string, jdText?: string): Promise<any> {
+  async uploadAndEvaluateCv(
+    filePath: string, 
+    originalName: string, 
+    jdText?: string,
+    jdFilePath?: string,
+    jdFileName?: string
+  ): Promise<any> {
     const startTime = Date.now();
     this.logger.log(`🚀 Starting CV evaluation for: ${originalName}`);
     
     try {
-      const endpoint = this.configService.get<string>('AI_CV_EVALUATE_UPLOAD_ENDPOINT', '/upload/cv_evaluate');
+      const endpoint = this.configService.get<string>('AI_CV_EVALUATE_UPLOAD_ENDPOINT', '/v1/upload/cv_evaluate');
       this.logger.log(`🎯 Endpoint: ${this.baseUrl}${endpoint}`);
       
       // Check if file exists
@@ -182,9 +188,20 @@ export class AiCvApiService {
         contentType: 'application/pdf',
       });
       
-      if (jdText) {
-        this.logger.log(`📝 JD text length: ${jdText.length} characters`);
-        formData.append('jd_text', jdText);
+      // Always add jd_text field (empty string if not provided)
+      const jdTextValue = jdText || '';
+      formData.append('jd_text', jdTextValue);
+      this.logger.log(`📝 JD text: ${jdTextValue ? `${jdTextValue.length} characters` : 'empty'}`);
+
+      if (jdFilePath && jdFileName) {
+        this.logger.log(`📋 JD file: ${jdFileName}`);
+        if (!fs.existsSync(jdFilePath)) {
+          throw new Error(`JD file not found: ${jdFilePath}`);
+        }
+        formData.append('jd_file', fs.createReadStream(jdFilePath), {
+          filename: jdFileName,
+          contentType: 'application/pdf',
+        });
       }
 
       this.logger.log('📤 Sending request to AI service...');
@@ -236,7 +253,7 @@ export class AiCvApiService {
     this.logger.log(`🔄 Starting CV improvement for: ${originalName}`);
     
     try {
-      const endpoint = this.configService.get<string>('AI_CV_IMPROVEMENT_UPLOAD_ENDPOINT', '/upload/cv_improvement');
+      const endpoint = this.configService.get<string>('AI_CV_IMPROVEMENT_UPLOAD_ENDPOINT', '/v1/upload/cv_improvement');
       this.logger.log(`🎯 Endpoint: ${this.baseUrl}${endpoint}`);
       
       // Check if file exists

@@ -10,6 +10,8 @@ import { UseGuards, Logger, UseFilters } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { InterviewService } from '../services/interview.service';
 import { AiInterviewApiService } from '../services/ai-interview-api.service';
+import { InterviewResultService } from '../services/interview-result.service';
+import { InterviewQuestionService } from '../services/interview-question.service';
 import { AllWsExceptionsFilter } from 'src/common/filters/ws-exception.filter';
 import { WsJwtGuard } from 'src/common/guards/ws-jwt.guard';
 
@@ -25,6 +27,8 @@ export class TechnicalGateway {
   constructor(
     private interviewService: InterviewService,
     private aiInterviewApi: AiInterviewApiService,
+    private interviewQuestionService: InterviewQuestionService,
+    private interviewResultService: InterviewResultService,
   ) {}
 
   @SubscribeMessage('start')
@@ -149,9 +153,78 @@ export class TechnicalGateway {
         aiResponse: aiResponse,
       });
 
+      // 💾 SAVE EACH QUESTION IMMEDIATELY TO DATABASE
+      this.logger.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      this.logger.log('📥 ANSWER RECEIVED - TRIGGERING MONGODB SAVE (TECHNICAL ROUND)');
+      this.logger.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      // 🔍 DEBUG: Log full AI response structure
+      this.logger.log(`\n🔍 AI RESPONSE STRUCTURE:`);
+      this.logger.log(`   Has state: ${!!aiResponse.state}`);
+      this.logger.log(`   Has history: ${!!aiResponse.state?.history}`);
+      this.logger.log(`   History length: ${aiResponse.state?.history?.length || 0}`);
+      this.logger.log(`   Next question: ${aiResponse.next_question !== null && aiResponse.next_question !== undefined ? 'EXISTS' : 'NULL'}`);
+      
+      if (aiResponse.state && aiResponse.state.history && aiResponse.state.history.length > 0) {
+        const latestQuestion = aiResponse.state.history[aiResponse.state.history.length - 1];
+        const questionNumber = aiResponse.state.history.length;
+        
+        this.logger.log(`\n🔍 LATEST QUESTION DATA INSPECTION:`);
+        this.logger.log(`   Question Number: ${questionNumber}`);
+        this.logger.log(`   Has question field: ${!!latestQuestion.question}`);
+        this.logger.log(`   Has answer field: ${!!latestQuestion.answer}`);
+        this.logger.log(`   Has evaluation: ${!!latestQuestion.evaluation}`);
+        this.logger.log(`   Has technical_evaluation: ${!!latestQuestion.technical_evaluation}`);
+        this.logger.log(`   Has communication_evaluation: ${!!latestQuestion.communication_evaluation}`);
+        this.logger.log(`   Has transcribed_text: ${!!latestQuestion.transcribed_text}`);
+        
+        this.logger.log(`\n📋 QUESTION DATA PREVIEW:`);
+        this.logger.log(`   Question: ${latestQuestion.question?.substring(0, 80) || 'MISSING'}...`);
+        this.logger.log(`   Answer: ${latestQuestion.answer?.substring(0, 80) || 'MISSING'}...`);
+        this.logger.log(`   Total Score: ${latestQuestion.evaluation?.total_score || 'MISSING'}`);
+        this.logger.log(`   Feedback: ${latestQuestion.evaluation?.feedback?.substring(0, 60) || 'MISSING'}...`);
+        
+        this.logger.log(`\n🔽 Calling InterviewQuestionService.saveQuestion()...\n`);
+        
+        try {
+          const savedDoc = await this.interviewQuestionService.saveQuestion(
+            data.userId,
+            sessionId,
+            latestQuestion,
+            questionNumber,
+            'technical',
+            {
+              roleTitle: aiResponse.state.role_title,
+              companyName: aiResponse.state.company_name,
+              industry: aiResponse.state.industry,
+            }
+          );
+          
+          if (savedDoc) {
+            this.logger.log(`✅ Gateway confirmed: Question ${questionNumber} saved to MongoDB!`);
+            this.logger.log(`   Document ID: ${savedDoc._id}`);
+            this.logger.log(`   Has Answer: ${!!savedDoc.answerText}`);
+            this.logger.log(`   Has Scores: ${!!savedDoc.scores}`);
+            this.logger.log(`   Overall Score: ${savedDoc.scores?.overall || 0}\n`);
+          } else {
+            this.logger.warn(`⚠️ Gateway warning: saveQuestion returned null (validation failed or duplicate)\n`);
+          }
+        } catch (saveError) {
+          this.logger.error(`❌ Gateway error: Failed to save question ${questionNumber}`);
+          this.logger.error(`❌ Error message: ${saveError.message}`);
+          this.logger.error(`❌ Stack: ${saveError.stack}\n`);
+        }
+      } else {
+        this.logger.warn('⚠️ No question history found in AI response - skipping save');
+        this.logger.warn(`   aiResponse.state exists: ${!!aiResponse.state}`);
+        this.logger.warn(`   aiResponse.state.history exists: ${!!aiResponse.state?.history}`);
+        this.logger.warn(`   aiResponse.state.history.length: ${aiResponse.state?.history?.length || 0}\n`);
+      }
+
       // Check if there's a next question from AI
-      if (aiResponse.next_question || aiResponse.question) {
-        const nextQuestion = aiResponse.next_question || aiResponse.question;
+      // Check if interview is complete (next_question is null or undefined)
+      if (aiResponse.next_question !== null && aiResponse.next_question !== undefined) {
+        const nextQuestion = aiResponse.next_question;
         
         const nextRecord = await this.interviewService.create(
           data.userId,
@@ -164,6 +237,22 @@ export class TechnicalGateway {
           question: nextRecord.question,
         });
       } else {
+        // Interview is complete - save complete results to MongoDB
+        this.logger.log('🎉 Interview completed! Saving complete results...');
+        
+        try {
+          // Save complete interview result
+          await this.interviewResultService.saveInterviewResult(
+            data.userId,
+            aiResponse
+          );
+          
+          this.logger.log('✅ Complete interview results saved to MongoDB');
+        } catch (saveError) {
+          this.logger.error('💥 Failed to save complete interview results:', saveError.message);
+          // Continue with final report even if save fails
+        }
+        
         // Interview might be complete, get final report
         try {
           const finalReport = await this.aiInterviewApi.getInterviewReport(

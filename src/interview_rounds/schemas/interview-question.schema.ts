@@ -51,6 +51,30 @@ export class AudioAnalysis {
   fillerWords?: number;
 }
 
+@Schema({ _id: false })
+export class VideoAnalysis {
+  @Prop()
+  transcription?: string;
+
+  @Prop()
+  duration?: number; // in seconds
+
+  @Prop({ min: 0, max: 100, default: 0 })
+  facePresence: number;
+
+  @Prop({ min: 0, max: 10, default: 0 })
+  eyeContact: number;
+
+  @Prop({ min: 0, max: 10, default: 0 })
+  headStability: number;
+
+  @Prop()
+  cheatingRisk?: string; // NONE, LOW, MEDIUM, HIGH
+
+  @Prop({ min: 0, max: 10, default: 0 })
+  behaviorScore: number;
+}
+
 @Schema({ timestamps: true })
 export class InterviewQuestion {
   @Prop({ type: Types.ObjectId, ref: 'InterviewSession', required: true })
@@ -58,6 +82,9 @@ export class InterviewQuestion {
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
+
+  @Prop({ required: true })
+  questionNumber: number;
 
   @Prop({ required: true })
   questionText: string;
@@ -80,8 +107,17 @@ export class InterviewQuestion {
   @Prop()
   audioUrl?: string;
 
+  @Prop()
+  videoFilePath?: string;
+
+  @Prop()
+  videoUrl?: string;
+
   @Prop({ type: AudioAnalysis })
   audioAnalysis?: AudioAnalysis;
+
+  @Prop({ type: VideoAnalysis })
+  videoAnalysis?: VideoAnalysis;
 
   @Prop({ type: QuestionScores })
   scores?: QuestionScores;
@@ -112,3 +148,6 @@ export class InterviewQuestion {
 }
 
 export const InterviewQuestionSchema = SchemaFactory.createForClass(InterviewQuestion);
+
+// Prevent duplicate saves - unique combination of sessionId and questionNumber
+InterviewQuestionSchema.index({ sessionId: 1, questionNumber: 1 }, { unique: true });

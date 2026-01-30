@@ -26,6 +26,10 @@ import { SubscriptionModule } from './subscriptions/subscription.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { PlaceholderModule } from './common/placeholder';
 import { JobsModule } from './jobs/jobs.module';
+import { CvModule } from './cv/cv.module';
+import { SessionsModule } from './sessions/sessions.module';
+import { JdModule } from './jd/jd.module';
+import { AudioModule } from './audio/audio.module';
 
 @Module({
   imports: [
@@ -63,6 +67,10 @@ import { JobsModule } from './jobs/jobs.module';
     AnalyticsModule,
     PlaceholderModule,
     JobsModule,
+    CvModule,
+    SessionsModule,
+    JdModule,
+    AudioModule,
   ],
 })
 export class AppModule implements NestModule {

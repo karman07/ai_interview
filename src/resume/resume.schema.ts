@@ -12,13 +12,16 @@ export class Resume {
   @Prop({ required: true })
   path: string;
 
+  @Prop({ required: true })
+  url: string;
+
   // ✅ CV evaluation stats (optional since AI service might be unavailable)
-  @Prop({ type: Object, required: false, default: null })
-  stats: Record<string, any> | null;
+  @Prop({ type: Object, required: false, default: {} })
+  stats: Record<string, any>;
 
   // ✅ New improvement_resume field
-  @Prop({ type: Object, default: null })
-  improvement_resume: Record<string, any> | null;
+  @Prop({ type: Object, required: false, default: {} })
+  improvement_resume: Record<string, any>;
 
   @Prop({ type: Types.ObjectId, ref: User.name, required: true })
   user: User;

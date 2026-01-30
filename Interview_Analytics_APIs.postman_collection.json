@@ -1,0 +1,484 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "Interview Analytics APIs",
+		"description": "Complete collection of interview analytics endpoints with per-question saving and real-time analytics",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12345678"
+	},
+	"item": [
+		{
+			"name": "Dashboard & Overview",
+			"item": [
+				{
+					"name": "Get Dashboard Analytics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/interview-results/dashboard",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"interview-results",
+								"dashboard"
+							]
+						},
+						"description": "Get comprehensive dashboard analytics including:\n- Summary statistics\n- Round breakdown\n- Performance trends\n- Top skills\n- Recent interviews"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Interview History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/interview-results/history?page=1&limit=10&roundType=technical",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"interview-results",
+								"history"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Items per page (default: 10)"
+								},
+								{
+									"key": "roundType",
+									"value": "technical",
+									"description": "Filter by round type (optional)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get paginated interview history with filters"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Session Details",
+			"item": [
+				{
+					"name": "Get Session Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/interview-results/session/{{sessionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"interview-results",
+								"session",
+								"{{sessionId}}"
+							]
+						},
+						"description": "Get complete session details including:\n- All questions and answers\n- Scores breakdown\n- Voice metrics\n- Role and company info"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Session Questions Only",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/interview-results/session/{{sessionId}}/questions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"interview-results",
+								"session",
+								"{{sessionId}}",
+								"questions"
+							]
+						},
+						"description": "Get just the questions list for a session without full analytics"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Session Voice Analytics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/interview-results/session/{{sessionId}}/voice-analytics",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"interview-results",
+								"session",
+								"{{sessionId}}",
+								"voice-analytics"
+							]
+						},
+						"description": "Get detailed voice and communication metrics:\n- Speech clarity\n- Confidence level\n- Pace scores\n- Question-wise analysis\n- Insights and recommendations"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Session",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/interview-results/session/{{sessionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"interview-results",
+								"session",
+								"{{sessionId}}"
+							]
+						},
+						"description": "Delete all questions and data for a specific session"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Performance Statistics",
+			"item": [
+				{
+					"name": "Get Performance Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/interview-results/stats/performance?days=30",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"interview-results",
+								"stats",
+								"performance"
+							],
+							"query": [
+								{
+									"key": "days",
+									"value": "30",
+									"description": "Number of days to analyze (default: 30)"
+								},
+								{
+									"key": "roundType",
+									"value": "technical",
+									"description": "Filter by specific round type",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get comprehensive performance statistics:\n- Overall stats (total interviews, avg score, etc.)\n- Round-wise performance\n- Skill analysis\n- Time-based insights\n- Recommendations"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Performance Stats (7 Days)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/interview-results/stats/performance?days=7",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"interview-results",
+								"stats",
+								"performance"
+							],
+							"query": [
+								{
+									"key": "days",
+									"value": "7"
+								}
+							]
+						},
+						"description": "Get performance stats for last 7 days"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Performance Stats (90 Days)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/interview-results/stats/performance?days=90",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"interview-results",
+								"stats",
+								"performance"
+							],
+							"query": [
+								{
+									"key": "days",
+									"value": "90"
+								}
+							]
+						},
+						"description": "Get performance stats for last 90 days"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Analytics by Category",
+			"item": [
+				{
+					"name": "Get Company-wise Analytics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/interview-results/stats/by-company",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"interview-results",
+								"stats",
+								"by-company"
+							]
+						},
+						"description": "Get analytics grouped by company:\n- Total interviews per company\n- Average scores\n- Round breakdown\n- Roles tested\n- Performance trends"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Role-wise Analytics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/interview-results/stats/by-role",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"interview-results",
+								"stats",
+								"by-role"
+							]
+						},
+						"description": "Get analytics grouped by role:\n- Total interviews per role\n- Average scores\n- Companies interviewed with\n- Skills evaluated\n- Performance trends"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Legacy Endpoints (Old System)",
+			"item": [
+				{
+					"name": "Get All Results (Old)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/interview-results",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"interview-results"
+							]
+						},
+						"description": "Legacy endpoint - Get all interview results (old system based on complete interview saves)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Result by ID (Old)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/interview-results/{{resultId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"interview-results",
+								"{{resultId}}"
+							]
+						},
+						"description": "Legacy endpoint - Get specific interview result by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Stats Summary (Old)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/interview-results/stats/summary",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"interview-results",
+								"stats",
+								"summary"
+							]
+						},
+						"description": "Legacy endpoint - Get summary statistics"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "YOUR_JWT_TOKEN_HERE",
+			"type": "string"
+		},
+		{
+			"key": "sessionId",
+			"value": "679d234a5f6e7c8d9e0f1a2b",
+			"type": "string",
+			"description": "Replace with actual MongoDB session ObjectId"
+		},
+		{
+			"key": "resultId",
+			"value": "679d234a5f6e7c8d9e0f1a2c",
+			"type": "string",
+			"description": "Replace with actual MongoDB result ObjectId (for legacy endpoints)"
+		}
+	]
+}

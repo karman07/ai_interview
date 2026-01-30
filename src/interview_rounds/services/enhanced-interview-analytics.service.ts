@@ -12,6 +12,7 @@ import {
   InterviewQuestion, 
   InterviewQuestionDocument,
   AudioAnalysis,
+  VideoAnalysis,
   QuestionScores
 } from '../schemas/interview-question.schema';
 import { 
@@ -46,7 +47,7 @@ export interface AnswerData {
   videoFilePath?: string;
   videoUrl?: string;
   audioAnalysis?: AudioAnalysis;
-  videoAnalysis?: any;
+  videoAnalysis?: VideoAnalysis;
   scores?: QuestionScores;
   feedback?: string;
   strengths?: string[];
@@ -105,32 +106,84 @@ export class EnhancedInterviewAnalyticsService {
   async recordQuestion(data: QuestionData): Promise<InterviewQuestionDocument> {
     this.logger.log(`❓ Recording question for session: ${data.sessionId}`);
 
-    // Find the session
-    const session = await this.sessionModel.findOne({ sessionId: data.sessionId });
-    if (!session) {
-      throw new Error(`Session not found: ${data.sessionId}`);
+    try {
+      // Find the session
+      const session = await this.sessionModel.findOne({ sessionId: data.sessionId });
+      if (!session) {
+        throw new Error(`Session not found: ${data.sessionId}`);
+      }
+
+      // Check if this question already exists (by question text to avoid duplicates)
+      const existingQuestion = await this.questionModel.findOne({
+        sessionId: session._id,
+        questionText: data.questionText
+      });
+
+      if (existingQuestion) {
+        this.logger.log(`⚠️ Question already exists: ${existingQuestion._id}`);
+        return existingQuestion;
+      }
+
+      // Determine question number
+      const existingCount = await this.questionModel.countDocuments({ sessionId: session._id });
+      const questionNumber = existingCount + 1;
+
+      const question = new this.questionModel({
+        sessionId: session._id,
+        userId: new Types.ObjectId(data.userId),
+        questionNumber,
+        questionText: data.questionText,
+        questionType: data.questionType,
+        competency: data.competency,
+        difficulty: data.difficulty,
+        questionAskedAt: data.questionAskedAt || new Date()
+      });
+
+      await question.save();
+
+      // Update session metrics
+      await this.sessionModel.findByIdAndUpdate(session._id, {
+        $push: { questions: question._id },
+        $inc: { 'metrics.totalQuestions': 1 }
+      });
+
+      this.logger.log(`✅ Question #${questionNumber} recorded: ${question._id}`);
+      return question;
+    } catch (error) {
+      // Handle duplicate key error from MongoDB unique index
+      if (error.code === 11000) {
+        this.logger.warn(`⚠️ Duplicate key error - Question already exists in database`);
+        
+        // Try to find and return the existing question
+        const session = await this.sessionModel.findOne({ sessionId: data.sessionId });
+        if (session) {
+          // First try by question text
+          let existing = await this.questionModel.findOne({
+            sessionId: session._id,
+            questionText: data.questionText
+          });
+          
+          // If not found by text, try to extract question number from error and find by that
+          if (!existing) {
+            const match = error.message.match(/questionNumber: (\d+)/);
+            if (match) {
+              const questionNumber = parseInt(match[1]);
+              existing = await this.questionModel.findOne({
+                sessionId: session._id,
+                questionNumber
+              });
+            }
+          }
+          
+          if (existing) {
+            this.logger.log(`✅ Returning existing question: ${existing._id}`);
+            return existing;
+          }
+        }
+      }
+      
+      throw error;
     }
-
-    const question = new this.questionModel({
-      sessionId: session._id,
-      userId: new Types.ObjectId(data.userId),
-      questionText: data.questionText,
-      questionType: data.questionType,
-      competency: data.competency,
-      difficulty: data.difficulty,
-      questionAskedAt: data.questionAskedAt || new Date()
-    });
-
-    await question.save();
-
-    // Update session metrics
-    await this.sessionModel.findByIdAndUpdate(session._id, {
-      $push: { questions: question._id },
-      $inc: { 'metrics.totalQuestions': 1 }
-    });
-
-    this.logger.log(`✅ Question recorded: ${question._id}`);
-    return question;
   }
 
   /**
@@ -158,15 +211,30 @@ export class EnhancedInterviewAnalyticsService {
       // Extract question from AI response if available
       const questionText = data.aiResponse?.state?.history?.slice(-2, -1)?.[0]?.question || 'Question not recorded';
       
+      // Determine question number from history or existing questions
+      let questionNumber = 1;
+      if (data.aiResponse?.state?.history) {
+        questionNumber = data.aiResponse.state.history.length;
+      } else {
+        // Count existing questions for this session
+        const existingCount = await this.questionModel.countDocuments({ sessionId: session._id });
+        questionNumber = existingCount + 1;
+      }
+      
+      this.logger.log(`📝 Creating placeholder question #${questionNumber}`);
+      
       question = new this.questionModel({
         sessionId: session._id,
         userId: new Types.ObjectId(data.userId),
+        questionNumber,
         questionText,
         questionType: data.aiResponse?.state?.round_type || 'unknown',
         questionAskedAt: new Date()
       });
       
       await question.save();
+      
+      this.logger.log(`✅ Placeholder question saved with ID: ${question._id}`);
       
       // Update session metrics
       await this.sessionModel.findByIdAndUpdate(session._id, {
@@ -440,8 +508,111 @@ export class EnhancedInterviewAnalyticsService {
   }
 
   /**
-   * Get analytics dashboard data
+   * Get average analytics across all user interviews
    */
+  async getAverageAnalytics(userId: string): Promise<any> {
+    const sessions = await this.sessionModel.find({ 
+      userId: new Types.ObjectId(userId),
+      status: InterviewStatus.COMPLETED 
+    });
+
+    if (!sessions.length) {
+      return { message: 'No completed interviews found' };
+    }
+
+    const totalSessions = sessions.length;
+    const avgScores = {
+      overall: 0,
+      communication: 0,
+      technical: 0,
+      behavioral: 0,
+      problemSolving: 0,
+      clarity: 0,
+      confidence: 0
+    };
+
+    let totalDuration = 0;
+    let totalQuestions = 0;
+    let totalResponseTime = 0;
+
+    sessions.forEach(session => {
+      if (session.scores) {
+        avgScores.overall += session.scores.overall || 0;
+        avgScores.communication += session.scores.communication || 0;
+        avgScores.technical += session.scores.technical || 0;
+        avgScores.behavioral += session.scores.behavioral || 0;
+        avgScores.problemSolving += session.scores.problemSolving || 0;
+        avgScores.clarity += session.scores.clarity || 0;
+        avgScores.confidence += session.scores.confidence || 0;
+      }
+      totalDuration += session.metrics?.totalDuration || 0;
+      totalQuestions += session.metrics?.totalQuestions || 0;
+      totalResponseTime += session.metrics?.averageResponseTime || 0;
+    });
+
+    Object.keys(avgScores).forEach(key => {
+      avgScores[key] = avgScores[key] / totalSessions;
+    });
+
+    return {
+      totalInterviews: totalSessions,
+      averageScores: avgScores,
+      averageDuration: totalDuration / totalSessions,
+      averageQuestions: totalQuestions / totalSessions,
+      averageResponseTime: totalResponseTime / totalSessions
+    };
+  }
+
+  /**
+   * Get complete analytics for a specific session
+   */
+  async getSessionAnalytics(sessionId: string, userId: string): Promise<any> {
+    const session = await this.sessionModel.findOne({ sessionId })
+      .populate('questions');
+
+    if (!session || session.userId.toString() !== userId) {
+      throw new Error('Session not found or access denied');
+    }
+
+    const questions = await this.questionModel.find({ sessionId: session._id })
+      .sort({ createdAt: 1 });
+
+    const questionAnalytics = questions.map(q => ({
+      question: q.questionText,
+      answer: q.answerText,
+      scores: q.scores,
+      audioAnalysis: q.audioAnalysis,
+      videoAnalysis: q.videoAnalysis || undefined,
+      feedback: q.feedback,
+      strengths: q.strengths,
+      improvements: q.improvements,
+      responseTime: q.responseTime,
+      timestamp: q.questionAskedAt
+    }));
+
+    return {
+      session: {
+        sessionId: session.sessionId,
+        roundType: session.roundType,
+        status: session.status,
+        startedAt: session.startedAt,
+        completedAt: session.completedAt,
+        jobContext: session.jobContext,
+        scores: session.scores,
+        metrics: session.metrics,
+        strengths: session.strengths,
+        areasForImprovement: session.areasForImprovement,
+        recommendations: session.recommendations
+      },
+      questions: questionAnalytics,
+      summary: {
+        totalQuestions: questions.length,
+        answeredQuestions: questions.filter(q => q.answerText).length,
+        averageScore: session.scores?.overall || 0,
+        totalDuration: session.metrics?.totalDuration || 0
+      }
+    };
+  }
   async getAnalyticsDashboard(userId: string): Promise<any> {
     const analytics = await this.getUserAnalytics(userId);
     const recentSessions = await this.sessionModel.find({ 
