@@ -235,7 +235,7 @@ export default function InterviewResultsV2() {
         </div>
 
         {/* Voice Analytics */}
-        {report.voice_analytics.analysis_performed && (
+        {report.voice_analytics?.analysis_performed && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
               <Mic className="w-6 h-6 text-blue-600" />
@@ -245,34 +245,34 @@ export default function InterviewResultsV2() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <VoiceMetric
                 label="Fluency"
-                score={report.voice_analytics.average_scores?.fluency || 0}
-                interpretation={report.voice_analytics.interpretation?.fluency || 'N/A'}
+                score={report.voice_analytics?.average_scores?.fluency || 0}
+                interpretation={report.voice_analytics?.interpretation?.fluency || 'N/A'}
               />
               <VoiceMetric
                 label="Clarity"
-                score={report.voice_analytics.average_scores?.clarity || 0}
-                interpretation={report.voice_analytics.interpretation?.clarity || 'N/A'}
+                score={report.voice_analytics?.average_scores?.clarity || 0}
+                interpretation={report.voice_analytics?.interpretation?.clarity || 'N/A'}
               />
               <VoiceMetric
                 label="Confidence"
-                score={report.voice_analytics.average_scores?.confidence || 0}
-                interpretation={report.voice_analytics.interpretation?.confidence || 'N/A'}
+                score={report.voice_analytics?.average_scores?.confidence || 0}
+                interpretation={report.voice_analytics?.interpretation?.confidence || 'N/A'}
               />
               <VoiceMetric
                 label="Pace"
-                score={report.voice_analytics.average_scores?.pace || 0}
-                interpretation={report.voice_analytics.interpretation?.pace || 'N/A'}
+                score={report.voice_analytics?.average_scores?.pace || 0}
+                interpretation={report.voice_analytics?.interpretation?.pace || 'N/A'}
               />
             </div>
 
-            {report.voice_analytics.speaking_rate_wpm && (
+            {report.voice_analytics?.speaking_rate_wpm && (
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-blue-900 dark:text-blue-300">
                     Speaking Rate
                   </span>
                   <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                    {Math.round(report.voice_analytics.speaking_rate_wpm)} WPM
+                    {Math.round(report.voice_analytics?.speaking_rate_wpm || 0)} WPM
                   </span>
                 </div>
                 <p className="text-xs text-blue-700 dark:text-blue-400 mt-2">

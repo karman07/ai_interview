@@ -138,7 +138,7 @@ export interface CompleteInterviewV2Response {
   company: string;
   evaluation: Evaluation;
   video_analytics: VideoAnalytics;
-  voice_analytics: VoiceAnalytics;
+  voice_analytics?: VoiceAnalytics;
   conversation: ConversationMessage[];
   metrics: {
     response_quality: number;

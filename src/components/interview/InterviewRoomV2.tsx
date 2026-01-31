@@ -239,12 +239,16 @@ export default function InterviewRoomV2({ round }: Props) {
     try {
       const audioFile = createAudioFile(audioBlob, sessionId);
       
+      console.log('📤 Submitting answer to API...');
       const response: SubmitAnswerV2Response = await submitAnswerV2(sessionId, {
         answer_audio: audioFile
       });
 
+      console.log('📥 Response received:', response);
+
       // Check if interview is complete (backend will return specific status)
       if (response.status === 'active') {
+        console.log('▶️ Interview continues - next question');
         setQuestion(response.question);
         setQuestionNumber(response.question_number);
         
@@ -255,15 +259,19 @@ export default function InterviewRoomV2({ round }: Props) {
             console.error('Failed to speak question:', err);
           });
         }, 800);
-      } else {
+      } else if (response.status === 'completed') {
         // Interview completed, get final report
+        console.log('🏁 Interview status is completed - calling handleComplete');
         await handleComplete();
+      } else {
+        console.warn('⚠️ Unknown status:', response.status);
       }
     } catch (error: any) {
-      console.error('Error submitting answer:', error);
+      console.error('❌ Error submitting answer:', error);
       
       // Check if error indicates completion
       if (error.response?.status === 400 && error.response?.data?.detail?.includes('complete')) {
+        console.log('🏁 Error indicates completion - calling handleComplete');
         await handleComplete();
       } else {
         setError(error.response?.data?.detail || error.message || 'Failed to submit answer');
@@ -273,18 +281,22 @@ export default function InterviewRoomV2({ round }: Props) {
 
   const handleComplete = async () => {
     try {
+      console.log('🏁 Completing interview...');
       const report: CompleteInterviewV2Response = await completeInterviewV2(sessionId, {
         final_notes: `${round} interview completed successfully`
       });
 
+      console.log('✅ Interview completed successfully:', report);
+      
       // Store report in localStorage for results page
       localStorage.setItem('v2_interview_report', JSON.stringify(report));
       localStorage.removeItem('v2_interview_session');
       
+      console.log('📊 Navigating to results page:', `/interview/results/${sessionId}`);
       // Navigate to results page
       navigate(`/interview/results/${sessionId}`);
     } catch (error: any) {
-      console.error('Error completing interview:', error);
+      console.error('❌ Error completing interview:', error);
       setError('Failed to complete interview');
     }
   };

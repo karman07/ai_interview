@@ -31,6 +31,7 @@ import InterviewHome from "./pages/Interview_round/InterviewHome";
 import InterviewStart from "./pages/Interview_round/InterviewStart";
 import InterviewRoomPage from "./pages/Interview_round/InterviewRoomPage";
 import InterviewHistory from "./pages/Interview_round/InterviewHistory";
+import InterviewResultsV2 from "./pages/Interview_round/InterviewResultsV2";
 import { AnalyticsProvider } from "./contexts/AnalyticsContext";
 import AnalyticsTest from "./pages/Test/AnalyticsTest";
 import { DSAQuestionsProvider } from "./contexts/DSAQuestionsContext";
@@ -77,6 +78,7 @@ function App() {
     location.pathname.startsWith("/lessons/") ||
     location.pathname.startsWith("/interview/start/") ||
     location.pathname.startsWith("/interview/room/") ||
+    location.pathname.startsWith("/interview/results/") ||
     location.pathname.startsWith("/employee/") ||
     location.pathname.startsWith("/dsa/");
 
@@ -210,6 +212,15 @@ function App() {
                   <Sidebar />
                   <div className="flex-1">
                     <InterviewHistory />
+                  </div>
+                </div>
+              } />
+
+              <Route path="/interview/results/:sessionId" element={
+                <div className="flex min-h-screen">
+                  <Sidebar />
+                  <div className="flex-1">
+                    <InterviewResultsV2 />
                   </div>
                 </div>
               } />
