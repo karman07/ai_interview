@@ -1,4 +1,4 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Input from "@/components/common/Input";
@@ -7,52 +7,36 @@ import Button from "@/components/ui/button";
 import { 
   Briefcase, Building2, FileText, Layers, Loader2, ArrowRight,
   Users, Code, Lightbulb, MessageCircle,
-  Award, BarChart3, Eye
+  Award, BarChart3, Eye, Upload, X, CheckCircle
 } from "lucide-react";
 import { InterviewAnalyticsApi, type Analytics, type RoundStats } from "@/api/interviewAnalytics";
-import http from "@/api/http";
+import { startInterviewV2, validateFile } from "@/api/interviewV2";
 
 interface InterviewDetails {
   role: string;
   company: string;
   jobDescription: string;
-  experience: string;
-  cvId?: string;
-  jdId?: string;
-}
-
-interface UserFile {
-  id: string;
-  name: string;
-  url: string;
+  resumeText: string;
+  resumeFile?: File;
+  jdFile?: File;
 }
 
 export default function InterviewStart() {
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
   const [details, setDetails] = useState<InterviewDetails>({
-    role: "", company: "", jobDescription: "", experience: "", cvId: undefined, jdId: undefined,
+    role: "",
+    company: "",
+    jobDescription: "",
+    resumeText: "",
   });
   const [loading, setLoading] = useState(false);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
-  const [resumes, setResumes] = useState<UserFile[]>([]);
-  const [jobDescriptions, setJobDescriptions] = useState<UserFile[]>([]);
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
     InterviewAnalyticsApi.getAnalytics().then(setAnalytics).catch(console.error);
-    fetchUserFiles();
   }, []);
-
-  const fetchUserFiles = async () => {
-    try {
-      const { data } = await http.get('/resume/files');
-      console.log('Resume/JD API Response:', data);
-      setResumes(data.resumes || []);
-      setJobDescriptions(data.jobDescriptions || []);
-    } catch (error) {
-      console.error('Failed to fetch user files:', error);
-    }
-  };
 
   const types = {
     technical: { icon: <Code className="w-6 h-6" />, color: "from-blue-500 to-blue-600", title: "Technical Round" },
@@ -66,13 +50,85 @@ export default function InterviewStart() {
   const roundData = analytics && type ? analytics[roundMap[type] as keyof Analytics] : null;
   const stats = (roundData && typeof roundData === 'object' && 'averageScore' in roundData) ? roundData as RoundStats : null;
 
-  const handleStart = () => {
-    if (!details.role || !details.company || !details.jobDescription || !details.experience) {
-      alert("Please fill in all fields"); return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'resume' | 'jd') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!validateFile(file)) {
+        setError(`Invalid file type. Please upload PDF, DOCX, or TXT file.`);
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        setError(`File too large. Maximum size is 10MB.`);
+        return;
+      }
+      setError("");
+      if (fileType === 'resume') {
+        setDetails(prev => ({ ...prev, resumeFile: file }));
+      } else {
+        setDetails(prev => ({ ...prev, jdFile: file }));
+      }
     }
+  };
+
+  const removeFile = (fileType: 'resume' | 'jd') => {
+    if (fileType === 'resume') {
+      setDetails(prev => ({ ...prev, resumeFile: undefined }));
+    } else {
+      setDetails(prev => ({ ...prev, jdFile: undefined }));
+    }
+  };
+
+  const handleStart = async () => {
+    // Validation
+    if (!details.role || !details.company) {
+      setError("Please fill in role and company");
+      return;
+    }
+
+    // Either resume file/text is required
+    if (!details.resumeFile && !details.resumeText) {
+      setError("Please provide your resume (upload file or enter text)");
+      return;
+    }
+
+    // Either JD file/text is required
+    if (!details.jdFile && !details.jobDescription) {
+      setError("Please provide job description (upload file or enter text)");
+      return;
+    }
+
     setLoading(true);
-    localStorage.setItem("interview_details", JSON.stringify({ ...details, industry: 'Technology', hasCV: !!details.cvId, hasJD: !!details.jdId }));
-    setTimeout(() => navigate(`/interview/room/${type}`), 500);
+    setError("");
+
+    try {
+      // Start V2 interview
+      const response = await startInterviewV2({
+        role: details.role,
+        company: details.company,
+        resume_file: details.resumeFile,
+        resume_text: details.resumeFile ? undefined : details.resumeText,
+        jd_file: details.jdFile,
+        jd_text: details.jdFile ? undefined : details.jobDescription,
+      });
+
+      // Store session data for interview room
+      const sessionData = {
+        sessionId: response.session_id,
+        firstQuestion: response.question,
+        questionNumber: response.question_number,
+        role: details.role,
+        company: details.company,
+        roundType: type || 'full',
+      };
+
+      localStorage.setItem('v2_interview_session', JSON.stringify(sessionData));
+      
+      // Navigate to interview room
+      navigate(`/interview/room/${type}`);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || err.message || 'Failed to start interview');
+      setLoading(false);
+    }
   };
 
 
@@ -142,81 +198,171 @@ export default function InterviewStart() {
                 <CardTitle className="text-2xl text-gray-900 dark:text-white">Interview Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                {error && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-start gap-3">
+                    <X className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-red-800 dark:text-red-300">{error}</p>
+                    </div>
+                    <button onClick={() => setError("")} className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                      <Briefcase className="w-4 h-4" /> Role
+                      <Briefcase className="w-4 h-4" /> Role <span className="text-red-500">*</span>
                     </label>
-                    <Input placeholder="e.g., Senior Developer" value={details.role} onChange={(e) => setDetails({...details, role: e.target.value})} />
+                    <Input 
+                      placeholder="e.g., Senior Software Engineer" 
+                      value={details.role} 
+                      onChange={(e) => setDetails({...details, role: e.target.value})} 
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                      <Building2 className="w-4 h-4" /> Company
+                      <Building2 className="w-4 h-4" /> Company <span className="text-red-500">*</span>
                     </label>
-                    <Input placeholder="e.g., Google" value={details.company} onChange={(e) => setDetails({...details, company: e.target.value})} />
+                    <Input 
+                      placeholder="e.g., Google" 
+                      value={details.company} 
+                      onChange={(e) => setDetails({...details, company: e.target.value})} 
+                    />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                    <Layers className="w-4 h-4" /> Experience
+
+                {/* Resume Upload Section */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <FileText className="w-4 h-4" /> Resume <span className="text-red-500">*</span>
                   </label>
-                  <Input placeholder="e.g., 5 years in full-stack" value={details.experience} onChange={(e) => setDetails({...details, experience: e.target.value})} />
+                  
+                  {!details.resumeFile ? (
+                    <div className="space-y-3">
+                      <div className="relative">
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.txt"
+                          onChange={(e) => handleFileChange(e, 'resume')}
+                          className="hidden"
+                          id="resume-upload"
+                        />
+                        <label
+                          htmlFor="resume-upload"
+                          className="flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:border-blue-500 dark:hover:border-blue-400 cursor-pointer transition-colors bg-gray-50 dark:bg-gray-700/50"
+                        >
+                          <Upload className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                            Upload Resume (PDF, DOCX, TXT)
+                          </span>
+                        </label>
+                      </div>
+                      <div className="text-center text-sm text-gray-500 dark:text-gray-400">or</div>
+                      <Textarea
+                        placeholder="Paste your resume text here..."
+                        value={details.resumeText}
+                        onChange={(e) => setDetails({...details, resumeText: e.target.value})}
+                        className="min-h-[120px]"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{details.resumeFile.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {(details.resumeFile.size / 1024).toFixed(2)} KB
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removeFile('resume')}
+                        className="p-2 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                    <FileText className="w-4 h-4" /> Job Description
+
+                {/* Job Description Section */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <Layers className="w-4 h-4" /> Job Description <span className="text-red-500">*</span>
                   </label>
-                  <Textarea placeholder="Paste job description..." value={details.jobDescription} onChange={(e) => setDetails({...details, jobDescription: e.target.value})} className="min-h-[100px]" />
+                  
+                  {!details.jdFile ? (
+                    <div className="space-y-3">
+                      <div className="relative">
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.txt"
+                          onChange={(e) => handleFileChange(e, 'jd')}
+                          className="hidden"
+                          id="jd-upload"
+                        />
+                        <label
+                          htmlFor="jd-upload"
+                          className="flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:border-purple-500 dark:hover:border-purple-400 cursor-pointer transition-colors bg-gray-50 dark:bg-gray-700/50"
+                        >
+                          <Upload className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                            Upload Job Description (PDF, DOCX, TXT)
+                          </span>
+                        </label>
+                      </div>
+                      <div className="text-center text-sm text-gray-500 dark:text-gray-400">or</div>
+                      <Textarea
+                        placeholder="Paste job description here..."
+                        value={details.jobDescription}
+                        onChange={(e) => setDetails({...details, jobDescription: e.target.value})}
+                        className="min-h-[120px]"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{details.jdFile.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {(details.jdFile.size / 1024).toFixed(2)} KB
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removeFile('jd')}
+                        className="p-2 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                      <FileText className="w-4 h-4" /> Resume
-                    </label>
-                    <select 
-                      value={details.cvId || ''} 
-                      onChange={(e) => {
-                        if (e.target.value === 'upload') {
-                          navigate('/dashboard');
-                        } else {
-                          setDetails({...details, cvId: e.target.value || undefined});
-                        }
-                      }}
-                      className="w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-indigo-500 outline-none text-gray-900 dark:text-white"
-                    >
-                      <option value="">Select Resume (Optional)</option>
-                      {resumes.map(resume => (
-                        <option key={resume.id} value={resume.id}>{resume.name}</option>
-                      ))}
-                      <option value="upload">+ Upload New Resume</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                      <FileText className="w-4 h-4" /> Job Description
-                    </label>
-                    <select 
-                      value={details.jdId || ''}
-                      onChange={(e) => {
-                        if (e.target.value === 'upload') {
-                          navigate('/dashboard');
-                        } else {
-                          setDetails({...details, jdId: e.target.value || undefined});
-                        }
-                      }}
-                      className="w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-indigo-500 outline-none text-gray-900 dark:text-white"
-                    >
-                      <option value="">Select JD (Optional)</option>
-                      {jobDescriptions.map(jd => (
-                        <option key={jd.id} value={jd.id}>{jd.name}</option>
-                      ))}
-                      <option value="upload">+ Upload New JD</option>
-                    </select>
-                  </div>
-                </div>
-                <Button onClick={handleStart} disabled={loading || !details.role || !details.company || !details.jobDescription || !details.experience}
-                  className={`w-full flex items-center justify-center gap-3 ${details.role && details.company && details.jobDescription && details.experience ? `bg-gradient-to-r ${info.color}` : 'bg-gray-300'} text-white font-bold py-4 rounded-2xl`}>
-                  {loading ? <><Loader2 className="animate-spin w-6 h-6" /> Preparing...</> : <><span>Start Interview</span><ArrowRight className="w-6 h-6" /></>}
+
+                <Button 
+                  onClick={handleStart} 
+                  disabled={loading || !details.role || !details.company || (!details.resumeFile && !details.resumeText) || (!details.jdFile && !details.jobDescription)}
+                  className={`w-full flex items-center justify-center gap-3 ${
+                    details.role && details.company && (details.resumeFile || details.resumeText) && (details.jdFile || details.jobDescription)
+                      ? `bg-gradient-to-r ${info.color}` 
+                      : 'bg-gray-300'
+                  } text-white font-bold py-4 rounded-2xl`}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="animate-spin w-6 h-6" /> 
+                      Starting Interview with AI...
+                    </>
+                  ) : (
+                    <>
+                      <span>Start AI Interview</span>
+                      <ArrowRight className="w-6 h-6" />
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>
