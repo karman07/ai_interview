@@ -48,12 +48,16 @@ export class InterviewService {
       const headers = formData.getHeaders();
       console.log('📋 Request Headers:', headers);
       
-      // Forward to AI backend with timeout and proper config
+      // Forward to AI backend with no timeout - wait as long as needed
       const response = await axios.post(`${AI_BACKEND_URL}/v2/interview/start`, formData, {
-        headers,
+        headers: {
+          ...headers,
+          'Connection': 'keep-alive',
+          'Keep-Alive': 'timeout=0',
+        },
         maxContentLength: Infinity,
         maxBodyLength: Infinity,
-        timeout: 300000, // 5 minutes timeout for AI processing and file analysis
+        timeout: 0, // No timeout - wait indefinitely for AI processing
       });
       
       console.log('✅ [V2 Interview API] AI Backend Response:', JSON.stringify(response.data, null, 2));
@@ -113,12 +117,16 @@ export class InterviewService {
       const headers = formData.getHeaders();
       console.log('📋 Request Headers:', headers);
       
-      // Forward to AI backend with extended timeout for AI processing
+      // Forward to AI backend with no timeout - wait as long as needed
       const response = await axios.post(`${AI_BACKEND_URL}/v2/interview/${session_id}/answer`, formData, {
-        headers,
+        headers: {
+          ...headers,
+          'Connection': 'keep-alive',
+          'Keep-Alive': 'timeout=0',
+        },
         maxContentLength: Infinity,
         maxBodyLength: Infinity,
-        timeout: 300000, // 5 minutes timeout for Gemini AI processing, audio transcription, and voice analysis
+        timeout: 0, // No timeout - wait indefinitely for Gemini AI processing, transcription, and voice analysis
       });
       
       console.log('✅ [V2 Interview API] AI Backend Response:', JSON.stringify(response.data, null, 2));
@@ -154,7 +162,11 @@ export class InterviewService {
     
     try {
       const response = await axios.get(`${AI_BACKEND_URL}/v2/interview/${session_id}/status`, {
-        timeout: 30000, // 30 seconds timeout for status check
+        headers: {
+          'Connection': 'keep-alive',
+          'Keep-Alive': 'timeout=0',
+        },
+        timeout: 0, // No timeout
       });
       
       console.log('✅ [V2 Interview API] AI Backend Response:', JSON.stringify(response.data, null, 2));
@@ -185,8 +197,12 @@ export class InterviewService {
     
     try {
       const response = await axios.post(`${AI_BACKEND_URL}/v2/interview/${session_id}/complete`, body, {
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 300000, // 5 minutes timeout for generating comprehensive evaluation report
+        headers: { 
+          'Content-Type': 'application/json',
+          'Connection': 'keep-alive',
+          'Keep-Alive': 'timeout=0',
+        },
+        timeout: 0, // No timeout - wait indefinitely for comprehensive evaluation report
       });
       
       console.log('✅ [V2 Interview API] Complete Response received');

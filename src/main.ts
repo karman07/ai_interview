@@ -52,7 +52,8 @@ async function bootstrap() {
       },
     }),
   );
-  app.useGlobalInterceptors(new TimeoutInterceptor(360000)); // 6 minutes timeout for AI processing
+  // Global timeout disabled for AI processing - connections will never timeout
+  // app.useGlobalInterceptors(new TimeoutInterceptor(360000));
 
   // Enable CORS
   app.enableCors({
