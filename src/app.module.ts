@@ -1,6 +1,4 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { InterviewController } from './v2/interview.controller';
-import { InterviewService } from './v2/interview.service';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MulterModule } from '@nestjs/platform-express';
@@ -17,6 +15,9 @@ import { LessonsModule } from './lessons/lessons.module';
 import { ProgressModule } from './progress/progress.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { QuizzesModule } from './quizzes/quizzes.module';
+
+// V2 Interview Module
+import { InterviewV2Module } from './v2/interview.module';
 
 // From dev/backend_dsa
 import { DsaQuestionsModule } from './dsa-questions/dsa-questions.module';
@@ -58,6 +59,7 @@ import { AudioModule } from './audio/audio.module';
     JobDescriptionModule,
     ResultsModule,
     InterviewModule,
+    InterviewV2Module, // V2 Interview API
     LessonsModule,
     ProgressModule,
     SubjectsModule,
@@ -74,8 +76,6 @@ import { AudioModule } from './audio/audio.module';
     JdModule,
     AudioModule,
   ],
-  controllers: [InterviewController],
-  providers: [InterviewService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

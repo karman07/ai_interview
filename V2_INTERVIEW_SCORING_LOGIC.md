@@ -776,5 +776,5 @@ The V2 Interview API leverages **Gemini 2.5 Pro AI** to conduct intelligent, ada
 - Lack of technical depth
 - Unprofessional early termination
 - Gap between resume claims and demonstrated knowledge
-
+a
 This scoring is **AI-generated** by Gemini based on the conversation, not predetermined thresholds.

@@ -11,6 +11,7 @@ import {
   Param,
   Delete,
   Logger,
+  BadRequestException,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ResumeService } from './resume.service';
@@ -364,6 +365,44 @@ export class ResumeController {
       return result;
     } catch (error) {
       this.logger.error('💥 Resume deletion failed:', error.message);
+      throw error;
+    }
+  }
+
+  // ✅ POST API for final-enhanced resume data
+  @Post('final-enhanced')
+  async createFinalEnhanced(@Body() body: any) {
+    this.logger.log('🎯 Final-enhanced API called');
+    this.logger.log('📥 Request body:', JSON.stringify(body, null, 2));
+    
+    try {
+      // Validate required fields
+      if (!body.resume) {
+        throw new BadRequestException('Resume data is required');
+      }
+
+      // Return the same structure as received
+      return {
+        message: body.message || 'Resume processed successfully',
+        resume: {
+          id: body.resume.id,
+          filename: body.resume.filename,
+          url: body.resume.url,
+          analytics: {
+            cv_quality: body.resume.analytics?.cv_quality || null,
+            jd_match: body.resume.analytics?.jd_match || null,
+            key_takeaways: body.resume.analytics?.key_takeaways || null,
+            overall_score: body.resume.analytics?.overall_score || null
+          },
+          enhancement: {
+            tailored_resume: body.resume.enhancement?.tailored_resume || null,
+            top_1_percent_gap: body.resume.enhancement?.top_1_percent_gap || null,
+            cover_letter: body.resume.enhancement?.cover_letter || null
+          }
+        }
+      };
+    } catch (error) {
+      this.logger.error('💥 Final-enhanced processing failed:', error.message);
       throw error;
     }
   }
