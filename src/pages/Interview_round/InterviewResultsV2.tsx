@@ -195,8 +195,8 @@ export default function InterviewResultsV2() {
           <SkillCard
             icon={<BarChart3 className="w-6 h-6" />}
             title="Overall Performance"
-            score={report.metrics.overall_performance}
-            assessment={`Response Quality: ${report.metrics.response_quality}/10`}
+            score={report.metrics?.overall_performance ?? 0}
+            assessment={`Response Quality: ${report.metrics?.response_quality ?? 0}/10`}
             color="from-indigo-500 to-indigo-600"
           />
         </div>
@@ -293,26 +293,26 @@ export default function InterviewResultsV2() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
             <VideoMetric
               label="Confidence"
-              value={report.video_analytics.confidence_score}
+              value={report.video_analytics?.confidence_score ?? 0}
               max={10}
               icon={<Star className="w-5 h-5" />}
             />
             <VideoMetric
               label="Eye Contact"
-              value={report.video_analytics.eye_contact_percentage}
+              value={report.video_analytics?.eye_contact_percentage ?? 0}
               max={100}
               suffix="%"
               icon={<Eye className="w-5 h-5" />}
             />
             <VideoMetric
               label="Posture"
-              value={report.video_analytics.posture_score}
+              value={report.video_analytics?.posture_score ?? 0}
               max={10}
               icon={<User className="w-5 h-5" />}
             />
             <VideoMetric
               label="Professionalism"
-              value={report.video_analytics.professionalism_score}
+              value={report.video_analytics?.professionalism_score ?? 0}
               max={10}
               icon={<Award className="w-5 h-5" />}
             />
@@ -324,9 +324,9 @@ export default function InterviewResultsV2() {
                 Facial Expressions
               </h4>
               <div className="space-y-2">
-                <ProgressBar label="Positive" value={report.video_analytics.facial_expressions.positive} color="green" />
-                <ProgressBar label="Neutral" value={report.video_analytics.facial_expressions.neutral} color="gray" />
-                <ProgressBar label="Stressed" value={report.video_analytics.facial_expressions.stressed} color="red" />
+                <ProgressBar label="Positive" value={report.video_analytics?.facial_expressions?.positive ?? 0} color="green" />
+                <ProgressBar label="Neutral" value={report.video_analytics?.facial_expressions?.neutral ?? 0} color="gray" />
+                <ProgressBar label="Stressed" value={report.video_analytics?.facial_expressions?.stressed ?? 0} color="red" />
               </div>
             </div>
 
@@ -335,9 +335,9 @@ export default function InterviewResultsV2() {
                 Body Language
               </h4>
               <div className="space-y-2">
-                <ProgressBar label="Open" value={report.video_analytics.body_language.open} color="green" />
-                <ProgressBar label="Neutral" value={report.video_analytics.body_language.neutral} color="gray" />
-                <ProgressBar label="Closed" value={report.video_analytics.body_language.closed} color="red" />
+                <ProgressBar label="Open" value={report.video_analytics?.body_language?.open ?? 0} color="green" />
+                <ProgressBar label="Neutral" value={report.video_analytics?.body_language?.neutral ?? 0} color="gray" />
+                <ProgressBar label="Closed" value={report.video_analytics?.body_language?.closed ?? 0} color="red" />
               </div>
             </div>
 
@@ -349,19 +349,19 @@ export default function InterviewResultsV2() {
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Engagement</span>
                   <span className="font-semibold capitalize text-gray-900 dark:text-white">
-                    {report.video_analytics.engagement_level}
+                    {report.video_analytics?.engagement_level ?? 'N/A'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Speech Pace</span>
                   <span className="font-semibold capitalize text-gray-900 dark:text-white">
-                    {report.video_analytics.speech_pace}
+                    {report.video_analytics?.speech_pace ?? 'N/A'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Energy Level</span>
                   <span className="font-semibold capitalize text-gray-900 dark:text-white">
-                    {report.video_analytics.energy_level}
+                    {report.video_analytics?.energy_level ?? 'N/A'}
                   </span>
                 </div>
               </div>
@@ -369,7 +369,7 @@ export default function InterviewResultsV2() {
           </div>
 
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 italic">
-            {report.video_analytics.note}
+            {report.video_analytics?.note ?? ''}
           </p>
         </div>
 

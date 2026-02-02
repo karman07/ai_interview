@@ -10,7 +10,8 @@ import {
   Award, BarChart3, Eye, Upload, X, CheckCircle
 } from "lucide-react";
 import { InterviewAnalyticsApi, type Analytics, type RoundStats } from "@/api/interviewAnalytics";
-import { startInterviewV2, validateFile } from "@/api/interviewV2";
+import { startInterviewWithFiles, startInterviewWithIDs, generateSessionId } from "@/api/interviewV2";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface InterviewDetails {
   role: string;
@@ -24,6 +25,7 @@ interface InterviewDetails {
 export default function InterviewStart() {
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [details, setDetails] = useState<InterviewDetails>({
     role: "",
     company: "",
@@ -53,7 +55,12 @@ export default function InterviewStart() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'resume' | 'jd') => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!validateFile(file)) {
+      // Validate file type
+      const allowedExtensions = ['.pdf', '.docx', '.txt'];
+      const fileName = file.name.toLowerCase();
+      const isValidType = allowedExtensions.some(ext => fileName.endsWith(ext));
+      
+      if (!isValidType) {
         setError(`Invalid file type. Please upload PDF, DOCX, or TXT file.`);
         return;
       }
@@ -97,19 +104,41 @@ export default function InterviewStart() {
       return;
     }
 
+    if (!user?._id) {
+      setError("User not authenticated");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      // Start V2 interview
-      const response = await startInterviewV2({
-        role: details.role,
-        company: details.company,
-        resume_file: details.resumeFile,
-        resume_text: details.resumeFile ? undefined : details.resumeText,
-        jd_file: details.jdFile,
-        jd_text: details.jdFile ? undefined : details.jobDescription,
-      });
+      let response;
+      
+      // Case 1: Both files provided - use simplified helper
+      if (details.resumeFile && details.jdFile) {
+        response = await startInterviewWithFiles(
+          user._id,
+          details.resumeFile,
+          details.jdFile,
+          details.role,
+          details.company
+        );
+      } 
+      // Case 2: Mixed or text-based - use full API
+      else {
+        const sessionId = generateSessionId(user._id);
+        response = await startInterviewWithIDs({
+          user_id: user._id,
+          session_id: sessionId,
+          role: details.role,
+          company: details.company,
+          cv_file: details.resumeFile,
+          cv_text: details.resumeFile ? undefined : details.resumeText,
+          jd_file: details.jdFile,
+          jd_text: details.jdFile ? undefined : details.jobDescription,
+        });
+      }
 
       // Store session data for interview room
       const sessionData = {

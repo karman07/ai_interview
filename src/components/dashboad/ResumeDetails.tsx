@@ -38,6 +38,10 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<"evaluation" | "improvement" | "jdMatch">("evaluation");
+  const [isDownloadingResume, setIsDownloadingResume] = useState(false);
+  const [showProgressDialog, setShowProgressDialog] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [enhancedResumeUrl, setEnhancedResumeUrl] = useState<string | null>(null);
 
   const hasImprovement = Boolean(resume?.enhancement);
   const hasJDMatch = Boolean(resume?.analytics?.jd_match?.subscores?.length > 0);
@@ -45,6 +49,49 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
   const sections = resume.analytics?.sections || resume.analytics?.cv_quality?.subscores || [];
   const strengths = resume.analytics?.strengths || resume.analytics?.key_takeaways?.green_flags || [];
   const weaknesses = resume.analytics?.weaknesses || resume.analytics?.key_takeaways?.red_flags || [];
+
+  const handleDownloadEnhancedResume = async () => {
+    setIsDownloadingResume(true);
+    setShowProgressDialog(true);
+    setProgress(0);
+    setEnhancedResumeUrl(null);
+
+    // Simulate progress
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + Math.random() * 15;
+      });
+    }, 500);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_AI_INTERVIEW_API}/v1/resume/final-enhanced`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(resume),
+      });
+
+      if (!response.ok) throw new Error('Failed to generate enhanced resume');
+
+      const data = await response.json();
+      clearInterval(progressInterval);
+      setProgress(100);
+      
+      const resumeBuilderUrl = import.meta.env.VITE_RESUME_BUILDER_URL || 'http://localhost:5173';
+      const queryParams = new URLSearchParams({ data: JSON.stringify(data) }).toString();
+      const fullUrl = `${resumeBuilderUrl}?${queryParams}`;
+      setEnhancedResumeUrl(fullUrl);
+    } catch (error) {
+      clearInterval(progressInterval);
+      console.error('Error downloading enhanced resume:', error);
+      alert('Failed to generate enhanced resume. Please try again.');
+      setShowProgressDialog(false);
+    } finally {
+      setIsDownloadingResume(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 sm:p-6 overflow-x-hidden">
@@ -291,6 +338,93 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
               </Dialog>
             </>
           )}
+
+          {hasImprovement && (
+            <ActionCard
+              icon={<Download className="w-5 h-5 text-indigo-600" />}
+              title="Download Enhanced Resume"
+              subtitle={
+                <button
+                  onClick={handleDownloadEnhancedResume}
+                  disabled={isDownloadingResume}
+                  className="text-indigo-600 hover:text-indigo-700 text-sm font-medium hover:underline text-left disabled:opacity-50"
+                >
+                  {isDownloadingResume ? 'Generating...' : 'Get Enhanced Resume →'}
+                </button>
+              }
+              color="gray"
+            />
+          )}
+
+          {/* Progress Dialog */}
+          <Dialog open={showProgressDialog} onOpenChange={(open) => {
+            if (!isDownloadingResume) setShowProgressDialog(open);
+          }}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-semibold">
+                  {enhancedResumeUrl ? 'Resume Ready!' : 'Generating Enhanced Resume'}
+                </DialogTitle>
+              </DialogHeader>
+              
+              {!enhancedResumeUrl ? (
+                <div className="space-y-4 py-4">
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                      <span>Processing...</span>
+                      <span>{Math.round(progress)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <motion.div
+                        className="bg-gradient-to-r from-indigo-600 to-purple-600 h-2 rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+                    Please wait while we generate your enhanced resume...
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4 py-4">
+                  <div className="flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                      <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
+                    </div>
+                  </div>
+                  <p className="text-center text-gray-700 dark:text-gray-300">
+                    Your enhanced resume has been generated successfully!
+                  </p>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => {
+                        window.open(enhancedResumeUrl, '_blank');
+                      }}
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      Open Resume
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setShowProgressDialog(false);
+                        setEnhancedResumeUrl(null);
+                        setProgress(0);
+                      }}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
 
           <ActionCard
             icon={<Download className="w-5 h-5 text-gray-600" />}
