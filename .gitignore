@@ -42,6 +42,14 @@ lerna-debug.log*
 .env.production.local
 .env.local
 
+# AWS Credentials - NEVER COMMIT
+*.csv
+*credentials*.csv
+*accessKeys*.csv
+Job_BOT*
+*.pem
+*.key
+
 # temp directory
 .temp
 .tmp
