@@ -33,6 +33,7 @@ import { CvModule } from './cv/cv.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { JdModule } from './jd/jd.module';
 import { AudioModule } from './audio/audio.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { AudioModule } from './audio/audio.module';
     SessionsModule,
     JdModule,
     AudioModule,
+    EmailModule,
   ],
 })
 export class AppModule implements NestModule {

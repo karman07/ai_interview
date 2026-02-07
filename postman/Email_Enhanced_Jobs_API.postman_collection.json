@@ -1,0 +1,423 @@
+{
+  "info": {
+    "name": "AI Interview - Email & Enhanced Jobs API",
+    "description": "Complete API collection for Email Notification System and Enhanced Job Management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "jobId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "applicationId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Email Notification System",
+      "item": [
+        {
+          "name": "Subscribe to Job Updates",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"userId\": \"optional_user_id\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/email/subscribe",
+              "host": ["{{baseUrl}}"],
+              "path": ["email", "subscribe"]
+            }
+          }
+        },
+        {
+          "name": "Unsubscribe from Job Updates",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/email/unsubscribe",
+              "host": ["{{baseUrl}}"],
+              "path": ["email", "unsubscribe"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/email/subscription-status/user@example.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["email", "subscription-status", "user@example.com"]
+            }
+          }
+        },
+        {
+          "name": "Get My Subscription",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/email/my-subscription",
+              "host": ["{{baseUrl}}"],
+              "path": ["email", "my-subscription"]
+            }
+          }
+        },
+        {
+          "name": "Trigger Job Update Email",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/email/trigger-job-update",
+              "host": ["{{baseUrl}}"],
+              "path": ["email", "trigger-job-update"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscriber Count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/email/subscribers/count",
+              "host": ["{{baseUrl}}"],
+              "path": ["email", "subscribers", "count"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Enhanced Job Management",
+      "item": [
+        {
+          "name": "Create Job",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Senior Full Stack Developer\",\n  \"description\": \"We are looking for an experienced Full Stack Developer\",\n  \"requirements\": [\"5+ years experience\", \"React\", \"Node.js\"],\n  \"location\": \"San Francisco, CA\",\n  \"salaryRange\": {\"min\": 120000, \"max\": 180000},\n  \"jobType\": \"full-time\",\n  \"experienceLevel\": \"senior\",\n  \"skills\": [\"React\", \"Node.js\", \"MongoDB\"],\n  \"benefits\": [\"Health Insurance\", \"401k\"],\n  \"companyInfo\": \"Fast-growing tech startup\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/jobs/enhanced",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "enhanced"]
+            }
+          }
+        },
+        {
+          "name": "Get My Jobs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/jobs/enhanced/my-jobs?isActive=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "enhanced", "my-jobs"],
+              "query": [
+                {
+                  "key": "isActive",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/jobs/enhanced/dashboard-stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "enhanced", "dashboard-stats"]
+            }
+          }
+        },
+        {
+          "name": "Update Job",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Senior Full Stack Developer (Updated)\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/jobs/enhanced/{{jobId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "enhanced", "{{jobId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Job",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/jobs/enhanced/{{jobId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "enhanced", "{{jobId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Job Applications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/jobs/enhanced/{{jobId}}/applications",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "enhanced", "{{jobId}}", "applications"]
+            }
+          }
+        },
+        {
+          "name": "Get Top Candidates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/jobs/enhanced/{{jobId}}/top-candidates?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "enhanced", "{{jobId}}", "top-candidates"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Job Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/jobs/enhanced/{{jobId}}/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "enhanced", "{{jobId}}", "analytics"]
+            }
+          }
+        },
+        {
+          "name": "Update Application Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"shortlisted\",\n  \"notes\": \"Great candidate\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/jobs/enhanced/applications/{{applicationId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "enhanced", "applications", "{{applicationId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Update Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationIds\": [\"app1\", \"app2\"],\n  \"status\": \"reviewed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/jobs/enhanced/bulk-update-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "enhanced", "bulk-update-status"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Job Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/jobs/enhanced/{{jobId}}/toggle-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["jobs", "enhanced", "{{jobId}}", "toggle-status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', jsonData.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"employer@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
