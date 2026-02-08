@@ -42,6 +42,18 @@ export const matchJD = async (data: { job_description: string; location?: string
   return response.data;
 };
 
+export const parseResume = async (file: File): Promise<any> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  // Using specific port 3000 as requested
+  const response = await axios.post('http://localhost:3000/match/resume/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
 export const getJobById = async (jobId: string): Promise<Job> => {
   // The contract doesn't explicitly list a "Get Job By ID" endpoint, 
   // but it's common practice. If missing, we might have to filter from the list or match result.

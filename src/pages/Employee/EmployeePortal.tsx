@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Briefcase, MapPin, DollarSign, Grid3x3, List, Bookmark, ArrowLeft, ExternalLink, Filter, Search, Bell, X, Play } from 'lucide-react';
-import { fetchJobs, Job } from '../../api/jobService';
+import { fetchJobs, Job, parseResume } from '../../api/jobService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useResume } from '@/contexts/ResumeContext';
 import { subscriptionService } from '@/api/subscriptionService';
@@ -12,7 +12,7 @@ const EmployeePortal = () => {
   const { resumes } = useResume();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState('jobs');
+
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(false);
@@ -34,6 +34,7 @@ const EmployeePortal = () => {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [subscriptionEmail, setSubscriptionEmail] = useState('');
   const [selectedResumeId, setSelectedResumeId] = useState<string>('');
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [subscribing, setSubscribing] = useState(false);
   const [frequency, setFrequency] = useState('daily');
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -43,6 +44,64 @@ const EmployeePortal = () => {
       setSubscriptionEmail(user.email);
     }
   }, [user]);
+
+  // Check subscription status when modal opens or email changes
+  useEffect(() => {
+    if (showSubscriptionModal && subscriptionEmail) {
+      checkSubscriptionStatus();
+    }
+  }, [showSubscriptionModal, subscriptionEmail]);
+
+  const checkSubscriptionStatus = async () => {
+    try {
+      console.log('Checking subscription status for:', subscriptionEmail);
+      // First try to get full subscription details (might need auth)
+      try {
+        const mySub = await subscriptionService.getMySubscription();
+        console.log('getMySubscription response:', mySub);
+        if (mySub.subscription && mySub.subscription.isSubscribed) {
+          setIsSubscribed(true);
+          setFrequency(mySub.subscription.frequency || 'daily');
+          console.log('Set isSubscribed to true from mySubscription');
+          return;
+        }
+      } catch (e) {
+        console.warn('getMySubscription failed, falling back to email check:', e);
+      }
+
+      const status = await subscriptionService.getStatus(subscriptionEmail);
+      console.log('getStatus response:', status);
+
+      // The getStatus endpoint returns: { isSubscribed: boolean, email: string, subscriptionTypes: string[] }
+      if (status && status.isSubscribed) {
+        setIsSubscribed(true);
+        // If frequency is not in the response, we might default or keep current state.
+        if (status.frequency) {
+          setFrequency(status.frequency);
+        }
+        console.log('Set isSubscribed to true from getStatus');
+      } else {
+        setIsSubscribed(false);
+        console.log('Set isSubscribed to false');
+      }
+    } catch (error) {
+      console.error('Error checking subscription status:', error);
+      // Don't set isSubscribed to false here blindly, keep previous state or default
+    }
+  };
+
+  const handleTriggerUpdate = async () => {
+    if (!isSubscribed) {
+      toast.error("You must be subscribed to trigger an update.");
+      return;
+    }
+    try {
+      await subscriptionService.triggerJobUpdate({ email: subscriptionEmail });
+      toast.success("Job update triggered! Check your inbox shortly.");
+    } catch (error) {
+      toast.error("Failed to trigger update.");
+    }
+  };
 
   const toggleBookmark = (jobId: string) => {
     setBookmarked(prev => {
@@ -62,19 +121,30 @@ const EmployeePortal = () => {
     });
   };
 
+  // Pagination State
+  const [skip, setSkip] = useState(0);
+  const [totalJobs, setTotalJobs] = useState(0);
+  const LIMIT = 20;
+
   useEffect(() => {
     // Debounce search to avoid too many requests
     const timer = setTimeout(() => {
-      loadJobs();
+      setSkip(0); // Reset to first page on filter change
+      loadJobs(0);
     }, 500);
     return () => clearTimeout(timer);
-  }, [location, minStipend, maxStipend, isRemote, isInternship]);
+  }, [keyword, location, minStipend, maxStipend, isRemote, isInternship]);
 
-  const loadJobs = async () => {
+  useEffect(() => {
+    loadJobs(skip);
+  }, [skip]);
+
+  const loadJobs = async (skipValue = skip) => {
     try {
       setLoading(true);
       const params: any = {
-        limit: 50,
+        limit: LIMIT,
+        skip: skipValue,
       };
 
       if (location) params.location = location;
@@ -85,9 +155,20 @@ const EmployeePortal = () => {
 
       const data = await fetchJobs(params);
       setJobs(data.jobs);
+      if (data.total !== undefined) {
+        setTotalJobs(data.total);
+      } else {
+        // Fallback if total is not returned: if full page, assume more? 
+        // But strict numbered pagination needs total. 
+        // If no total, we'll just stick to simplified view or try to infer.
+        // For now, let's set a default or use length.
+        // If we got jobs, we have at least (skip + jobs.length)
+        setTotalJobs(skipValue + data.jobs.length + (data.jobs.length === LIMIT ? LIMIT : 0));
+      }
     } catch (error) {
       console.error('Error fetching jobs:', error);
       setJobs([]);
+      setTotalJobs(0);
     } finally {
       setLoading(false);
     }
@@ -109,10 +190,24 @@ const EmployeePortal = () => {
 
     try {
       setSubscribing(true);
+
+      let parsedData = null;
+      if (resumeFile) {
+        try {
+          // parseResume is imported from jobService
+          const result = await parseResume(resumeFile);
+          parsedData = result;
+        } catch (err) {
+          console.error("Resume parsing failed", err);
+          toast.error("Failed to parse resume for alerts. Proceeding with basic subscription.");
+        }
+      }
+
       await subscriptionService.subscribe({
         email: subscriptionEmail,
         userId: user?._id,
         frequency,
+        resumeData: parsedData,
       });
       setIsSubscribed(true); // Toggle state
       toast.success('Successfully subscribed to job updates!');
@@ -143,9 +238,7 @@ const EmployeePortal = () => {
     setSelectedJob(job);
   };
 
-  const tabs = [
-    { id: 'jobs', label: 'Browse Jobs', icon: Briefcase },
-  ];
+
 
   // Client-side filtering for keyword (title, company, description)
   // because the backend GET /jobs endpoint does not support keyword search currently.
@@ -179,31 +272,11 @@ const EmployeePortal = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 transition-colors duration-500">
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2 overflow-x-auto py-4 scrollbar-hide">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => { setActiveTab(tab.id); setSelectedJob(null); }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold whitespace-nowrap transition-all ${activeTab === tab.id
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 text-white shadow-lg'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`}
-                >
-                  <tab.icon className="w-4 h-4" />
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="h-screen overflow-y-auto bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 transition-colors duration-500 scrollbar-hide">
+      {/* Header removed as requested */}
 
       <div className="max-w-7xl mx-auto p-6">
-        {activeTab === 'jobs' && !selectedJob && (
+        {!selectedJob && (
           <div>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Browse Jobs</h1>
@@ -462,6 +535,69 @@ const EmployeePortal = () => {
                 </table>
               </div>
             )}
+
+            {/* Pagination Controls */}
+            {totalJobs > 0 && (
+              <div className="flex justify-center items-center mt-8 gap-2">
+                <button
+                  onClick={() => setSkip(Math.max(0, skip - LIMIT))}
+                  disabled={skip === 0 || loading}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 text-gray-600 dark:text-gray-400"
+                >
+                  Previous
+                </button>
+
+                {/* Page Numbers */}
+                {(() => {
+                  const totalPages = Math.ceil(totalJobs / LIMIT);
+                  const currentPage = Math.floor(skip / LIMIT) + 1;
+                  const pages = [];
+
+                  // Logic to show a window of pages, e.g., 1 2 ... 5 6 7 ... 10
+                  // For simplicity, let's show up to 5 surrounding pages for now, or all if few.
+
+                  let startPage = Math.max(1, currentPage - 2);
+                  let endPage = Math.min(totalPages, currentPage + 2);
+
+                  if (totalPages <= 5) {
+                    startPage = 1;
+                    endPage = totalPages;
+                  } else {
+                    if (currentPage <= 3) {
+                      startPage = 1;
+                      endPage = 5;
+                    } else if (currentPage >= totalPages - 2) {
+                      startPage = totalPages - 4;
+                      endPage = totalPages;
+                    }
+                  }
+
+                  for (let i = startPage; i <= endPage; i++) {
+                    pages.push(
+                      <button
+                        key={i}
+                        onClick={() => setSkip((i - 1) * LIMIT)}
+                        className={`w-10 h-10 rounded-lg font-semibold transition-all ${currentPage === i
+                          ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                          }`}
+                      >
+                        {i}
+                      </button>
+                    );
+                  }
+                  return pages;
+                })()}
+
+                <button
+                  onClick={() => setSkip(skip + LIMIT)}
+                  disabled={skip + LIMIT >= totalJobs || loading}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 text-gray-600 dark:text-gray-400"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -484,6 +620,14 @@ const EmployeePortal = () => {
                 <p className="text-gray-600 dark:text-gray-300">
                   Subscribe to receive daily job updates tailored to your profile.
                 </p>
+                {isSubscribed && (
+                  <button
+                    onClick={handleTriggerUpdate}
+                    className="mt-2 text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200 font-semibold underline"
+                  >
+                    Trigger Instant Job Update
+                  </button>
+                )}
               </div>
 
               <div className="space-y-4 mb-6">
@@ -492,84 +636,110 @@ const EmployeePortal = () => {
                     Select Resume for Tailored Alerts
                   </label>
                   {resumes.length > 0 ? (
-                    <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2">
-                      {resumes.map((resume) => (
-                        <label key={resume.id || resume._id} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
-                          <input
-                            type="radio"
-                            name="resume"
-                            value={resume.id || resume._id}
-                            checked={selectedResumeId === (resume.id || resume._id)}
-                            onChange={(e) => setSelectedResumeId(e.target.value)}
-                            className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
-                          />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{resume.filename || 'Untitled Resume'}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(resume.createdAt).toLocaleDateString()}</p>
-                          </div>
-                        </label>
-                      ))}
-                    </div>
+                    <select
+                      value={selectedResumeId}
+                      onChange={(e) => {
+                        setSelectedResumeId(e.target.value);
+                        setResumeFile(null); // Deselect uploaded file if selecting existing
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="">Select an existing resume</option>
+                      {resumes.map((resume) => {
+                        let dateStr = '';
+                        try {
+                          if (resume.createdAt) {
+                            const d = new Date(resume.createdAt);
+                            if (!isNaN(d.getTime())) {
+                              dateStr = ` (${d.toLocaleDateString()})`;
+                            }
+                          }
+                        } catch (e) { /* ignore */ }
+                        return (
+                          <option key={resume.id || resume._id} value={resume.id || resume._id}>
+                            {resume.filename || 'Untitled Resume'}{dateStr}
+                          </option>
+                        );
+                      })}
+                    </select>
                   ) : (
-                    <p className="text-sm text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
-                      No resumes found. Please upload a resume first to optimize your alerts.
+                    <p className="text-sm text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg mb-2">
+                      No existing resumes found.
                     </p>
                   )}
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={subscriptionEmail}
-                    onChange={(e) => setSubscriptionEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Frequency
-                  </label>
-                  <select
-                    value={frequency}
-                    onChange={(e) => setFrequency(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                  >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
+                  <div className="mt-4">
+                    <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Or Upload New</p>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          setResumeFile(e.target.files[0]);
+                          setSelectedResumeId(''); // Deselect existing if uploading new
+                        }
+                      }}
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-300"
+                    />
+                  </div>
+                  {resumeFile && (
+                    <p className="text-xs text-green-600 mt-1">Selected: {resumeFile.name}</p>
+                  )}
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                {isSubscribed ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={subscriptionEmail}
+                  onChange={(e) => setSubscriptionEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm mt-2 font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Frequency
+                </label>
+                <select
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 flex-col sm:flex-row mt-6">
+                {isSubscribed && (
                   <button
                     onClick={handleUnsubscribe}
                     disabled={subscribing}
-                    className="w-full px-4 py-2 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-all disabled:opacity-50"
+                    className="w-full sm:w-1/2 px-4 py-2 bg-red-100 text-red-700 font-semibold rounded-xl hover:bg-red-200 transition-all disabled:opacity-50"
                   >
                     {subscribing ? 'Processing...' : 'Unsubscribe'}
                   </button>
-                ) : (
-                  <button
-                    onClick={handleSubscribe}
-                    disabled={subscribing || !subscriptionEmail}
-                    className="w-full px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
-                  >
-                    {subscribing ? 'Processing...' : 'Subscribe'}
-                  </button>
                 )}
+
+                <button
+                  onClick={handleSubscribe}
+                  disabled={subscribing || !subscriptionEmail}
+                  className={`w-full ${isSubscribed ? 'sm:w-1/2' : ''} px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50`}
+                >
+                  {subscribing ? 'Processing...' : (isSubscribed ? 'Update Subscription' : 'Subscribe')}
+                </button>
               </div>
             </div>
           </div>
         )}
 
-        {activeTab === 'jobs' && selectedJob && (
+        {selectedJob && (
           <div className="animate-fadeIn">
             <button onClick={() => setSelectedJob(null)} className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-6 hover:text-gray-900 dark:hover:text-white">
               <ArrowLeft className="w-5 h-5" />Back to jobs
@@ -644,7 +814,7 @@ const EmployeePortal = () => {
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 };
 
