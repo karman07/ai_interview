@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Briefcase, MapPin, DollarSign, Grid3x3, List, Bookmark, ArrowLeft, ExternalLink, Filter, Search, Bell, X, Play } from 'lucide-react';
 import { fetchJobs, Job, parseResume } from '../../api/jobService';
 import { useAuth } from '@/contexts/AuthContext';
@@ -126,20 +126,97 @@ const EmployeePortal = () => {
   const [totalJobs, setTotalJobs] = useState(0);
   const LIMIT = 20;
 
+  // Resume Filter State
+  const [resumeFilterFile, setResumeFilterFile] = useState<File | null>(null);
+  const [isResumeFiltered, setIsResumeFiltered] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     // Debounce search to avoid too many requests
     const timer = setTimeout(() => {
-      setSkip(0); // Reset to first page on filter change
-      loadJobs(0);
+      // If we are filtering by resume, we don't want to trigger the normal loadJobs 
+      // unless the user changes other filters, but even then, how do we combine?
+      // For now, if resume filtered, we might explicitly just rely on that.
+      // But if the user changes keyword/location, should we re-run the resume match with params?
+      // The current upload endpoint might not support query params mixed with file?
+      // Let's assume for now: Normal load triggers if NOT resume filtered OR if we handle it differently.
+      // Actually, let's keep it simple: If not resume filtered, load normal jobs.
+      if (!isResumeFiltered) {
+        setSkip(0);
+        loadJobs(0);
+      }
     }, 500);
     return () => clearTimeout(timer);
   }, [keyword, location, minStipend, maxStipend, isRemote, isInternship]);
 
   useEffect(() => {
-    loadJobs(skip);
+    if (!isResumeFiltered) {
+      loadJobs(skip);
+    }
   }, [skip]);
 
+  const handleResumeFilterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("handleResumeFilterUpload triggered");
+    if (e.target.files?.[0]) {
+      const file = e.target.files[0];
+      console.log("File selected:", file.name);
+      setResumeFilterFile(file);
+      await filterJobsByResume(file);
+    } else {
+      console.log("No file selected in event target");
+    }
+  };
+
+  const filterJobsByResume = async (file: File) => {
+    try {
+      console.log("Starting filterJobsByResume for:", file.name);
+      setLoading(true);
+      const data = await parseResume(file);
+      console.log("Resume Filter Response:", data);
+
+      // Assuming the response structure. 
+      // If it returns a list of jobs directly or inside a property.
+      // Based on matchJD/matchResume, it usually returns { jobs: [], total_matches: ... }
+      // If the user said "Global job result" vs "Filter option with resume", 
+      // I expect this endpoint returns the filtered list.
+
+      if (data.jobs) {
+        setJobs(data.jobs);
+        setTotalJobs(data.total_matches || data.jobs.length);
+        setIsResumeFiltered(true);
+        setSkip(0); // Reset pagination (though backend might not support pagination for this match yet)
+      } else if (Array.isArray(data)) {
+        setJobs(data);
+        setTotalJobs(data.length);
+        setIsResumeFiltered(true);
+        setSkip(0);
+      } else {
+        toast.error("Format returned by resume filter not recognized.");
+      }
+    } catch (error) {
+      console.error("Error filtering by resume:", error);
+      toast.error("Failed to filter jobs by resume.");
+      setJobs([]);
+      setTotalJobs(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearResumeFilter = () => {
+    setResumeFilterFile(null);
+    setIsResumeFiltered(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    loadJobs(0);
+  };
+
   const loadJobs = async (skipValue = skip) => {
+    console.log("loadJobs called. isResumeFiltered:", isResumeFiltered, "skip:", skipValue);
+    if (isResumeFiltered) {
+      console.log("Skipping loadJobs because resume is filtered");
+      return;
+    }
+
     try {
       setLoading(true);
       const params: any = {
@@ -288,6 +365,38 @@ const EmployeePortal = () => {
                   <Bell className="w-5 h-5" />
                   <span className="hidden sm:inline font-semibold">Job Alerts</span>
                 </button>
+                <div className="border-l border-gray-300 dark:border-gray-600 mx-1"></div>
+
+                {/* Resume Filter Button */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleResumeFilterUpload}
+                />
+                <button
+                  onClick={() => {
+                    if (isResumeFiltered) {
+                      clearResumeFilter();
+                    } else {
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                  className={`p-2 rounded-lg flex items-center gap-2 transition-all ${isResumeFiltered
+                    ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                    : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 hover:bg-indigo-100'
+                    }`}
+                  title={resumeFilterFile ? `Filtered by: ${resumeFilterFile.name}` : 'Filter jobs by resume match'}
+                >
+                  <Briefcase className="w-5 h-5" />
+                  <span className="hidden sm:inline font-medium">
+                    {isResumeFiltered && resumeFilterFile
+                      ? `Clear: ${resumeFilterFile.name.substring(0, 15)}...`
+                      : (isResumeFiltered ? 'Clear Resume Filter' : 'Filter with Resume')}
+                  </span>
+                </button>
+
                 <div className="border-l border-gray-300 dark:border-gray-600 mx-1"></div>
                 <button
                   onClick={() => setShowFilters(!showFilters)}

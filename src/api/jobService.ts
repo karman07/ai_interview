@@ -28,8 +28,15 @@ export const fetchJobs = async (params: any = {}): Promise<JobListResponse> => {
   if (params.limit) queryParams.append('limit', params.limit.toString());
 
   // Using absolute URL to ensure we hit the correct backend
-  const response = await axios.get(`${API_URL}/jobs?${queryParams.toString()}`);
-  return response.data;
+  console.log(`Fetching jobs from: ${API_URL}/jobs?${queryParams.toString()}`);
+  try {
+    const response = await axios.get(`${API_URL}/jobs?${queryParams.toString()}`);
+    console.log("fetchJobs Success:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("fetchJobs Error:", error);
+    throw error;
+  }
 };
 
 export const matchResume = async (data: ResumeMatchRequest): Promise<MatchResultResponse> => {
@@ -43,10 +50,11 @@ export const matchJD = async (data: { job_description: string; location?: string
 };
 
 export const parseResume = async (file: File): Promise<any> => {
+  console.log("jobService: parseResume called for file:", file.name);
   const formData = new FormData();
   formData.append('file', file);
-  // Using specific port 3000 as requested
-  const response = await axios.post('http://localhost:3000/match/resume/upload', formData, {
+  // Using specific port 8000 as requested for filtering/matching
+  const response = await axios.post('http://localhost:8080/match/resume/upload', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
