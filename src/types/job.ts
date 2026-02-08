@@ -1,117 +1,56 @@
-// Job Types
+// Job Types based on BACKEND_CONTRACT.md
+export enum JobLevel {
+  ENTRY_LEVEL = 'ENTRY_LEVEL',
+  MID_LEVEL = 'MID_LEVEL',
+  SENIOR_LEVEL = 'SENIOR_LEVEL',
+  EXECUTIVE = 'EXECUTIVE',
+}
+
+export enum EmploymentType {
+  FULL_TIME = 'FULL_TIME',
+  PART_TIME = 'PART_TIME',
+  CONTRACTOR = 'CONTRACTOR',
+  INTERNSHIP = 'INTERNSHIP',
+}
+
 export interface Job {
-  _id: string;
+  job_id: string;
+  adzuna_id: string;
   title: string;
+  company: string;
+  location: string | null;
+  employment_type: EmploymentType | string | null;
+  salary_min: number;
+  salary_max: number;
   description: string;
-  requirements: string[];
-  salaryRange: {
-    min: number;
-    max: number;
-  };
-  location: string;
-  jobType: 'full-time' | 'part-time' | 'contract' | 'internship';
-  experienceLevel: 'entry' | 'mid' | 'senior' | 'executive';
-  skills: string[];
-  benefits: string[];
-  companyInfo: string;
-  employerId: {
-    _id: string;
-    name: string;
-    company: string;
-  };
-  isActive: boolean;
-  postedAt: Date;
-  applicationCount: number;
-  hasApplied: boolean;
+  redirect_url: string | null;
+  relevance_score?: number;
+  is_internship: boolean;
+  // Optional for frontend display
+  postedAt?: Date;
 }
 
-// Application Types
-export interface Application {
-  _id: string;
-  jobId: {
-    _id: string;
-    title: string;
-    company: string;
-    location: string;
-  };
-  employerId: {
-    _id: string;
-    name: string;
-    company: string;
-  };
-  status: 'pending' | 'reviewed' | 'shortlisted' | 'rejected' | 'interview_scheduled' | 'hired';
-  coverLetter: string;
-  aiMatchingScore: {
-    overallMatch: number;
-    skillsMatch: number;
-    experienceMatch: number;
-    matchingKeywords: string[];
-    missingSkills: string[];
-    aiRecommendation: string;
-  };
-  interviewScores: {
-    overall: number;
-    technical: number;
-    behavioral: number;
-    problemSolving: number;
-    hr: number;
-    totalInterviews: number;
-    lastInterviewDate: Date;
-  };
-  employerNotes: string;
-  rejectionReason: string;
-  appliedAt: Date;
-  statusUpdatedAt: Date;
+export interface JobListResponse {
+  total: number;
+  jobs: Job[];
 }
 
-// Interview Types
-export interface InterviewSession {
-  _id: string;
-  userId: string;
-  type: 'technical' | 'behavioral' | 'hr' | 'problem-solving';
-  status: 'in-progress' | 'completed' | 'abandoned';
-  questions: {
-    questionId: string;
-    question: string;
-    answer: string;
-    score: number;
-    feedback: string;
-    timeSpent: number;
-  }[];
-  overallScore: number;
-  feedback: string;
-  duration: number;
-  startedAt: Date;
-  completedAt: Date;
-  createdAt: Date;
+export interface ResumeMatchRequest {
+  resume_text: string;
+  location?: string;
+  internship_only?: boolean;
+  job_level?: JobLevel;
+  stipend_min?: number;
 }
 
-// Invitation Types
-export interface Invitation {
-  _id: string;
-  jobId: {
-    _id: string;
-    title: string;
-    company: string;
-    location: string;
-    salaryRange: {
-      min: number;
-      max: number;
-    };
-  };
-  employerId: {
-    _id: string;
-    name: string;
-    company: string;
-  };
-  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
-  message: string;
-  employeeResponse: string;
-  createdAt: Date;
-  updatedAt: Date;
+export interface MatchResultResponse {
+  total_matches: number;
+  search_time_ms: number;
+  jobs: Job[];
+  metadata: any;
 }
 
-// Dashboard Stats
+// Keeping DashboardStats for now if used elsewhere, but marked as legacy
 export interface DashboardStats {
   totalApplications: number;
   pendingApplications: number;

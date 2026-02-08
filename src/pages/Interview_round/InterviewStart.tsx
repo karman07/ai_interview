@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Input from "@/components/common/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import Button from "@/components/ui/button";
-import { 
+import {
   Briefcase, Building2, FileText, Layers, Loader2, ArrowRight,
   Users, Code, Lightbulb, MessageCircle,
   Award, BarChart3, Eye, Upload, X, CheckCircle
@@ -25,11 +25,19 @@ interface InterviewDetails {
 export default function InterviewStart() {
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+
+  const preFilledData = location.state as {
+    role?: string;
+    company?: string;
+    jobDescription?: string;
+  } | undefined;
+
   const [details, setDetails] = useState<InterviewDetails>({
-    role: "",
-    company: "",
-    jobDescription: "",
+    role: preFilledData?.role || "",
+    company: preFilledData?.company || "",
+    jobDescription: preFilledData?.jobDescription || "",
     resumeText: "",
   });
   const [loading, setLoading] = useState(false);
@@ -59,7 +67,7 @@ export default function InterviewStart() {
       const allowedExtensions = ['.pdf', '.docx', '.txt'];
       const fileName = file.name.toLowerCase();
       const isValidType = allowedExtensions.some(ext => fileName.endsWith(ext));
-      
+
       if (!isValidType) {
         setError(`Invalid file type. Please upload PDF, DOCX, or TXT file.`);
         return;
@@ -114,7 +122,7 @@ export default function InterviewStart() {
 
     try {
       let response;
-      
+
       // Case 1: Both files provided - use simplified helper
       if (details.resumeFile && details.jdFile) {
         response = await startInterviewWithFiles(
@@ -124,7 +132,7 @@ export default function InterviewStart() {
           details.role,
           details.company
         );
-      } 
+      }
       // Case 2: Mixed or text-based - use full API
       else {
         const sessionId = generateSessionId(user._id);
@@ -151,7 +159,7 @@ export default function InterviewStart() {
       };
 
       localStorage.setItem('v2_interview_session', JSON.stringify(sessionData));
-      
+
       // Navigate to interview room
       navigate(`/interview/room/${type}`);
     } catch (err: any) {
@@ -244,20 +252,20 @@ export default function InterviewStart() {
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                       <Briefcase className="w-4 h-4" /> Role <span className="text-red-500">*</span>
                     </label>
-                    <Input 
-                      placeholder="e.g., Senior Software Engineer" 
-                      value={details.role} 
-                      onChange={(e) => setDetails({...details, role: e.target.value})} 
+                    <Input
+                      placeholder="e.g., Senior Software Engineer"
+                      value={details.role}
+                      onChange={(e) => setDetails({ ...details, role: e.target.value })}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                       <Building2 className="w-4 h-4" /> Company <span className="text-red-500">*</span>
                     </label>
-                    <Input 
-                      placeholder="e.g., Google" 
-                      value={details.company} 
-                      onChange={(e) => setDetails({...details, company: e.target.value})} 
+                    <Input
+                      placeholder="e.g., Google"
+                      value={details.company}
+                      onChange={(e) => setDetails({ ...details, company: e.target.value })}
                     />
                   </div>
                 </div>
@@ -267,7 +275,7 @@ export default function InterviewStart() {
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                     <FileText className="w-4 h-4" /> Resume <span className="text-red-500">*</span>
                   </label>
-                  
+
                   {!details.resumeFile ? (
                     <div className="space-y-3">
                       <div className="relative">
@@ -292,7 +300,7 @@ export default function InterviewStart() {
                       <Textarea
                         placeholder="Paste your resume text here..."
                         value={details.resumeText}
-                        onChange={(e) => setDetails({...details, resumeText: e.target.value})}
+                        onChange={(e) => setDetails({ ...details, resumeText: e.target.value })}
                         className="min-h-[120px]"
                       />
                     </div>
@@ -322,7 +330,7 @@ export default function InterviewStart() {
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                     <Layers className="w-4 h-4" /> Job Description <span className="text-red-500">*</span>
                   </label>
-                  
+
                   {!details.jdFile ? (
                     <div className="space-y-3">
                       <div className="relative">
@@ -347,7 +355,7 @@ export default function InterviewStart() {
                       <Textarea
                         placeholder="Paste job description here..."
                         value={details.jobDescription}
-                        onChange={(e) => setDetails({...details, jobDescription: e.target.value})}
+                        onChange={(e) => setDetails({ ...details, jobDescription: e.target.value })}
                         className="min-h-[120px]"
                       />
                     </div>
@@ -372,18 +380,17 @@ export default function InterviewStart() {
                   )}
                 </div>
 
-                <Button 
-                  onClick={handleStart} 
+                <Button
+                  onClick={handleStart}
                   disabled={loading || !details.role || !details.company || (!details.resumeFile && !details.resumeText) || (!details.jdFile && !details.jobDescription)}
-                  className={`w-full flex items-center justify-center gap-3 ${
-                    details.role && details.company && (details.resumeFile || details.resumeText) && (details.jdFile || details.jobDescription)
-                      ? `bg-gradient-to-r ${info.color}` 
+                  className={`w-full flex items-center justify-center gap-3 ${details.role && details.company && (details.resumeFile || details.resumeText) && (details.jdFile || details.jobDescription)
+                      ? `bg-gradient-to-r ${info.color}`
                       : 'bg-gray-300'
-                  } text-white font-bold py-4 rounded-2xl`}
+                    } text-white font-bold py-4 rounded-2xl`}
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="animate-spin w-6 h-6" /> 
+                      <Loader2 className="animate-spin w-6 h-6" />
                       Starting Interview with AI...
                     </>
                   ) : (
