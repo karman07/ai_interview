@@ -35,26 +35,44 @@ type InterviewCardProps = {
 };
 
 function InterviewCard({ type, description, icon, color, navigate }: InterviewCardProps) {
-  return (
-    <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-2xl hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-300 overflow-hidden">
-      {/* Gradient accent */}
-      <div className={`absolute top-0 left-0 right-0 h-1 ${color}`}></div>
+  // Extract text color from gradient prop (simplification)
+  const getTextColor = (gradientClass: string) => {
+    if (gradientClass.includes('blue')) return 'text-blue-600 dark:text-blue-400';
+    if (gradientClass.includes('emerald') || gradientClass.includes('green')) return 'text-emerald-600 dark:text-emerald-400';
+    if (gradientClass.includes('amber') || gradientClass.includes('orange')) return 'text-amber-600 dark:text-amber-400';
+    if (gradientClass.includes('purple')) return 'text-purple-600 dark:text-purple-400';
+    return 'text-gray-900 dark:text-white';
+  };
 
-      {/* Card content */}
-      <div className="p-8">
+  const getBgColor = (gradientClass: string) => {
+    if (gradientClass.includes('blue')) return 'bg-blue-50 dark:bg-blue-900/20';
+    if (gradientClass.includes('emerald') || gradientClass.includes('green')) return 'bg-emerald-50 dark:bg-emerald-900/20';
+    if (gradientClass.includes('amber') || gradientClass.includes('orange')) return 'bg-amber-50 dark:bg-amber-900/20';
+    if (gradientClass.includes('purple')) return 'bg-purple-50 dark:bg-purple-900/20';
+    return 'bg-gray-100 dark:bg-gray-800';
+  };
+
+  const textColor = getTextColor(color);
+  const bgColor = getBgColor(color);
+
+  return (
+    <div className="group relative bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full">
+      <div className="p-8 flex flex-col h-full">
         {/* Icon */}
         <div
-          className={`w-16 h-16 rounded-2xl ${color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}
+          className={`w-14 h-14 rounded-xl ${bgColor} flex items-center justify-center mb-6 transition-transform duration-300`}
         >
-          <div className="text-white">{icon}</div>
+          <div className={textColor}>
+            {React.cloneElement(icon as React.ReactElement, { className: "w-7 h-7" })}
+          </div>
         </div>
 
         {/* Content */}
-        <div className="space-y-4">
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
+        <div className="space-y-3 flex-grow">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
             {type} Round
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-base">
+          <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-sm">
             {description}
           </p>
         </div>
@@ -64,15 +82,12 @@ function InterviewCard({ type, description, icon, color, navigate }: InterviewCa
           onClick={() =>
             navigate(`/interview/start/${type.toLowerCase()}`)
           }
-          className="mt-8 w-full flex items-center justify-center gap-3 bg-gray-900 dark:bg-gray-700 text-white px-6 py-4 rounded-2xl hover:bg-gray-800 dark:hover:bg-gray-600 transition-all duration-300 group-hover:shadow-lg font-semibold hover:scale-[1.02]"
+          className="mt-8 w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 font-medium text-sm group-hover:border-gray-300 dark:group-hover:border-gray-600"
         >
           Start Interview
-          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+          <ArrowRight className="w-4 h-4" />
         </button>
       </div>
-
-      {/* Hover effect overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-transparent to-gray-50/50 dark:to-gray-900/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
     </div>
   );
 }
@@ -90,26 +105,39 @@ const StatCard = ({
   suffix?: string;
   icon: React.ReactNode;
   gradient: string;
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg p-6"
-  >
-    <div className="flex items-center justify-between mb-4">
-      <div className={`p-3 bg-gradient-to-br ${gradient} rounded-xl text-white`}>
-        {icon}
+}) => {
+  // Extract text color from gradient (simplification)
+  const getTextColor = (g: string) => {
+    if (g.includes('blue')) return 'text-blue-600 dark:text-blue-400';
+    if (g.includes('green') || g.includes('emerald')) return 'text-emerald-600 dark:text-emerald-400';
+    if (g.includes('purple')) return 'text-purple-600 dark:text-purple-400';
+    if (g.includes('amber') || g.includes('orange')) return 'text-amber-600 dark:text-amber-400';
+    return 'text-gray-900 dark:text-white';
+  };
+
+  const textColor = getTextColor(gradient);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className={`p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 ${textColor}`}>
+          {React.cloneElement(icon as React.ReactElement, { className: "w-6 h-6" })}
+        </div>
       </div>
-    </div>
-    <div className="space-y-1">
-      <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">{title}</p>
-      <div className="flex items-baseline gap-1">
-        <span className="text-3xl font-bold text-gray-900 dark:text-white">{value}</span>
-        {suffix && <span className="text-lg text-gray-500 dark:text-gray-400">{suffix}</span>}
+      <div className="space-y-1">
+        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">{title}</p>
+        <div className="flex items-baseline gap-1">
+          <span className="text-3xl font-bold text-gray-900 dark:text-white">{value}</span>
+          {suffix && <span className="text-lg text-gray-500 dark:text-gray-400">{suffix}</span>}
+        </div>
       </div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 // Helper functions
 const getRoundIcon = (roundType: string) => {
@@ -147,11 +175,23 @@ const RoundPerformanceCard = ({
   color: string;
 }) => {
   const date = new Date(roundData.lastAttempted);
+
+  // Extract text color from gradient color prop
+  const getTextColor = (g: string) => {
+    if (g.includes('blue')) return 'text-blue-600 dark:text-blue-400';
+    if (g.includes('emerald') || g.includes('green')) return 'text-emerald-600 dark:text-emerald-400';
+    if (g.includes('amber') || g.includes('orange')) return 'text-amber-600 dark:text-amber-400';
+    if (g.includes('purple')) return 'text-purple-600 dark:text-purple-400';
+    return 'text-gray-900 dark:text-white';
+  };
+
+  const textColor = getTextColor(color);
+
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 p-5">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
       <div className="flex items-center gap-3 mb-4">
-        <div className={`p-2 ${color} rounded-lg text-white`}>
-          {icon}
+        <div className={`p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 ${textColor}`}>
+          {React.cloneElement(icon as React.ReactElement, { className: "w-5 h-5" })}
         </div>
         <h4 className="font-bold text-gray-900 dark:text-white capitalize">
           {roundData.roundType.replace(/([A-Z])/g, ' $1').trim()}
@@ -164,7 +204,7 @@ const RoundPerformanceCard = ({
         </div>
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-600 dark:text-gray-400">Average Score</span>
-          <span className="font-bold text-blue-600 dark:text-blue-400">{Math.round(roundData.averageScore)}</span>
+          <span className="font-bold text-gray-900 dark:text-white">{Math.round(roundData.averageScore)}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-600 dark:text-gray-400">Last Attempted</span>
@@ -270,22 +310,28 @@ const CompanyCard = ({
 }) => {
   const trendType = company.trend.toLowerCase() as "improving" | "declining" | "stable";
   return (
-    <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 border border-indigo-200 dark:border-indigo-800">
+    <div className="flex items-center justify-between p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors">
       <div className="flex-1">
         <h5 className="font-semibold text-gray-900 dark:text-white">{company.companyName}</h5>
         <p className="text-xs text-gray-600 dark:text-gray-400">
           {company.totalInterviews} interview{company.totalInterviews > 1 ? "s" : ""}
         </p>
       </div>
-      <div className="text-right flex items-center gap-2">
+      <div className="text-right flex items-center gap-3">
         <div>
-          <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+          <div className="text-lg font-bold text-gray-900 dark:text-white">
             {Math.round(company.averageScore)}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">avg</div>
         </div>
-        {trendType === "improving" && <TrendingUp className="w-5 h-5 text-green-500" />}
-        {trendType === "declining" && <TrendingDown className="w-5 h-5 text-red-500" />}
+        <div className={`p-1.5 rounded-full ${trendType === 'improving' ? 'bg-emerald-50 text-emerald-600' :
+          trendType === 'declining' ? 'bg-rose-50 text-rose-600' :
+            'bg-gray-50 text-gray-600'
+          }`}>
+          {trendType === "improving" && <TrendingUp className="w-4 h-4" />}
+          {trendType === "declining" && <TrendingDown className="w-4 h-4" />}
+          {trendType === "stable" && <Activity className="w-4 h-4" />}
+        </div>
       </div>
     </div>
   );
@@ -322,7 +368,7 @@ const RoleCard = ({
     .map(([skill]) => skill);
 
   return (
-    <div className="p-4 rounded-lg bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 border border-pink-200 dark:border-pink-800">
+    <div className="p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-pink-200 dark:hover:border-pink-800 transition-colors">
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <h5 className="font-semibold text-gray-900 dark:text-white">{role.roleTitle}</h5>
@@ -330,7 +376,7 @@ const RoleCard = ({
             {role.totalInterviews} interview{role.totalInterviews > 1 ? "s" : ""}
           </p>
         </div>
-        <div className="text-lg font-bold text-pink-600 dark:text-pink-400">
+        <div className="text-lg font-bold text-gray-900 dark:text-white">
           {Math.round(role.averageScore)}
         </div>
       </div>
@@ -339,7 +385,7 @@ const RoleCard = ({
           {topSkills.map((skill, idx) => (
             <span
               key={idx}
-              className="text-xs px-2 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full border border-pink-200 dark:border-pink-700"
+              className="text-xs px-2 py-1 bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-600"
             >
               {skill}
             </span>
@@ -360,15 +406,15 @@ const TrendCard = ({
   const latestScore = scores[scores.length - 1];
   const previousScore = scores.length > 1 ? scores[scores.length - 2] : latestScore;
   const trend = latestScore > previousScore ? "up" : latestScore < previousScore ? "down" : "stable";
-  
+
   return (
-    <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-800 p-5">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h4 className="font-semibold text-gray-900 dark:text-white capitalize text-sm">
           {roundType.replace(/([A-Z])/g, ' $1').trim()}
         </h4>
-        {trend === "up" && <TrendingUp className="w-5 h-5 text-green-600" />}
-        {trend === "down" && <TrendingDown className="w-5 h-5 text-red-600" />}
+        {trend === "up" && <TrendingUp className="w-4 h-4 text-emerald-600" />}
+        {trend === "down" && <TrendingDown className="w-4 h-4 text-rose-600" />}
       </div>
       <div className="space-y-3">
         <div>
@@ -376,11 +422,11 @@ const TrendCard = ({
           <div className="text-xs text-gray-500 dark:text-gray-400">Latest Score</div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden flex">
+          <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex gap-0.5">
             {scores.map((_, idx) => (
               <div
                 key={idx}
-                className={`h-full bg-gradient-to-r from-green-400 to-emerald-500`}
+                className={`h-full bg-emerald-500`}
                 style={{ width: `${100 / scores.length}%`, opacity: 0.3 + (idx / scores.length) * 0.7 }}
               />
             ))}
@@ -402,19 +448,34 @@ const RecentInterviewCard = ({ interview, navigate }: { interview: any; navigate
     hr: <MessageCircle className="w-5 h-5" />,
   };
 
-  const roundColors = {
-    technical: "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400",
-    behavioral: "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400",
-    problemSolving: "bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400",
-    hr: "bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400",
+  const getTextColor = (type: string) => {
+    switch (type) {
+      case 'technical': return 'text-blue-600 dark:text-blue-400';
+      case 'behavioral': return 'text-emerald-600 dark:text-emerald-400';
+      case 'problemSolving': return 'text-amber-600 dark:text-amber-400';
+      case 'hr': return 'text-purple-600 dark:text-purple-400';
+      default: return 'text-gray-600 dark:text-gray-400';
+    }
+  };
+
+  const getBgColor = (type: string) => {
+    switch (type) {
+      case 'technical': return 'bg-blue-50 dark:bg-blue-900/20';
+      case 'behavioral': return 'bg-emerald-50 dark:bg-emerald-900/20';
+      case 'problemSolving': return 'bg-amber-50 dark:bg-amber-900/20';
+      case 'hr': return 'bg-purple-50 dark:bg-purple-900/20';
+      default: return 'bg-gray-50 dark:bg-gray-800';
+    }
   };
 
   const date = new Date(interview.completedAt);
+  const textColor = getTextColor(interview.roundType);
+  const bgColor = getBgColor(interview.roundType);
 
   return (
-    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-300">
+    <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-300">
       <div className="flex items-center gap-4 flex-1">
-        <div className={`p-3 rounded-lg ${roundColors[interview.roundType as keyof typeof roundColors] || roundColors.technical}`}>
+        <div className={`p-2.5 rounded-lg ${bgColor} ${textColor}`}>
           {roundIcons[interview.roundType as keyof typeof roundIcons] || roundIcons.technical}
         </div>
         <div className="flex-1">
@@ -426,16 +487,16 @@ const RecentInterviewCard = ({ interview, navigate }: { interview: any; navigate
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-6">
         <div className="text-right">
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">{interview.overallScore}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Overall Score</div>
+          <div className="text-xl font-bold text-gray-900 dark:text-white">{interview.overallScore}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">Score</div>
         </div>
         <button
           onClick={() => navigate(`/interview/results/${interview.sessionId}`)}
-          className="p-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
         >
-          <Eye className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          <Eye className="w-5 h-5 text-gray-500 dark:text-gray-400" />
         </button>
       </div>
     </div>
@@ -581,16 +642,16 @@ export default function InterviewHome() {
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Interview Analytics Dashboard
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 text-lg">
+              <p className="text-gray-600 dark:text-gray-400">
                 Track your progress, analyze performance, and master every interview
               </p>
             </div>
             <button
               onClick={() => setShowInterviewSelection(true)}
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 shadow-sm"
             >
               <PlayCircle className="w-5 h-5" />
               Start New Interview
@@ -785,16 +846,16 @@ export default function InterviewHome() {
 
         {/* Recommendations */}
         {performanceStats?.recommendations && performanceStats.recommendations.length > 0 && (
-          <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/10 dark:to-purple-900/10 rounded-2xl border border-blue-200 dark:border-blue-800 shadow-lg p-6">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-yellow-600" />
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-amber-500" />
               Personalized Recommendations
             </h3>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {performanceStats.recommendations.map((rec, idx) => (
-                <div key={idx} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
-                  <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">{rec}</span>
+                <div key={idx} className="flex items-start gap-3 text-gray-700 dark:text-gray-300 text-sm">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span>{rec}</span>
                 </div>
               ))}
             </div>

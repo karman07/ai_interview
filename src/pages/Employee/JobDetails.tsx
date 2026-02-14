@@ -40,17 +40,17 @@ const JobDetails = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 transition-colors duration-500 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-500 p-6">
       <div className="max-w-5xl mx-auto">
         <button onClick={() => navigate('/employee/jobs')} className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 mb-6 transition-colors">
           <ArrowLeft className="w-5 h-5" />
           Back to Jobs
         </button>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 mb-6">
           <div className="flex items-start gap-6 mb-6">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-              <Building2 className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+              <Building2 className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div className="flex-1">
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{job.title}</h1>
@@ -78,7 +78,7 @@ const JobDetails = () => {
             <button
               onClick={() => job.redirect_url ? window.open(job.redirect_url, '_blank') : null}
               disabled={!job.redirect_url}
-              className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 text-white font-bold rounded-xl hover:shadow-lg transition-all hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-8 py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
               <span>Apply Now</span>
               <ExternalLink className="w-5 h-5" />
@@ -92,11 +92,6 @@ const JobDetails = () => {
                 {job.description}
               </div>
             </div>
-            {/* 
-              Since structured requirements/skills are not in the new/basic contract, 
-              we rely on the description. 
-              If the backend parses them later, we can re-add these sections. 
-            */}
           </div>
         </div>
       </div>

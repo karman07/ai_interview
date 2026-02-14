@@ -74,7 +74,7 @@ const JobSearch: React.FC = () => {
         </div>
 
         {/* Search Filters */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -87,7 +87,7 @@ const JobSearch: React.FC = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Job title, company or keywords"
-                  className="pl-10 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  className="pl-10 w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all"
                 />
               </div>
             </div>
@@ -102,7 +102,7 @@ const JobSearch: React.FC = () => {
                   value={locationFilter}
                   onChange={(e) => setLocationFilter(e.target.value)}
                   placeholder="City, state, or remote"
-                  className="pl-10 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  className="pl-10 w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all"
                 />
               </div>
             </div>
@@ -117,40 +117,40 @@ const JobSearch: React.FC = () => {
         ) : (
           <div className="space-y-4">
             {filteredJobs.map((job) => (
-              <div key={job.job_id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+              <div key={job.job_id} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer group">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{job.title}</h3>
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-3">
-                      <div className="flex items-center">
-                        <Building2 className="h-4 w-4 mr-1" />
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{job.title}</h3>
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      <div className="flex items-center px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-700 font-medium">
+                        <Building2 className="h-3.5 w-3.5 mr-1.5" />
                         {job.company}
                       </div>
                       {job.location && (
                         <div className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-1" />
+                          <MapPin className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
                           {job.location}
                         </div>
                       )}
                       <div className="flex items-center">
-                        <DollarSign className="h-4 w-4 mr-1" />
+                        <DollarSign className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
                         {formatSalary(job.salary_min, job.salary_max)}
                       </div>
                       {job.employment_type && (
                         <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-1" />
+                          <Clock className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
                           {job.employment_type}
                         </div>
                       )}
                     </div>
-                    <p className="text-gray-700 dark:text-gray-300 mb-3 line-clamp-2">{job.description}</p>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-2 leading-relaxed">{job.description}</p>
                   </div>
                   <button
                     onClick={() => job.redirect_url ? window.open(job.redirect_url, '_blank') : null}
                     disabled={!job.redirect_url}
-                    className="ml-4 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-4 py-2 rounded-md transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="ml-6 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
                   >
-                    Apply <ExternalLink className="h-3 w-3 ml-2" />
+                    Apply <ExternalLink className="h-3.5 w-3.5 ml-2" />
                   </button>
                 </div>
               </div>

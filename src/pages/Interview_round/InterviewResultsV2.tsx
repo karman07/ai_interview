@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -79,20 +79,16 @@ export default function InterviewResultsV2() {
     return <XCircle className="w-6 h-6" />;
   };
 
-  const getRecommendationBg = (rec: string) => {
-    if (rec === 'hire') return 'from-green-500 to-emerald-600';
-    if (rec === 'maybe') return 'from-yellow-500 to-orange-500';
-    return 'from-red-500 to-pink-600';
-  };
+
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Interview Results
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
@@ -102,16 +98,16 @@ export default function InterviewResultsV2() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate('/interview_round')}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
               >
-                <Home className="w-5 h-5" />
+                <Home className="w-4 h-4" />
                 Dashboard
               </button>
               <button
                 onClick={() => window.print()}
-                className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium shadow-sm"
               >
-                <Download className="w-5 h-5" />
+                <Download className="w-4 h-4" />
                 Download Report
               </button>
             </div>
@@ -121,39 +117,49 @@ export default function InterviewResultsV2() {
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         {/* Overall Recommendation Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`bg-gradient-to-r ${getRecommendationBg(report.evaluation.recommendation)} rounded-3xl shadow-2xl p-8 text-white`}
-        >
+        {/* Overall Recommendation Card */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <div className="flex items-center gap-3 mb-4">
-                {getRecommendationIcon(report.evaluation.recommendation)}
-                <h2 className="text-3xl font-bold capitalize">
-                  {report.evaluation.recommendation === 'hire' ? 'Strong Hire' : report.evaluation.recommendation === 'maybe' ? 'Maybe Hire' : 'No Hire'}
-                </h2>
-              </div>
-              <p className="text-white/90 text-lg mb-4">{report.evaluation.summary}</p>
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
-                  <span>{report.total_questions} questions answered</span>
+              <div className="flex items-center gap-4 mb-4">
+                <div className={`p-3 rounded-xl ${report.evaluation.recommendation === 'hire' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400' :
+                  report.evaluation.recommendation === 'maybe' ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400' :
+                    'bg-rose-100 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400'
+                  }`}>
+                  {getRecommendationIcon(report.evaluation.recommendation)}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Target className="w-5 h-5" />
-                  <span>{report.interview_duration_minutes} minutes</span>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white capitalize">
+                    {report.evaluation.recommendation === 'hire' ? 'Strong Hire' : report.evaluation.recommendation === 'maybe' ? 'Maybe Hire' : 'No Hire'}
+                  </h2>
+                  <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-4 h-4" />
+                      <span>{report.total_questions} questions</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Target className="w-4 h-4" />
+                      <span>{report.interview_duration_minutes} mins</span>
+                    </div>
+                  </div>
                 </div>
               </div>
+              <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed max-w-3xl">
+                {report.evaluation.summary}
+              </p>
             </div>
-            <div className="text-center">
-              <div className="w-32 h-32 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3">
-                <div className="text-6xl font-bold">{report.evaluation.overall_score}</div>
+
+            <div className="text-center pl-8 border-l border-gray-100 dark:border-gray-700">
+              <div className={`text-5xl font-bold mb-1 ${report.evaluation.overall_score >= 70 ? 'text-emerald-600 dark:text-emerald-400' :
+                report.evaluation.overall_score >= 50 ? 'text-indigo-600 dark:text-indigo-400' :
+                  'text-rose-600 dark:text-rose-400'
+                }`}>
+                {report.evaluation.overall_score}
               </div>
-              <div className="text-white/80">Overall Score</div>
+              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Overall Score</div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Skill Assessments */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -241,7 +247,7 @@ export default function InterviewResultsV2() {
               <Mic className="w-6 h-6 text-blue-600" />
               Voice Analytics
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <VoiceMetric
                 label="Fluency"
@@ -266,16 +272,16 @@ export default function InterviewResultsV2() {
             </div>
 
             {report.voice_analytics?.speaking_rate_wpm && (
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-blue-900 dark:text-blue-300">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Speaking Rate
                   </span>
-                  <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                  <span className="text-lg font-bold text-gray-900 dark:text-white">
                     {Math.round(report.voice_analytics?.speaking_rate_wpm || 0)} WPM
                   </span>
                 </div>
-                <p className="text-xs text-blue-700 dark:text-blue-400 mt-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                   Ideal range: 120-150 WPM
                 </p>
               </div>
@@ -319,8 +325,8 @@ export default function InterviewResultsV2() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
-              <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-300 mb-3">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                 Facial Expressions
               </h4>
               <div className="space-y-2">
@@ -330,8 +336,8 @@ export default function InterviewResultsV2() {
               </div>
             </div>
 
-            <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4">
-              <h4 className="text-sm font-semibold text-indigo-900 dark:text-indigo-300 mb-3">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                 Body Language
               </h4>
               <div className="space-y-2">
@@ -341,8 +347,8 @@ export default function InterviewResultsV2() {
               </div>
             </div>
 
-            <div className="bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-xl p-4">
-              <h4 className="text-sm font-semibold text-pink-900 dark:text-pink-300 mb-3">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                 Other Metrics
               </h4>
               <div className="space-y-2 text-sm">
@@ -368,7 +374,7 @@ export default function InterviewResultsV2() {
             </div>
           </div>
 
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 italic">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 italic border-t border-gray-100 dark:border-gray-700 pt-3">
             {report.video_analytics?.note ?? ''}
           </p>
         </div>
@@ -384,15 +390,15 @@ export default function InterviewResultsV2() {
         </div>
 
         {/* Key Highlights */}
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/10 dark:to-orange-900/10 rounded-2xl border border-yellow-200 dark:border-yellow-800 p-6">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <Star className="w-6 h-6 text-yellow-600" />
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Star className="w-5 h-5 text-amber-500" />
             Key Highlights
           </h3>
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {report.evaluation.key_highlights.map((highlight, idx) => (
-              <li key={idx} className="flex items-start gap-3">
-                <ArrowRight className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+              <li key={idx} className="flex items-start gap-3 text-sm">
+                <ArrowRight className="w-4 h-4 text-amber-500 mt-1 flex-shrink-0" />
                 <span className="text-gray-700 dark:text-gray-300">{highlight}</span>
               </li>
             ))}
@@ -400,35 +406,35 @@ export default function InterviewResultsV2() {
         </div>
 
         {/* Improvement Recommendations */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-2xl border border-blue-200 dark:border-blue-800 p-6">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <Target className="w-6 h-6 text-blue-600" />
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Target className="w-5 h-5 text-indigo-600" />
             Improvement Recommendations
           </h3>
-          <ul className="space-y-3">
+          <ul className="space-y-4">
             {report.evaluation.improvement_areas.map((area, idx) => (
-              <li key={idx} className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400">{idx + 1}</span>
+              <li key={idx} className="flex items-start gap-3 text-sm">
+                <div className="w-6 h-6 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0 text-indigo-600 dark:text-indigo-400 font-semibold text-xs border border-indigo-100 dark:border-indigo-800">
+                  {idx + 1}
                 </div>
-                <span className="text-gray-700 dark:text-gray-300">{area}</span>
+                <span className="text-gray-700 dark:text-gray-300 pt-0.5">{area}</span>
               </li>
             ))}
           </ul>
         </div>
 
         {/* Call to Action */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 text-white text-center">
+        <div className="bg-indigo-600 rounded-2xl shadow-lg p-8 text-white text-center">
           <h3 className="text-2xl font-bold mb-3">Ready for Your Next Interview?</h3>
-          <p className="text-white/90 mb-6 max-w-2xl mx-auto">
+          <p className="text-indigo-100 mb-8 max-w-2xl mx-auto">
             Practice makes perfect. Start another interview to improve your skills and track your progress.
           </p>
           <button
             onClick={() => navigate('/interview_round')}
-            className="inline-flex items-center gap-2 px-8 py-4 bg-white text-indigo-600 font-semibold rounded-xl hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl"
+            className="inline-flex items-center gap-2 px-8 py-3 bg-white text-indigo-600 font-semibold rounded-lg hover:bg-gray-50 transition-all shadow-sm"
           >
             Start New Interview
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -438,110 +444,134 @@ export default function InterviewResultsV2() {
 
 // Helper Components
 
-const SkillCard = ({ 
-  icon, 
-  title, 
-  score, 
-  assessment, 
-  color 
-}: { 
-  icon: React.ReactNode; 
-  title: string; 
-  score: number; 
-  assessment: string; 
-  color: string; 
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6"
-  >
-    <div className={`inline-flex p-3 bg-gradient-to-r ${color} rounded-xl text-white mb-4`}>
-      {icon}
-    </div>
-    <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{title}</h4>
-    <div className="flex items-baseline gap-2 mb-3">
-      <span className="text-4xl font-bold text-gray-900 dark:text-white">{score}</span>
-      <span className="text-gray-500 dark:text-gray-400">/10</span>
-    </div>
-    <p className="text-sm text-gray-600 dark:text-gray-400">{assessment}</p>
-    
-    <div className="mt-4 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-      <motion.div
-        initial={{ width: 0 }}
-        animate={{ width: `${score * 10}%` }}
-        transition={{ duration: 1, delay: 0.2 }}
-        className={`h-2 rounded-full bg-gradient-to-r ${color}`}
-      />
-    </div>
-  </motion.div>
-);
+const SkillCard = ({
+  icon,
+  title,
+  score,
+  assessment,
+  color
+}: {
+  icon: React.ReactNode;
+  title: string;
+  score: number;
+  assessment: string;
+  color: string;
+}) => {
+  // Extract base color from gradient string for text color mapping (simple approximation)
+  const getTextColor = (gradient: string) => {
+    if (gradient.includes('blue')) return 'text-blue-600 dark:text-blue-400';
+    if (gradient.includes('purple')) return 'text-purple-600 dark:text-purple-400';
+    if (gradient.includes('yellow') || gradient.includes('orange')) return 'text-amber-600 dark:text-amber-400';
+    if (gradient.includes('pink')) return 'text-pink-600 dark:text-pink-400';
+    if (gradient.includes('green') || gradient.includes('emerald')) return 'text-emerald-600 dark:text-emerald-400';
+    return 'text-indigo-600 dark:text-indigo-400';
+  };
 
-const VoiceMetric = ({ 
-  label, 
-  score, 
-  interpretation 
-}: { 
-  label: string; 
-  score: number; 
-  interpretation: string; 
-}) => (
-  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">{label}</h4>
-    <div className="flex items-baseline gap-2 mb-1">
-      <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">{score.toFixed(1)}</span>
-      <span className="text-sm text-blue-500 dark:text-blue-400">/10</span>
+  const getBgColor = (gradient: string) => {
+    if (gradient.includes('blue')) return 'bg-blue-600 dark:bg-blue-400';
+    if (gradient.includes('purple')) return 'bg-purple-600 dark:bg-purple-400';
+    if (gradient.includes('yellow') || gradient.includes('orange')) return 'bg-amber-600 dark:bg-amber-400';
+    if (gradient.includes('pink')) return 'bg-pink-600 dark:bg-pink-400';
+    if (gradient.includes('green') || gradient.includes('emerald')) return 'bg-emerald-600 dark:bg-emerald-400';
+    return 'bg-indigo-600 dark:bg-indigo-400';
+  };
+
+  const textColorClass = getTextColor(color);
+  const bgColorClass = getBgColor(color);
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 h-full flex flex-col">
+      <div className="flex items-start justify-between mb-4">
+        <div className={`p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 ${textColorClass}`}>
+          {React.cloneElement(icon as React.ReactElement, { className: "w-6 h-6" })}
+        </div>
+        <div className="text-2xl font-bold text-gray-900 dark:text-white">
+          {score}<span className="text-sm text-gray-400 font-normal">/10</span>
+        </div>
+      </div>
+
+      <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{title}</h4>
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 flex-grow">{assessment}</p>
+
+      <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 mt-auto">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${score * 10}%` }}
+          transition={{ duration: 1, delay: 0.2 }}
+          className={`h-1.5 rounded-full ${bgColorClass}`}
+        />
+      </div>
     </div>
-    <p className="text-xs text-blue-700 dark:text-blue-400">{interpretation}</p>
+  );
+};
+
+const VoiceMetric = ({
+  label,
+  score,
+  interpretation
+}: {
+  label: string;
+  score: number;
+  interpretation: string;
+}) => (
+  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+    <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">{label}</h4>
+    <div className="flex items-baseline gap-2 mb-1">
+      <span className="text-3xl font-bold text-gray-900 dark:text-white">{score.toFixed(1)}</span>
+      <span className="text-sm text-gray-400">/10</span>
+    </div>
+    <p className="text-xs text-gray-500 dark:text-gray-400">{interpretation}</p>
   </div>
 );
 
-const VideoMetric = ({ 
-  label, 
-  value, 
-  max, 
-  suffix = '', 
-  icon 
-}: { 
-  label: string; 
-  value: number; 
-  max: number; 
-  suffix?: string; 
-  icon: React.ReactNode; 
+const VideoMetric = ({
+  label,
+  value,
+  max,
+  suffix = '',
+  icon
+}: {
+  label: string;
+  value: number;
+  max: number;
+  suffix?: string;
+  icon: React.ReactNode;
 }) => (
-  <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
+  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
     <div className="flex items-center gap-2 mb-2">
-      <div className="text-purple-600 dark:text-purple-400">{icon}</div>
-      <h4 className="text-sm font-medium text-purple-900 dark:text-purple-300">{label}</h4>
+      <div className="text-gray-400 dark:text-gray-500">
+        {React.cloneElement(icon as React.ReactElement, { className: "w-4 h-4" })}
+      </div>
+      <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</h4>
     </div>
     <div className="flex items-baseline gap-1 mb-2">
-      <span className="text-3xl font-bold text-purple-600 dark:text-purple-400">{value.toFixed(1)}</span>
-      <span className="text-sm text-purple-500 dark:text-purple-400">/{max}{suffix}</span>
+      <span className="text-3xl font-bold text-gray-900 dark:text-white">{value.toFixed(1)}</span>
+      <span className="text-sm text-gray-400">/{max}{suffix}</span>
     </div>
-    <div className="w-full bg-purple-200 dark:bg-purple-900/50 rounded-full h-2">
+    <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
       <motion.div
         initial={{ width: 0 }}
         animate={{ width: `${(value / max) * 100}%` }}
         transition={{ duration: 1 }}
-        className="h-2 rounded-full bg-purple-600 dark:bg-purple-400"
+        className="h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400"
       />
     </div>
   </div>
 );
 
-const ProgressBar = ({ 
-  label, 
-  value, 
-  color 
-}: { 
-  label: string; 
-  value: number; 
-  color: 'green' | 'gray' | 'red'; 
+const ProgressBar = ({
+  label,
+  value,
+  color
+}: {
+  label: string;
+  value: number;
+  color: 'green' | 'gray' | 'red';
 }) => {
   const colors = {
-    green: 'bg-green-500',
+    green: 'bg-emerald-500',
     gray: 'bg-gray-400',
-    red: 'bg-red-500',
+    red: 'bg-rose-500',
   };
 
   return (
@@ -550,7 +580,7 @@ const ProgressBar = ({
         <span className="text-gray-600 dark:text-gray-400">{label}</span>
         <span className="font-semibold text-gray-900 dark:text-white">{value}%</span>
       </div>
-      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+      <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${value}%` }}

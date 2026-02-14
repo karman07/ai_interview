@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Filter, BookOpen, Video, FileText, Download, ExternalLink, Clock, Users, Star, TrendingUp, Award, Calendar } from 'lucide-react';
+import { Search, Filter, BookOpen, Video, FileText, Download, ExternalLink, Clock, Users, Star, TrendingUp, Award, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Resource {
   id: number;
@@ -21,6 +21,117 @@ interface Resource {
   borderColor: string;
   accentColor: string;
 }
+
+const ResourceCard = ({ resource }: { resource: Resource }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const maxLength = 120; // Character limit for initial view
+  const shouldShowReadMore = resource.description.length > maxLength;
+
+  return (
+    <div
+      className="group relative bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md cursor-pointer flex flex-col h-full"
+    >
+      {/* Featured Badge */}
+      {resource.featured && (
+        <div className="absolute top-4 right-4 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide">
+          FEATURED
+        </div>
+      )}
+
+      {/* Resource Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center space-x-3">
+          <div className={`p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg ${resource.accentColor} dark:text-blue-400`}>
+            {resource.icon}
+          </div>
+          <div>
+            <div className="flex items-center space-x-2 mb-1">
+              <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                {resource.category}
+              </span>
+            </div>
+            <div className="text-xs font-medium text-gray-400 dark:text-gray-500">
+              {resource.type}
+            </div>
+          </div>
+        </div>
+        {!resource.featured && (
+          <div className="flex items-center space-x-1 text-xs font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md">
+            <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
+            <span>{resource.rating}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+        {resource.title}
+      </h3>
+
+      <div className="mb-6 flex-grow">
+        <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+          {isExpanded || !shouldShowReadMore
+            ? resource.description
+            : `${resource.description.substring(0, maxLength)}...`}
+        </p>
+        {shouldShowReadMore && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+            className="mt-2 flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-medium transition-colors"
+          >
+            {isExpanded ? (
+              <>
+                Show less <ChevronUp className="h-3 w-3" />
+              </>
+            ) : (
+              <>
+                Read more <ChevronDown className="h-3 w-3" />
+              </>
+            )}
+          </button>
+        )}
+      </div>
+
+      {/* Tags */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {resource.tags.slice(0, 3).map((tag, tagIndex) => (
+          <span
+            key={tagIndex}
+            className="px-2.5 py-1 bg-gray-50 dark:bg-gray-700/50 text-xs font-medium text-gray-600 dark:text-gray-400 rounded-md border border-gray-100 dark:border-gray-600"
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
+
+      {/* Metadata Footer */}
+      <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700 mt-auto">
+        <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center space-x-1.5">
+            <Clock className="w-3.5 h-3.5" />
+            <span>{resource.duration}</span>
+          </div>
+          <div className="flex items-center space-x-1.5">
+            <Users className="w-3.5 h-3.5" />
+            <span>{resource.students.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <button className="text-gray-400 hover:text-blue-600 transition-colors">
+            <Download className="w-4 h-4" />
+          </button>
+          <button className="text-gray-400 hover:text-blue-600 transition-colors">
+            <ExternalLink className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const ResourcesHub = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -197,12 +308,12 @@ const ResourcesHub = () => {
   const sortedAndFilteredResources = useMemo(() => {
     let filtered = resources.filter(resource => {
       const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          resource.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-      
+        resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        resource.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+
       const matchesCategory = selectedCategory === 'All' || resource.category === selectedCategory;
       const matchesType = selectedType === 'All' || resource.type === selectedType;
-      
+
       return matchesSearch && matchesCategory && matchesType;
     });
 
@@ -225,210 +336,107 @@ const ResourcesHub = () => {
     return filtered;
   }, [searchTerm, selectedCategory, selectedType, sortBy]);
 
-  const getDifficultyColor = (difficulty: Resource['difficulty']): string => {
-    switch (difficulty) {
-      case 'Beginner': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300';
-      case 'Intermediate': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300';
-      case 'Advanced': return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300';
-      case 'Expert': return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300';
-      default: return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
-    }
-  };
+
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      {/* Premium Header */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-700">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium mb-6">
-              <Award className="w-4 h-4 mr-2" />
+          <div className="text-center">
+            <div className="inline-flex items-center px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium mb-6">
+              <Award className="w-3.5 h-3.5 mr-2" />
               Premium Learning Resources
             </div>
-            <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
               Professional Resource Library
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
-              Access curated, industry-grade learning materials designed by experts to accelerate your professional growth and technical expertise
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
+              Access curated, industry-grade learning materials designed by experts to accelerate your professional growth
             </p>
           </div>
+        </div>
+      </div>
 
-          {/* Enhanced Search and Filters */}
-          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-8 mb-8">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Advanced Search */}
-              <div className="lg:col-span-2 relative">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search Resources</label>
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Search by title, description, or tags..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                  />
-                </div>
-              </div>
-
-              {/* Category Filter */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Search and Filters */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-8 shadow-sm">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Advanced Search */}
+            <div className="lg:col-span-2 relative">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search Resources</label>
               <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full appearance-none bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-4 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white"
-                >
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-                <Filter className="absolute right-4 top-12 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4 pointer-events-none" />
-              </div>
-
-              {/* Sort Options */}
-              <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sort By</label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full appearance-none bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-4 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white"
-                >
-                  <option value="popular">Most Popular</option>
-                  <option value="rating">Highest Rated</option>
-                  <option value="recent">Recently Updated</option>
-                  <option value="alphabetical">Alphabetical</option>
-                </select>
-                <TrendingUp className="absolute right-4 top-12 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4 pointer-events-none" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search by title, description, or tags..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                />
               </div>
             </div>
 
-            {/* Results Summary */}
-            <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">
-                  Showing <span className="font-semibold text-blue-600 dark:text-blue-400">{sortedAndFilteredResources.length}</span> of {resources.length} resources
-                </span>
-                {(searchTerm || selectedCategory !== 'All' || selectedType !== 'All') && (
-                  <button
-                    onClick={() => {
-                      setSearchTerm('');
-                      setSelectedCategory('All');
-                      setSelectedType('All');
-                    }}
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors duration-200"
-                  >
-                    Clear all filters
-                  </button>
-                )}
-              </div>
+            {/* Category Filter */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full appearance-none bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-4 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white"
+              >
+                {categories.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+              <Filter className="absolute right-4 top-12 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4 pointer-events-none" />
+            </div>
+
+            {/* Sort Options */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sort By</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full appearance-none bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-4 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white"
+              >
+                <option value="popular">Most Popular</option>
+                <option value="rating">Highest Rated</option>
+                <option value="recent">Recently Updated</option>
+                <option value="alphabetical">Alphabetical</option>
+              </select>
+              <TrendingUp className="absolute right-4 top-12 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Results Summary */}
+          <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600 dark:text-gray-400">
+                Showing <span className="font-semibold text-blue-600 dark:text-blue-400">{sortedAndFilteredResources.length}</span> of {resources.length} resources
+              </span>
+              {(searchTerm || selectedCategory !== 'All' || selectedType !== 'All') && (
+                <button
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedCategory('All');
+                    setSelectedType('All');
+                  }}
+                  className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors duration-200"
+                >
+                  Clear all filters
+                </button>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Premium Resources Grid */}
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-          {sortedAndFilteredResources.map((resource, index) => (
-            <div
-              key={resource.id}
-              className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl border-2 border-gray-200 dark:border-gray-700 p-8 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02] cursor-pointer overflow-hidden"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              {/* Featured Badge */}
-              {resource.featured && (
-                <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                  FEATURED
-                </div>
-              )}
-
-              {/* Resource Header */}
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center space-x-4">
-                  <div className={`p-3 bg-white dark:bg-gray-700 rounded-2xl shadow-sm ${resource.accentColor} dark:text-blue-400 group-hover:shadow-md transition-shadow duration-300`}>
-                    {resource.icon}
-                  </div>
-                  <div>
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                        {resource.category}
-                      </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(resource.difficulty)}`}>
-                        {resource.difficulty}
-                      </span>
-                    </div>
-                    <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      {resource.type}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-1 text-sm text-amber-600 dark:text-amber-400 bg-white dark:bg-gray-700 px-2 py-1 rounded-lg shadow-sm">
-                  <Star className="w-4 h-4 fill-current" />
-                  <span className="font-bold">{resource.rating}</span>
-                </div>
-              </div>
-
-              {/* Content */}
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
-                {resource.title}
-              </h3>
-              <p className="text-gray-700 dark:text-gray-300 mb-6 text-sm leading-relaxed line-clamp-3">
-                {resource.description}
-              </p>
-
-              {/* Enhanced Stats */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-white dark:bg-gray-700 rounded-xl p-3 shadow-sm">
-                  <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                    <Clock className="w-4 h-4" />
-                    <span className="font-medium">{resource.duration}</span>
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">{resource.studyTime}</div>
-                </div>
-                <div className="bg-white dark:bg-gray-700 rounded-xl p-3 shadow-sm">
-                  <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                    <Users className="w-4 h-4" />
-                    <span className="font-medium">{resource.students.toLocaleString()}</span>
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">Active learners</div>
-                </div>
-              </div>
-
-              {/* Tags */}
-              <div className="flex flex-wrap gap-2 mb-6">
-                {resource.tags.slice(0, 3).map((tag, tagIndex) => (
-                  <span
-                    key={tagIndex}
-                    className="px-3 py-1 bg-white dark:bg-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 rounded-full shadow-sm border border-gray-100 dark:border-gray-600"
-                  >
-                    {tag}
-                  </span>
-                ))}
-                {resource.tags.length > 3 && (
-                  <span className="px-3 py-1 bg-gray-100 dark:bg-gray-600 text-xs font-semibold text-gray-600 dark:text-gray-300 rounded-full">
-                    +{resource.tags.length - 3}
-                  </span>
-                )}
-              </div>
-
-              {/* Last Updated */}
-              <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400 mb-6">
-                <Calendar className="w-3 h-3" />
-                <span>Updated {new Date(resource.lastUpdated).toLocaleDateString()}</span>
-              </div>
-
-              {/* Premium Actions */}
-              <div className="flex space-x-3">
-                <button className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl">
-                  <Download className="w-4 h-4" />
-                  <span>Access Resource</span>
-                </button>
-                <button className="p-3 border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-300 shadow-sm hover:shadow-md">
-                  <ExternalLink className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                </button>
-              </div>
-            </div>
+      {/* Resources Grid */}
+      <div className="max-w-7xl mx-auto px-6 pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {sortedAndFilteredResources.map((resource) => (
+            <ResourceCard key={resource.id} resource={resource} />
           ))}
         </div>
 
@@ -458,20 +466,18 @@ const ResourcesHub = () => {
         )}
       </div>
 
-      {/* Professional Footer Section */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-t border-gray-100 dark:border-gray-700 mt-20">
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="text-center">
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Can't find what you're looking for?
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
-              Request specific resources or suggest new topics for our expert team to create.
-            </p>
-            <button className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl">
-              Request New Resource
-            </button>
-          </div>
+      {/* Footer Call to Action */}
+      <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12">
+        <div className="max-w-7xl mx-auto px-6 py-12 text-center">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            Can't find what you're looking for?
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-xl mx-auto">
+            Request specific resources or suggest new topics for our expert team.
+          </p>
+          <button className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-2.5 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors">
+            Request New Resource
+          </button>
         </div>
       </div>
     </div>

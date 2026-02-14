@@ -51,21 +51,20 @@ export default function Navbar() {
   };
 
   return (
-    <nav 
-      className={`w-full fixed top-0 z-50 backdrop-blur-md border-b transition-all duration-300 ${
-        scrolled ? 'shadow-lg bg-white/95 dark:bg-gray-900/95' : 'shadow-sm bg-white/80 dark:bg-gray-900/80'
-      } border-gray-200/20 dark:border-gray-700/20`}
+    <nav
+      className={`w-full fixed top-0 z-50 border-b transition-all duration-300 ${scrolled ? 'bg-white dark:bg-gray-900 shadow-sm' : 'bg-white dark:bg-gray-900'
+        } border-gray-200 dark:border-gray-800`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link 
-            to={routes.home} 
+          <Link
+            to={routes.home}
             className="flex items-center space-x-2.5 group"
             onClick={() => setActiveLink(routes.home)}
           >
-            <div 
-              className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold shadow-md transition-all duration-300 group-hover:shadow-lg group-hover:scale-105 bg-gradient-to-br from-indigo-600 to-purple-600"
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold shadow-sm transition-all duration-300 bg-indigo-600"
             >
               <span className="text-base">AI</span>
             </div>
@@ -86,15 +85,14 @@ export default function Navbar() {
                 key={link.to}
                 to={link.to}
                 onClick={() => setActiveLink(link.to)}
-                className={`relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-                  activeLink === link.to 
-                    ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' 
-                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
-                }`}
+                className={`relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${activeLink === link.to
+                  ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
               >
                 {link.label}
                 {activeLink === link.to && (
-                  <span 
+                  <span
                     className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-indigo-600 dark:bg-indigo-400"
                   />
                 )}
@@ -115,17 +113,17 @@ export default function Navbar() {
                 <Sun className="w-5 h-5 text-gray-400 group-hover:text-yellow-500 transition-colors" />
               )}
             </button>
-            
+
             {isAuthenticated ? (
               <>
-                <Button 
+                <Button
                   variant="ghost"
                   onClick={() => navigate(routes.dashboard)}
                   className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   Dashboard
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
                   onClick={handleLogout}
                   className="text-sm font-medium border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 dark:hover:border-red-500 transition-all"
@@ -135,16 +133,16 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Button 
+                <Button
                   variant="ghost"
                   className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   onClick={() => navigate('/login')}
                 >
                   Login
                 </Button>
-                <Button 
+                <Button
                   variant="primary"
-                  className="text-sm font-medium shadow-sm hover:shadow-lg bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 hover:from-indigo-700 hover:to-purple-700 dark:hover:from-indigo-600 dark:hover:to-purple-600 text-white transition-all"
+                  className="text-sm font-medium shadow-sm bg-indigo-600 hover:bg-indigo-700 text-white transition-all"
                   onClick={() => navigate('/signup')}
                 >
                   Get Started
@@ -160,30 +158,26 @@ export default function Navbar() {
             aria-label="Toggle menu"
           >
             <div className="w-5 h-5 flex flex-col justify-center items-center space-y-1">
-              <span 
-                className={`block w-5 h-0.5 bg-gray-600 dark:bg-gray-300 rounded-full transition-all duration-200 ${
-                  isMenuOpen ? 'rotate-45 translate-y-1.5' : ''
-                }`}
+              <span
+                className={`block w-5 h-0.5 bg-gray-600 dark:bg-gray-300 rounded-full transition-all duration-200 ${isMenuOpen ? 'rotate-45 translate-y-1.5' : ''
+                  }`}
               />
-              <span 
-                className={`block w-5 h-0.5 bg-gray-600 dark:bg-gray-300 rounded-full transition-all duration-200 ${
-                  isMenuOpen ? 'opacity-0' : ''
-                }`}
+              <span
+                className={`block w-5 h-0.5 bg-gray-600 dark:bg-gray-300 rounded-full transition-all duration-200 ${isMenuOpen ? 'opacity-0' : ''
+                  }`}
               />
-              <span 
-                className={`block w-5 h-0.5 bg-gray-600 dark:bg-gray-300 rounded-full transition-all duration-200 ${
-                  isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''
-                }`}
+              <span
+                className={`block w-5 h-0.5 bg-gray-600 dark:bg-gray-300 rounded-full transition-all duration-200 ${isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''
+                  }`}
               />
             </div>
           </button>
         </div>
 
         {/* Mobile menu */}
-        <div 
-          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-            isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-          }`}
+        <div
+          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+            }`}
         >
           <div className="py-4 space-y-1 border-t border-gray-100 dark:border-gray-700">
             {navLinks.map((link) => (
@@ -194,16 +188,15 @@ export default function Navbar() {
                   setActiveLink(link.to);
                   setIsMenuOpen(false);
                 }}
-                className={`block px-4 py-2.5 rounded-lg font-medium text-sm transition-colors ${
-                  activeLink === link.to 
-                    ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' 
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-                }`}
+                className={`block px-4 py-2.5 rounded-lg font-medium text-sm transition-colors ${activeLink === link.to
+                  ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
               >
                 {link.label}
               </Link>
             ))}
-            
+
             {/* Mobile Theme Toggle */}
             <button
               onClick={toggleTheme}
@@ -216,12 +209,12 @@ export default function Navbar() {
                 <Sun className="w-5 h-5" />
               )}
             </button>
-            
+
             {/* Mobile Auth Buttons */}
             <div className="pt-3 mt-3 border-t border-gray-100 dark:border-gray-700 space-y-2">
               {isAuthenticated ? (
                 <>
-                  <Button 
+                  <Button
                     variant="outline"
                     onClick={() => {
                       navigate(routes.dashboard);
@@ -231,7 +224,7 @@ export default function Navbar() {
                   >
                     Dashboard
                   </Button>
-                  <Button 
+                  <Button
                     variant="outline"
                     onClick={() => {
                       handleLogout();
@@ -244,7 +237,7 @@ export default function Navbar() {
                 </>
               ) : (
                 <>
-                  <Button 
+                  <Button
                     variant="outline"
                     onClick={() => {
                       navigate('/login');
@@ -254,7 +247,7 @@ export default function Navbar() {
                   >
                     Login
                   </Button>
-                  <Button 
+                  <Button
                     variant="primary"
                     onClick={() => {
                       navigate('/signup');
