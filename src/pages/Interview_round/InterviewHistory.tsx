@@ -1,12 +1,11 @@
-import { useEffect, useState } from 'react';
-import { 
-  Calendar, 
-  Clock, 
-  Award,
-  Eye,
-  ChevronLeft,
+import { useState, useEffect } from "react";
+import {
+  Calendar,
+  Clock,
   ChevronRight,
-  Search
+  ChevronLeft,
+  Search,
+  Award
 } from 'lucide-react';
 import { InterviewAnalyticsApi, type InterviewSession } from '@/api/interviewAnalytics';
 
@@ -40,70 +39,70 @@ export default function InterviewHistory() {
 
   const getRoundColor = (round: string) => {
     const colors: Record<string, string> = {
-      technical: 'from-blue-500 to-blue-600',
-      behavioral: 'from-emerald-500 to-emerald-600',
-      'problem-solving': 'from-amber-500 to-orange-500',
-      hr: 'from-purple-500 to-purple-600'
+      technical: 'text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/10',
+      behavioral: 'text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10',
+      'problem-solving': 'text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10',
+      hr: 'text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/10'
     };
-    return colors[round] || 'from-gray-500 to-gray-600';
+    return colors[round] || 'text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800';
   };
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      completed: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800',
-      active: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      paused: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      abandoned: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800'
+      completed: 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800',
+      active: 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800',
+      paused: 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800',
+      abandoned: 'text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-800'
     };
-    return colors[status] || 'bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-400';
+    return colors[status] || 'text-gray-700 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/10 border-gray-200 dark:border-gray-700';
   };
 
-  const filteredSessions = sessions.filter(session => 
-    !searchTerm || 
+  const filteredSessions = sessions.filter(session =>
+    !searchTerm ||
     session.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     session.company?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-100 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Interview History</h1>
-          <p className="text-gray-600 dark:text-gray-400">Review your past interview sessions</p>
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto px-6 py-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Interview History</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Review your past interview sessions</p>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-5xl mx-auto px-6 py-8">
         {/* Filters */}
-        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Search */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
                 Search
               </label>
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 dark:text-gray-500" />
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search by role or company..."
-                  className="pl-10 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  className="pl-9 w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 transition-all"
                 />
               </div>
             </div>
 
             {/* Round Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
                 Filter by Round
               </label>
               <select
                 value={roundFilter}
                 onChange={(e) => setRoundFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white appearance-none cursor-pointer"
               >
                 <option value="">All Rounds</option>
                 <option value="technical">Technical</option>
@@ -118,74 +117,76 @@ export default function InterviewHistory() {
         {/* Sessions List */}
         {loading ? (
           <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
           </div>
         ) : filteredSessions.length === 0 ? (
-          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-12 border border-gray-100 dark:border-gray-700 text-center">
-            <Calendar className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No sessions found</h3>
-            <p className="text-gray-600 dark:text-gray-400">Start your first interview to see your history here</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-12 border border-gray-200 dark:border-gray-700 text-center border-dashed">
+            <div className="w-12 h-12 rounded-full bg-gray-50 dark:bg-gray-900 flex items-center justify-center mx-auto mb-4">
+              <Calendar className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+            </div>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">No sessions found</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Start your first interview to see your history here</p>
           </div>
         ) : (
           <div className="space-y-4">
             {filteredSessions.map((session) => (
-              <div 
-                key={session.sessionId} 
-                className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all hover:border-blue-300 dark:hover:border-blue-600"
+              <div
+                key={session.sessionId}
+                className="group bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all shadow-sm hover:shadow-md"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className={`px-3 py-1 bg-gradient-to-r ${getRoundColor(session.round)} text-white rounded-lg text-sm font-semibold capitalize`}>
+                      <div className={`px-2.5 py-1 rounded-md text-xs font-medium border ${getRoundColor(session.round)} capitalize`}>
                         {session.round.replace('-', ' ')}
                       </div>
-                      <div className={`px-3 py-1 rounded-lg text-xs font-medium border ${getStatusColor(session.status)}`}>
+                      <div className={`px-2.5 py-1 rounded-md text-xs font-medium border ${getStatusColor(session.status)} capitalize`}>
                         {session.status}
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-2">
                       {session.role && (
                         <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Role</p>
-                          <p className="font-semibold text-gray-900 dark:text-white">{session.role}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Role</p>
+                          <p className="font-medium text-sm text-gray-900 dark:text-white">{session.role}</p>
                         </div>
                       )}
                       {session.company && (
                         <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Company</p>
-                          <p className="font-semibold text-gray-900 dark:text-white">{session.company}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Company</p>
+                          <p className="font-medium text-sm text-gray-900 dark:text-white">{session.company}</p>
                         </div>
                       )}
                       <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Score</p>
-                        <div className="flex items-center gap-2">
-                          <Award className="w-4 h-4 text-yellow-500" />
-                          <p className="font-semibold text-gray-900 dark:text-white">{session.metrics.overallScore.toFixed(1)}/10</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Score</p>
+                        <div className="flex items-center gap-1.5">
+                          <Award className="w-4 h-4 text-amber-500" />
+                          <p className="font-bold text-sm text-gray-900 dark:text-white">{session.metrics.overallScore.toFixed(1)}<span className="text-gray-400 font-normal">/10</span></p>
                         </div>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Duration</p>
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-blue-500" />
-                          <p className="font-semibold text-gray-900 dark:text-white">{Math.floor(session.metrics.totalDuration / 60)} min</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Duration</p>
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-4 h-4 text-gray-400" />
+                          <p className="font-medium text-sm text-gray-900 dark:text-white">{Math.floor(session.metrics.totalDuration / 60)}m</p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>{new Date(session.startedAt).toLocaleDateString()}</span>
+                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>{new Date(session.startedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                       </div>
                       <div>
-                        Questions: {session.metrics.questionsAnswered}
+                        Questions Answered: <span className="font-medium text-gray-700 dark:text-gray-300">{session.metrics.questionsAnswered}</span>
                       </div>
                     </div>
                   </div>
 
-                  <button className="ml-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                    <Eye className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  <button className="ml-4 p-2 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                    <ChevronRight className="w-5 h-5" />
                   </button>
                 </div>
               </div>
@@ -195,23 +196,23 @@ export default function InterviewHistory() {
 
         {/* Pagination */}
         {!loading && filteredSessions.length > 0 && (
-          <div className="flex items-center justify-center gap-4 mt-8">
+          <div className="flex items-center justify-center gap-3 mt-8">
             <button
               onClick={() => setPage(Math.max(0, page - 1))}
               disabled={page === 0}
-              className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
-            <span className="text-gray-600 dark:text-gray-400">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Page {page + 1}
             </span>
             <button
               onClick={() => setPage(page + 1)}
               disabled={filteredSessions.length < limit}
-              className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900"
             >
-              <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <ChevronRight className="w-5 h-5" />
             </button>
           </div>
         )}

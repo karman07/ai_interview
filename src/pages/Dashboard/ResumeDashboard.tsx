@@ -108,7 +108,7 @@ const ResumeDashboard: React.FC = () => {
 
   // Chart colors
   const COLORS = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899', '#14B8A6', '#F97316'];
-  
+
   // Safe wrapper in case context provides undefined
   const safeResumes: Resume[] = Array.isArray(resumes) ? resumes : [];
 
@@ -149,20 +149,20 @@ const ResumeDashboard: React.FC = () => {
       const files: File[] = [resumeFile];
       if (jdFile) files.push(jdFile);
       const uploadedResumeData = await uploadResume(files, jdText);
-      
+
       // Show success notification
       addNotification({
         type: 'success',
         title: 'Resume uploaded successfully',
         message: `${resumeFile.name} has been analyzed and processed.`,
       });
-      
+
       // Close upload modal and open detailed view with the uploaded resume
       setIsUploadOpen(false);
       setResumeFile(null);
       setJDFile(null);
       setJDText('');
-      
+
       // Show the detailed resume view (same as clicking eye button)
       setSelectedResume(uploadedResumeData);
     } catch (err) {
@@ -193,10 +193,10 @@ const ResumeDashboard: React.FC = () => {
     let data: string;
     let filename: string;
     let mimeType: string;
-    
+
     switch (format) {
       case 'csv':
-  const csvData = safeResumes.map(r => ({
+        const csvData = safeResumes.map(r => ({
           filename: r.filename,
           date: new Date(r.createdAt).toLocaleDateString(),
           cv_quality: r.analytics?.cv_quality?.overall_score || 0,
@@ -236,14 +236,14 @@ const ResumeDashboard: React.FC = () => {
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-white dark:via-blue-300 dark:to-purple-300 bg-clip-text text-transparent mb-2">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2">
                 Resume Analytics Dashboard
               </h1>
               <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base lg:text-lg">Transform your career with data-driven insights</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative">
-                <select 
+                <select
                   onChange={(e) => handleDownload(e.target.value)}
                   className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
@@ -255,7 +255,7 @@ const ResumeDashboard: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsUploadOpen(true)}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 shadow-sm hover:shadow-md"
               >
                 <CloudArrowUpIcon className="w-5 h-5" />
                 Upload Resume
@@ -306,11 +306,10 @@ const ResumeDashboard: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-xl font-medium transition-all duration-300 whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-md'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-              }`}
+              className={`flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-xl font-medium transition-all duration-300 whitespace-nowrap ${activeTab === tab.id
+                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-md'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
             >
               <tab.icon className="w-4 h-4" />
               <span className="hidden sm:inline">{tab.label}</span>
@@ -333,28 +332,28 @@ const ResumeDashboard: React.FC = () => {
                   <AreaChart data={performanceData}>
                     <defs>
                       <linearGradient id="colorFit" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="colorCV" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="colorJD" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="name" stroke="#6B7280" fontSize={12} />
                     <YAxis stroke="#6B7280" fontSize={12} />
                     <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'white', 
-                        border: '1px solid #E5E7EB', 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '1px solid #E5E7EB',
                         borderRadius: '12px',
                         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-                      }} 
+                      }}
                     />
                     <Legend />
                     <Area type="monotone" dataKey="cvQuality" stroke="#10B981" fillOpacity={1} fill="url(#colorCV)" strokeWidth={2} name="CV Quality Score" />
@@ -438,7 +437,7 @@ const ResumeDashboard: React.FC = () => {
                       <span className="text-sm font-bold text-gray-900 dark:text-white">{Math.round(item.score)}%</span>
                     </div>
                     <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-1000"
                         style={{ width: `${item.score}%` }}
                       />
@@ -455,7 +454,7 @@ const ResumeDashboard: React.FC = () => {
             {resumes.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {safeResumes.map((resume) => (
-                  <DetailedResumeCard key={resume._id} resume={resume}  />
+                  <DetailedResumeCard key={resume._id} resume={resume} />
                 ))}
               </div>
             ) : (
@@ -488,7 +487,7 @@ const ResumeDashboard: React.FC = () => {
                     <XMarkIcon className="w-6 h-6" />
                   </button>
                 </div>
-                
+
                 <div className="sm:flex sm:items-start">
                   <div className="w-full mt-3 text-center sm:mt-0 sm:text-left">
                     <h3 className="text-2xl font-bold leading-6 text-gray-900 dark:text-white mb-2">
@@ -497,14 +496,13 @@ const ResumeDashboard: React.FC = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                       Upload your resume in PDF, DOC, or DOCX format for analysis. Optionally, upload a Job Description file or paste JD text for better matching.
                     </p>
-                    
+
                     {/* Resume File Input */}
                     <div
-                      className={`mt-4 border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 ${
-                        isDragOver
-                          ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-                      }`}
+                      className={`mt-4 border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 ${isDragOver
+                        ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                        }`}
                       onClick={() => resumeInputRef.current?.click()}
                       onDragOver={(e) => {
                         e.preventDefault();
@@ -540,11 +538,10 @@ const ResumeDashboard: React.FC = () => {
 
                     {/* JD File Input */}
                     <div
-                      className={`mt-4 border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 ${
-                        isDragOver
-                          ? 'border-purple-400 bg-purple-50'
-                          : 'border-gray-300 hover:border-gray-400'
-                      }`}
+                      className={`mt-4 border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 ${isDragOver
+                        ? 'border-purple-400 bg-purple-50'
+                        : 'border-gray-300 hover:border-gray-400'
+                        }`}
                       onClick={() => jdInputRef.current?.click()}
                       onDragOver={(e) => {
                         e.preventDefault();
@@ -594,7 +591,7 @@ const ResumeDashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mt-6 flex flex-col sm:flex-row-reverse gap-3">
                   <button
                     onClick={handleUpload}

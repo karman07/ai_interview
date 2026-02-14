@@ -12,7 +12,7 @@ import {
   Sun,
   Briefcase,
 } from "lucide-react";
-import colors from "@/constants/colors";
+
 import { cn } from "@/utils/cn";
 import SidebarItem from "./SidebarItem";
 import SidebarSection from "./SidebarSection";
@@ -75,15 +75,12 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex justify-between items-center">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 h-16 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: colors.primary }}
-          >
-            <Target size={16} className="text-white" />
+          <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-600">
+            <Target size={18} className="text-white" />
           </div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
             AI Coach
           </h2>
         </div>
@@ -126,7 +123,7 @@ export default function Sidebar() {
               ))}
             </SidebarSection>
           ))}
-          
+
           {/* Theme Toggle */}
           <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
             <button
@@ -154,16 +151,11 @@ export default function Sidebar() {
         className="hidden lg:block w-64 min-h-screen border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
       >
         <div className="p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: colors.primary }}
-            >
-              <Target size={16} className="text-white" />
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-600 shadow-sm">
+              <Target size={18} className="text-white" />
             </div>
-            <h2
-              className="text-xl font-semibold text-gray-900 dark:text-white"
-            >
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
               AI Coach
             </h2>
           </div>
@@ -182,7 +174,7 @@ export default function Sidebar() {
               ))}
             </SidebarSection>
           ))}
-          
+
           {/* Theme Toggle */}
           <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
             <button

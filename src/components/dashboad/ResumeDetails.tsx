@@ -78,7 +78,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
       const data = await response.json();
       clearInterval(progressInterval);
       setProgress(100);
-      
+
       const resumeBuilderUrl = import.meta.env.VITE_RESUME_BUILDER_URL || 'http://localhost:5173';
       const queryParams = new URLSearchParams({ data: JSON.stringify(data) }).toString();
       const fullUrl = `${resumeBuilderUrl}?${queryParams}`;
@@ -159,12 +159,12 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                     animate={{ width: `${Math.min(overallScore, 100)}%` }}
                     transition={{ duration: 1 }}
                     className={`h-3 rounded-full relative ${overallScore >= 80
-                      ? "bg-gradient-to-r from-green-400 to-green-500"
+                      ? "bg-green-500"
                       : overallScore >= 60
-                        ? "bg-gradient-to-r from-blue-400 to-blue-500"
+                        ? "bg-blue-500"
                         : overallScore >= 40
-                          ? "bg-gradient-to-r from-yellow-400 to-yellow-500"
-                          : "bg-gradient-to-r from-red-400 to-red-500"
+                          ? "bg-yellow-500"
+                          : "bg-red-500"
                       }`}
                   >
                     <div className="absolute right-0 top-0 w-1 h-3 bg-white/40 rounded-full"></div>
@@ -366,7 +366,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                   {enhancedResumeUrl ? 'Resume Ready!' : 'Generating Enhanced Resume'}
                 </DialogTitle>
               </DialogHeader>
-              
+
               {!enhancedResumeUrl ? (
                 <div className="space-y-4 py-4">
                   <div className="flex items-center justify-center">
@@ -379,7 +379,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <motion.div
-                        className="bg-gradient-to-r from-indigo-600 to-purple-600 h-2 rounded-full"
+                        className="bg-indigo-600 h-2 rounded-full"
                         initial={{ width: 0 }}
                         animate={{ width: `${progress}%` }}
                         transition={{ duration: 0.3 }}
@@ -631,12 +631,12 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume, sections, strengt
                               animate={{ width: `${percentage}%` }}
                               transition={{ duration: 0.7 }}
                               className={`h-3 rounded-full ${percentage >= 80
-                                ? "bg-gradient-to-r from-green-400 to-green-500"
+                                ? "bg-green-500"
                                 : percentage >= 60
-                                  ? "bg-gradient-to-r from-blue-400 to-blue-500"
+                                  ? "bg-blue-500"
                                   : percentage >= 40
-                                    ? "bg-gradient-to-r from-yellow-400 to-yellow-500"
-                                    : "bg-gradient-to-r from-red-400 to-red-500"
+                                    ? "bg-yellow-500"
+                                    : "bg-red-500"
                                 }`}
                             />
                           </div>
@@ -678,12 +678,12 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume, sections, strengt
                               animate={{ width: `${percentage}%` }}
                               transition={{ duration: 0.7 }}
                               className={`h-3 rounded-full ${percentage >= 80
-                                ? "bg-gradient-to-r from-green-400 to-green-500"
+                                ? "bg-green-500"
                                 : percentage >= 60
-                                  ? "bg-gradient-to-r from-blue-400 to-blue-500"
+                                  ? "bg-blue-500"
                                   : percentage >= 40
-                                    ? "bg-gradient-to-r from-yellow-400 to-yellow-500"
-                                    : "bg-gradient-to-r from-red-400 to-red-500"
+                                    ? "bg-yellow-500"
+                                    : "bg-red-500"
                                 }`}
                             />
                           </div>
@@ -853,11 +853,10 @@ const JDMatchTab = ({ resume }: { resume: any }) => {
                   <tr key={idx} className="hover:bg-indigo-50/30 dark:hover:bg-indigo-900/5 transition-colors">
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${
-                          percentage >= 80 ? "bg-indigo-500" :
+                        <div className={`w-3 h-3 rounded-full ${percentage >= 80 ? "bg-indigo-500" :
                           percentage >= 60 ? "bg-blue-500" :
-                          percentage >= 40 ? "bg-yellow-500" : "bg-red-500"
-                        }`} />
+                            percentage >= 40 ? "bg-yellow-500" : "bg-red-500"
+                          }`} />
                         <span className="font-medium text-gray-900 dark:text-white capitalize">
                           {sub.dimension.replace(/_/g, " ")}
                         </span>
@@ -877,28 +876,26 @@ const JDMatchTab = ({ resume }: { resume: any }) => {
                               initial={{ width: 0 }}
                               animate={{ width: `${percentage}%` }}
                               transition={{ duration: 0.8, ease: "easeOut" }}
-                              className={`h-4 rounded-full shadow-sm ${
-                                percentage >= 80
-                                  ? "bg-gradient-to-r from-indigo-500 to-purple-500"
-                                  : percentage >= 60
+                              className={`h-4 rounded-full shadow-sm ${percentage >= 80
+                                ? "bg-gradient-to-r from-indigo-500 to-purple-500"
+                                : percentage >= 60
                                   ? "bg-gradient-to-r from-blue-500 to-indigo-500"
                                   : percentage >= 40
-                                  ? "bg-gradient-to-r from-yellow-500 to-orange-500"
-                                  : "bg-gradient-to-r from-red-500 to-pink-500"
-                              }`}
+                                    ? "bg-gradient-to-r from-yellow-500 to-orange-500"
+                                    : "bg-gradient-to-r from-red-500 to-pink-500"
+                                }`}
                             />
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className={`text-xs font-semibold ${
-                            percentage >= 80 ? "text-indigo-600 dark:text-indigo-400" :
+                          <span className={`text-xs font-semibold ${percentage >= 80 ? "text-indigo-600 dark:text-indigo-400" :
                             percentage >= 60 ? "text-blue-600 dark:text-blue-400" :
-                            percentage >= 40 ? "text-yellow-600 dark:text-yellow-400" :
-                            "text-red-600 dark:text-red-400"
-                          }`}>
+                              percentage >= 40 ? "text-yellow-600 dark:text-yellow-400" :
+                                "text-red-600 dark:text-red-400"
+                            }`}>
                             {percentage >= 80 ? "Excellent Match" :
-                             percentage >= 60 ? "Good Match" :
-                             percentage >= 40 ? "Moderate Match" : "Needs Improvement"}
+                              percentage >= 60 ? "Good Match" :
+                                percentage >= 40 ? "Moderate Match" : "Needs Improvement"}
                           </span>
                           <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
                             {Math.round(percentage)}%
@@ -937,126 +934,126 @@ const ImprovementTab = ({ resume }: { resume: any }) => {
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">AI-Enhanced Content</h3>
 
       {resume.enhancement?.tailored_resume?.summary && (
-      <ImprovementCard
-        title="Professional Summary"
-        color="blue"
-        icon={<Users className="w-4 h-4" />}
-        content={resume.enhancement.tailored_resume.summary}
-      />
-    )}
+        <ImprovementCard
+          title="Professional Summary"
+          color="blue"
+          icon={<Users className="w-4 h-4" />}
+          content={resume.enhancement.tailored_resume.summary}
+        />
+      )}
 
-    {resume.enhancement?.tailored_resume?.experience && (
-      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
-        <div className="px-4 py-3 border-b bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-          <h4 className="font-semibold text-green-900 dark:text-green-100 flex items-center gap-2">
-            <Award className="w-4 h-4" /> Experience Highlights
-          </h4>
-        </div>
-        <div className="p-4 space-y-2">
-          {resume.enhancement.tailored_resume.experience.map((exp: string, idx: number) => (
-            <div key={idx} className="flex items-start gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-              <span className="text-gray-700 dark:text-gray-300 text-sm">{exp}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
-
-    {resume.enhancement?.tailored_resume?.skills && (
-      <ImprovementSkills
-        title="Key Skills"
-        color="purple"
-        icon={<Brain className="w-4 h-4" />}
-        skills={resume.enhancement.tailored_resume.skills}
-      />
-    )}
-
-    {resume.enhancement?.tailored_resume?.projects && (
-      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
-        <div className="px-4 py-3 border-b bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
-          <h4 className="font-semibold text-orange-900 dark:text-orange-100 flex items-center gap-2">
-            <Star className="w-4 h-4" /> Project Highlights
-          </h4>
-        </div>
-        <div className="p-4 space-y-2">
-          {resume.enhancement.tailored_resume.projects.map((proj: string, idx: number) => (
-            <div key={idx} className="flex items-start gap-2">
-              <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-              <span className="text-gray-700 dark:text-gray-300 text-sm">{proj}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
-
-    {resume.enhancement?.top_1_percent_gap && (
-      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
-        <div className="px-4 py-3 border-b bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
-          <h4 className="font-semibold text-purple-900 dark:text-purple-100 flex items-center gap-2">
-            <Award className="w-4 h-4" /> Top 1% Gap Analysis
-          </h4>
-        </div>
-        <div className="p-4 space-y-4">
-          {resume.enhancement.top_1_percent_gap.strengths && (
-            <div>
-              <h5 className="font-medium text-gray-900 dark:text-white mb-2">Strengths</h5>
-              <div className="space-y-1">
-                {resume.enhancement.top_1_percent_gap.strengths.map((s: string, i: number) => (
-                  <div key={i} className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{s}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {resume.enhancement.top_1_percent_gap.gaps && (
-            <div>
-              <h5 className="font-medium text-gray-900 dark:text-white mb-2">Gaps</h5>
-              <div className="space-y-1">
-                {resume.enhancement.top_1_percent_gap.gaps.map((g: string, i: number) => (
-                  <div key={i} className="flex items-start gap-2">
-                    <XCircle className="w-4 h-4 text-red-500 mt-0.5" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{g}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {resume.enhancement.top_1_percent_gap.actionable_next_steps && (
-            <div>
-              <h5 className="font-medium text-gray-900 dark:text-white mb-2">Actionable Next Steps</h5>
-              <div className="space-y-1">
-                {resume.enhancement.top_1_percent_gap.actionable_next_steps.map((step: string, i: number) => (
-                  <div key={i} className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{step}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    )}
-
-    {resume.enhancement?.cover_letter && (
-      <ImprovementCard
-        title="Tailored Cover Letter"
-        color="indigo"
-        icon={<FileText className="w-4 h-4" />}
-        content={
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg max-h-64 overflow-y-auto">
-            <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed font-sans">
-              {typeof resume.enhancement.cover_letter === 'object'
-                ? resume.enhancement.cover_letter.content
-                : resume.enhancement.cover_letter}
-            </pre>
+      {resume.enhancement?.tailored_resume?.experience && (
+        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
+          <div className="px-4 py-3 border-b bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+            <h4 className="font-semibold text-green-900 dark:text-green-100 flex items-center gap-2">
+              <Award className="w-4 h-4" /> Experience Highlights
+            </h4>
           </div>
-        }
-      />
-    )}
+          <div className="p-4 space-y-2">
+            {resume.enhancement.tailored_resume.experience.map((exp: string, idx: number) => (
+              <div key={idx} className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">{exp}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {resume.enhancement?.tailored_resume?.skills && (
+        <ImprovementSkills
+          title="Key Skills"
+          color="purple"
+          icon={<Brain className="w-4 h-4" />}
+          skills={resume.enhancement.tailored_resume.skills}
+        />
+      )}
+
+      {resume.enhancement?.tailored_resume?.projects && (
+        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
+          <div className="px-4 py-3 border-b bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
+            <h4 className="font-semibold text-orange-900 dark:text-orange-100 flex items-center gap-2">
+              <Star className="w-4 h-4" /> Project Highlights
+            </h4>
+          </div>
+          <div className="p-4 space-y-2">
+            {resume.enhancement.tailored_resume.projects.map((proj: string, idx: number) => (
+              <div key={idx} className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">{proj}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {resume.enhancement?.top_1_percent_gap && (
+        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
+          <div className="px-4 py-3 border-b bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
+            <h4 className="font-semibold text-purple-900 dark:text-purple-100 flex items-center gap-2">
+              <Award className="w-4 h-4" /> Top 1% Gap Analysis
+            </h4>
+          </div>
+          <div className="p-4 space-y-4">
+            {resume.enhancement.top_1_percent_gap.strengths && (
+              <div>
+                <h5 className="font-medium text-gray-900 dark:text-white mb-2">Strengths</h5>
+                <div className="space-y-1">
+                  {resume.enhancement.top_1_percent_gap.strengths.map((s: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{s}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {resume.enhancement.top_1_percent_gap.gaps && (
+              <div>
+                <h5 className="font-medium text-gray-900 dark:text-white mb-2">Gaps</h5>
+                <div className="space-y-1">
+                  {resume.enhancement.top_1_percent_gap.gaps.map((g: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <XCircle className="w-4 h-4 text-red-500 mt-0.5" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{g}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {resume.enhancement.top_1_percent_gap.actionable_next_steps && (
+              <div>
+                <h5 className="font-medium text-gray-900 dark:text-white mb-2">Actionable Next Steps</h5>
+                <div className="space-y-1">
+                  {resume.enhancement.top_1_percent_gap.actionable_next_steps.map((step: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{step}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {resume.enhancement?.cover_letter && (
+        <ImprovementCard
+          title="Tailored Cover Letter"
+          color="indigo"
+          icon={<FileText className="w-4 h-4" />}
+          content={
+            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg max-h-64 overflow-y-auto">
+              <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed font-sans">
+                {typeof resume.enhancement.cover_letter === 'object'
+                  ? resume.enhancement.cover_letter.content
+                  : resume.enhancement.cover_letter}
+              </pre>
+            </div>
+          }
+        />
+      )}
     </div>
   );
 };

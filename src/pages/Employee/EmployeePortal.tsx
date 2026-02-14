@@ -360,7 +360,7 @@ const EmployeePortal = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowSubscriptionModal(true)}
-                  className="p-2 rounded-lg flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md hover:shadow-lg transition-all"
+                  className="p-2 rounded-lg flex items-center gap-2 bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 transition-all"
                 >
                   <Bell className="w-5 h-5" />
                   <span className="hidden sm:inline font-semibold">Job Alerts</span>
@@ -507,7 +507,7 @@ const EmployeePortal = () => {
                     const isExpanded = expandedDesc.has(job.job_id); // Use job_id
                     const descPreview = job.description?.length > 150 ? job.description.slice(0, 150) + '...' : job.description || 'No description available.';
                     return (
-                      <div key={job.job_id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-2xl transition-all flex flex-col group">
+                      <div key={job.job_id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all flex flex-col group">
                         <div className="p-6 flex-1">
                           <div className="flex justify-between items-start mb-3">
                             <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-1" title={job.title}>{job.title}</h3>
@@ -552,7 +552,7 @@ const EmployeePortal = () => {
                           <button
                             onClick={() => job.redirect_url ? window.open(job.redirect_url, '_blank') : null}
                             disabled={!job.redirect_url}
-                            className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                            className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                           >
                             Apply <ExternalLink className="w-4 h-4" />
                           </button>
@@ -631,7 +631,7 @@ const EmployeePortal = () => {
                               <button
                                 onClick={() => job.redirect_url ? window.open(job.redirect_url, '_blank') : null}
                                 disabled={!job.redirect_url}
-                                className="px-3 py-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg disabled:opacity-50"
+                                className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50"
                               >
                                 Apply
                               </button>
@@ -687,7 +687,7 @@ const EmployeePortal = () => {
                         key={i}
                         onClick={() => setSkip((i - 1) * LIMIT)}
                         className={`w-10 h-10 rounded-lg font-semibold transition-all ${currentPage === i
-                          ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
+                          ? 'bg-indigo-600 text-white'
                           : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                           }`}
                       >
@@ -839,7 +839,7 @@ const EmployeePortal = () => {
                 <button
                   onClick={handleSubscribe}
                   disabled={subscribing || !subscriptionEmail}
-                  className={`w-full ${isSubscribed ? 'sm:w-1/2' : ''} px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50`}
+                  className={`w-full ${isSubscribed ? 'sm:w-1/2' : ''} px-4 py-2 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-sm`}
                 >
                   {subscribing ? 'Processing...' : (isSubscribed ? 'Update Subscription' : 'Subscribe')}
                 </button>
@@ -853,7 +853,7 @@ const EmployeePortal = () => {
             <button onClick={() => setSelectedJob(null)} className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-6 hover:text-gray-900 dark:hover:text-white">
               <ArrowLeft className="w-5 h-5" />Back to jobs
             </button>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8">
               <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
                 <div>
                   <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">{selectedJob.title}</h1>
@@ -868,7 +868,7 @@ const EmployeePortal = () => {
                         jobDescription: selectedJob.description
                       }
                     })}
-                    className="p-3 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+                    className="p-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-sm transition-all flex items-center gap-2"
                     title="Start Mock Interview"
                   >
                     <Play className="w-6 h-6" />
@@ -911,7 +911,7 @@ const EmployeePortal = () => {
                 <button
                   onClick={() => selectedJob.redirect_url ? window.open(selectedJob.redirect_url, '_blank') : null}
                   disabled={!selectedJob.redirect_url}
-                  className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full md:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
                 >
                   Apply Now <ExternalLink className="w-5 h-5" />
                 </button>

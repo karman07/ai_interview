@@ -26,7 +26,7 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume }) => {
   const overallScore = Math.round(
     ((resume.analytics?.cv_quality?.overall_score || 0) +
       (resume.analytics?.jd_match?.overall_score || 0)) /
-      2
+    2
   );
 
   return (
@@ -36,8 +36,8 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume }) => {
         <div className="p-4 sm:p-6">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="p-2 sm:p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex-shrink-0">
-                <DocumentTextIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+              <div className="flex-shrink-0">
+                <DocumentTextIcon className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="font-semibold text-base sm:text-lg text-gray-900 dark:text-white truncate">
@@ -47,10 +47,10 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume }) => {
                   <CalendarIcon className="w-4 h-4" />
                   {resume?.createdAt
                     ? new Date(resume.createdAt).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
                     : "N/A"}
                 </p>
               </div>
@@ -73,8 +73,8 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume }) => {
                   (resume.analytics?.cv_quality?.overall_score ?? 0) >= 70
                     ? "Strong"
                     : (resume.analytics?.cv_quality?.overall_score ?? 0) >= 50
-                    ? "Good"
-                    : "Needs Work",
+                      ? "Good"
+                      : "Needs Work",
                 icon: DocumentTextIcon,
               },
               {
@@ -84,8 +84,8 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume }) => {
                   (resume.analytics?.jd_match?.overall_score ?? 0) >= 70
                     ? "Strong"
                     : (resume.analytics?.jd_match?.overall_score ?? 0) >= 50
-                    ? "Good"
-                    : "Needs Work",
+                      ? "Good"
+                      : "Needs Work",
                 icon: BriefcaseIcon,
               },
               {
@@ -96,18 +96,19 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume }) => {
               },
             ].map((metric, idx) => (
               <div key={idx} className="text-center">
-                <div className="flex justify-center mb-1 sm:mb-2">
-                  <metric.icon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 dark:text-gray-500" />
+                <div className="flex justify-center mb-2">
+                  <metric.icon className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                 </div>
                 <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {Math.round(metric.value || 0)}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 sm:mb-2 truncate">{metric.label}</p>
                 <span
-                  className={`inline-block px-1 sm:px-2 py-1 rounded-full text-xs font-medium ${getBandColor(
+                  className={`inline-flex items-center text-xs font-semibold ${getBandColor(
                     metric.band
                   )}`}
                 >
+                  <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5" />
                   {metric.band || "N/A"}
                 </span>
               </div>
@@ -117,7 +118,7 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume }) => {
           {/* Overall Progress Bar */}
           <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-1000"
+              className="h-full bg-blue-600 rounded-full transition-all duration-1000"
               style={{ width: `${Math.min(overallScore, 100)}%` }}
             />
           </div>
@@ -143,15 +144,15 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume }) => {
 const getBandColor = (band?: string): string => {
   switch (band?.toLowerCase()) {
     case "strong":
-      return "text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20";
+      return "text-emerald-600 dark:text-emerald-400";
     case "good":
-      return "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/20";
+      return "text-indigo-600 dark:text-indigo-400";
     case "partial":
-      return "text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/20";
+      return "text-amber-600 dark:text-amber-400";
     case "weak":
-      return "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20";
+      return "text-rose-600 dark:text-rose-400";
     default:
-      return "text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700";
+      return "text-gray-500 dark:text-gray-400";
   }
 };
 
