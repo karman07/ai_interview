@@ -26,6 +26,7 @@ export const fetchJobs = async (params: any = {}): Promise<JobListResponse> => {
   if (params.internship !== undefined) queryParams.append('internship', params.internship.toString());
   if (params.skip) queryParams.append('skip', params.skip.toString());
   if (params.limit) queryParams.append('limit', params.limit.toString());
+  if (params.engineering_type) queryParams.append('branch_type', params.engineering_type);
 
   // Using absolute URL to ensure we hit the correct backend
   console.log(`Fetching jobs from: ${API_URL}/jobs?${queryParams.toString()}`);
@@ -36,6 +37,29 @@ export const fetchJobs = async (params: any = {}): Promise<JobListResponse> => {
   } catch (error) {
     console.error("fetchJobs Error:", error);
     throw error;
+  }
+};
+
+export const getEngineeringTypes = async (): Promise<string[]> => {
+  try {
+    const response = await axios.get(`${API_URL}/jobs/engineering-types`);
+    // Check for "engineering_types" property as per API response
+    if (response.data && Array.isArray(response.data.engineering_types)) {
+      return response.data.engineering_types;
+    }
+
+    // Fallback: Check if response.data itself is an array
+    if (Array.isArray(response.data)) {
+      return response.data;
+    } else if (response.data && Array.isArray(response.data.types)) {
+      return response.data.types;
+    }
+
+    console.warn("getEngineeringTypes: API Response format not recognized", response.data);
+    return [];
+  } catch (error) {
+    console.error("getEngineeringTypes Error:", error);
+    return [];
   }
 };
 
@@ -81,6 +105,38 @@ export const getJobById = async (jobId: string): Promise<Job> => {
     return response.data;
   } catch (error) {
     console.warn("Get Job By ID endpoints not explicitly documented, might fail.", error);
+    throw error;
+  }
+};
+
+// --- Favorites API ---
+
+export interface UserJobInteractionResponse {
+  message: string;
+  status: string;
+  is_active: boolean;
+}
+
+export const toggleFavoriteJob = async (jobId: string, userId: string): Promise<UserJobInteractionResponse> => {
+  try {
+    console.log(`[jobService] Toggling favorite for jobId: ${jobId}, userId: ${userId}`);
+    const response = await axios.post(`${API_URL}/${jobId}/favorite`, { user_id: userId });
+    console.log(`[jobService] Toggle response:`, response.data);
+    return response.data;
+  } catch (error) {
+    console.error("toggleFavoriteJob Error:", error);
+    throw error;
+  }
+};
+
+export const fetchFavoriteJobs = async (userId: string): Promise<JobListResponse> => {
+  try {
+    console.log(`[jobService] Fetching favorites for userId: ${userId}`);
+    const response = await axios.get(`${API_URL}/favorites?user_id=${userId}`);
+    console.log(`[jobService] Fetch response:`, response.data);
+    return response.data;
+  } catch (error) {
+    console.error("fetchFavoriteJobs Error:", error);
     throw error;
   }
 };

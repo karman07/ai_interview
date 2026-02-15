@@ -1,94 +1,129 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Background: Soft White #F9FAFB -> 210 20% 98% */
+    --background: 210 20% 98%;
+    /* Primary Text: Dark Slate #111827 -> 221 39% 11% */
+    --foreground: 221 39% 11%;
 
+    /* Card Background: Pure White #FFFFFF -> 0 0% 100% */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
- 
+    --card-foreground: 221 39% 11%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
- 
-    --primary: 222.2 47.4% 11.2%;
+    --popover-foreground: 221 39% 11%;
+
+    /* Primary Brand: Deep AI Blue #2563EB -> 221 83% 53% */
+    --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
- 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
- 
+
+    /* Primary Hover: Bright Blue #1D4ED8 -> 224 76% 48% */
+    --primary-hover: 224 76% 48%;
+
+    /* Secondary: AI Purple #7C3AED -> 262 83% 58% */
+    --secondary: 262 83% 58%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Secondary Text / Muted: Muted Gray #6B7280 -> 220 9% 46% */
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
- 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
- 
+    /* Keeping a light gray for backgrounds if needed */
+    --muted-foreground: 220 9% 46%;
+
+    /* Accent: Emerald #10B981 -> 160 84% 39% */
+    --accent: 160 84% 39%;
+    --accent-foreground: 210 40% 98%;
+
+    /* CTA Highlight: Soft Orange #F59E0B -> 38 92% 50% */
+    --cta: 38 92% 50%;
+    --cta-foreground: 221 39% 11%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
- 
+    /* Border: Light Gray #E5E7EB -> 220 13% 91% */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 221 83% 53%;
+    /* Using primary for ring */
+
     --radius: 0.5rem;
   }
- 
+
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
- 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
- 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
- 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
- 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
- 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
- 
+    /* Background: Deep Navy #0F172A -> 222 47% 11% */
+    --background: 222 47% 11%;
+    /* Primary Text: Soft White #F1F5F9 -> 210 40% 96% */
+    --foreground: 210 40% 96%;
+
+    /* Card Background: Dark Slate #1E293B -> 215 28% 17% */
+    --card: 215 28% 17%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 215 28% 17%;
+    --popover-foreground: 210 40% 96%;
+
+    /* Primary Brand: Electric Blue #3B82F6 -> 217 91% 60% */
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+    /* Dark text on bright blue */
+
+    /* Primary Hover: Bright Cyan-Blue #60A5FA -> 213 94% 68% */
+    --primary-hover: 213 94% 68%;
+
+    /* Secondary: Neon Purple #A78BFA -> 255 92% 76% */
+    --secondary: 255 92% 76%;
+    --secondary-foreground: 222 47% 11%;
+
+    /* Secondary Text / Muted: Cool Gray #94A3B8 -> 215 16% 47% */
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 16% 47%;
+
+    /* Accent: Mint Emerald #34D399 -> 158 64% 52% */
+    --accent: 158 64% 52%;
+    --accent-foreground: 222 47% 11%;
+
+    /* CTA Highlight: Warm Amber #FBBF24 -> 43 96% 56% */
+    --cta: 43 96% 56%;
+    --cta-foreground: 222 47% 11%;
+
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
- 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+
+    /* Border: Muted Dark Gray #475569 -> 215 14% 34% */
+    --border: 215 14% 34%;
+    --input: 215 14% 34%;
+    --ring: 217 91% 60%;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     overflow-x: hidden;
   }
+
   html {
     overflow-x: hidden;
   }
-  
+
   /* Auto dark mode for common elements */
   .dark {
     color-scheme: dark;
   }
-  
+
   .dark input:not([type="range"]),
   .dark textarea,
   .dark select {
     @apply bg-gray-800 border-gray-600 text-white placeholder-gray-400;
   }
-  
+
   .dark button:not(.no-dark) {
     @apply text-gray-200;
   }
@@ -99,12 +134,15 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
   .text-responsive {
     @apply text-sm sm:text-base lg:text-lg;
   }
+
   .container-responsive {
     @apply px-4 sm:px-6 lg:px-8;
   }

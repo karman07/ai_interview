@@ -9,8 +9,7 @@ import { NotificationProvider } from "@/contexts/NotificationContext";
 import NotificationToast from "@/components/common/NotificationToast";
 import PricingPage from "@/pages/Pricing/Pricing";
 import routes from "@/constants/routes";
-import Login from "./pages/Auth/Login";
-import Signup from "./pages/Auth/Signup";
+import AuthPage from "./pages/Auth/AuthPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import Profile from "./pages/Profile/Profile";
 import CompleteProfile from "./pages/Profile/CompleteProfile";
@@ -92,253 +91,253 @@ function App() {
             <NotificationToast />
 
             <div className="flex-grow">
-          <Routes>
-            {/* Public Routes */}
-            <Route path={routes.home} element={<Home />} />
-            <Route path={routes.about} element={<About />} />
-            <Route path={routes.contact} element={<ContactPage />} />
-            <Route path={routes.jobsPublic} element={<JobsPublicPage />} />
-            <Route
-              path={routes.interview}
-              element={
-                <div className="flex min-h-screen">
-                  <Sidebar />
-                  <div className="flex-1">
-                    <InterviewProvider>
-                      <ResultsProvider>
-                        <InterviewApp />
-                      </ResultsProvider>
-                    </InterviewProvider>
-                  </div>
-                </div>
-              }
-            />
-
-            <Route
-              path={routes.jobListings}
-              element={
-                <div className="flex min-h-screen">
-                  <Sidebar />
-                  <div className="flex-1">
-                    <JobSearch />
-                  </div>
-                </div>
-              }
-            />
-
-            <Route
-              path={routes.resources}
-              element={
-                <div className="flex min-h-screen">
-                  <Sidebar />
-                  <div className="flex-1">
-                    <ResourcesHub />
-                  </div>
-                </div>
-              }
-            />
-            <Route path="/analytics-test" element={<AnalyticsTest />} />
-            <Route path={routes.pricing} element={<PricingPage />} />
-
-            {/* Login / Signup with redirect if already logged in */}
-            <Route
-              path={routes.login}
-              element={
-                <RedirectIfLoggedIn>
-                  <Login />
-                </RedirectIfLoggedIn>
-              }
-            />
-            <Route
-              path={routes.signup}
-              element={
-                <RedirectIfLoggedIn>
-                  <Signup />
-                </RedirectIfLoggedIn>
-              }
-            />
-
-            {/* Protected Routes */}
-            <Route element={<ProtectedRoute />}>
-              <Route
-                path={routes.dashboard}
-                element={
-                  <div className="flex min-h-screen">
-                    <Sidebar />
-                    <div className="flex-1">
-                      <ResumeDashboard />
+              <Routes>
+                {/* Public Routes */}
+                <Route path={routes.home} element={<Home />} />
+                <Route path={routes.about} element={<About />} />
+                <Route path={routes.contact} element={<ContactPage />} />
+                <Route path={routes.jobsPublic} element={<JobsPublicPage />} />
+                <Route
+                  path={routes.interview}
+                  element={
+                    <div className="flex min-h-screen">
+                      <Sidebar />
+                      <div className="flex-1">
+                        <InterviewProvider>
+                          <ResultsProvider>
+                            <InterviewApp />
+                          </ResultsProvider>
+                        </InterviewProvider>
+                      </div>
                     </div>
-                  </div>
-                }
-              />
+                  }
+                />
 
-              {/* Employee Portal - Single Route */}
-              <Route path="/employee" element={<div className="flex min-h-screen"><Sidebar /><div className="flex-1"><EmployeePortal /></div></div>} />
-
-              <Route path={routes.profile} element={<Profile />} />
-              <Route
-                path={routes.completeProfile}
-                element={<CompleteProfile />}
-              />
-              <Route path={routes.interviewHome} element={
-              <div className="flex min-h-screen">
-                    <Sidebar />
-                    <div className="flex-1">
-                      <InterviewHome />
+                <Route
+                  path={routes.jobListings}
+                  element={
+                    <div className="flex min-h-screen">
+                      <Sidebar />
+                      <div className="flex-1">
+                        <JobSearch />
+                      </div>
                     </div>
-                  </div>
-                }
-              />
-              <Route path={routes.interviewStart(":type")} element={
-                <div className="flex min-h-screen">
-                  <Sidebar />
-                  <div className="flex-1">
-                      <InterviewStart />
-                    </div>
-                  </div>
-                }
-              />
-              <Route path={routes.interviewRoom(":type")} element={
-                <div className="flex min-h-screen">
-                  <Sidebar />
-                  <div className="flex-1">
-                    <InterviewRoomPage />
-                  </div>
-                </div>
-              } />
+                  }
+                />
 
-              <Route path={routes.interviewHistory} element={
-                <div className="flex min-h-screen">
-                  <Sidebar />
-                  <div className="flex-1">
-                    <InterviewHistory />
-                  </div>
-                </div>
-              } />
-
-              <Route path="/interview/results/:sessionId" element={
-                <div className="flex min-h-screen">
-                  <Sidebar />
-                  <div className="flex-1">
-                    <InterviewResultsV2 />
-                  </div>
-                </div>
-              } />
-            </Route>
-
-            <Route element={<ProtectedRoute />}>
-              <Route
-                path={routes.subjects}
-                element={
-                  <div className="flex min-h-screen">
-                    <Sidebar />
-                    <div className="flex-1">
-                      <SubjectsProvider>
-                        <ProgressProvider>
-                          <SubjectsPage />
-                        </ProgressProvider>
-                      </SubjectsProvider>
+                <Route
+                  path={routes.resources}
+                  element={
+                    <div className="flex min-h-screen">
+                      <Sidebar />
+                      <div className="flex-1">
+                        <ResourcesHub />
+                      </div>
                     </div>
-                  </div>
-                }
-              />
+                  }
+                />
+                <Route path="/analytics-test" element={<AnalyticsTest />} />
+                <Route path={routes.pricing} element={<PricingPage />} />
 
-              <Route
-                path={routes.subjectDetails(":id")}
-                element={
-                  <div className="flex min-h-screen">
-                    <Sidebar />
-                    <div className="flex-1">
-                      <SubjectsProvider>
-                        <ProgressProvider>
-                          <LessonsProvider>
-                            <SubjectDetailsPage />
-                          </LessonsProvider>
-                        </ProgressProvider>
-                      </SubjectsProvider>
-                    </div>
-                  </div>
-                }
-              />
-              <Route
-                path={routes.lessonDetails(":subjectId")}
-                element={
-                  <div className="flex min-h-screen">
-                    {/* <Sidebar /> */}
-                    <div className="flex-1">
-                      <SubjectsProvider>
-                        <ProgressProvider>
-                          <LessonsProvider>
-                            <LessonDetailsPage />
-                          </LessonsProvider>
-                        </ProgressProvider>
-                      </SubjectsProvider>
-                    </div>
-                  </div>
-                }
-              />
-            </Route>
+                {/* Auth Routes */}
+                <Route
+                  path={routes.login}
+                  element={
+                    <RedirectIfLoggedIn>
+                      <AuthPage />
+                    </RedirectIfLoggedIn>
+                  }
+                />
+                <Route
+                  path={routes.signup}
+                  element={
+                    <RedirectIfLoggedIn>
+                      <AuthPage />
+                    </RedirectIfLoggedIn>
+                  }
+                />
 
-            {/* DSA Routes */}
-            <Route element={<ProtectedRoute />}>
-              <Route
-                path={routes.dsaDashboard}
-                element={
-                  <div className="flex min-h-screen">
-                    <Sidebar />
-                    <div className="flex-1">
-                      <DSAQuestionsProvider>
-                        <DSAProgressProvider>
-                          <DSADashboard />
-                        </DSAProgressProvider>
-                      </DSAQuestionsProvider>
-                    </div>
-                  </div>
-                }
-              />
-              <Route
-                path={routes.dsaQuestions}
-                element={
-                  <div className="flex min-h-screen">
-                    <Sidebar />
-                    <div className="flex-1">
-                      <DSAQuestionsProvider>
-                        <DSAProgressProvider>
-                          <DSAQuestionsList />
-                        </DSAProgressProvider>
-                      </DSAQuestionsProvider>
-                    </div>
-                  </div>
-                }
-              />
-              <Route
-                path={routes.dsaQuestionDetails(":questionId")}
-                element={
-                  <div className="flex min-h-screen">
-                    <Sidebar />
-                    <div className="flex-1">
-                      <DSAQuestionsProvider>
-                        <DSAProgressProvider>
-                          <CodeExecutionProvider>
-                            <DSAQuestionSolvePage />
-                          </CodeExecutionProvider>
-                        </DSAProgressProvider>
-                      </DSAQuestionsProvider>
-                    </div>
-                  </div>
-                }
-              />
-            </Route>
+                {/* Protected Routes */}
+                <Route element={<ProtectedRoute />}>
+                  <Route
+                    path={routes.dashboard}
+                    element={
+                      <div className="flex min-h-screen">
+                        <Sidebar />
+                        <div className="flex-1">
+                          <ResumeDashboard />
+                        </div>
+                      </div>
+                    }
+                  />
 
-            {/* Catch-all: redirect unknown routes to home */}
-            <Route path="*" element={<Navigate to={routes.home} replace />} />
-          </Routes>
-        </div>
+                  {/* Employee Portal - Single Route */}
+                  <Route path="/employee" element={<div className="flex min-h-screen"><Sidebar /><div className="flex-1"><EmployeePortal /></div></div>} />
 
-        {!shouldHideNavbar && <Footer />}
-      </div>
-    </PricingProvider>
-    </AnalyticsProvider>
+                  <Route path={routes.profile} element={<Profile />} />
+                  <Route
+                    path={routes.completeProfile}
+                    element={<CompleteProfile />}
+                  />
+                  <Route path={routes.interviewHome} element={
+                    <div className="flex min-h-screen">
+                      <Sidebar />
+                      <div className="flex-1">
+                        <InterviewHome />
+                      </div>
+                    </div>
+                  }
+                  />
+                  <Route path={routes.interviewStart(":type")} element={
+                    <div className="flex min-h-screen">
+                      <Sidebar />
+                      <div className="flex-1">
+                        <InterviewStart />
+                      </div>
+                    </div>
+                  }
+                  />
+                  <Route path={routes.interviewRoom(":type")} element={
+                    <div className="flex min-h-screen">
+                      <Sidebar />
+                      <div className="flex-1">
+                        <InterviewRoomPage />
+                      </div>
+                    </div>
+                  } />
+
+                  <Route path={routes.interviewHistory} element={
+                    <div className="flex min-h-screen">
+                      <Sidebar />
+                      <div className="flex-1">
+                        <InterviewHistory />
+                      </div>
+                    </div>
+                  } />
+
+                  <Route path="/interview/results/:sessionId" element={
+                    <div className="flex min-h-screen">
+                      <Sidebar />
+                      <div className="flex-1">
+                        <InterviewResultsV2 />
+                      </div>
+                    </div>
+                  } />
+                </Route>
+
+                <Route element={<ProtectedRoute />}>
+                  <Route
+                    path={routes.subjects}
+                    element={
+                      <div className="flex min-h-screen">
+                        <Sidebar />
+                        <div className="flex-1">
+                          <SubjectsProvider>
+                            <ProgressProvider>
+                              <SubjectsPage />
+                            </ProgressProvider>
+                          </SubjectsProvider>
+                        </div>
+                      </div>
+                    }
+                  />
+
+                  <Route
+                    path={routes.subjectDetails(":id")}
+                    element={
+                      <div className="flex min-h-screen">
+                        <Sidebar />
+                        <div className="flex-1">
+                          <SubjectsProvider>
+                            <ProgressProvider>
+                              <LessonsProvider>
+                                <SubjectDetailsPage />
+                              </LessonsProvider>
+                            </ProgressProvider>
+                          </SubjectsProvider>
+                        </div>
+                      </div>
+                    }
+                  />
+                  <Route
+                    path={routes.lessonDetails(":subjectId")}
+                    element={
+                      <div className="flex min-h-screen">
+                        {/* <Sidebar /> */}
+                        <div className="flex-1">
+                          <SubjectsProvider>
+                            <ProgressProvider>
+                              <LessonsProvider>
+                                <LessonDetailsPage />
+                              </LessonsProvider>
+                            </ProgressProvider>
+                          </SubjectsProvider>
+                        </div>
+                      </div>
+                    }
+                  />
+                </Route>
+
+                {/* DSA Routes */}
+                <Route element={<ProtectedRoute />}>
+                  <Route
+                    path={routes.dsaDashboard}
+                    element={
+                      <div className="flex min-h-screen">
+                        <Sidebar />
+                        <div className="flex-1">
+                          <DSAQuestionsProvider>
+                            <DSAProgressProvider>
+                              <DSADashboard />
+                            </DSAProgressProvider>
+                          </DSAQuestionsProvider>
+                        </div>
+                      </div>
+                    }
+                  />
+                  <Route
+                    path={routes.dsaQuestions}
+                    element={
+                      <div className="flex min-h-screen">
+                        <Sidebar />
+                        <div className="flex-1">
+                          <DSAQuestionsProvider>
+                            <DSAProgressProvider>
+                              <DSAQuestionsList />
+                            </DSAProgressProvider>
+                          </DSAQuestionsProvider>
+                        </div>
+                      </div>
+                    }
+                  />
+                  <Route
+                    path={routes.dsaQuestionDetails(":questionId")}
+                    element={
+                      <div className="flex min-h-screen">
+                        <Sidebar />
+                        <div className="flex-1">
+                          <DSAQuestionsProvider>
+                            <DSAProgressProvider>
+                              <CodeExecutionProvider>
+                                <DSAQuestionSolvePage />
+                              </CodeExecutionProvider>
+                            </DSAProgressProvider>
+                          </DSAQuestionsProvider>
+                        </div>
+                      </div>
+                    }
+                  />
+                </Route>
+
+                {/* Catch-all: redirect unknown routes to home */}
+                <Route path="*" element={<Navigate to={routes.home} replace />} />
+              </Routes>
+            </div>
+
+            {!shouldHideNavbar && <Footer />}
+          </div>
+        </PricingProvider>
+      </AnalyticsProvider>
     </NotificationProvider>
   );
 }
