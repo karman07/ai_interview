@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import {
   fetchJobs,
+  getEngineeringTypes,
   type Job,
 } from '@/api/jobService';
 
@@ -19,9 +20,7 @@ const JobSearch: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
 
-  useEffect(() => {
-    loadData();
-  }, [searchTerm, locationFilter]);
+
 
   const loadData = async () => {
     setLoading(true);
@@ -33,6 +32,7 @@ const JobSearch: React.FC = () => {
         // or just fetching all and filtering client side if the API is limited.
         // The contract supports 'location'. 
         location: locationFilter || undefined
+
       });
       setJobs(jobsData.jobs);
     } catch (error) {
@@ -106,6 +106,10 @@ const JobSearch: React.FC = () => {
                 />
               </div>
             </div>
+
+
+
+
           </div>
         </div>
 

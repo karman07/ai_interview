@@ -77,8 +77,8 @@ export default function Sidebar() {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 h-16 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-600">
-            <Target size={18} className="text-white" />
+          <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary">
+            <Target size={18} className="text-primary-foreground" />
           </div>
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">
             AI Coach
@@ -152,8 +152,8 @@ export default function Sidebar() {
       >
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-600 shadow-sm">
-              <Target size={18} className="text-white" />
+            <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary shadow-sm">
+              <Target size={18} className="text-primary-foreground" />
             </div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
               AI Coach

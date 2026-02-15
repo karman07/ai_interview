@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Briefcase, MapPin, DollarSign, Grid3x3, List, Bookmark, ArrowLeft, ExternalLink, Filter, Search, Bell, X, Play } from 'lucide-react';
-import { fetchJobs, Job, parseResume } from '../../api/jobService';
+import { Briefcase, MapPin, DollarSign, Grid3x3, List, Bookmark, ArrowLeft, ExternalLink, Filter, Search, Bell, X, Play, Heart } from 'lucide-react';
+import { fetchJobs, Job, parseResume, getEngineeringTypes, toggleFavoriteJob, fetchFavoriteJobs } from '../../api/jobService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useResume } from '@/contexts/ResumeContext';
 import { subscriptionService } from '@/api/subscriptionService';
@@ -25,7 +25,11 @@ const EmployeePortal = () => {
   const [isRemote, setIsRemote] = useState(false);
   const [isInternship, setIsInternship] = useState(false);
 
+  const [engineeringTypes, setEngineeringTypes] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+
   const [bookmarked, setBookmarked] = useState<Set<string>>(new Set());
+  const [showFavorites, setShowFavorites] = useState(false); // New state for Favorites view
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [expandedDesc, setExpandedDesc] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
@@ -43,7 +47,17 @@ const EmployeePortal = () => {
     if (user?.email) {
       setSubscriptionEmail(user.email);
     }
+    loadEngineeringTypes();
   }, [user]);
+
+  const loadEngineeringTypes = async () => {
+    try {
+      const types = await getEngineeringTypes();
+      setEngineeringTypes(types);
+    } catch (error) {
+      console.error('Failed to load engineering types:', error);
+    }
+  };
 
   // Check subscription status when modal opens or email changes
   useEffect(() => {
@@ -103,13 +117,43 @@ const EmployeePortal = () => {
     }
   };
 
-  const toggleBookmark = (jobId: string) => {
+  const toggleBookmark = async (jobId: string) => {
+    if (!user?._id) {
+      toast.error("Please login to manage favorites");
+      return;
+    }
+
+    // Optimistic update
+    const isCurrentlyBookmarked = bookmarked.has(jobId);
     setBookmarked(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(jobId)) newSet.delete(jobId);
+      if (isCurrentlyBookmarked) newSet.delete(jobId);
       else newSet.add(jobId);
       return newSet;
     });
+
+    try {
+      await toggleFavoriteJob(jobId, user._id);
+      toast.success(isCurrentlyBookmarked ? "Removed from favorites" : "Added to favorites");
+
+      // If we are in "Favorites Only" mode and unbookmarking, we might want to reload or remove from list?
+      // But for now, let's just keep the list as is until reload or filter change.
+      if (showFavorites && isCurrentlyBookmarked) {
+        // Optional: remove from current view instantly if strictly viewing favorites
+        setJobs(prev => prev.filter(j => j.job_id !== jobId));
+      }
+
+    } catch (error) {
+      // Revert on failure
+      console.error("Failed to toggle favorite", error);
+      toast.error("Failed to update favorite status");
+      setBookmarked(prev => {
+        const newSet = new Set(prev);
+        if (isCurrentlyBookmarked) newSet.add(jobId);
+        else newSet.delete(jobId);
+        return newSet;
+      });
+    }
   };
 
   const toggleDescription = (jobId: string) => {
@@ -134,26 +178,21 @@ const EmployeePortal = () => {
   useEffect(() => {
     // Debounce search to avoid too many requests
     const timer = setTimeout(() => {
-      // If we are filtering by resume, we don't want to trigger the normal loadJobs 
-      // unless the user changes other filters, but even then, how do we combine?
-      // For now, if resume filtered, we might explicitly just rely on that.
-      // But if the user changes keyword/location, should we re-run the resume match with params?
-      // The current upload endpoint might not support query params mixed with file?
-      // Let's assume for now: Normal load triggers if NOT resume filtered OR if we handle it differently.
-      // Actually, let's keep it simple: If not resume filtered, load normal jobs.
       if (!isResumeFiltered) {
         setSkip(0);
         loadJobs(0);
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [keyword, location, minStipend, maxStipend, isRemote, isInternship]);
+  }, [keyword, location, minStipend, maxStipend, isRemote, isInternship, selectedCategory, showFavorites]);
 
   useEffect(() => {
     if (!isResumeFiltered) {
       loadJobs(skip);
     }
   }, [skip]);
+
+  // ... (keeping existing functions) -> This comment was a mistake in previous turn, restoring code now.
 
   const handleResumeFilterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log("handleResumeFilterUpload triggered");
@@ -174,17 +213,11 @@ const EmployeePortal = () => {
       const data = await parseResume(file);
       console.log("Resume Filter Response:", data);
 
-      // Assuming the response structure. 
-      // If it returns a list of jobs directly or inside a property.
-      // Based on matchJD/matchResume, it usually returns { jobs: [], total_matches: ... }
-      // If the user said "Global job result" vs "Filter option with resume", 
-      // I expect this endpoint returns the filtered list.
-
       if (data.jobs) {
         setJobs(data.jobs);
         setTotalJobs(data.total_matches || data.jobs.length);
         setIsResumeFiltered(true);
-        setSkip(0); // Reset pagination (though backend might not support pagination for this match yet)
+        setSkip(0);
       } else if (Array.isArray(data)) {
         setJobs(data);
         setTotalJobs(data.length);
@@ -211,7 +244,7 @@ const EmployeePortal = () => {
   };
 
   const loadJobs = async (skipValue = skip) => {
-    console.log("loadJobs called. isResumeFiltered:", isResumeFiltered, "skip:", skipValue);
+    console.log("loadJobs called. isResumeFiltered:", isResumeFiltered, "showFavorites:", showFavorites, "skip:", skipValue);
     if (isResumeFiltered) {
       console.log("Skipping loadJobs because resume is filtered");
       return;
@@ -219,6 +252,14 @@ const EmployeePortal = () => {
 
     try {
       setLoading(true);
+
+      if (showFavorites && user?._id) {
+        const data = await fetchFavoriteJobs(user._id);
+        setJobs(data.jobs);
+        setTotalJobs(data.total || data.jobs.length);
+        return;
+      }
+
       const params: any = {
         limit: LIMIT,
         skip: skipValue,
@@ -229,17 +270,13 @@ const EmployeePortal = () => {
       if (maxStipend) params.max_stipend = Number(maxStipend);
       if (isRemote) params.remote = true;
       if (isInternship) params.internship = true;
+      if (selectedCategory) params.engineering_type = selectedCategory;
 
       const data = await fetchJobs(params);
       setJobs(data.jobs);
       if (data.total !== undefined) {
         setTotalJobs(data.total);
       } else {
-        // Fallback if total is not returned: if full page, assume more? 
-        // But strict numbered pagination needs total. 
-        // If no total, we'll just stick to simplified view or try to infer.
-        // For now, let's set a default or use length.
-        // If we got jobs, we have at least (skip + jobs.length)
         setTotalJobs(skipValue + data.jobs.length + (data.jobs.length === LIMIT ? LIMIT : 0));
       }
     } catch (error) {
@@ -399,6 +436,18 @@ const EmployeePortal = () => {
 
                 <div className="border-l border-gray-300 dark:border-gray-600 mx-1"></div>
                 <button
+                  onClick={() => {
+                    setShowFavorites(!showFavorites);
+                    setSkip(0); // Reset pagination logic when switching views
+                  }}
+                  className={`p-2 rounded-lg flex items-center gap-2 ${showFavorites ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
+                  title="Show Favorites"
+                >
+                  <Heart className={`w-5 h-5 ${showFavorites ? 'fill-current' : ''}`} />
+                  <span className="hidden sm:inline">Favorites</span>
+                </button>
+                <div className="border-l border-gray-300 dark:border-gray-600 mx-1"></div>
+                <button
                   onClick={() => setShowFilters(!showFilters)}
                   className={`p-2 rounded-lg flex items-center gap-2 ${showFilters ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
                 >
@@ -432,6 +481,24 @@ const EmployeePortal = () => {
               {/* Advanced Filters */}
               {showFilters && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-fadeIn">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Category / Branch</label>
+                    <div className="relative">
+                      <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="w-full pl-10 pr-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none text-gray-900 dark:text-white focus:border-indigo-500 appearance-none"
+                      >
+                        <option value="">All Categories</option>
+                        {Array.isArray(engineeringTypes) && engineeringTypes.map((type) => (
+                          <option key={type} value={type}>
+                            {type}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Location</label>
                     <div className="relative">

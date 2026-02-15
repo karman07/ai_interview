@@ -64,7 +64,7 @@ export default function Navbar() {
             onClick={() => setActiveLink(routes.home)}
           >
             <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold shadow-sm transition-all duration-300 bg-indigo-600"
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-primary-foreground font-bold shadow-sm transition-all duration-300 bg-primary"
             >
               <span className="text-base">AI</span>
             </div>
@@ -86,14 +86,14 @@ export default function Navbar() {
                 to={link.to}
                 onClick={() => setActiveLink(link.to)}
                 className={`relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${activeLink === link.to
-                  ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
+                  ? 'text-primary dark:text-primary bg-primary/10 dark:bg-primary/20'
                   : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
                   }`}
               >
                 {link.label}
                 {activeLink === link.to && (
                   <span
-                    className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-indigo-600 dark:bg-indigo-400"
+                    className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary dark:bg-primary"
                   />
                 )}
               </Link>
@@ -108,7 +108,7 @@ export default function Navbar() {
               aria-label="Toggle theme"
             >
               {theme === 'light' ? (
-                <Moon className="w-5 h-5 text-gray-600 group-hover:text-indigo-600 transition-colors" />
+                <Moon className="w-5 h-5 text-gray-600 group-hover:text-primary transition-colors" />
               ) : (
                 <Sun className="w-5 h-5 text-gray-400 group-hover:text-yellow-500 transition-colors" />
               )}
@@ -119,7 +119,7 @@ export default function Navbar() {
                 <Button
                   variant="ghost"
                   onClick={() => navigate(routes.dashboard)}
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   Dashboard
                 </Button>
@@ -135,14 +135,14 @@ export default function Navbar() {
               <>
                 <Button
                   variant="ghost"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   onClick={() => navigate('/login')}
                 >
                   Login
                 </Button>
                 <Button
                   variant="primary"
-                  className="text-sm font-medium shadow-sm bg-indigo-600 hover:bg-indigo-700 text-white transition-all"
+                  className="text-sm font-semibold shadow-none transition-all active:scale-95"
                   onClick={() => navigate('/signup')}
                 >
                   Get Started
@@ -189,7 +189,7 @@ export default function Navbar() {
                   setIsMenuOpen(false);
                 }}
                 className={`block px-4 py-2.5 rounded-lg font-medium text-sm transition-colors ${activeLink === link.to
-                  ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
+                  ? 'text-primary dark:text-primary bg-primary/10 dark:bg-primary/20'
                   : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                   }`}
               >
@@ -243,7 +243,7 @@ export default function Navbar() {
                       navigate('/login');
                       setIsMenuOpen(false);
                     }}
-                    className="w-full text-sm font-medium border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all"
+                    className="w-full text-sm font-medium border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-primary dark:hover:border-primary transition-all"
                   >
                     Login
                   </Button>
@@ -253,7 +253,7 @@ export default function Navbar() {
                       navigate('/signup');
                       setIsMenuOpen(false);
                     }}
-                    className="w-full text-sm font-medium bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 hover:from-indigo-700 hover:to-purple-700 dark:hover:from-indigo-600 dark:hover:to-purple-600 text-white transition-all"
+                    className="w-full text-sm font-medium bg-primary hover:bg-primary-hover text-primary-foreground transition-all"
                   >
                     Get Started
                   </Button>
