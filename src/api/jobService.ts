@@ -63,6 +63,23 @@ export const getEngineeringTypes = async (): Promise<string[]> => {
   }
 };
 
+export const getLocations = async (): Promise<string[]> => {
+  try {
+    const response = await axios.get(`${API_URL}/jobs/locations`);
+    if (response.data && Array.isArray(response.data.locations)) {
+      return response.data.locations;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    console.warn("getLocations: API Response format not recognized", response.data);
+    return [];
+  } catch (error) {
+    console.error("getLocations Error:", error);
+    return [];
+  }
+};
+
 export const matchResume = async (data: ResumeMatchRequest): Promise<MatchResultResponse> => {
   const response = await axios.post(`${API_URL}/match/resume`, data);
   return response.data;
@@ -77,8 +94,8 @@ export const parseResume = async (file: File): Promise<any> => {
   console.log("jobService: parseResume called for file:", file.name);
   const formData = new FormData();
   formData.append('file', file);
-  // Using specific port 8000 as requested for filtering/matching
-  const response = await axios.post('http://localhost:8080/match/resume/upload', formData, {
+  // Using the API_URL constant and port 8000 for matching
+  const response = await axios.post(`${API_URL}/match/resume/upload`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
