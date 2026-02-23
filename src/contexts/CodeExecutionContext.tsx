@@ -6,7 +6,7 @@ import {
   RunCustomCodeDto,
   ExecutionHistoryFilters,
   ComplexityAnalysis,
-} from '@/types/dsa';
+} from '../types/dsa';
 import { codeExecutionApi } from '@/api/codeExecution';
 
 interface CodeExecutionContextType {
@@ -68,10 +68,10 @@ export const CodeExecutionProvider: React.FC<CodeExecutionProviderProps> = ({ ch
       setError(null);
       const result = await codeExecutionApi.runCode(questionId, data);
       setCurrentExecution(result);
-      
+
       // Add to history
       setExecutionHistory(prev => [result, ...prev]);
-      
+
       return result;
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to run code');
@@ -108,10 +108,10 @@ export const CodeExecutionProvider: React.FC<CodeExecutionProviderProps> = ({ ch
       setError(null);
       const result = await codeExecutionApi.runCustomCode(data);
       setCurrentExecution(result);
-      
+
       // Add to history
       setExecutionHistory(prev => [result, ...prev]);
-      
+
       return result;
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to run custom code');

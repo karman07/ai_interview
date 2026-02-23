@@ -21,26 +21,9 @@ import {
 import Plyr from "plyr-react";
 import "plyr-react/plyr.css";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
-import axios from "axios";
-import { API_BASE_URL } from "@/api/http";
 import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis } from "recharts";
 
-interface ProgressData {
-  _id: string;
-  lessonId: string;
-  status: 'not-started' | 'in-progress' | 'completed';
-  progressPercent: number;
-  score?: number;
-  timeSpent: number;
-  lastAccessed: Date;
-}
-
-interface ProgressState {
-  [id: string]: ProgressData;
-}
-
 interface StoredState {
-  progress: ProgressState;
   lastLessonId: string | null;
   lastSubLessonId: string | null;
 }
@@ -48,10 +31,6 @@ interface StoredState {
 const LessonDetailsPage: React.FC = () => {
   const { subjectId } = useParams<{ subjectId: string }>();
   const navigate = useNavigate();
-  const { lessons, fetchLessons, quizzes, fetchQuizzes, isLoading } = useLessons();
-  const { refreshProgress } = useProgress();
-
-  const [progress, setProgress] = useState<ProgressState>({});
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [currentSubLesson, setCurrentSubLesson] = useState<SubLesson | null>(null);
   const [quizMode, setQuizMode] = useState(false);
@@ -60,115 +39,77 @@ const LessonDetailsPage: React.FC = () => {
   const [showAnswers, setShowAnswers] = useState(false);
   const [expandedDescription, setExpandedDescription] = useState(false);
 
-  // Fetch progress from API
-  const fetchProgress = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/progress`);
-      const progressData = response.data.data || [];
-      const progressMap: ProgressState = {};
-      progressData.forEach((p: ProgressData) => {
-        progressMap[p.lessonId] = p;
-      });
-      setProgress(progressMap);
-    } catch (error) {
-      console.error('Failed to fetch progress:', error);
-    }
-  };
+  const { lessons, fetchLessons, fetchQuizzes, quizzes, isLoading } = useLessons();
+  const { updateProgress, progress: globalProgress } = useProgress();
 
-  // Load lessons and progress
+  // Fetch subject-wide data
   useEffect(() => {
     if (subjectId) {
       fetchLessons(subjectId);
-      fetchProgress();
     }
-  }, [subjectId]);
+  }, [subjectId, fetchLessons]);
 
-  // Initialize state from localStorage
+  // Load session state once lessons are available
   useEffect(() => {
-    if (subjectId && lessons.length > 0) {
-      console.log('📚 Lessons loaded:', lessons);
-      const stored = localStorage.getItem(`lessonProgress-${subjectId}`);
+    if (subjectId && lessons.length > 0 && !currentLesson) {
+      const stored = localStorage.getItem(`lessonSession-${subjectId}`);
       if (stored) {
-        const parsed: StoredState = JSON.parse(stored);
-        setProgress(parsed.progress || {});
-        const lastLesson =
-          lessons.find((l) => l._id === parsed.lastLessonId) || lessons[0];
-        // Create subLessons from lessons if they don't exist
-        const subLessons = lastLesson.subLessons?.length > 0 
-          ? lastLesson.subLessons 
-          : [{ _id: lastLesson._id, title: lastLesson.title, content: lastLesson.content, order: 1 }];
-        const lastSubLesson = subLessons.find((s) => s._id === parsed.lastSubLessonId) || subLessons[0];
-        setCurrentLesson({ ...lastLesson, subLessons });
-        setCurrentSubLesson(lastSubLesson);
+        try {
+          const parsed: StoredState = JSON.parse(stored);
+          const lastLesson = lessons.find((l) => l._id === parsed.lastLessonId) || lessons[0];
+          const subLessons = lastLesson.subLessons?.length > 0
+            ? lastLesson.subLessons
+            : [{ _id: lastLesson._id, title: lastLesson.title, content: lastLesson.content, order: 1 }];
+          const lastSubLesson = subLessons.find((s: any) => s._id === parsed.lastSubLessonId) || subLessons[0];
+
+          setCurrentLesson({ ...lastLesson, subLessons });
+          setCurrentSubLesson(lastSubLesson);
+        } catch (e) {
+          console.error("Failed to parse session", e);
+        }
       } else {
         const firstLesson = lessons[0];
-        const subLessons = firstLesson.subLessons?.length > 0 
-          ? firstLesson.subLessons 
+        const subLessons = firstLesson.subLessons?.length > 0
+          ? firstLesson.subLessons
           : [{ _id: firstLesson._id, title: firstLesson.title, content: firstLesson.content, order: 1 }];
         setCurrentLesson({ ...firstLesson, subLessons });
         setCurrentSubLesson(subLessons[0]);
       }
     }
-  }, [lessons, subjectId]);
+  }, [lessons, subjectId, currentLesson]);
 
-  // Persist state to localStorage
+  // Fetch quizzes and reset state on lesson change
   useEffect(() => {
-    if (subjectId) {
-      const state: StoredState = {
-        progress,
-        lastLessonId: currentLesson?._id || null,
-        lastSubLessonId: currentSubLesson?._id || null,
+    if (currentLesson?._id) {
+      fetchQuizzes(currentLesson._id);
+      setQuizResults(null);
+      setSelectedAnswers({});
+      setShowAnswers(false);
+    }
+  }, [currentLesson?._id, fetchQuizzes]);
+
+  // Convert global progress array to map for easy access
+  const progressMap = React.useMemo(() => {
+    const map: { [key: string]: any } = {};
+    globalProgress.forEach(p => {
+      map[p.lessonId] = p;
+    });
+    return map;
+  }, [globalProgress]);
+
+  // Persist session state to localStorage
+  useEffect(() => {
+    if (subjectId && currentLesson?._id && currentSubLesson?._id) {
+      const state = {
+        lastLessonId: currentLesson._id,
+        lastSubLessonId: currentSubLesson._id,
       };
-      localStorage.setItem(`lessonProgress-${subjectId}`, JSON.stringify(state));
+      localStorage.setItem(`lessonSession-${subjectId}`, JSON.stringify(state));
     }
-  }, [progress, currentLesson, currentSubLesson, subjectId]);
-
-  // Fetch quizzes on lesson change
-  useEffect(() => {
-    if (currentLesson) fetchQuizzes(currentLesson._id);
-    setQuizResults(null);
-    setSelectedAnswers({});
-    setShowAnswers(false);
-  }, [currentLesson]);
-
-  const updateProgress = async (lessonId: string, status: 'not-started' | 'in-progress' | 'completed', progressPercent: number, score?: number) => {
-    try {
-      // Optimistically update local state
-      setProgress(prev => ({
-        ...prev,
-        [lessonId]: {
-          ...prev[lessonId],
-          _id: prev[lessonId]?._id || 'temp',
-          lessonId,
-          status,
-          progressPercent: Math.round(progressPercent),
-          score: score || prev[lessonId]?.score,
-          timeSpent: prev[lessonId]?.timeSpent || 0,
-          lastAccessed: new Date()
-        }
-      }));
-
-      await axios.post(`${API_BASE_URL}/progress`, {
-        lessonId,
-        status,
-        progressPercent: Math.round(progressPercent),
-        score: score || null,
-        timeSpent: 0
-      });
-      
-      // Refresh from API to ensure sync
-      await fetchProgress();
-      // Also refresh global progress context
-      refreshProgress();
-    } catch (err) {
-      console.error("❌ Failed to update progress API", err);
-      // Revert on error
-      await fetchProgress();
-    }
-  };
+  }, [currentLesson?._id, currentSubLesson?._id, subjectId]);
 
   const handleNext = async () => {
-    if (!currentLesson || !currentSubLesson) return;
+    if (!currentLesson?._id || !currentSubLesson?._id) return;
     const subLessons = currentLesson.subLessons;
     const idx = subLessons.findIndex((s) => s._id === currentSubLesson._id);
 
@@ -180,7 +121,8 @@ const LessonDetailsPage: React.FC = () => {
       setQuizMode(false);
     } else {
       // Check if quiz exists for this lesson
-      if (quizzes[currentLesson._id] && quizzes[currentLesson._id].length > 0) {
+      const lessonQuizzes = quizzes[currentLesson._id] || [];
+      if (lessonQuizzes.length > 0) {
         setQuizMode(true);
       } else {
         // No quiz, move to next lesson
@@ -188,8 +130,8 @@ const LessonDetailsPage: React.FC = () => {
         const lessonIdx = lessons.findIndex((l) => l._id === currentLesson._id);
         if (lessonIdx < lessons.length - 1) {
           const nextLesson = lessons[lessonIdx + 1];
-          const nextSubLessons = nextLesson.subLessons?.length > 0 
-            ? nextLesson.subLessons 
+          const nextSubLessons = nextLesson.subLessons?.length > 0
+            ? nextLesson.subLessons
             : [{ _id: nextLesson._id, title: nextLesson.title, content: nextLesson.content, order: 1 }];
           setCurrentLesson({ ...nextLesson, subLessons: nextSubLessons });
           setCurrentSubLesson(nextSubLessons[0]);
@@ -262,14 +204,14 @@ const LessonDetailsPage: React.FC = () => {
     );
   }
 
-  const completedCount = lessons.filter((l) => progress[l._id]?.status === 'completed').length;
+  const completedCount = lessons.filter((l) => progressMap[l._id]?.status === 'completed').length;
   const overallProgress = lessons.length > 0 ? Math.round((completedCount / lessons.length) * 100) : 0;
 
   const quizData = quizResults
     ? [
-        { name: "Correct", value: quizResults.correct, color: "#10b981" },
-        { name: "Wrong", value: quizResults.wrong, color: "#ef4444" },
-      ]
+      { name: "Correct", value: quizResults.correct, color: "#10b981" },
+      { name: "Wrong", value: quizResults.wrong, color: "#ef4444" },
+    ]
     : [];
 
   return (
@@ -284,7 +226,7 @@ const LessonDetailsPage: React.FC = () => {
             <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-200" />
             Back to Subjects
           </button>
-          
+
           {/* Progress Overview */}
           <div className="bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-xl p-4 border border-white/50 dark:border-gray-600/50">
             <div className="flex items-center justify-between mb-3">
@@ -305,29 +247,27 @@ const LessonDetailsPage: React.FC = () => {
             </p>
           </div>
         </div>
-        
+
         <div className="p-4 space-y-3">
           {lessons.map((lesson, lessonIndex) => {
-            const lessonProgress = progress[lesson._id];
+            const lessonProgress = progressMap[lesson._id];
             const isCurrentLesson = currentLesson?._id === lesson._id;
             const isCompleted = lessonProgress?.status === 'completed';
             const isInProgress = lessonProgress?.status === 'in-progress';
-            
+
             return (
               <div key={lesson._id} className="space-y-2">
-                <div className={`p-3 rounded-lg border transition-all duration-300 ${
-                  isCurrentLesson 
-                    ? "bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-600 shadow-md" 
-                    : "bg-white/60 dark:bg-gray-700/40 border-gray-200 dark:border-gray-600 hover:bg-white/80 dark:hover:bg-gray-700/60"
-                }`}>
+                <div className={`p-3 rounded-lg border transition-all duration-300 ${isCurrentLesson
+                  ? "bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-600 shadow-md"
+                  : "bg-white/60 dark:bg-gray-700/40 border-gray-200 dark:border-gray-600 hover:bg-white/80 dark:hover:bg-gray-700/60"
+                  }`}>
                   <div className="flex items-center gap-2 mb-2">
-                    <div className={`p-1.5 rounded-md ${
-                      isCompleted 
-                        ? "bg-green-100 dark:bg-green-900/50" 
-                        : isInProgress 
-                        ? "bg-yellow-100 dark:bg-yellow-900/50" 
+                    <div className={`p-1.5 rounded-md ${isCompleted
+                      ? "bg-green-100 dark:bg-green-900/50"
+                      : isInProgress
+                        ? "bg-yellow-100 dark:bg-yellow-900/50"
                         : "bg-gray-100 dark:bg-gray-700"
-                    }`}>
+                      }`}>
                       {isCompleted ? (
                         <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
                       ) : isInProgress ? (
@@ -348,14 +288,14 @@ const LessonDetailsPage: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   {lesson.description && (
                     <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1 leading-relaxed">{lesson.description}</p>
                   )}
-              
+
                   <div className="space-y-1.5 mt-2">
-                    {(lesson.subLessons?.length > 0 
-                      ? lesson.subLessons 
+                    {(lesson.subLessons?.length > 0
+                      ? lesson.subLessons
                       : [{ _id: lesson._id, title: lesson.title, content: lesson.content, order: 1 }]
                     ).map((sub, subIndex) => {
                       const isActive = currentSubLesson?._id === sub._id;
@@ -363,23 +303,21 @@ const LessonDetailsPage: React.FC = () => {
                         <div
                           key={sub._id}
                           onClick={() => {
-                            const subLessons = lesson.subLessons?.length > 0 
-                              ? lesson.subLessons 
+                            const subLessons = lesson.subLessons?.length > 0
+                              ? lesson.subLessons
                               : [{ _id: lesson._id, title: lesson.title, content: lesson.content, order: 1 }];
                             setCurrentLesson({ ...lesson, subLessons });
                             setCurrentSubLesson(sub);
                             setQuizMode(false);
                           }}
-                          className={`group p-2 rounded-md cursor-pointer transition-all duration-200 ${
-                            isActive
-                              ? "bg-blue-100 dark:bg-blue-900/40 border border-blue-300 dark:border-blue-600"
-                              : "hover:bg-gray-50 dark:hover:bg-gray-600/40 border border-transparent"
-                          }`}
+                          className={`group p-2 rounded-md cursor-pointer transition-all duration-200 ${isActive
+                            ? "bg-blue-100 dark:bg-blue-900/40 border border-blue-300 dark:border-blue-600"
+                            : "hover:bg-gray-50 dark:hover:bg-gray-600/40 border border-transparent"
+                            }`}
                         >
                           <div className="flex items-center gap-2">
-                            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
-                              isActive ? "bg-blue-600 text-white" : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
-                            }`}>
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${isActive ? "bg-blue-600 text-white" : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
+                              }`}>
                               {subIndex + 1}
                             </div>
                             <span className="text-xs font-medium text-slate-800 dark:text-gray-200 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors flex-1 truncate">
@@ -394,37 +332,36 @@ const LessonDetailsPage: React.FC = () => {
                     })}
                   </div>
 
-                {quizzes[lesson._id] && quizzes[lesson._id].length > 0 && (
-                  <div
-                    onClick={() => {
-                      setCurrentLesson(lesson);
-                      setQuizMode(true);
-                    }}
-                    className={`group p-2 mt-2 rounded-md cursor-pointer transition-all duration-200 border ${
-                      quizMode && currentLesson._id === lesson._id
+                  {quizzes[lesson._id] && quizzes[lesson._id].length > 0 && (
+                    <div
+                      onClick={() => {
+                        setCurrentLesson(lesson);
+                        setQuizMode(true);
+                      }}
+                      className={`group p-2 mt-2 rounded-md cursor-pointer transition-all duration-200 border ${quizMode && currentLesson._id === lesson._id
                         ? "bg-green-100 dark:bg-green-900/40 border-green-300 dark:border-green-600"
                         : "hover:bg-green-50 dark:hover:bg-green-900/20 border-green-200 dark:border-green-700"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="p-1 rounded-md bg-green-100 dark:bg-green-800">
-                        <HelpCircle className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                      </div>
-                      <span className="text-xs font-medium text-slate-800 dark:text-gray-200 group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors flex-1">
-                        Quiz
-                      </span>
-                      <div className="text-xs px-1.5 py-0.5 rounded-md bg-green-200 dark:bg-green-700 text-green-700 dark:text-green-300 font-medium">
-                        {quizzes[lesson._id].length}Q
+                        }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="p-1 rounded-md bg-green-100 dark:bg-green-800">
+                          <HelpCircle className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                        </div>
+                        <span className="text-xs font-medium text-slate-800 dark:text-gray-200 group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors flex-1">
+                          Quiz
+                        </span>
+                        <div className="text-xs px-1.5 py-0.5 rounded-md bg-green-200 dark:bg-green-700 text-green-700 dark:text-green-300 font-medium">
+                          {quizzes[lesson._id].length}Q
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
-        
+
         {/* Sidebar Footer */}
         <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700">
           <div className="text-center">
@@ -454,7 +391,7 @@ const LessonDetailsPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="relative">
               <div className="w-full bg-slate-200 dark:bg-gray-600 rounded-full h-3 overflow-hidden">
                 <div
@@ -601,7 +538,7 @@ const LessonDetailsPage: React.FC = () => {
                     <ChevronLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-200" />
                     Previous
                   </button>
-                  
+
                   <button
                     onClick={handleNext}
                     className="group flex items-center gap-3 px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-bold shadow-xl hover:shadow-2xl hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300"
@@ -643,18 +580,16 @@ const LessonDetailsPage: React.FC = () => {
                                     onClick={() =>
                                       setSelectedAnswers((prev) => ({ ...prev, [q._id]: opt }))
                                     }
-                                    className={`text-left py-4 px-6 rounded-xl border-2 transition-all duration-200 transform hover:scale-102 ${
-                                      selectedAnswers[q._id] === opt
-                                        ? "bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 border-blue-300 dark:border-blue-600 shadow-md"
-                                        : "border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 hover:border-slate-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800"
-                                    }`}
+                                    className={`text-left py-4 px-6 rounded-xl border-2 transition-all duration-200 transform hover:scale-102 ${selectedAnswers[q._id] === opt
+                                      ? "bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 border-blue-300 dark:border-blue-600 shadow-md"
+                                      : "border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 hover:border-slate-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800"
+                                      }`}
                                   >
                                     <div className="flex items-center gap-3">
-                                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                                        selectedAnswers[q._id] === opt
-                                          ? "bg-blue-600 border-blue-600 text-white"
-                                          : "border-slate-300 dark:border-gray-500"
-                                      }`}>
+                                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedAnswers[q._id] === opt
+                                        ? "bg-blue-600 border-blue-600 text-white"
+                                        : "border-slate-300 dark:border-gray-500"
+                                        }`}>
                                         {selectedAnswers[q._id] === opt && <span className="text-xs">✓</span>}
                                       </div>
                                       <span className="font-medium text-slate-900 dark:text-white">{opt}</span>
@@ -665,7 +600,7 @@ const LessonDetailsPage: React.FC = () => {
                             </div>
                           ))}
                         </div>
-                        
+
                         <div className="text-center mt-8">
                           <button
                             onClick={handleQuizSubmit}
@@ -694,7 +629,7 @@ const LessonDetailsPage: React.FC = () => {
                           <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Quiz Review</h3>
                           <p className="text-slate-600 dark:text-gray-400">Review your answers and see the correct ones</p>
                         </div>
-                        
+
                         {quizzes[currentLesson._id].map((q, i) => (
                           <div key={q._id} className="p-6 rounded-xl border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800">
                             <p className="font-bold text-lg text-slate-900 dark:text-white mb-4 flex items-center gap-3">
@@ -703,32 +638,30 @@ const LessonDetailsPage: React.FC = () => {
                               </div>
                               {q.question}
                             </p>
-                            
+
                             <div className="grid gap-3">
                               {q.options.map((opt) => {
                                 const isSelected = selectedAnswers[q._id] === opt;
                                 const isCorrect = opt === q.correctAnswer;
                                 const isWrongSelection = isSelected && !isCorrect;
-                                
+
                                 return (
                                   <div
                                     key={opt}
-                                    className={`py-3 px-4 rounded-lg border-2 ${
-                                      isCorrect
-                                        ? "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-600 text-green-800 dark:text-green-300"
-                                        : isWrongSelection
+                                    className={`py-3 px-4 rounded-lg border-2 ${isCorrect
+                                      ? "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-600 text-green-800 dark:text-green-300"
+                                      : isWrongSelection
                                         ? "bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-600 text-red-800 dark:text-red-300"
                                         : "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-300"
-                                    }`}
+                                      }`}
                                   >
                                     <div className="flex items-center gap-3">
-                                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                                        isCorrect
-                                          ? "bg-green-600 border-green-600 text-white"
-                                          : isWrongSelection
+                                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${isCorrect
+                                        ? "bg-green-600 border-green-600 text-white"
+                                        : isWrongSelection
                                           ? "bg-red-600 border-red-600 text-white"
                                           : "border-gray-300 dark:border-gray-500"
-                                      }`}>
+                                        }`}>
                                         {isCorrect && <span className="text-xs">✓</span>}
                                         {isWrongSelection && <span className="text-xs">✗</span>}
                                       </div>
@@ -761,7 +694,7 @@ const LessonDetailsPage: React.FC = () => {
                       <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                         Quiz Results
                       </h2>
-                      
+
                       <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
                           <PieChart width={300} height={250}>
@@ -785,7 +718,7 @@ const LessonDetailsPage: React.FC = () => {
                           </BarChart>
                         </div>
                       </div>
-                      
+
                       <div className="mt-8 grid grid-cols-2 gap-6 max-w-md mx-auto">
                         <div className="p-4 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-700">
                           <div className="text-3xl font-bold text-emerald-700 dark:text-emerald-400">{quizResults.correct}</div>
@@ -802,13 +735,13 @@ const LessonDetailsPage: React.FC = () => {
                           {quizResults.correct > quizResults.wrong ? "🎉" : quizResults.correct === quizResults.wrong ? "👍" : ""}
                         </div>
                         <p className="text-xl font-semibold text-slate-700 dark:text-gray-300">
-                          {quizResults.correct > quizResults.wrong 
-                            ? "Excellent work! You've mastered this topic!" 
-                            : quizResults.correct === quizResults.wrong 
-                            ? "Good effort! Keep learning to improve!"
-                            : "Keep practicing! Review the lesson and try again."}
+                          {quizResults.correct > quizResults.wrong
+                            ? "Excellent work! You've mastered this topic!"
+                            : quizResults.correct === quizResults.wrong
+                              ? "Good effort! Keep learning to improve!"
+                              : "Keep practicing! Review the lesson and try again."}
                         </p>
-                        
+
                         <div className="mt-6">
                           <div className="text-lg font-medium text-slate-600 dark:text-gray-400 mb-2">
                             Your Score: {Math.round((quizResults.correct / (quizResults.correct + quizResults.wrong)) * 100)}%
@@ -816,8 +749,8 @@ const LessonDetailsPage: React.FC = () => {
                           <div className="w-full bg-slate-200 dark:bg-gray-600 rounded-full h-4">
                             <div
                               className="bg-gradient-to-r from-emerald-500 to-green-600 h-4 rounded-full transition-all duration-700"
-                              style={{ 
-                                width: `${Math.round((quizResults.correct / (quizResults.correct + quizResults.wrong)) * 100)}%` 
+                              style={{
+                                width: `${Math.round((quizResults.correct / (quizResults.correct + quizResults.wrong)) * 100)}%`
                               }}
                             ></div>
                           </div>

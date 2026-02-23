@@ -43,18 +43,18 @@ const SearchFilters = ({
             transition={{ duration: 0.6, delay: 0.2 }}
             className="bg-white dark:bg-gray-800 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-gray-100 dark:border-gray-700/50 overflow-hidden"
         >
-            <div className="p-8">
+            <div className="p-4 sm:p-8">
                 <div className="relative group/search">
-                    <div className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-3 pointer-events-none">
-                        <Search className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                        <div className="w-px h-6 bg-gray-200 dark:bg-gray-700" />
+                    <div className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 flex items-center gap-2 sm:gap-3 pointer-events-none">
+                        <Search className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+                        <div className="w-px h-5 sm:h-6 bg-gray-200 dark:bg-gray-700" />
                     </div>
                     <input
                         type="text"
-                        placeholder="Search by role, company, or skills..."
+                        placeholder="Search jobs..."
                         value={keyword}
                         onChange={(e) => setKeyword(e.target.value)}
-                        className="w-full pl-20 pr-6 py-5 bg-gray-50/50 dark:bg-gray-900/40 border border-gray-100 dark:border-gray-700/50 rounded-3xl outline-none text-lg text-gray-900 dark:text-white placeholder-gray-400 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/30 transition-all font-medium shadow-inner"
+                        className="w-full pl-14 sm:pl-20 pr-6 py-4 sm:py-5 bg-gray-50/50 dark:bg-gray-900/40 border border-gray-100 dark:border-gray-700/50 rounded-2xl sm:rounded-3xl outline-none text-base sm:text-lg text-gray-900 dark:text-white placeholder-gray-400 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/30 transition-all font-medium shadow-inner"
                     />
                     {keyword && (
                         <button
@@ -117,21 +117,21 @@ const SearchFilters = ({
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-6 pt-6">
+                        <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-6">
                             <label className="flex items-center gap-3 cursor-pointer group/toggle">
-                                <div className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${isRemote ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-700'}`}>
+                                <div className={`w-12 h-6 rounded-full relative transition-all duration-300 ${isRemote ? 'bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-gray-200 dark:bg-gray-700'}`}>
                                     <input type="checkbox" checked={isRemote} onChange={(e) => setIsRemote(e.target.checked)} className="sr-only" />
-                                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${isRemote ? 'translate-x-6' : ''}`} />
+                                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 shadow-sm ${isRemote ? 'translate-x-6' : ''}`} />
                                 </div>
-                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Remote</span>
+                                <span className={`text-sm font-bold transition-colors ${isRemote ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>Remote</span>
                             </label>
 
                             <label className="flex items-center gap-3 cursor-pointer group/toggle">
-                                <div className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${isInternship ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-700'}`}>
+                                <div className={`w-12 h-6 rounded-full relative transition-all duration-300 ${isInternship ? 'bg-indigo-600 shadow-[0_0_15px_rgba(79,70,229,0.4)]' : 'bg-gray-200 dark:bg-gray-700'}`}>
                                     <input type="checkbox" checked={isInternship} onChange={(e) => setIsInternship(e.target.checked)} className="sr-only" />
-                                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${isInternship ? 'translate-x-6' : ''}`} />
+                                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 shadow-sm ${isInternship ? 'translate-x-6' : ''}`} />
                                 </div>
-                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Intern</span>
+                                <span className={`text-sm font-bold transition-colors ${isInternship ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400'}`}>Intern</span>
                             </label>
                         </div>
                     </div>

@@ -1,4 +1,4 @@
-import { ReactNode, MouseEvent, ComponentType } from "react";
+import { ComponentType } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ChevronRight,

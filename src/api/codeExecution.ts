@@ -6,7 +6,7 @@ import {
   RunCustomCodeDto,
   ExecutionHistoryFilters,
   ComplexityAnalysis,
-} from '@/types/dsa';
+} from '../types/dsa';
 
 const CODE_EXECUTION_BASE = '/code-execution';
 
@@ -74,7 +74,7 @@ export const codeExecutionApi = {
     filters?: ExecutionHistoryFilters
   ): Promise<CodeExecutionResult[]> => {
     const params = new URLSearchParams();
-    
+
     if (filters?.questionId) params.append('questionId', filters.questionId);
     if (filters?.limit) params.append('limit', filters.limit.toString());
 

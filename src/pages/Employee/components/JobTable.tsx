@@ -30,11 +30,11 @@ const JobTable = ({
             <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
                     <tr className="bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-800">
-                        <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Opportunity</th>
-                        <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Deployment</th>
-                        <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Compensation</th>
-                        <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Branch</th>
-                        <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Ops</th>
+                        <th className="px-4 sm:px-8 py-4 sm:py-6 text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Opportunity</th>
+                        <th className="px-4 sm:px-8 py-4 sm:py-6 text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Deployment</th>
+                        <th className="px-4 sm:px-8 py-4 sm:py-6 text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Compensation</th>
+                        <th className="px-4 sm:px-8 py-4 sm:py-6 text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Branch</th>
+                        <th className="px-4 sm:px-8 py-4 sm:py-6 text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Ops</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -49,14 +49,14 @@ const JobTable = ({
                                     className="group hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-all cursor-pointer"
                                     onClick={() => handleJobClick(job)}
                                 >
-                                    <td className="px-8 py-6">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-gray-50 dark:bg-gray-900 rounded-xl flex items-center justify-center border border-gray-100 dark:border-gray-700 shadow-sm transition-transform group-hover:scale-110">
-                                                <span className="text-blue-600 dark:text-blue-400 font-bold text-lg">{job.company?.charAt(0).toUpperCase()}</span>
+                                    <td className="px-4 sm:px-8 py-4 sm:py-6">
+                                        <div className="flex items-center gap-3 sm:gap-4">
+                                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 dark:bg-gray-900 rounded-lg sm:rounded-xl flex items-center justify-center border border-gray-100 dark:border-gray-700 shadow-sm transition-transform group-hover:scale-110">
+                                                <span className="text-blue-600 dark:text-blue-400 font-bold text-base sm:text-lg">{job.company?.charAt(0).toUpperCase()}</span>
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
-                                                    <h3 className="font-bold text-gray-900 dark:text-white">{job.title}</h3>
+                                                    <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white leading-tight">{job.title}</h3>
                                                     <div className="flex items-center gap-1">
                                                         <button
                                                             onClick={(e) => {
@@ -78,30 +78,30 @@ const JobTable = ({
                                                         </button>
                                                     </div>
                                                 </div>
-                                                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1 uppercase tracking-wider font-bold text-[10px]">
-                                                    {job.company} {job.is_internship && <span className="ml-2 text-blue-500">• Intern</span>}
+                                                <div className="text-gray-600 dark:text-gray-400 mt-0.5 uppercase tracking-wider font-bold text-[8px] sm:text-[10px]">
+                                                    {job.company} {job.is_internship && <span className="ml-1 sm:ml-2 text-blue-500">• Intern</span>}
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-8 py-6">
-                                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 font-medium">
-                                            <MapPin className="w-4 h-4 text-blue-500" />
+                                    <td className="px-4 sm:px-8 py-4 sm:py-6">
+                                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 font-medium text-xs sm:text-sm">
+                                            <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500" />
                                             {job.location || 'Global'}
                                         </div>
                                     </td>
-                                    <td className="px-8 py-6">
-                                        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold">
-                                            <DollarSign className="w-4 h-4" />
+                                    <td className="px-4 sm:px-8 py-4 sm:py-6">
+                                        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs sm:text-sm">
+                                            <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                             {formatSalary(job.salary_min, job.salary_max)}
                                         </div>
                                     </td>
-                                    <td className="px-8 py-6">
-                                        <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px] font-black uppercase tracking-widest rounded-lg">
+                                    <td className="px-4 sm:px-8 py-4 sm:py-6">
+                                        <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[8px] sm:text-[10px] font-black uppercase tracking-widest rounded-md sm:rounded-lg">
                                             {job.category || 'Engineering'}
                                         </span>
                                     </td>
-                                    <td className="px-8 py-6">
+                                    <td className="px-4 sm:px-8 py-4 sm:py-6">
                                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
                                                 onClick={(e) => {
@@ -117,7 +117,7 @@ const JobTable = ({
                                                     e.stopPropagation();
                                                     if (job.redirect_url) window.open(job.redirect_url, '_blank');
                                                 }}
-                                                className="p-2 bg-gray-900 text-white rounded-xl hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/10"
+                                                className="p-2 bg-blue-600 dark:bg-blue-600 text-white rounded-xl hover:bg-blue-700 dark:hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/20"
                                             >
                                                 <ExternalLink className="w-4 h-4" />
                                             </button>

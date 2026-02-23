@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import axios from "axios";
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
+import axios from "@/api/http";
 import { API_BASE_URL } from "@/api/http";
 import { useLazyLoading, LoadingState, createLoadingIndicator } from "@/hooks/useLazyLoading";
 import { mockLessonsDetail, mockQuizzes } from "@/constants/mockData";
@@ -46,7 +46,7 @@ interface LessonsContextProps {
   isLoading: boolean;
   hasRealData: boolean;
   loadingIndicator: ReturnType<typeof createLoadingIndicator>;
-  
+
   fetchLessons: (subjectId: string) => Promise<void>;
   fetchQuizzes: (lessonId: string) => Promise<void>;
   retry: () => void;
@@ -63,10 +63,10 @@ const LessonsContext = createContext<LessonsContextProps>({
   isLoading: false,
   hasRealData: false,
   loadingIndicator: { show: false, message: "", type: "none" },
-  fetchLessons: async () => {},
-  fetchQuizzes: async () => {},
-  retry: () => {},
-  reset: () => {},
+  fetchLessons: async () => { },
+  fetchQuizzes: async () => { },
+  retry: () => { },
+  reset: () => { },
 });
 
 export const useLessons = () => useContext(LessonsContext);
@@ -112,16 +112,19 @@ export const LessonsProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [currentSubjectId]);
 
-  const fetchLessons = async (subjectId: string) => {
-    if (currentSubjectId === subjectId) {
-      console.log("⚠️ Already fetching/fetched lessons for:", subjectId);
+  const fetchLessons = useCallback(async (subjectId: string) => {
+    if (currentSubjectId === subjectId && (lessons.length > 0 || loadingState === LoadingState.LOADING)) {
       return;
     }
-    console.log("🔄 Setting subject ID and fetching lessons:", subjectId);
     setCurrentSubjectId(subjectId);
-  };
+  }, [currentSubjectId, lessons.length, loadingState]);
 
-  const fetchQuizzes = async (lessonId: string) => {
+  const fetchQuizzes = useCallback(async (lessonId: string) => {
+    // If we already have quizzes or are currently loading, skip
+    if (quizzes[lessonId] !== undefined || quizzesLoadingState[lessonId] === LoadingState.LOADING) {
+      return;
+    }
+
     try {
       setQuizzesLoadingState(prev => ({ ...prev, [lessonId]: LoadingState.LOADING }));
       setQuizzesError(prev => ({ ...prev, [lessonId]: null }));
@@ -139,26 +142,31 @@ export const LessonsProvider: React.FC<{ children: ReactNode }> = ({ children })
       });
 
       clearTimeout(staticTimeout);
-      setQuizzes(prev => ({ ...prev, [lessonId]: res.data }));
+      setQuizzes(prev => ({ ...prev, [lessonId]: res.data || [] }));
       setQuizzesLoadingState(prev => ({ ...prev, [lessonId]: LoadingState.SUCCESS }));
-    } catch (err) {
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        setQuizzes(prev => ({ ...prev, [lessonId]: [] }));
+        setQuizzesLoadingState(prev => ({ ...prev, [lessonId]: LoadingState.SUCCESS }));
+        return;
+      }
       console.error("❌ Failed to fetch quizzes", err);
-      
+
       // Set error state and fallback to static data
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch quizzes";
       setQuizzesError(prev => ({ ...prev, [lessonId]: errorMessage }));
       setQuizzesLoadingState(prev => ({ ...prev, [lessonId]: LoadingState.ERROR }));
       setQuizzes(prev => ({ ...prev, [lessonId]: mockQuizzes[lessonId] || [] }));
     }
-  };
+  }, [quizzes, quizzesLoadingState]);
 
   const loadingIndicator = createLoadingIndicator(loadingState, error);
 
   return (
-    <LessonsContext.Provider 
-      value={{ 
-        lessons, 
-        quizzes, 
+    <LessonsContext.Provider
+      value={{
+        lessons,
+        quizzes,
         loadingState,
         quizzesLoadingState,
         error,
@@ -166,7 +174,7 @@ export const LessonsProvider: React.FC<{ children: ReactNode }> = ({ children })
         isLoading,
         hasRealData,
         loadingIndicator,
-        fetchLessons, 
+        fetchLessons,
         fetchQuizzes,
         retry,
         reset,

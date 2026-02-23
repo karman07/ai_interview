@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE_URL, baseURL } from "@/api/http";
 import { useLessons } from "@/contexts/LessonsContext";
-import { ArrowLeft, BookOpen, Clock, User, Tag, TrendingUp, Play, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
-import axios from "axios";
+import { ArrowLeft, BookOpen, Clock, User, Tag, TrendingUp, Play, CheckCircle, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
+import { useProgress } from "@/contexts/ProgressContext";
+import axios from "@/api/http";
 
 interface Subject {
   _id: string;
@@ -25,6 +26,10 @@ interface LessonCardProps {
 
 const LessonCard: React.FC<LessonCardProps> = ({ lesson, index }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { getProgressForLesson } = useProgress();
+  const lessonProgress = getProgressForLesson(lesson._id);
+  const isCompleted = lessonProgress?.status === 'completed';
+
   const maxLength = 150;
   const shouldShowReadMore = lesson.description && lesson.description.length > maxLength;
 
@@ -35,9 +40,14 @@ const LessonCard: React.FC<LessonCardProps> = ({ lesson, index }) => {
           {index + 1}
         </div>
         <div className="flex-grow">
-          <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-1.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
-            {lesson.title}
-          </h3>
+          <div className="flex items-center gap-2 mb-1.5">
+            <h3 className="font-bold text-gray-900 dark:text-white text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
+              {lesson.title}
+            </h3>
+            {isCompleted && (
+              <CheckCircle2 className="h-4 w-4 text-green-500 fill-green-500/10" />
+            )}
+          </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
             {isExpanded || !shouldShowReadMore
               ? lesson.description
@@ -63,8 +73,16 @@ const LessonCard: React.FC<LessonCardProps> = ({ lesson, index }) => {
             </button>
           )}
         </div>
-        <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <Play className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <div className="flex-shrink-0">
+          {isCompleted ? (
+            <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+            </div>
+          ) : (
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <Play className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -90,9 +108,11 @@ const SubjectDetailsPage: React.FC = () => {
         setLoading(false);
       }
     };
-    fetchSubject();
-    fetchLessons(id!); // fetch lessons from LessonsContext
-  }, [id]);
+    if (id) {
+      fetchSubject();
+      fetchLessons(id);
+    }
+  }, [id, fetchLessons]);
 
   if (loading) {
     return (

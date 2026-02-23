@@ -4,72 +4,34 @@ import { Briefcase, MapPin, DollarSign, Clock, Building2, ExternalLink, Lock, Sp
 import { useAuth } from '@/contexts/AuthContext';
 import routes from '@/constants/routes';
 import Button from '@/components/ui/button';
-import { type Job } from '@/api/jobService';
+import { fetchJobs, type Job } from '@/api/jobService';
 
 const JobsPublicPage = () => {
-  // Dummy data
-  const DUMMY_JOBS: Job[] = [
-    {
-      job_id: '1',
-      title: 'Senior Frontend Engineer',
-      company: 'TechCorp',
-      location: 'San Francisco, CA',
-      salary_min: 120000,
-      salary_max: 180000,
-      employment_type: 'Full-time',
-      description: 'We are looking for an experienced Frontend Engineer to join our team. You will be working with React, TypeScript, and modern web technologies to build scalable applications.',
-      postedAt: new Date().toISOString(),
-      redirect_url: 'https://example.com/apply/1',
-      engineering_type: 'Software'
-    },
-    {
-      job_id: '2',
-      title: 'Product Designer',
-      company: 'DesignStudio',
-      location: 'Remote',
-      salary_min: 90000,
-      salary_max: 140000,
-      employment_type: 'Contract',
-      description: 'Join our creative team to design beautiful and intuitive user interfaces. Experience with Figma and design systems is required.',
-      postedAt: new Date().toISOString(),
-      redirect_url: 'https://example.com/apply/2',
-      engineering_type: 'Design'
-    },
-    {
-      job_id: '3',
-      title: 'Backend Developer',
-      company: 'DataSystems',
-      location: 'New York, NY',
-      salary_min: 130000,
-      salary_max: 170000,
-      employment_type: 'Full-time',
-      description: 'Build robust APIs and microservices. Proficiency in Node.js, Python, or Go is expected.',
-      postedAt: new Date().toISOString(),
-      redirect_url: 'https://example.com/apply/3',
-      engineering_type: 'Software'
-    },
-  ];
-
-  const [jobs, setJobs] = useState<Job[]>(DUMMY_JOBS);
-  const [loading, setLoading] = useState(false);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
   const isAuthenticated = !!user || !!localStorage.getItem('access_token');
 
-  // No API load effect needed
-  /*
-  useEffect(() => {
-    loadInitialData();
-  }, []);
+  const loadJobs = async () => {
+    setLoading(true);
+    try {
+      const resp = await fetchJobs({ limit: 10 });
+      setJobs(resp.jobs || []);
+    } catch (err) {
+      console.error("Failed to load public jobs", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadJobs();
-  }, [selectedCategory]);
-  */
+  }, []);
 
-  const handleApply = (url: string | null) => {
+  const handleAction = (url?: string | null) => {
     if (!isAuthenticated) {
-      localStorage.setItem('redirectAfterLogin', '/jobs');
+      localStorage.setItem('redirectAfterLogin', window.location.pathname);
       navigate(routes.login);
     } else if (url) {
       window.open(url, '_blank');
@@ -80,7 +42,7 @@ const JobsPublicPage = () => {
 
   const handleViewMore = () => {
     if (!isAuthenticated) {
-      localStorage.setItem('redirectAfterLogin', '/jobs');
+      localStorage.setItem('redirectAfterLogin', routes.jobListings);
       navigate(routes.login);
     } else {
       navigate(routes.jobListings);
@@ -173,7 +135,7 @@ const JobsPublicPage = () => {
                     <div className="flex flex-col gap-3 md:w-40 md:flex-shrink-0">
                       <Button
                         variant="primary"
-                        onClick={() => handleApply(job.redirect_url)}
+                        onClick={() => handleAction(job.redirect_url)}
                         className="w-full justify-center"
                       >
                         {!isAuthenticated && <Lock className="w-3.5 h-3.5 mr-2" />}
@@ -184,7 +146,7 @@ const JobsPublicPage = () => {
                         <Button
                           variant="outline"
                           className="w-full justify-center"
-                          onClick={() => handleApply(job.redirect_url)}
+                          onClick={() => handleAction(job.redirect_url)}
                         >
                           Details
                           <ExternalLink className="w-3.5 h-3.5 ml-2" />

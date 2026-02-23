@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Mail, Phone, MapPin, Send, MessageCircle, Clock, Globe, CheckCircle, Sparkles } from "lucide-react";
+import { Mail, Phone, MapPin, Send, MessageCircle, Clock, Globe, CheckCircle } from "lucide-react";
 import Button from "@/components/ui/button";
 
 const ContactPage = () => {
