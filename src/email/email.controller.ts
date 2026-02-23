@@ -96,4 +96,10 @@ export class EmailController {
 
     return { count };
   }
+
+  @Post('trigger-job-update')
+  async triggerJobUpdate() {
+    await this.schedulerService.triggerDailyEmail();
+    return { success: true, message: 'Job update email triggered' };
+  }
 }

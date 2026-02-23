@@ -8,30 +8,30 @@ import { LoggingMiddleware } from './common/middleware/logging.middleware';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ResumeModule } from './resume/resume.module';
-import { JobDescriptionModule } from './job-description/job-description.module';
+
 import { ResultsModule } from './results/results.module';
-import { InterviewModule } from './interview/interview.module';
+
 import { LessonsModule } from './lessons/lessons.module';
 import { ProgressModule } from './progress/progress.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { QuizzesModule } from './quizzes/quizzes.module';
 
 // V2 Interview Module
-import { InterviewV2Module } from './v2/interview.module';
+
 
 // From dev/backend_dsa
 import { DsaQuestionsModule } from './dsa-questions/dsa-questions.module';
 
 // From dev/backend_fixed
-import { InterviewRoundsModule } from './interview_rounds/interview.module';
+
 import { PaymentModule } from './payments/payment.module';
 import { SubscriptionModule } from './subscriptions/subscription.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { PlaceholderModule } from './common/placeholder';
-import { JobsModule } from './jobs/jobs.module';
+
 import { CvModule } from './cv/cv.module';
 import { SessionsModule } from './sessions/sessions.module';
-import { JdModule } from './jd/jd.module';
+
 import { AudioModule } from './audio/audio.module';
 import { EmailModule } from './email/email.module';
 
@@ -57,24 +57,18 @@ import { EmailModule } from './email/email.module';
     AuthModule,
     UsersModule,
     ResumeModule,
-    JobDescriptionModule,
     ResultsModule,
-    InterviewModule,
-    InterviewV2Module, // V2 Interview API
     LessonsModule,
     ProgressModule,
     SubjectsModule,
 
     DsaQuestionsModule,
-    InterviewRoundsModule,
     PaymentModule,
     SubscriptionModule,
     AnalyticsModule,
     PlaceholderModule,
-    JobsModule,
     CvModule,
     SessionsModule,
-    JdModule,
     AudioModule,
     EmailModule,
   ],
