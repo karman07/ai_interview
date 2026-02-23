@@ -8,9 +8,11 @@ import {
   Briefcase,
   Clock,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import routes from '@/constants/routes';
 import {
   fetchJobs,
-  getEngineeringTypes,
   type Job,
 } from '@/api/jobService';
 
@@ -19,28 +21,37 @@ const JobSearch: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const isAuthenticated = !!user || !!localStorage.getItem('access_token');
 
+  const handleApply = (url: string | null) => {
+    if (!isAuthenticated) {
+      localStorage.setItem('redirectAfterLogin', window.location.pathname);
+      navigate(routes.login);
+    } else if (url) {
+      window.open(url, '_blank');
+    }
+  };
 
-
-  const loadData = async () => {
+  const loadData = React.useCallback(async () => {
     setLoading(true);
     try {
-      // Fetching with basic filters mapped from UI
       const jobsData = await fetchJobs({
         limit: 50,
-        // Passing search term as location for now if it looks like a location, 
-        // or just fetching all and filtering client side if the API is limited.
-        // The contract supports 'location'. 
         location: locationFilter || undefined
-
       });
-      setJobs(jobsData.jobs);
+      setJobs(jobsData.jobs || []);
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [locationFilter]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Client-side filtering for title/description if API doesn't support keyword search
   const filteredJobs = jobs.filter(job => {
@@ -150,7 +161,7 @@ const JobSearch: React.FC = () => {
                     <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-2 leading-relaxed">{job.description}</p>
                   </div>
                   <button
-                    onClick={() => job.redirect_url ? window.open(job.redirect_url, '_blank') : null}
+                    onClick={() => handleApply(job.redirect_url)}
                     disabled={!job.redirect_url}
                     className="ml-6 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
                   >

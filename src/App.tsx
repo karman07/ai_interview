@@ -33,12 +33,6 @@ import InterviewHistory from "./pages/Interview_round/InterviewHistory";
 import InterviewResultsV2 from "./pages/Interview_round/InterviewResultsV2";
 import { AnalyticsProvider } from "./contexts/AnalyticsContext";
 import AnalyticsTest from "./pages/Test/AnalyticsTest";
-import { DSAQuestionsProvider } from "./contexts/DSAQuestionsContext";
-import { DSAProgressProvider } from "./contexts/DSAProgressContext";
-import { CodeExecutionProvider } from "./contexts/CodeExecutionContext";
-import DSADashboard from "./pages/DSA/DSADashboard";
-import DSAQuestionsList from "./pages/DSA/DSAQuestionsList";
-import DSAQuestionSolvePage from "./pages/DSA/DSAQuestionSolvePage";
 import ContactPage from "./pages/contact/ContactPage";
 import JobsPublicPage from "./pages/JobsPublic";
 import EmployeePortal from "./pages/Employee/EmployeePortal";
@@ -68,8 +62,6 @@ function App() {
     routes.lessonDetails,
     routes.interviewHome,
     routes.interviewHistory,
-    routes.dsaDashboard,
-    routes.dsaQuestions,
   ];
   const shouldHideNavbar =
     hideNavbarRoutes.includes(location.pathname) ||
@@ -78,8 +70,7 @@ function App() {
     location.pathname.startsWith("/interview/start/") ||
     location.pathname.startsWith("/interview/room/") ||
     location.pathname.startsWith("/interview/results/") ||
-    location.pathname.startsWith("/employee/") ||
-    location.pathname.startsWith("/dsa/");
+    location.pathname.startsWith("/employee/");
 
   return (
     <NotificationProvider>
@@ -278,56 +269,7 @@ function App() {
                   />
                 </Route>
 
-                {/* DSA Routes */}
-                <Route element={<ProtectedRoute />}>
-                  <Route
-                    path={routes.dsaDashboard}
-                    element={
-                      <div className="flex min-h-screen">
-                        <Sidebar />
-                        <div className="flex-1">
-                          <DSAQuestionsProvider>
-                            <DSAProgressProvider>
-                              <DSADashboard />
-                            </DSAProgressProvider>
-                          </DSAQuestionsProvider>
-                        </div>
-                      </div>
-                    }
-                  />
-                  <Route
-                    path={routes.dsaQuestions}
-                    element={
-                      <div className="flex min-h-screen">
-                        <Sidebar />
-                        <div className="flex-1">
-                          <DSAQuestionsProvider>
-                            <DSAProgressProvider>
-                              <DSAQuestionsList />
-                            </DSAProgressProvider>
-                          </DSAQuestionsProvider>
-                        </div>
-                      </div>
-                    }
-                  />
-                  <Route
-                    path={routes.dsaQuestionDetails(":questionId")}
-                    element={
-                      <div className="flex min-h-screen">
-                        <Sidebar />
-                        <div className="flex-1">
-                          <DSAQuestionsProvider>
-                            <DSAProgressProvider>
-                              <CodeExecutionProvider>
-                                <DSAQuestionSolvePage />
-                              </CodeExecutionProvider>
-                            </DSAProgressProvider>
-                          </DSAQuestionsProvider>
-                        </div>
-                      </div>
-                    }
-                  />
-                </Route>
+
 
                 {/* Catch-all: redirect unknown routes to home */}
                 <Route path="*" element={<Navigate to={routes.home} replace />} />

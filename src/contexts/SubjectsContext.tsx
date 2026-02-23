@@ -1,6 +1,6 @@
 // src/contexts/SubjectsContext.tsx
 import React, { createContext, useContext } from "react";
-import axios from "axios";
+import axios from "@/api/http";
 import { API_BASE_URL } from "@/api/http";
 import { useLazyFilteredData, LoadingState, createLoadingIndicator } from "@/hooks/useLazyLoading";
 import { mockSubjects } from "@/constants/mockData";
@@ -50,14 +50,14 @@ interface SubjectsContextType {
   isError: boolean;
   hasRealData: boolean;
   loadingIndicator: ReturnType<typeof createLoadingIndicator>;
-  
+
   // Filter methods
   setSearch: (q: string) => void;
   setCategoryFilter: (q: string) => void;
   setLevelFilter: (q: string) => void;
   updateFilter: (key: keyof SubjectsFilters, value: string) => void;
   resetFilters: () => void;
-  
+
   // Loading methods
   load: () => void;
   retry: () => void;

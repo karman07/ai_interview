@@ -256,7 +256,7 @@ const EmployeePortal = () => {
   const [totalJobs, setTotalJobs] = useState(0);
   const LIMIT = 20;
 
-  const [resumeFilterFile, setResumeFilterFile] = useState<File | null>(null);
+
   const [isResumeFiltered, setIsResumeFiltered] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -347,7 +347,6 @@ const EmployeePortal = () => {
   const handleResumeFilterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
-      setResumeFilterFile(file);
       await filterJobsByResume(file);
     }
   };
@@ -381,7 +380,7 @@ const EmployeePortal = () => {
   };
 
   const clearResumeFilter = () => {
-    setResumeFilterFile(null);
+
     setIsResumeFiltered(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
     loadJobs(0);
@@ -477,24 +476,24 @@ const EmployeePortal = () => {
 
   return (
     <div className="h-screen overflow-y-auto bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 transition-colors duration-500 custom-scrollbar">
-      <div className="max-w-7xl mx-auto p-6 relative">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 relative">
         <div className="absolute top-0 right-0 -z-10 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full animate-pulse" />
         <div className="absolute bottom-0 left-0 -z-10 w-96 h-96 bg-indigo-500/10 blur-[120px] rounded-full" />
 
         {!selectedJob ? (
           <div className="space-y-8">
-            <div className="flex flex-col lg:flex-row justify-between items-center lg:items-end gap-8 mb-12">
+            <div className="flex flex-col lg:flex-row justify-between items-center lg:items-end gap-8 mb-8 sm:mb-12">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
                 className="text-center lg:text-left"
               >
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-widest mb-4 border border-blue-100 dark:border-blue-800">
-                  <Sparkles className="w-3.5 h-3.5" />
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-widest mb-4 border border-blue-100 dark:border-blue-800">
+                  <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   <span>Personalized for you</span>
                 </div>
-                <h1 className="text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-4">
+                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-4">
                   Find Your <span className="relative inline-block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
                     Perfect Match
                     <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 100 20" preserveAspectRatio="none">
@@ -502,7 +501,7 @@ const EmployeePortal = () => {
                     </svg>
                   </span>
                 </h1>
-                <p className="text-xl text-gray-500 dark:text-gray-400 font-medium max-w-2xl leading-relaxed">
+                <p className="text-base sm:text-xl text-gray-500 dark:text-gray-400 font-medium max-w-2xl leading-relaxed">
                   Discover career-defining opportunities precisely matched with your unique <span className="text-blue-600 dark:text-blue-400 font-bold">engineering DNA</span>.
                 </p>
               </motion.div>
@@ -513,7 +512,6 @@ const EmployeePortal = () => {
                 clearResumeFilter={clearResumeFilter}
                 fileInputRef={fileInputRef}
                 handleResumeFilterUpload={handleResumeFilterUpload}
-                resumeFilterFile={resumeFilterFile}
                 showFavorites={showFavorites}
                 setShowFavorites={setShowFavorites}
                 showBookmarks={showBookmarks}

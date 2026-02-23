@@ -68,10 +68,10 @@ const SubscriptionModal = ({
                         initial={{ opacity: 0, scale: 0.9, y: 30 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 30 }}
-                        className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.5)] border border-white/20 overflow-hidden"
+                        className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-[2rem] sm:rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.5)] border border-white/20 overflow-hidden"
                     >
                         {/* Header */}
-                        <div className="bg-gray-900 px-10 py-12 relative overflow-hidden">
+                        <div className="bg-gray-900 px-6 sm:px-10 py-8 sm:py-12 relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
                             <button
                                 onClick={() => setShowSubscriptionModal(false)}
@@ -80,17 +80,17 @@ const SubscriptionModal = ({
                                 <X className="w-6 h-6" />
                             </button>
                             <div className="relative z-10">
-                                <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-blue-500/20">
-                                    <Bell className="w-8 h-8 text-white" />
+                                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-600 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 shadow-xl shadow-blue-500/20">
+                                    <Bell className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                                 </div>
-                                <h2 className="text-3xl font-black text-white uppercase tracking-tight mb-3">Job Infiltration Alerts</h2>
-                                <p className="text-blue-200/60 font-medium">New opportunities delivered straight to your operations center.</p>
+                                <h2 className="text-xl sm:text-3xl font-black text-white uppercase tracking-tight mb-2 sm:mb-3">Job Infiltration Alerts</h2>
+                                <p className="text-xs sm:text-sm text-blue-200/60 font-medium whitespace-normal">New opportunities delivered straight to your operations center.</p>
                             </div>
                         </div>
 
                         {/* Form */}
-                        <div className="p-10 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                            <form onSubmit={handleSubscribeSubmit} className="space-y-8">
+                        <div className="p-6 sm:p-10 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                            <form onSubmit={handleSubscribeSubmit} className="space-y-6 sm:space-y-8">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Deployment Email</label>
@@ -124,8 +124,8 @@ const SubscriptionModal = ({
                                     </div>
                                 </div>
 
-                                <div className="p-8 bg-blue-50/30 dark:bg-blue-900/10 rounded-3xl border border-blue-100/30 dark:border-blue-800/20 space-y-8">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="p-5 sm:p-8 bg-blue-50/30 dark:bg-blue-900/10 rounded-2xl sm:rounded-3xl border border-blue-100/30 dark:border-blue-800/20 space-y-6 sm:space-y-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Location Filter</label>
                                             <div className="relative group">
@@ -158,10 +158,12 @@ const SubscriptionModal = ({
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-4 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30 bg-white/50 dark:bg-gray-800/50">
-                                        <Filter className="w-5 h-5 text-blue-600" />
-                                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300 flex-1">Restrict to Internship roles?</span>
-                                        <label className="relative inline-flex items-center cursor-pointer">
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl sm:rounded-2xl border border-blue-100 dark:border-blue-900/30 bg-white/50 dark:bg-gray-800/50">
+                                        <div className="flex items-center gap-3">
+                                            <Filter className="w-5 h-5 text-blue-600" />
+                                            <span className="text-sm font-bold text-gray-700 dark:text-gray-300 flex-1">Restrict to Internship roles?</span>
+                                        </div>
+                                        <label className="relative inline-flex items-center cursor-pointer ml-auto">
                                             <input
                                                 type="checkbox"
                                                 checked={subInternship}
@@ -236,20 +238,20 @@ const SubscriptionModal = ({
                                     </button>
 
                                     {isSubscribed && (
-                                        <div className="flex gap-4">
+                                        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                                             <button
                                                 type="button"
                                                 onClick={handleTriggerUpdate}
-                                                className="flex-1 py-4 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 font-bold rounded-xl transition-all hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-xs flex items-center justify-center gap-2"
+                                                className="flex-1 py-3.5 sm:py-4 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 font-bold rounded-xl transition-all hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-[10px] sm:text-xs flex items-center justify-center gap-2"
                                             >
-                                                <Bell className="w-4 h-4" /> Trigger Intelligence Scan
+                                                <Bell className="w-4 h-4" /> Trigger Scan
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={handleUnsubscribe}
-                                                className="flex-1 py-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold rounded-xl transition-all hover:bg-red-100 dark:hover:bg-red-900/30 text-xs"
+                                                className="flex-1 py-3.5 sm:py-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold rounded-xl transition-all hover:bg-red-100 dark:hover:bg-red-900/30 text-[10px] sm:text-xs"
                                             >
-                                                Deactivate Alert Feed
+                                                Deactivate Feed
                                             </button>
                                         </div>
                                     )}
