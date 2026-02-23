@@ -26,6 +26,7 @@ export interface Job {
   redirect_url: string | null;
   relevance_score?: number;
   is_internship: boolean;
+  category?: string;
   // Optional for frontend display
   postedAt?: Date;
 }
