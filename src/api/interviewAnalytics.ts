@@ -70,6 +70,7 @@ export interface DashboardStats {
       bestScore: number;
     };
   };
+  externalAnalytics?: any[]; // The new array of payloads saved from the external AI backend
 }
 
 export const InterviewAnalyticsApi = {

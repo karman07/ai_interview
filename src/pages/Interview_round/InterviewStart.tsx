@@ -10,7 +10,6 @@ import {
   Award, BarChart3, Eye, Upload, X, CheckCircle
 } from "lucide-react";
 import { InterviewAnalyticsApi, type Analytics, type RoundStats } from "@/api/interviewAnalytics";
-import { startInterviewWithFiles, startInterviewWithIDs, generateSessionId } from "@/api/interviewV2";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface InterviewDetails {
@@ -121,51 +120,45 @@ export default function InterviewStart() {
     setError("");
 
     try {
-      let response;
+      // Extract text from files if needed
+      let resumeText = details.resumeText;
+      let jdText = details.jobDescription;
 
-      // Case 1: Both files provided - use simplified helper
-      if (details.resumeFile && details.jdFile) {
-        response = await startInterviewWithFiles(
-          user._id,
-          details.resumeFile,
-          details.jdFile,
-          details.role,
-          details.company
-        );
+      if (details.resumeFile && !resumeText) {
+        resumeText = await readFileAsText(details.resumeFile);
       }
-      // Case 2: Mixed or text-based - use full API
-      else {
-        const sessionId = generateSessionId(user._id);
-        response = await startInterviewWithIDs({
-          user_id: user._id,
-          session_id: sessionId,
-          role: details.role,
-          company: details.company,
-          cv_file: details.resumeFile,
-          cv_text: details.resumeFile ? undefined : details.resumeText,
-          jd_file: details.jdFile,
-          jd_text: details.jdFile ? undefined : details.jobDescription,
-        });
+      if (details.jdFile && !jdText) {
+        jdText = await readFileAsText(details.jdFile);
       }
 
-      // Store session data for interview room
-      const sessionData = {
-        sessionId: response.session_id,
-        firstQuestion: response.question,
-        questionNumber: response.question_number,
+      // Save raw setup data for the Python WebSocket backend
+      const setupData = {
+        resumeText,
+        jdText,
         role: details.role,
         company: details.company,
-        roundType: type || 'full',
+        roundType: type || 'technical',
+        userId: user._id,
       };
 
-      localStorage.setItem('v2_interview_session', JSON.stringify(sessionData));
+      localStorage.setItem('ws_interview_setup', JSON.stringify(setupData));
 
-      // Navigate to interview room
+      // Navigate to the interview room
       navigate(`/interview/room/${type}`);
     } catch (err: any) {
-      setError(err.response?.data?.detail || err.message || 'Failed to start interview');
+      setError(err.message || 'Failed to prepare interview');
       setLoading(false);
     }
+  };
+
+  // Helper to read file as text
+  const readFileAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsText(file);
+    });
   };
 
 
@@ -384,8 +377,8 @@ export default function InterviewStart() {
                   onClick={handleStart}
                   disabled={loading || !details.role || !details.company || (!details.resumeFile && !details.resumeText) || (!details.jdFile && !details.jobDescription)}
                   className={`w-full flex items-center justify-center gap-3 ${details.role && details.company && (details.resumeFile || details.resumeText) && (details.jdFile || details.jobDescription)
-                      ? `bg-gradient-to-r ${info.color}`
-                      : 'bg-gray-300'
+                    ? `bg-gradient-to-r ${info.color}`
+                    : 'bg-gray-300'
                     } text-white font-bold py-4 rounded-2xl`}
                 >
                   {loading ? (

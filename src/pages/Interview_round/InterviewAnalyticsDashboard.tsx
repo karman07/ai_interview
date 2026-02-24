@@ -1,37 +1,35 @@
-import  { useEffect, useState } from 'react';
-import { 
-  TrendingUp, 
-  Award, 
-
+import { useEffect, useState } from 'react';
+import {
+  TrendingUp,
+  Award,
   Target,
   BarChart3,
   Zap,
   Trophy,
-  ArrowUp,
-  ArrowDown
+  Brain,
 } from 'lucide-react';
-import { 
-  LineChart, 
-  Line, 
- 
-  RadarChart, 
-  Radar, 
-  PolarGrid, 
-  PolarAngleAxis, 
+import {
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
   PolarRadiusAxis,
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
+  ResponsiveContainer
 } from 'recharts';
-import { InterviewAnalyticsApi, type DashboardStats, type Analytics } from '@/api/interviewAnalytics';
+import { InterviewAnalyticsApi } from '@/api/interviewAnalytics';
+import { InterviewV2Report } from '@/api/interviewV2';
 
-export default function InterviewAnalyticsDashboard() {
-  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
-  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+interface ExternalAnalyticsSession extends InterviewV2Report {
+  timestamp: string;
+}
+
+interface InterviewAnalyticsDashboardProps {
+  onStartNew?: () => void;
+}
+
+export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAnalyticsDashboardProps) {
   const [loading, setLoading] = useState(true);
+  const [sessions, setSessions] = useState<ExternalAnalyticsSession[]>([]);
 
   useEffect(() => {
     loadData();
@@ -39,12 +37,15 @@ export default function InterviewAnalyticsDashboard() {
 
   const loadData = async () => {
     try {
-      const [stats, analyticsData] = await Promise.all([
-        InterviewAnalyticsApi.getDashboardStats(),
-        InterviewAnalyticsApi.getAnalytics()
-      ]);
-      setDashboardStats(stats);
-      setAnalytics(analyticsData);
+      // The old dashboard-stats endpoint now contains externalAnalytics
+      const data = await InterviewAnalyticsApi.getDashboardStats();
+      if (data && data.externalAnalytics) {
+        // Sort by newest first
+        const sorted = [...data.externalAnalytics].sort(
+          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+        setSessions(sorted);
+      }
     } catch (error) {
       console.error('Failed to load analytics:', error);
     } finally {
@@ -52,27 +53,52 @@ export default function InterviewAnalyticsDashboard() {
     }
   };
 
-  const getRoundColor = (round: string) => {
-    const colors: Record<string, string> = {
-      technical: 'from-blue-500 to-blue-600',
-      behavioral: 'from-emerald-500 to-emerald-600',
-      'problem-solving': 'from-amber-500 to-orange-500',
-      hr: 'from-purple-500 to-purple-600'
-    };
-    return colors[round] || 'from-gray-500 to-gray-600';
+  // Compute Aggregated Stats
+  const totalInterviews = sessions.length;
+  const averageScore = totalInterviews > 0
+    ? sessions.reduce((acc, s) => acc + (s.summary?.overall_score || 0), 0) / totalInterviews
+    : 0;
+  const bestScore = totalInterviews > 0
+    ? Math.max(...sessions.map(s => s.summary?.overall_score || 0))
+    : 0;
+
+  // Compute dimension averages for the Radar Chart
+  const dimensions = {
+    'Technical Depth': 0,
+    'Problem Solving': 0,
+    'System Design': 0,
+    'Communication': 0,
+    'Role Fit': 0
   };
 
-  const radarData = analytics ? [
-    { subject: 'Technical', score: analytics.technical.averageScore, fullMark: 10 },
-    { subject: 'Behavioral', score: analytics.behavioral.averageScore, fullMark: 10 },
-    { subject: 'Problem Solving', score: analytics.problemSolving.averageScore, fullMark: 10 },
-    { subject: 'HR', score: analytics.hr.averageScore, fullMark: 10 }
+  sessions.forEach(s => {
+    dimensions['Technical Depth'] += s.dimension_scores?.technical_depth || 0;
+    dimensions['Problem Solving'] += s.dimension_scores?.problem_solving || 0;
+    dimensions['System Design'] += s.dimension_scores?.system_design || 0;
+    dimensions['Communication'] += s.dimension_scores?.communication || 0;
+    dimensions['Role Fit'] += s.dimension_scores?.role_fit || 0;
+  });
+
+  const radarData = totalInterviews > 0 ? [
+    { subject: 'Technical Depth', score: dimensions['Technical Depth'] / totalInterviews, fullMark: 10 },
+    { subject: 'Problem Solving', score: dimensions['Problem Solving'] / totalInterviews, fullMark: 10 },
+    { subject: 'System Design', score: dimensions['System Design'] / totalInterviews, fullMark: 10 },
+    { subject: 'Communication', score: dimensions['Communication'] / totalInterviews, fullMark: 10 },
+    { subject: 'Role Fit', score: dimensions['Role Fit'] / totalInterviews, fullMark: 10 }
   ] : [];
+
+  // Aggregate Top Strengths / Areas for Improvement
+  const allStrengths = sessions.flatMap(s => s.verdict?.strengths_to_highlight || []);
+  const allImprovements = sessions.flatMap(s => s.verdict?.areas_to_fix_before_next_interview || []);
+
+  // Get top 5 unique for display
+  const topStrengths = Array.from(new Set(allStrengths)).slice(0, 5);
+  const topImprovements = Array.from(new Set(allImprovements)).slice(0, 5);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
       </div>
     );
   }
@@ -82,14 +108,25 @@ export default function InterviewAnalyticsDashboard() {
       {/* Header */}
       <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-100 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Interview Analytics</h1>
-              <p className="text-gray-600 dark:text-gray-400">Track your performance and progress</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">AI Interview Analytics</h1>
+              <p className="text-gray-600 dark:text-gray-400">Track your performance across all AI-evaluated dimensions</p>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full shadow-lg">
-              <Trophy className="w-5 h-5" />
-              <span className="font-semibold">Score: {dashboardStats?.averageScore.toFixed(1)}</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-xl shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30">
+                <Trophy className="w-5 h-5" />
+                <span className="font-semibold text-lg">Avg Score: {averageScore.toFixed(1)}</span>
+              </div>
+              {onStartNew && (
+                <button
+                  onClick={onStartNew}
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-medium transition-all duration-300 shadow-sm"
+                >
+                  <Zap className="w-5 h-5" />
+                  Start New Interview
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -97,182 +134,162 @@ export default function InterviewAnalyticsDashboard() {
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-lg transition-shadow">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center">
                 <BarChart3 className="w-6 h-6 text-white" />
               </div>
-              <span className="text-sm text-gray-500 dark:text-gray-400">Total</span>
+              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total</span>
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{dashboardStats?.totalInterviews || 0}</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Interviews</p>
+            <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-1">{totalInterviews}</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Interviews Completed</p>
           </div>
 
-          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-lg transition-shadow">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
                 <Target className="w-6 h-6 text-white" />
               </div>
-              <span className="text-sm text-gray-500 dark:text-gray-400">Average</span>
+              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Average</span>
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{dashboardStats?.averageScore.toFixed(1) || '0.0'}</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Score</p>
+            <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-1">{averageScore.toFixed(1)}</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Overall Score</p>
           </div>
 
-          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-lg transition-shadow">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-sm text-gray-500 dark:text-gray-400">Current</span>
-            </div>
-            <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{dashboardStats?.currentStreak || 0}</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Day Streak</p>
-          </div>
-
-          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
                 <Award className="w-6 h-6 text-white" />
               </div>
-              <span className="text-sm text-gray-500 dark:text-gray-400">Best</span>
+              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Best</span>
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{dashboardStats?.bestScore.toFixed(1) || '0.0'}</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Score</p>
+            <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-1">{bestScore.toFixed(1)}</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Highest Score</p>
           </div>
         </div>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Performance Radar Chart */}
-          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Performance Overview</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <RadarChart data={radarData}>
-                <PolarGrid stroke="#e5e7eb" className="dark:stroke-gray-700" />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: '#6b7280', fontSize: 12 }} />
-                <PolarRadiusAxis angle={90} domain={[0, 10]} tick={{ fill: '#6b7280' }} />
-                <Radar name="Score" dataKey="score" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
-              </RadarChart>
-            </ResponsiveContainer>
+        {totalInterviews === 0 && (
+          <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
+            <Zap className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Analytics Yet</h3>
+            <p className="text-gray-500 dark:text-gray-400">Complete an AI interview to see your detailed performance metrics.</p>
           </div>
+        )}
 
-          {/* Monthly Progress Chart */}
-          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Monthly Progress</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={analytics?.monthlyProgress || []}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
-                <XAxis dataKey="month" tick={{ fill: '#6b7280', fontSize: 12 }} />
-                <YAxis tick={{ fill: '#6b7280' }} />
-                <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
-                <Legend />
-                <Line type="monotone" dataKey="averageScore" stroke="#3b82f6" strokeWidth={2} name="Avg Score" />
-                <Line type="monotone" dataKey="sessionsCount" stroke="#10b981" strokeWidth={2} name="Sessions" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Round Breakdown */}
-        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Round Performance</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {analytics && Object.entries({
-              technical: analytics.technical,
-              behavioral: analytics.behavioral,
-              'problem-solving': analytics.problemSolving,
-              hr: analytics.hr
-            }).map(([round, stats]) => (
-              <div key={round} className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold text-gray-900 dark:text-white capitalize">{round.replace('-', ' ')}</h4>
-                  {stats.improvementTrend > 0 ? (
-                    <ArrowUp className="w-4 h-4 text-green-500" />
-                  ) : (
-                    <ArrowDown className="w-4 h-4 text-red-500" />
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Avg Score:</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{stats.averageScore.toFixed(1)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Best:</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{stats.bestScore.toFixed(1)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Sessions:</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{stats.totalSessions}</span>
-                  </div>
+        {totalInterviews > 0 && (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Performance Radar Chart */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Dimension Breakdown</h3>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart data={radarData}>
+                      <PolarGrid stroke="#e5e7eb" className="dark:stroke-gray-700" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fill: '#6b7280', fontSize: 12 }} />
+                      <PolarRadiusAxis angle={90} domain={[0, 10]} tick={{ fill: '#6b7280' }} />
+                      <Radar name="Score" dataKey="score" stroke="#6366f1" fill="#6366f1" fillOpacity={0.5} />
+                    </RadarChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Recent Sessions */}
-        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Recent Sessions</h3>
-          <div className="space-y-3">
-            {dashboardStats?.recentSessions.map((session) => (
-              <div key={session.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 bg-gradient-to-br ${getRoundColor(session.round)} rounded-lg flex items-center justify-center text-white font-bold`}>
-                    {session.score.toFixed(1)}
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white capitalize">{session.round} Round</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{new Date(session.date).toLocaleDateString()}</p>
-                  </div>
+              {/* Strengths & Improvements */}
+              <div className="flex flex-col gap-6">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm flex-1">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-emerald-500" />
+                    Top Strengths
+                  </h3>
+                  <ul className="space-y-3">
+                    {topStrengths.map((strength, idx) => (
+                      <li key={idx} className="flex items-start gap-2.5 text-sm">
+                        <span className="text-emerald-500 mt-0.5">•</span>
+                        <span className="text-gray-700 dark:text-gray-300">{strength}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  session.status === 'completed' 
-                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
-                    : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                }`}>
-                  {session.status}
+
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm flex-1">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Target className="w-5 h-5 text-rose-500" />
+                    Critical Areas to Improve
+                  </h3>
+                  <ul className="space-y-3">
+                    {topImprovements.map((area, idx) => (
+                      <li key={idx} className="flex items-start gap-2.5 text-sm">
+                        <span className="text-rose-500 mt-0.5">•</span>
+                        <span className="text-gray-700 dark:text-gray-300">{area}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        {/* Strengths & Improvements */}
-        {analytics?.overall && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-500" />
-                Strengths
+            {/* AI External Interviews List */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                <Brain className="w-6 h-6 text-indigo-500" />
+                Interview History
               </h3>
-              <div className="space-y-2">
-                {analytics.overall.strengths.map((strength, idx) => (
-                  <div key={idx} className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                    <span className="text-green-600 dark:text-green-400">✓</span>
-                    <span className="text-gray-900 dark:text-white">{strength}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+              <div className="space-y-4">
+                {sessions.map((aiSession, idx) => {
+                  const score = aiSession.summary?.overall_score ?? 0;
+                  const rec = aiSession.summary?.hire_recommendation ?? 'Unknown';
 
-            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <Target className="w-5 h-5 text-orange-500" />
-                Areas for Improvement
-              </h3>
-              <div className="space-y-2">
-                {analytics.overall.areasForImprovement.map((area, idx) => (
-                  <div key={idx} className="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                    <span className="text-orange-600 dark:text-orange-400">→</span>
-                    <span className="text-gray-900 dark:text-white">{area}</span>
-                  </div>
-                ))}
+                  const scoreColor =
+                    score >= 75 ? "text-emerald-600 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-900/30 dark:border-emerald-800" :
+                      score >= 50 ? "text-amber-600 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-900/30 dark:border-amber-800" :
+                        "text-rose-600 bg-rose-50 border-rose-200 dark:text-rose-400 dark:bg-rose-900/30 dark:border-rose-800";
+
+                  return (
+                    <div key={idx} className="p-5 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 transition-all hover:border-indigo-200 dark:hover:border-indigo-800">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-14 h-14 flex flex-col items-center justify-center rounded-xl border font-extrabold ${scoreColor}`}>
+                            <span className="text-xl leading-none">{score}</span>
+                            <span className="text-[10px] uppercase font-semibold mt-1 opacity-70">Score</span>
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-gray-900 dark:text-white capitalize text-lg">{rec}</h4>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
+                              {new Date(aiSession.timestamp).toLocaleString()} • {aiSession.summary?.seniority_assessment?.toUpperCase() || 'GENERAL'} ROLE
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5 border-t border-gray-100 dark:border-gray-700">
+                        <div>
+                          <h5 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-3">Key Strengths</h5>
+                          <ul className="space-y-2">
+                            {aiSession.verdict?.strengths_to_highlight?.slice(0, 3).map((s: string, i: number) => (
+                              <li key={i} className="text-sm text-gray-700 dark:text-gray-300 flex items-start gap-2">
+                                <span className="text-emerald-500 mt-0.5">•</span> <span className="leading-relaxed">{s}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <h5 className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-3">Primary Focus Areas</h5>
+                          <ul className="space-y-2">
+                            {aiSession.verdict?.areas_to_fix_before_next_interview?.slice(0, 3).map((a: string, i: number) => (
+                              <li key={i} className="text-sm text-gray-700 dark:text-gray-300 flex items-start gap-2">
+                                <span className="text-rose-500 mt-0.5">•</span> <span className="leading-relaxed">{a}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>

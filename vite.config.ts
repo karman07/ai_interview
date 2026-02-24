@@ -10,4 +10,13 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      "/piston": {
+        target: "http://localhost:2000",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/piston/, ""),
+      },
+    },
+  },
 });
