@@ -8,7 +8,6 @@ import { User, UserSchema } from '../users/schemas/user.schema';
 
 import { HttpModule } from '@nestjs/axios';
 import { AiCvApiService } from './ai-cv-api.service';
-import { AiMatcherService } from '../common/services/ai-matcher.service';
 
 @Module({
   imports: [
@@ -20,7 +19,7 @@ import { AiMatcherService } from '../common/services/ai-matcher.service';
 
   ],
   controllers: [ResumeController, AiCvController],
-  providers: [ResumeService, AiCvApiService, AiMatcherService],
+  providers: [ResumeService, AiCvApiService],
   exports: [AiCvApiService],
 })
 export class ResumeModule { }

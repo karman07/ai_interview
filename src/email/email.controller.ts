@@ -12,12 +12,12 @@ export class EmailController {
   constructor(
     @InjectModel(EmailSubscription.name) private subscriptionModel: Model<EmailSubscriptionDocument>,
     private schedulerService: EmailSchedulerService,
-  ) {}
+  ) { }
 
   @Post('subscribe')
   async subscribe(@Body() body: { email: string; userId?: string }) {
     const unsubscribeToken = crypto.randomBytes(32).toString('hex');
-    
+
     const subscription = await this.subscriptionModel.findOneAndUpdate(
       { email: body.email.toLowerCase() },
       {
@@ -31,7 +31,7 @@ export class EmailController {
     );
 
     // Send welcome email
-    await this.schedulerService['emailService'].sendWelcomeEmail(subscription.email);
+    // await this.schedulerService['emailService'].sendWelcomeEmail(subscription.email);
 
     return {
       success: true,

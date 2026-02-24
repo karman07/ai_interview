@@ -12,9 +12,9 @@ export class EmailSchedulerService {
   constructor(
     @InjectModel(EmailSubscription.name) private subscriptionModel: Model<EmailSubscriptionDocument>,
     private emailService: EmailService,
-  ) {}
+  ) { }
 
-  @Cron('25 9 * * *', { timeZone: 'Asia/Kolkata' })
+  // @Cron('25 9 * * *', { timeZone: 'Asia/Kolkata' })
   async sendDailyUpdates() {
     this.logger.log('Starting daily update email task...');
 

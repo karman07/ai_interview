@@ -9,7 +9,6 @@ import { Model } from 'mongoose';
 import { Resume, ResumeDocument } from './resume.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { AiCvApiService } from './ai-cv-api.service';
-import { AiMatcherService } from '../common/services/ai-matcher.service';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -22,7 +21,6 @@ export class ResumeService {
     @InjectModel(Resume.name) private resumeModel: Model<ResumeDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private readonly aiCvApiService: AiCvApiService,
-    private readonly aiMatcherService: AiMatcherService,
   ) {
     this.appBaseUrl = process.env.APP_BASE_URL || process.env.APP_URL || 'http://localhost:3000';
   }
@@ -39,7 +37,7 @@ export class ResumeService {
     userId: string,
   ) {
     this.logger.log('📁 ResumeService.uploadResume called');
-    
+
     if (!file) {
       this.logger.error('❌ No resume file provided');
       throw new BadRequestException('No resume file uploaded');
@@ -59,7 +57,7 @@ export class ResumeService {
     try {
       this.logger.log('🤖 Calling AI CV evaluation API...');
       const startTime = Date.now();
-      
+
       stats = await this.aiCvApiService.uploadAndEvaluateCv(
         file.path,
         file.originalname,
@@ -67,7 +65,7 @@ export class ResumeService {
         jdFile?.path,
         jdFile?.originalname,
       );
-      
+
       const duration = Date.now() - startTime;
       this.logger.log(`✅ CV evaluation completed in ${duration}ms`);
       this.logger.log('📊 AI CV Evaluation Response:', JSON.stringify(stats, null, 2));
@@ -86,7 +84,7 @@ export class ResumeService {
       try {
         this.logger.log('🔄 Calling AI CV improvement API...');
         const startTime = Date.now();
-        
+
         improvement_resume = await this.aiCvApiService.uploadAndGetImprovements(
           file.path,
           file.originalname,
@@ -94,7 +92,7 @@ export class ResumeService {
           jdFile?.path,
           jdFile?.originalname,
         );
-        
+
         const duration = Date.now() - startTime;
         this.logger.log(`✅ CV improvement completed in ${duration}ms`);
         this.logger.log('🔄 AI CV Improvement Response:', JSON.stringify(improvement_resume, null, 2));
@@ -110,7 +108,7 @@ export class ResumeService {
       try {
         this.logger.log('🔄 Calling AI CV improvement API (without JD)...');
         const startTime = Date.now();
-        
+
         improvement_resume = await this.aiCvApiService.uploadAndGetImprovements(
           file.path,
           file.originalname,
@@ -118,7 +116,7 @@ export class ResumeService {
           undefined, // No JD file
           undefined,
         );
-        
+
         const duration = Date.now() - startTime;
         this.logger.log(`✅ CV improvement completed in ${duration}ms`);
         this.logger.log('🔄 AI CV Improvement Response (no JD):', JSON.stringify(improvement_resume, null, 2));
@@ -165,7 +163,7 @@ export class ResumeService {
       this.logger.error('Full error:', JSON.stringify(saveError, null, 2));
       throw saveError;
     }
-    
+
     this.logger.log('📋 Saved resume object:', JSON.stringify({
       _id: resume._id,
       filename: resume.filename,
@@ -181,15 +179,7 @@ export class ResumeService {
       this.logger.error('⚠️ Failed to update user resumeUrl:', err.message);
     }
 
-    // Upload to AI matcher service with user ID
-    try {
-      this.logger.log('🔗 Uploading resume to AI matcher service...');
-      await this.aiMatcherService.uploadResume(userId, undefined, file.path);
-      this.logger.log('✅ Resume uploaded to AI matcher service');
-    } catch (err) {
-      this.logger.error('⚠️ Failed to upload to AI matcher service:', err.message);
-      // Don't throw error, continue with normal flow
-    }
+
 
     return resume;
   }
@@ -213,7 +203,7 @@ export class ResumeService {
     jdText?: string,
   ) {
     this.logger.log(`🔄 Improving resume with ID: ${resumeId}`);
-    
+
     const resume = await this.resumeModel.findById(resumeId);
     if (!resume) {
       this.logger.error(`❌ Resume not found: ${resumeId}`);
@@ -223,7 +213,7 @@ export class ResumeService {
     try {
       this.logger.log('🤖 Calling AI CV improvement API...');
       const startTime = Date.now();
-      
+
       const improvement_resume = await this.aiCvApiService.uploadAndGetImprovements(
         resume.path,
         resume.filename,
@@ -237,7 +227,7 @@ export class ResumeService {
 
       resume.improvement_resume = improvement_resume;
       await resume.save();
-      
+
       this.logger.log('✅ Resume improvement saved to database');
 
       return {
@@ -246,7 +236,7 @@ export class ResumeService {
       };
     } catch (err) {
       this.logger.error('💥 Error improving resume:', err.message);
-      
+
       if (err.message.includes('ECONNREFUSED') || err.message.includes('connect')) {
         this.logger.warn('⚠️ AI service unavailable, returning resume without improvement');
         return {
@@ -255,7 +245,7 @@ export class ResumeService {
           improvement_status: 'AI service unavailable'
         };
       }
-      
+
       throw new BadRequestException('Failed to improve CV');
     }
   }
@@ -263,7 +253,7 @@ export class ResumeService {
   // ✅ DELETE API: delete resume and its stats
   async deleteResume(resumeId: string, userId: string) {
     this.logger.log(`🗑️ Deleting resume with ID: ${resumeId}`);
-    
+
     const resume = await this.resumeModel.findById(resumeId);
     if (!resume) {
       this.logger.error(`❌ Resume not found: ${resumeId}`);

@@ -46,7 +46,7 @@ export class AiCvApiService {
   private readonly timeout: number;
 
   constructor(private readonly configService: ConfigService) {
-    this.baseUrl = this.configService.get<string>('AI_INTERVIEW_API_BASE_URL', 'http://localhost:8000');
+    this.baseUrl = this.configService.get<string>('AI_INTERVIEW_API_BASE_URL', 'http://localhost:9000');
     this.timeout = this.configService.get<number>('AI_INTERVIEW_API_TIMEOUT', 60000);
 
     this.axiosInstance = axios.create({
@@ -161,33 +161,33 @@ export class AiCvApiService {
    * Upload and evaluate CV file
    */
   async uploadAndEvaluateCv(
-    filePath: string, 
-    originalName: string, 
+    filePath: string,
+    originalName: string,
     jdText?: string,
     jdFilePath?: string,
     jdFileName?: string
   ): Promise<any> {
     const startTime = Date.now();
     this.logger.log(`🚀 Starting CV evaluation for: ${originalName}`);
-    
+
     try {
       const endpoint = this.configService.get<string>('AI_CV_EVALUATE_UPLOAD_ENDPOINT', '/v1/upload/cv_evaluate');
       this.logger.log(`🎯 Endpoint: ${this.baseUrl}${endpoint}`);
-      
+
       // Check if file exists
       if (!fs.existsSync(filePath)) {
         throw new Error(`File not found: ${filePath}`);
       }
-      
+
       const fileStats = fs.statSync(filePath);
       this.logger.log(`📄 File size: ${fileStats.size} bytes`);
-      
+
       const formData = new FormData();
       formData.append('file', fs.createReadStream(filePath), {
         filename: originalName,
         contentType: 'application/pdf',
       });
-      
+
       // Always add jd_text field (empty string if not provided)
       const jdTextValue = jdText || '';
       formData.append('jd_text', jdTextValue);
@@ -214,14 +214,14 @@ export class AiCvApiService {
         maxContentLength: Infinity,
         timeout: 120000, // 2 minutes timeout
       });
-      
+
       const duration = Date.now() - startTime;
       this.logger.log(`✅ CV evaluation successful in ${duration}ms`);
       return response.data;
     } catch (error) {
       const duration = Date.now() - startTime;
       this.logger.error(`💥 CV evaluation failed after ${duration}ms`);
-      
+
       if (error.code === 'ECONNABORTED') {
         this.logger.error('⏰ Request timeout - AI service took too long to respond');
       } else if (error.code === 'ECONNREFUSED') {
@@ -230,7 +230,7 @@ export class AiCvApiService {
         this.logger.error(`📊 Response status: ${error.response.status}`);
         this.logger.error(`📊 Response data: ${JSON.stringify(error.response.data)}`);
       }
-      
+
       this.logger.error('Full error details:', error.message);
       throw new HttpException(
         `Failed to upload and evaluate CV: ${error.message}`,
@@ -251,22 +251,22 @@ export class AiCvApiService {
   ): Promise<any> {
     const startTime = Date.now();
     this.logger.log(`🔄 Starting CV improvement for: ${originalName}`);
-    
+
     try {
       const endpoint = this.configService.get<string>('AI_CV_IMPROVEMENT_UPLOAD_ENDPOINT', '/v1/upload/cv_improvement');
       this.logger.log(`🎯 Endpoint: ${this.baseUrl}${endpoint}`);
-      
+
       // Check if file exists
       if (!fs.existsSync(filePath)) {
         throw new Error(`File not found: ${filePath}`);
       }
-      
+
       const formData = new FormData();
       formData.append('file', fs.createReadStream(filePath), {
         filename: originalName,
         contentType: 'application/pdf',
       });
-      
+
       // Always add jd_text field (empty string if not provided)
       const jdTextValue = jdText || '';
       formData.append('jd_text', jdTextValue);
@@ -288,7 +288,7 @@ export class AiCvApiService {
       this.logger.log(`  - file: ${originalName} (application/pdf)`);
       this.logger.log(`  - jd_text: ${jdTextValue ? 'provided' : 'empty'}`);
       this.logger.log(`  - jd_file: ${jdFilePath ? jdFileName : 'not provided'}`);
-      
+
       this.logger.log('📤 Sending improvement request to AI service...');
       const response = await this.axiosInstance.post(endpoint, formData, {
         headers: {
@@ -299,14 +299,14 @@ export class AiCvApiService {
         maxContentLength: Infinity,
         timeout: 120000, // 2 minutes timeout
       });
-      
+
       const duration = Date.now() - startTime;
       this.logger.log(`✅ CV improvement successful in ${duration}ms`);
       return response.data;
     } catch (error) {
       const duration = Date.now() - startTime;
       this.logger.error(`💥 CV improvement failed after ${duration}ms`);
-      
+
       if (error.code === 'ECONNABORTED') {
         this.logger.error('⏰ Request timeout - AI service took too long to respond');
       } else if (error.code === 'ECONNREFUSED') {
@@ -315,7 +315,7 @@ export class AiCvApiService {
         this.logger.error(`📊 Response status: ${error.response.status}`);
         this.logger.error(`📊 Response data: ${JSON.stringify(error.response.data)}`);
       }
-      
+
       this.logger.error('Full error details:', error.message);
       throw new HttpException(
         `Failed to upload and get improvements: ${error.message}`,
@@ -362,7 +362,7 @@ export class AiCvApiService {
           'Accept': 'application/json',
         },
       });
-      
+
       return response.data;
     } catch (error) {
       this.logger.error('Failed to upload CV artifact', error);
@@ -389,7 +389,7 @@ export class AiCvApiService {
           'Accept': 'application/json',
         },
       });
-      
+
       return response.data;
     } catch (error) {
       this.logger.error('Failed to upload JD artifact', error);
