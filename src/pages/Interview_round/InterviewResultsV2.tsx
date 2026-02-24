@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Award,
   TrendingUp,
   TrendingDown,
-  Mic,
-  Video,
   MessageSquare,
   CheckCircle,
   XCircle,
@@ -16,40 +14,49 @@ import {
   BarChart3,
   Target,
   Zap,
-  Eye,
-  Heart,
   Brain,
-  User,
   Star,
   ArrowRight,
-  Clock,
+  ChevronDown,
+  ChevronUp,
+  Lightbulb,
+  Calendar,
+  Rocket,
+  Shield,
+  Eye,
+  Cpu,
+  Users,
 } from "lucide-react";
-import { CompleteInterviewV2Response } from "@/api/interviewV2";
+import { InterviewV2Report } from "@/api/interviewV2";
+
+// ────────────────────────────────────────────────────────────
+// Main Component
+// ────────────────────────────────────────────────────────────
 
 export default function InterviewResultsV2() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
-  const [report, setReport] = useState<CompleteInterviewV2Response | null>(null);
+  const [report, setReport] = useState<InterviewV2Report | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Try to load from localStorage first
-    const storedReport = localStorage.getItem('v2_interview_report');
+    const storedReport = localStorage.getItem("v2_interview_report");
     if (storedReport) {
-      setReport(JSON.parse(storedReport));
-      setLoading(false);
-    } else {
-      // TODO: Fetch from API if not in localStorage
-      setLoading(false);
+      try {
+        setReport(JSON.parse(storedReport));
+      } catch {
+        console.error("Failed to parse stored interview report");
+      }
     }
+    setLoading(false);
   }, [sessionId]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading interview results...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600 mx-auto mb-4" />
+          <p className="text-gray-500 dark:text-gray-400 font-medium">Loading interview results…</p>
         </div>
       </div>
     );
@@ -57,14 +64,14 @@ export default function InterviewResultsV2() {
 
   if (!report) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <XCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">No Results Found</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">Could not load interview results.</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-6">Could not load interview results.</p>
           <button
-            onClick={() => navigate('/interview_round')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+            onClick={() => navigate("/interview_round")}
+            className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium"
           >
             Go to Dashboard
           </button>
@@ -73,365 +80,87 @@ export default function InterviewResultsV2() {
     );
   }
 
-  const getRecommendationIcon = (rec: string) => {
-    if (rec === 'hire') return <CheckCircle className="w-6 h-6" />;
-    if (rec === 'maybe') return <AlertCircle className="w-6 h-6" />;
-    return <XCircle className="w-6 h-6" />;
-  };
-
-
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Interview Results
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                {report.role} at {report.company} • {report.interview_duration_minutes} minutes
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate('/interview_round')}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
-              >
-                <Home className="w-4 h-4" />
-                Dashboard
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium shadow-sm"
-              >
-                <Download className="w-4 h-4" />
-                Download Report
-              </button>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+      {/* ─── Top Navigation ─── */}
+      <div className="sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/60 dark:border-gray-800">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <h1 className="text-lg font-bold text-gray-900 dark:text-white">Interview Report</h1>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/interview_round")}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+            >
+              <Home className="w-4 h-4" />
+              Dashboard
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-sm"
+            >
+              <Download className="w-4 h-4" />
+              Export
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        {/* Overall Recommendation Card */}
-        {/* Overall Recommendation Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-4 mb-4">
-                <div className={`p-3 rounded-xl ${report.evaluation.recommendation === 'hire' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400' :
-                  report.evaluation.recommendation === 'maybe' ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400' :
-                    'bg-rose-100 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400'
-                  }`}>
-                  {getRecommendationIcon(report.evaluation.recommendation)}
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white capitalize">
-                    {report.evaluation.recommendation === 'hire' ? 'Strong Hire' : report.evaluation.recommendation === 'maybe' ? 'Maybe Hire' : 'No Hire'}
-                  </h2>
-                  <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-4 h-4" />
-                      <span>{report.total_questions} questions</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Target className="w-4 h-4" />
-                      <span>{report.interview_duration_minutes} mins</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed max-w-3xl">
-                {report.evaluation.summary}
-              </p>
-            </div>
+      <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+        {/* ─── 1. Hero / Summary Card ─── */}
+        <HeroCard report={report} />
 
-            <div className="text-center pl-8 border-l border-gray-100 dark:border-gray-700">
-              <div className={`text-5xl font-bold mb-1 ${report.evaluation.overall_score >= 70 ? 'text-emerald-600 dark:text-emerald-400' :
-                report.evaluation.overall_score >= 50 ? 'text-indigo-600 dark:text-indigo-400' :
-                  'text-rose-600 dark:text-rose-400'
-                }`}>
-                {report.evaluation.overall_score}
-              </div>
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Overall Score</div>
-            </div>
-          </div>
-        </div>
+        {/* ─── 2. Dimension Scores ─── */}
+        <section>
+          <SectionHeading icon={<BarChart3 className="w-5 h-5" />} title="Dimension Scores" />
+          <DimensionScoresGrid scores={report.dimension_scores} />
+        </section>
 
-        {/* Skill Assessments */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <SkillCard
-            icon={<Brain className="w-6 h-6" />}
-            title="Technical Skills"
-            score={report.evaluation.technical_skills.score}
-            assessment={report.evaluation.technical_skills.assessment}
-            color="from-blue-500 to-blue-600"
-          />
-          <SkillCard
-            icon={<MessageSquare className="w-6 h-6" />}
-            title="Communication"
-            score={report.evaluation.communication_skills.score}
-            assessment={report.evaluation.communication_skills.assessment}
-            color="from-purple-500 to-purple-600"
-          />
-          <SkillCard
-            icon={<Zap className="w-6 h-6" />}
-            title="Problem Solving"
-            score={report.evaluation.problem_solving.score}
-            assessment={report.evaluation.problem_solving.assessment}
-            color="from-yellow-500 to-orange-500"
-          />
-          <SkillCard
-            icon={<Heart className="w-6 h-6" />}
-            title="Cultural Fit"
-            score={report.evaluation.cultural_fit.score}
-            assessment={report.evaluation.cultural_fit.assessment}
-            color="from-pink-500 to-pink-600"
-          />
-          <SkillCard
-            icon={<User className="w-6 h-6" />}
-            title="Experience Relevance"
-            score={report.evaluation.experience_relevance.score}
-            assessment={report.evaluation.experience_relevance.assessment}
-            color="from-green-500 to-emerald-600"
-          />
-          <SkillCard
-            icon={<BarChart3 className="w-6 h-6" />}
-            title="Overall Performance"
-            score={report.metrics?.overall_performance ?? 0}
-            assessment={`Response Quality: ${report.metrics?.response_quality ?? 0}/10`}
-            color="from-indigo-500 to-indigo-600"
-          />
-        </div>
-
-        {/* Strengths & Weaknesses */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <TrendingUp className="w-6 h-6 text-green-600" />
-              Strengths
-            </h3>
-            <ul className="space-y-3">
-              {report.evaluation.strengths.map((strength, idx) => (
-                <li key={idx} className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700 dark:text-gray-300">{strength}</span>
-                </li>
+        {/* ─── 3. Question-wise Analysis ─── */}
+        {report.question_wise_analysis?.length > 0 && (
+          <section>
+            <SectionHeading icon={<MessageSquare className="w-5 h-5" />} title="Question-wise Analysis" />
+            <div className="space-y-4">
+              {report.question_wise_analysis.map((q) => (
+                <QuestionCard key={q.question_id} question={q} />
               ))}
-            </ul>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <TrendingDown className="w-6 h-6 text-orange-600" />
-              Areas for Improvement
-            </h3>
-            <ul className="space-y-3">
-              {report.evaluation.weaknesses.map((weakness, idx) => (
-                <li key={idx} className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700 dark:text-gray-300">{weakness}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {/* Voice Analytics */}
-        {report.voice_analytics?.analysis_performed && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-              <Mic className="w-6 h-6 text-blue-600" />
-              Voice Analytics
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-              <VoiceMetric
-                label="Fluency"
-                score={report.voice_analytics?.average_scores?.fluency || 0}
-                interpretation={report.voice_analytics?.interpretation?.fluency || 'N/A'}
-              />
-              <VoiceMetric
-                label="Clarity"
-                score={report.voice_analytics?.average_scores?.clarity || 0}
-                interpretation={report.voice_analytics?.interpretation?.clarity || 'N/A'}
-              />
-              <VoiceMetric
-                label="Confidence"
-                score={report.voice_analytics?.average_scores?.confidence || 0}
-                interpretation={report.voice_analytics?.interpretation?.confidence || 'N/A'}
-              />
-              <VoiceMetric
-                label="Pace"
-                score={report.voice_analytics?.average_scores?.pace || 0}
-                interpretation={report.voice_analytics?.interpretation?.pace || 'N/A'}
-              />
             </div>
-
-            {report.voice_analytics?.speaking_rate_wpm && (
-              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Speaking Rate
-                  </span>
-                  <span className="text-lg font-bold text-gray-900 dark:text-white">
-                    {Math.round(report.voice_analytics?.speaking_rate_wpm || 0)} WPM
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  Ideal range: 120-150 WPM
-                </p>
-              </div>
-            )}
-          </div>
+          </section>
         )}
 
-        {/* Video Analytics */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-            <Video className="w-6 h-6 text-purple-600" />
-            Video Analytics
-          </h3>
+        {/* ─── 4. Skill Gap Analysis ─── */}
+        <section>
+          <SectionHeading icon={<Target className="w-5 h-5" />} title="Skill Gap Analysis" />
+          <SkillGapGrid gaps={report.skill_gap_analysis} />
+        </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <VideoMetric
-              label="Confidence"
-              value={report.video_analytics?.confidence_score ?? 0}
-              max={10}
-              icon={<Star className="w-5 h-5" />}
-            />
-            <VideoMetric
-              label="Eye Contact"
-              value={report.video_analytics?.eye_contact_percentage ?? 0}
-              max={100}
-              suffix="%"
-              icon={<Eye className="w-5 h-5" />}
-            />
-            <VideoMetric
-              label="Posture"
-              value={report.video_analytics?.posture_score ?? 0}
-              max={10}
-              icon={<User className="w-5 h-5" />}
-            />
-            <VideoMetric
-              label="Professionalism"
-              value={report.video_analytics?.professionalism_score ?? 0}
-              max={10}
-              icon={<Award className="w-5 h-5" />}
-            />
-          </div>
+        {/* ─── 5. Behavioral Insights ─── */}
+        <section>
+          <SectionHeading icon={<Brain className="w-5 h-5" />} title="Behavioral Insights" />
+          <BehavioralInsightsGrid insights={report.behavioral_insights} />
+        </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                Facial Expressions
-              </h4>
-              <div className="space-y-2">
-                <ProgressBar label="Positive" value={report.video_analytics?.facial_expressions?.positive ?? 0} color="green" />
-                <ProgressBar label="Neutral" value={report.video_analytics?.facial_expressions?.neutral ?? 0} color="gray" />
-                <ProgressBar label="Stressed" value={report.video_analytics?.facial_expressions?.stressed ?? 0} color="red" />
-              </div>
-            </div>
+        {/* ─── 6. Improvement Plan ─── */}
+        <section>
+          <SectionHeading icon={<Rocket className="w-5 h-5" />} title="Improvement Plan" />
+          <ImprovementTimeline plan={report.improvement_plan} />
+        </section>
 
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                Body Language
-              </h4>
-              <div className="space-y-2">
-                <ProgressBar label="Open" value={report.video_analytics?.body_language?.open ?? 0} color="green" />
-                <ProgressBar label="Neutral" value={report.video_analytics?.body_language?.neutral ?? 0} color="gray" />
-                <ProgressBar label="Closed" value={report.video_analytics?.body_language?.closed ?? 0} color="red" />
-              </div>
-            </div>
+        {/* ─── 7. Verdict ─── */}
+        <section>
+          <SectionHeading icon={<Award className="w-5 h-5" />} title="Final Verdict" />
+          <VerdictCard verdict={report.verdict} />
+        </section>
 
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                Other Metrics
-              </h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Engagement</span>
-                  <span className="font-semibold capitalize text-gray-900 dark:text-white">
-                    {report.video_analytics?.engagement_level ?? 'N/A'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Speech Pace</span>
-                  <span className="font-semibold capitalize text-gray-900 dark:text-white">
-                    {report.video_analytics?.speech_pace ?? 'N/A'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Energy Level</span>
-                  <span className="font-semibold capitalize text-gray-900 dark:text-white">
-                    {report.video_analytics?.energy_level ?? 'N/A'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 italic border-t border-gray-100 dark:border-gray-700 pt-3">
-            {report.video_analytics?.note ?? ''}
-          </p>
-        </div>
-
-        {/* Detailed Feedback */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Detailed Feedback
-          </h3>
-          <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
-            {report.evaluation.detailed_feedback}
-          </p>
-        </div>
-
-        {/* Key Highlights */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <Star className="w-5 h-5 text-amber-500" />
-            Key Highlights
-          </h3>
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {report.evaluation.key_highlights.map((highlight, idx) => (
-              <li key={idx} className="flex items-start gap-3 text-sm">
-                <ArrowRight className="w-4 h-4 text-amber-500 mt-1 flex-shrink-0" />
-                <span className="text-gray-700 dark:text-gray-300">{highlight}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Improvement Recommendations */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <Target className="w-5 h-5 text-indigo-600" />
-            Improvement Recommendations
-          </h3>
-          <ul className="space-y-4">
-            {report.evaluation.improvement_areas.map((area, idx) => (
-              <li key={idx} className="flex items-start gap-3 text-sm">
-                <div className="w-6 h-6 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0 text-indigo-600 dark:text-indigo-400 font-semibold text-xs border border-indigo-100 dark:border-indigo-800">
-                  {idx + 1}
-                </div>
-                <span className="text-gray-700 dark:text-gray-300 pt-0.5">{area}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Call to Action */}
-        <div className="bg-indigo-600 rounded-2xl shadow-lg p-8 text-white text-center">
-          <h3 className="text-2xl font-bold mb-3">Ready for Your Next Interview?</h3>
-          <p className="text-indigo-100 mb-8 max-w-2xl mx-auto">
-            Practice makes perfect. Start another interview to improve your skills and track your progress.
+        {/* ─── CTA ─── */}
+        <div className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-2xl p-8 text-white text-center shadow-xl shadow-indigo-200/30 dark:shadow-indigo-900/20">
+          <h3 className="text-2xl font-bold mb-2">Ready for Your Next Interview?</h3>
+          <p className="text-indigo-100 mb-6 max-w-xl mx-auto text-sm">
+            Practice makes perfect. Use the improvement plan above and start another session.
           </p>
           <button
-            onClick={() => navigate('/interview_round')}
-            className="inline-flex items-center gap-2 px-8 py-3 bg-white text-indigo-600 font-semibold rounded-lg hover:bg-gray-50 transition-all shadow-sm"
+            onClick={() => navigate("/interview_round")}
+            className="inline-flex items-center gap-2 px-8 py-3 bg-white text-indigo-700 font-semibold rounded-xl hover:bg-indigo-50 transition-all shadow-sm"
           >
             Start New Interview
             <ArrowRight className="w-4 h-4" />
@@ -442,152 +171,407 @@ export default function InterviewResultsV2() {
   );
 }
 
-// Helper Components
+// ────────────────────────────────────────────────────────────
+// Sub-components
+// ────────────────────────────────────────────────────────────
 
-const SkillCard = ({
-  icon,
-  title,
-  score,
-  assessment,
-  color
-}: {
-  icon: React.ReactNode;
-  title: string;
-  score: number;
-  assessment: string;
-  color: string;
-}) => {
-  // Extract base color from gradient string for text color mapping (simple approximation)
-  const getTextColor = (gradient: string) => {
-    if (gradient.includes('blue')) return 'text-blue-600 dark:text-blue-400';
-    if (gradient.includes('purple')) return 'text-purple-600 dark:text-purple-400';
-    if (gradient.includes('yellow') || gradient.includes('orange')) return 'text-amber-600 dark:text-amber-400';
-    if (gradient.includes('pink')) return 'text-pink-600 dark:text-pink-400';
-    if (gradient.includes('green') || gradient.includes('emerald')) return 'text-emerald-600 dark:text-emerald-400';
-    return 'text-indigo-600 dark:text-indigo-400';
-  };
-
-  const getBgColor = (gradient: string) => {
-    if (gradient.includes('blue')) return 'bg-blue-600 dark:bg-blue-400';
-    if (gradient.includes('purple')) return 'bg-purple-600 dark:bg-purple-400';
-    if (gradient.includes('yellow') || gradient.includes('orange')) return 'bg-amber-600 dark:bg-amber-400';
-    if (gradient.includes('pink')) return 'bg-pink-600 dark:bg-pink-400';
-    if (gradient.includes('green') || gradient.includes('emerald')) return 'bg-emerald-600 dark:bg-emerald-400';
-    return 'bg-indigo-600 dark:bg-indigo-400';
-  };
-
-  const textColorClass = getTextColor(color);
-  const bgColorClass = getBgColor(color);
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 h-full flex flex-col">
-      <div className="flex items-start justify-between mb-4">
-        <div className={`p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 ${textColorClass}`}>
-          {React.cloneElement(icon as React.ReactElement, { className: "w-6 h-6" })}
-        </div>
-        <div className="text-2xl font-bold text-gray-900 dark:text-white">
-          {score}<span className="text-sm text-gray-400 font-normal">/10</span>
-        </div>
-      </div>
-
-      <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{title}</h4>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 flex-grow">{assessment}</p>
-
-      <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 mt-auto">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${score * 10}%` }}
-          transition={{ duration: 1, delay: 0.2 }}
-          className={`h-1.5 rounded-full ${bgColorClass}`}
-        />
-      </div>
-    </div>
-  );
-};
-
-const VoiceMetric = ({
-  label,
-  score,
-  interpretation
-}: {
-  label: string;
-  score: number;
-  interpretation: string;
-}) => (
-  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-    <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">{label}</h4>
-    <div className="flex items-baseline gap-2 mb-1">
-      <span className="text-3xl font-bold text-gray-900 dark:text-white">{score.toFixed(1)}</span>
-      <span className="text-sm text-gray-400">/10</span>
-    </div>
-    <p className="text-xs text-gray-500 dark:text-gray-400">{interpretation}</p>
+const SectionHeading = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
+  <div className="flex items-center gap-2.5 mb-5">
+    <div className="text-indigo-600 dark:text-indigo-400">{icon}</div>
+    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
   </div>
 );
 
-const VideoMetric = ({
-  label,
-  value,
-  max,
-  suffix = '',
-  icon
-}: {
-  label: string;
-  value: number;
-  max: number;
-  suffix?: string;
-  icon: React.ReactNode;
-}) => (
-  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-    <div className="flex items-center gap-2 mb-2">
-      <div className="text-gray-400 dark:text-gray-500">
-        {React.cloneElement(icon as React.ReactElement, { className: "w-4 h-4" })}
-      </div>
-      <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</h4>
-    </div>
-    <div className="flex items-baseline gap-1 mb-2">
-      <span className="text-3xl font-bold text-gray-900 dark:text-white">{value.toFixed(1)}</span>
-      <span className="text-sm text-gray-400">/{max}{suffix}</span>
-    </div>
-    <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
-      <motion.div
-        initial={{ width: 0 }}
-        animate={{ width: `${(value / max) * 100}%` }}
-        transition={{ duration: 1 }}
-        className="h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400"
-      />
-    </div>
-  </div>
-);
+// ── Hero Card ──
 
-const ProgressBar = ({
-  label,
-  value,
-  color
-}: {
-  label: string;
-  value: number;
-  color: 'green' | 'gray' | 'red';
-}) => {
-  const colors = {
-    green: 'bg-emerald-500',
-    gray: 'bg-gray-400',
-    red: 'bg-rose-500',
-  };
+function HeroCard({ report }: { report: InterviewV2Report }) {
+  const score = report.summary?.overall_score ?? 0;
+  const rec = report.summary?.hire_recommendation ?? "";
+  const seniority = report.summary?.seniority_assessment ?? "";
+  const confidence = report.summary?.confidence_assessment ?? "";
+
+  const scoreColor =
+    score >= 75 ? "text-emerald-600 dark:text-emerald-400" :
+      score >= 50 ? "text-amber-600 dark:text-amber-400" :
+        "text-rose-600 dark:text-rose-400";
+
+  const ringColor =
+    score >= 75 ? "stroke-emerald-500" :
+      score >= 50 ? "stroke-amber-500" :
+        "stroke-rose-500";
+
+  const circumference = 2 * Math.PI * 54;
+  const dashOffset = circumference - (score / 100) * circumference;
 
   return (
-    <div>
-      <div className="flex justify-between text-xs mb-1">
-        <span className="text-gray-600 dark:text-gray-400">{label}</span>
-        <span className="font-semibold text-gray-900 dark:text-white">{value}%</span>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-lg shadow-gray-200/50 dark:shadow-black/20 border border-gray-200/60 dark:border-gray-700/60 p-8"
+    >
+      <div className="flex flex-col md:flex-row items-center gap-8">
+        {/* Score Ring */}
+        <div className="relative flex-shrink-0">
+          <svg className="w-36 h-36 -rotate-90" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="54" fill="none" strokeWidth="8" className="stroke-gray-100 dark:stroke-gray-700" />
+            <motion.circle
+              cx="60" cy="60" r="54" fill="none" strokeWidth="8" strokeLinecap="round"
+              className={ringColor}
+              strokeDasharray={circumference}
+              initial={{ strokeDashoffset: circumference }}
+              animate={{ strokeDashoffset: dashOffset }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className={`text-4xl font-extrabold ${scoreColor}`}>{score}</span>
+            <span className="text-xs text-gray-400 font-medium">/ 100</span>
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 text-center md:text-left">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{rec}</h2>
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-3">
+            <Badge color="indigo" label={`Seniority: ${seniority}`} />
+            <Badge color="slate" label={`Confidence: ${confidence}`} />
+          </div>
+        </div>
       </div>
-      <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${value}%` }}
-          transition={{ duration: 0.8 }}
-          className={`h-1.5 rounded-full ${colors[color]}`}
-        />
+    </motion.div>
+  );
+}
+
+const Badge = ({ label, color }: { label: string; color: "indigo" | "slate" | "emerald" | "rose" | "amber" }) => {
+  const styles: Record<string, string> = {
+    indigo: "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+    slate: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700",
+    emerald: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    rose: "bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+    amber: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+  };
+  return (
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border capitalize ${styles[color]}`}>
+      {label}
+    </span>
+  );
+};
+
+// ── Dimension Scores Grid ──
+
+const DIMENSION_META: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
+  technical_depth: { icon: <Cpu className="w-5 h-5" />, label: "Technical Depth", color: "indigo" },
+  problem_solving: { icon: <Zap className="w-5 h-5" />, label: "Problem Solving", color: "amber" },
+  system_design: { icon: <Lightbulb className="w-5 h-5" />, label: "System Design", color: "violet" },
+  communication: { icon: <MessageSquare className="w-5 h-5" />, label: "Communication", color: "sky" },
+  role_fit: { icon: <Users className="w-5 h-5" />, label: "Role Fit", color: "emerald" },
+};
+
+const COLOR_MAP: Record<string, { bar: string; bg: string; text: string; iconBg: string }> = {
+  indigo: { bar: "bg-indigo-500", bg: "bg-indigo-50 dark:bg-indigo-900/20", text: "text-indigo-600 dark:text-indigo-400", iconBg: "bg-indigo-100 dark:bg-indigo-900/40" },
+  amber: { bar: "bg-amber-500", bg: "bg-amber-50 dark:bg-amber-900/20", text: "text-amber-600 dark:text-amber-400", iconBg: "bg-amber-100 dark:bg-amber-900/40" },
+  violet: { bar: "bg-violet-500", bg: "bg-violet-50 dark:bg-violet-900/20", text: "text-violet-600 dark:text-violet-400", iconBg: "bg-violet-100 dark:bg-violet-900/40" },
+  sky: { bar: "bg-sky-500", bg: "bg-sky-50 dark:bg-sky-900/20", text: "text-sky-600 dark:text-sky-400", iconBg: "bg-sky-100 dark:bg-sky-900/40" },
+  emerald: { bar: "bg-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20", text: "text-emerald-600 dark:text-emerald-400", iconBg: "bg-emerald-100 dark:bg-emerald-900/40" },
+};
+
+function DimensionScoresGrid({ scores }: { scores: InterviewV2Report["dimension_scores"] }) {
+  if (!scores) return null;
+  const entries = Object.entries(scores) as [string, number][];
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      {entries.map(([key, value]) => {
+        const meta = DIMENSION_META[key] ?? { icon: <BarChart3 className="w-5 h-5" />, label: key.replace(/_/g, " "), color: "indigo" };
+        const c = COLOR_MAP[meta.color] ?? COLOR_MAP.indigo;
+        return (
+          <motion.div
+            key={key}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 * entries.indexOf([key, value] as any) }}
+            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col items-center text-center"
+          >
+            <div className={`p-2.5 rounded-xl mb-3 ${c.iconBg} ${c.text}`}>{meta.icon}</div>
+            <div className="text-3xl font-extrabold text-gray-900 dark:text-white mb-0.5">{value}<span className="text-sm font-normal text-gray-400">/10</span></div>
+            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 capitalize">{meta.label}</div>
+            <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${value * 10}%` }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className={`h-1.5 rounded-full ${c.bar}`}
+              />
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Question Card (expandable) ──
+
+function QuestionCard({ question }: { question: InterviewV2Report["question_wise_analysis"][number] }) {
+  const [expanded, setExpanded] = useState(false);
+  const scoreColor =
+    question.score >= 8 ? "text-emerald-600 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-900/30 dark:border-emerald-800" :
+      question.score >= 5 ? "text-amber-600 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-900/30 dark:border-amber-800" :
+        "text-rose-600 bg-rose-50 border-rose-200 dark:text-rose-400 dark:bg-rose-900/30 dark:border-rose-800";
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+      {/* Header (always visible) */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between p-5 text-left hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors"
+      >
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <span className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold border ${scoreColor}`}>
+            {question.score}
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+              Q{question.question_id}. {question.question}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">
+              {question.user_answer_summary}
+            </p>
+          </div>
+        </div>
+        {expanded ? <ChevronUp className="w-5 h-5 text-gray-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />}
+      </button>
+
+      {/* Expanded body */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-5 pt-0 border-t border-gray-100 dark:border-gray-700">
+              {/* Answer summary */}
+              <div className="mb-4 mt-4">
+                <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Your Answer</h4>
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{question.user_answer_summary}</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Strengths */}
+                <div className="bg-emerald-50/50 dark:bg-emerald-900/10 rounded-lg p-4 border border-emerald-100 dark:border-emerald-900/30">
+                  <h4 className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <TrendingUp className="w-3.5 h-3.5" /> Strengths
+                  </h4>
+                  <ul className="space-y-1.5">
+                    {question.evaluation?.strengths?.map((s, i) => (
+                      <li key={i} className="text-xs text-emerald-800 dark:text-emerald-300 flex items-start gap-1.5">
+                        <CheckCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                        <span>{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Weaknesses */}
+                <div className="bg-rose-50/50 dark:bg-rose-900/10 rounded-lg p-4 border border-rose-100 dark:border-rose-900/30">
+                  <h4 className="text-xs font-semibold text-rose-700 dark:text-rose-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <TrendingDown className="w-3.5 h-3.5" /> Weaknesses
+                  </h4>
+                  <ul className="space-y-1.5">
+                    {question.evaluation?.weaknesses?.map((w, i) => (
+                      <li key={i} className="text-xs text-rose-800 dark:text-rose-300 flex items-start gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                        <span>{w}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Ideal Answer */}
+                <div className="bg-indigo-50/50 dark:bg-indigo-900/10 rounded-lg p-4 border border-indigo-100 dark:border-indigo-900/30">
+                  <h4 className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Lightbulb className="w-3.5 h-3.5" /> Ideal Answer Points
+                  </h4>
+                  <ul className="space-y-1.5">
+                    {question.evaluation?.ideal_answer_outline?.map((pt, i) => (
+                      <li key={i} className="text-xs text-indigo-800 dark:text-indigo-300 flex items-start gap-1.5">
+                        <ArrowRight className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                        <span>{pt}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ── Skill Gap Analysis ──
+
+function SkillGapGrid({ gaps }: { gaps: InterviewV2Report["skill_gap_analysis"] }) {
+  if (!gaps) return null;
+
+  const sections = [
+    { label: "Critical Gaps", items: gaps.critical_gaps, color: "rose", icon: <XCircle className="w-4 h-4" /> },
+    { label: "Moderate Gaps", items: gaps.moderate_gaps, color: "amber", icon: <AlertCircle className="w-4 h-4" /> },
+    { label: "Minor Gaps", items: gaps.minor_gaps, color: "sky", icon: <Eye className="w-4 h-4" /> },
+  ] as const;
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {sections.map(({ label, items, color, icon }) => {
+        const c = {
+          rose: "bg-rose-50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-900/40 text-rose-700 dark:text-rose-300",
+          amber: "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-900/40 text-amber-700 dark:text-amber-300",
+          sky: "bg-sky-50 dark:bg-sky-900/10 border-sky-200 dark:border-sky-900/40 text-sky-700 dark:text-sky-300",
+        }[color];
+
+        return (
+          <div key={label} className={`rounded-xl p-5 border ${c}`}>
+            <h4 className="text-sm font-bold flex items-center gap-2 mb-3">{icon} {label}</h4>
+            {items?.length ? (
+              <ul className="space-y-2">
+                {items.map((item, i) => (
+                  <li key={i} className="text-sm flex items-start gap-2">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm opacity-60 italic">None identified</p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Behavioral Insights ──
+
+function BehavioralInsightsGrid({ insights }: { insights: InterviewV2Report["behavioral_insights"] }) {
+  if (!insights) return null;
+
+  const cards = [
+    { label: "Communication Style", value: insights.communication_style, icon: <MessageSquare className="w-5 h-5" />, color: "indigo" },
+    { label: "Thinking Pattern", value: insights.thinking_pattern, icon: <Brain className="w-5 h-5" />, color: "violet" },
+    { label: "Pressure Handling", value: insights.pressure_handling, icon: <Shield className="w-5 h-5" />, color: "emerald" },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {cards.map(({ label, value, icon, color }) => {
+        const c = COLOR_MAP[color] ?? COLOR_MAP.indigo;
+        return (
+          <div key={label} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+            <div className={`inline-flex p-2.5 rounded-xl mb-3 ${c.iconBg} ${c.text}`}>{icon}</div>
+            <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-1.5">{label}</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{value || "N/A"}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Improvement Plan Timeline ──
+
+function ImprovementTimeline({ plan }: { plan: InterviewV2Report["improvement_plan"] }) {
+  if (!plan) return null;
+
+  const phases = [
+    { label: "Immediate Actions", items: plan.immediate_actions, icon: <Zap className="w-4 h-4" />, accent: "indigo" },
+    { label: "30-Day Plan", items: plan["30_day_plan"], icon: <Calendar className="w-4 h-4" />, accent: "violet" },
+    { label: "90-Day Plan", items: plan["90_day_plan"], icon: <Rocket className="w-4 h-4" />, accent: "emerald" },
+  ] as const;
+
+  return (
+    <div className="relative">
+      {/* Connecting line */}
+      <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-indigo-300 via-violet-300 to-emerald-300 dark:from-indigo-700 dark:via-violet-700 dark:to-emerald-700" />
+
+      <div className="space-y-6 md:space-y-0 md:grid md:grid-cols-3 md:gap-6">
+        {phases.map(({ label, items, icon, accent }) => {
+          const c = COLOR_MAP[accent] ?? COLOR_MAP.indigo;
+          return (
+            <div key={label} className="relative">
+              {/* Dot on timeline */}
+              <div className="hidden md:flex absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full border-2 border-white dark:border-gray-900 z-10" style={{ backgroundColor: accent === "indigo" ? "#6366f1" : accent === "violet" ? "#8b5cf6" : "#10b981" }} />
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className={`p-1.5 rounded-lg ${c.iconBg} ${c.text}`}>{icon}</div>
+                  <h4 className="text-sm font-bold text-gray-900 dark:text-white">{label}</h4>
+                </div>
+                <ul className="space-y-2.5">
+                  {items?.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300">
+                      <CheckCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${c.text}`} />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
-};
+}
+
+// ── Verdict Card ──
+
+function VerdictCard({ verdict }: { verdict: InterviewV2Report["verdict"] }) {
+  if (!verdict) return null;
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+      {/* Final recommendation */}
+      <div className="p-6 bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20 border-b border-gray-200 dark:border-gray-700">
+        <p className="text-gray-800 dark:text-gray-200 leading-relaxed font-medium">
+          {verdict.final_recommendation_text}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100 dark:divide-gray-700">
+        {/* Strengths */}
+        <div className="p-6">
+          <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-2 mb-3 uppercase tracking-wider">
+            <TrendingUp className="w-4 h-4" /> Strengths to Highlight
+          </h4>
+          <ul className="space-y-2.5">
+            {verdict.strengths_to_highlight?.map((s, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300">
+                <Star className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                <span>{s}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Areas to fix */}
+        <div className="p-6">
+          <h4 className="text-sm font-bold text-rose-700 dark:text-rose-400 flex items-center gap-2 mb-3 uppercase tracking-wider">
+            <TrendingDown className="w-4 h-4" /> Fix Before Next Interview
+          </h4>
+          <ul className="space-y-2.5">
+            {verdict.areas_to_fix_before_next_interview?.map((a, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300">
+                <AlertCircle className="w-4 h-4 text-rose-500 mt-0.5 flex-shrink-0" />
+                <span>{a}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}

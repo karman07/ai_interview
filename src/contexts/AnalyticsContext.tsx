@@ -17,51 +17,51 @@ interface AnalyticsContextType {
   // Current session data
   visitorId: string | null;
   sessionId: string | null;
-  
+
   // Analytics data
   stats: AnalyticsStatsDto | null;
   realTimeStats: RealTimeStatsDto | null;
   topPages: TopPagesDto[];
   timeSeries: TimeSeriesDataDto[];
   dashboard: AnalyticsDashboardDto | null;
-  
+
   // Page tracking data
   pageViewCount: number;
-  
+
   // Loading states
   isLoading: boolean;
   isTracking: boolean;
-  
+
   // Error state
   error: string | null;
-  
+
   // WebSocket connection management
   connect: () => Promise<void>;
   heartbeat: () => Promise<void>;
   disconnect: () => Promise<void>;
-  
+
   // Tracking methods
   initializeSession: () => Promise<void>;
   trackPageView: (path: string, title?: string, additionalData?: Partial<TrackPageViewDto>) => Promise<void>;
   updateTimeSpent: (path: string, timeSpent: number) => Promise<void>;
   endSession: () => Promise<void>;
-  
+
   // Session management methods
   getSessionById: (sessionId: string) => Promise<void>;
   getSessions: (limit?: number, offset?: number) => Promise<void>;
   getSessionPageViews: (sessionId: string) => Promise<void>;
-  
+
   // Data fetching methods
   fetchStats: (startDate: string, endDate: string) => Promise<void>;
   fetchRealTimeStats: () => Promise<void>;
   fetchTopPages: (startDate: string, endDate: string, limit?: number) => Promise<void>;
   fetchTimeSeries: (startDate: string, endDate: string, granularity: 'hour' | 'day') => Promise<void>;
   fetchDashboard: (startDate: string, endDate: string) => Promise<void>;
-  
+
   // Visitor management methods
   getUserVisitors: (limit?: number, offset?: number) => Promise<void>;
   getUserVisitorStats: () => Promise<void>;
-  
+
   // Utility methods
   healthCheck: () => Promise<void>;
   clearError: () => void;
@@ -76,24 +76,24 @@ interface AnalyticsProviderProps {
   userId?: string;
 }
 
-export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({ 
-  children, 
+export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
+  children,
   autoTrack = true,
-  userId 
+  userId
 }) => {
   const location = useLocation();
-  
+
   // Session state
   const [visitorId, setVisitorId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  
+
   // Analytics data state
   const [stats, setStats] = useState<AnalyticsStatsDto | null>(null);
   const [realTimeStats, setRealTimeStats] = useState<RealTimeStatsDto | null>(null);
   const [topPages, setTopPages] = useState<TopPagesDto[]>([]);
   const [timeSeries, setTimeSeries] = useState<TimeSeriesDataDto[]>([]);
   const [dashboard, setDashboard] = useState<AnalyticsDashboardDto | null>(null);
-  
+
   // Loading and error states
   const [isLoading, setIsLoading] = useState(false);
   const [isTracking, setIsTracking] = useState(false);
@@ -102,7 +102,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
   const [apiFailureCount, setApiFailureCount] = useState(0);
   const [analyticsDisabled, setAnalyticsDisabled] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Page tracking state
   const [currentPath, setCurrentPath] = useState<string>('');
   const [pageStartTime, setPageStartTime] = useState<number>(0);
@@ -123,15 +123,15 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
     setApiFailureCount(prev => {
       const newCount = prev + 1;
       console.log(`Analytics: API failure #${newCount}:`, error?.message || error);
-      
+
       // Only disable analytics after 15 consecutive failures (increased threshold)
       // and only if errors are not just network/connection issues
       if (newCount >= 15) {
         const errorMessage = error?.message || error?.toString() || '';
         // Don't disable for common network errors that might be temporary
-        if (!errorMessage.includes('ERR_CONNECTION_REFUSED') && 
-            !errorMessage.includes('ERR_NETWORK') &&
-            !errorMessage.includes('Network Error')) {
+        if (!errorMessage.includes('ERR_CONNECTION_REFUSED') &&
+          !errorMessage.includes('ERR_NETWORK') &&
+          !errorMessage.includes('Network Error')) {
           setAnalyticsDisabled(true);
           console.warn('🚨 Analytics DISABLED due to repeated API failures after 15 attempts');
           console.warn('🚨 Last error:', error);
@@ -166,7 +166,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
           console.log('Analytics: Recovered from disabled state');
         }
       }, 60000); // Try recovery every minute
-      
+
       return () => clearInterval(recoveryInterval);
     }
   }, [analyticsDisabled, apiFailureCount]);
@@ -176,13 +176,13 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
     if (sessionId && sessionInitialized && !analyticsDisabled) {
       const heartbeatInterval = setInterval(() => {
         console.log('💓 Analytics: Sending heartbeat...');
-        
+
         // Send WebSocket heartbeat
         if (analyticsWebSocket.isConnected()) {
           analyticsWebSocket.emit('heartbeat', {});
           console.log('💓 Analytics: WebSocket heartbeat sent');
         }
-        
+
         // Also call API heartbeat if sessionId exists
         if (sessionId) {
           AnalyticsApi.heartbeat({ sessionId }).then(() => {
@@ -195,7 +195,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
           });
         }
       }, 30000); // Send heartbeat every 30 seconds
-      
+
       return () => clearInterval(heartbeatInterval);
     }
   }, [sessionId, sessionInitialized, analyticsDisabled, handleApiSuccess, handleApiFailure]);
@@ -203,7 +203,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
   // Get device type as string
   const getDeviceType = (): string => {
     if (typeof window === 'undefined') return 'desktop';
-    
+
     const userAgent = navigator.userAgent.toLowerCase();
     if (/tablet|ipad|playbook|silk/.test(userAgent)) {
       return 'tablet';
@@ -217,9 +217,9 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
   // Get visitor data
   const getVisitorData = (): Partial<TrackVisitorDto> => {
     if (typeof window === 'undefined') return {};
-    
+
     const urlParams = new URLSearchParams(window.location.search);
-    
+
     return {
       userAgent: navigator.userAgent,
       language: navigator.language,
@@ -251,7 +251,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
       // Check for existing session first
       let newVisitorId = localStorage.getItem('analytics_visitor_id');
       let newSessionId = localStorage.getItem('analytics_session_id');
-      
+
       // Only generate new IDs if none exist
       if (!newVisitorId) {
         newVisitorId = generateVisitorId();
@@ -260,7 +260,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
       } else {
         console.log('Analytics: Using existing visitor ID:', newVisitorId);
       }
-      
+
       if (!newSessionId) {
         newSessionId = generateSessionId();
         localStorage.setItem('analytics_session_id', newSessionId);
@@ -279,12 +279,12 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
           console.log('Analytics: Using existing session ID:', newSessionId);
         }
       }
-      
+
       localStorage.setItem('analytics_last_activity', Date.now().toString());
 
       setVisitorId(newVisitorId);
       setSessionId(newSessionId);
-      
+
       const startTime = localStorage.getItem('analytics_session_start');
       setSessionStartTime(startTime ? parseInt(startTime) : Date.now());
       setSessionInitialized(true);
@@ -293,7 +293,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
 
       // Track visitor and start session (restored API calls)
       const additionalData = getVisitorData();
-      
+
       const visitorData: TrackVisitorDto = {
         visitorId: newVisitorId,
         sessionId: newSessionId,
@@ -323,11 +323,11 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
         data: visitorData
       });
       console.log('📤 Analytics: startSession API call:', {
-        url: '/api/analytics/sessions/start', 
+        url: '/api/analytics/sessions/start',
         method: 'POST',
         data: sessionData
       });
-      
+
       Promise.all([
         AnalyticsApi.trackVisitor(visitorData).then(response => {
           console.log('📥 Analytics: trackVisitor API response:', response);
@@ -388,8 +388,8 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
 
   // Track page view (fixed for proper counting and WebSocket compatibility)
   const trackPageView = useCallback(async (
-    path: string, 
-    title?: string, 
+    path: string,
+    title?: string,
     additionalData?: Partial<TrackPageViewDto>
   ) => {
     // Basic guards only
@@ -397,9 +397,9 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
       console.log('Analytics: Skipping page view - not initialized');
       return;
     }
-    
+
     console.log(`Analytics: Tracking page view for ${path}`);
-    
+
     try {
       // Always update time spent on previous page first
       if (currentPath && pageStartTime && currentPath !== path) {
@@ -415,7 +415,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
       // Update state immediately (always increment page count for new paths)
       setCurrentPath(path);
       setPageStartTime(Date.now());
-      
+
       // Always increment page count when tracking a new page
       setPageViewCount(prev => {
         const newCount = prev + 1;
@@ -423,77 +423,78 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
         console.log(`Analytics: Page count incremented to: ${newCount}`);
         return newCount;
       });
-      
+
       localStorage.setItem('analytics_last_activity', Date.now().toString());
       localStorage.setItem('analytics_last_tracked_path', path);
 
-        // Make API call to track page view
-        try {
-          const pageViewData: TrackPageViewDto = {
-            visitorId,
-            sessionId,
-            url: window.location.href,
-            path,
-            title: title || document.title,
-            device: getDeviceType() as any,
-            previousPage: currentPath || undefined,
-            screenResolution: `${screen.width}x${screen.height}`,
-            viewportSize: `${window.innerWidth}x${window.innerHeight}`,
-            browser: navigator.userAgent.includes('Chrome') ? 'Chrome' : 
-                    navigator.userAgent.includes('Firefox') ? 'Firefox' : 
-                    navigator.userAgent.includes('Safari') ? 'Safari' : 'Unknown',
-            operatingSystem: navigator.platform,
-            ...getVisitorData(),
-            ...additionalData,
-          };
+      // Make API call to track page view
+      try {
+        const pageViewData: TrackPageViewDto = {
+          visitorId,
+          sessionId,
+          url: window.location.href,
+          path,
+          title: title || document.title,
+          device: getDeviceType() as any,
+          previousPage: currentPath || undefined,
+          screenResolution: `${screen.width}x${screen.height}`,
+          viewportSize: `${window.innerWidth}x${window.innerHeight}`,
+          browser: navigator.userAgent.includes('Chrome') ? 'Chrome' :
+            navigator.userAgent.includes('Firefox') ? 'Firefox' :
+              navigator.userAgent.includes('Safari') ? 'Safari' : 'Unknown',
+          operatingSystem: navigator.platform,
+          ...getVisitorData(),
+          ...additionalData,
+        };
 
-          // Emit WebSocket event for page view (real-time tracking)
-          console.log('🔌 Analytics: Emitting WebSocket trackPageView event');
-          console.log('🔌 Analytics: WebSocket connected status:', analyticsWebSocket.isConnected());
-          
-          if (analyticsWebSocket.isConnected()) {
-            analyticsWebSocket.emit('trackPageView', pageViewData);
-            console.log('✅ Analytics: WebSocket trackPageView event emitted successfully');
-          } else {
-            console.warn('⚠️ Analytics: WebSocket not connected, attempting to reconnect...');
-            analyticsWebSocket.connect(visitorId, sessionId, userId);
-            // Try to emit after connection attempt
-            setTimeout(() => {
-              if (analyticsWebSocket.isConnected()) {
-                analyticsWebSocket.emit('trackPageView', pageViewData);
-                console.log('✅ Analytics: WebSocket trackPageView event emitted after reconnection');
-              }
-            }, 1000);
-          }
+        // Emit WebSocket event for page view (real-time tracking)
+        console.log('🔌 Analytics: Emitting WebSocket trackPageView event');
+        console.log('🔌 Analytics: WebSocket connected status:', analyticsWebSocket.isConnected());
 
-          // Make API call (don't block)
-          console.log('📤 Analytics: trackPageView API call:', {
-            url: '/api/analytics/pageviews',
-            method: 'POST',
-            data: pageViewData
-          });
-          
-          AnalyticsApi.trackPageView(pageViewData)
-            .then((response) => {
-              console.log('📥 Analytics: trackPageView API response:', response);
-              console.log(`✅ Analytics: Successfully sent page view API for ${path}`);
-              handleApiSuccess();
-            })
-            .catch((err: any) => {
-              console.error('❌ Analytics: trackPageView API failed:', err);
-              console.error('❌ Analytics: Page view error details:', {
-                message: err?.message || 'Unknown error',
-                status: err?.status || 'No status',
-                url: err?.config?.url || 'No URL',
-                method: err?.config?.method || 'No method',
-                path: path
-              });
-              handleApiFailure(err);
+        if (analyticsWebSocket.isConnected()) {
+          analyticsWebSocket.emit('trackPageView', pageViewData);
+          console.log('✅ Analytics: WebSocket trackPageView event emitted successfully');
+        } else {
+          console.warn('⚠️ Analytics: WebSocket not connected, attempting to reconnect...');
+          analyticsWebSocket.connect(visitorId, sessionId, userId);
+          // Try to emit after connection attempt
+          setTimeout(() => {
+            if (analyticsWebSocket.isConnected()) {
+              analyticsWebSocket.emit('trackPageView', pageViewData);
+              console.log('✅ Analytics: WebSocket trackPageView event emitted after reconnection');
+            }
+          }, 1000);
+        }
+
+        // Make API call (don't block)
+        console.log('📤 Analytics: trackPageView API call:', {
+          url: '/api/analytics/pageviews',
+          method: 'POST',
+          data: pageViewData
+        });
+
+        AnalyticsApi.trackPageView(pageViewData)
+          .then((response) => {
+            console.log('📥 Analytics: trackPageView API response:', response);
+            console.log(`✅ Analytics: Successfully sent page view API for ${path}`);
+            handleApiSuccess();
+          })
+          .catch((err: any) => {
+            console.error('❌ Analytics: trackPageView API failed:', err);
+            console.error('❌ Analytics: Page view error details:', {
+              message: err?.message || 'Unknown error',
+              status: err?.status || 'No status',
+              url: err?.config?.url || 'No URL',
+              method: err?.config?.method || 'No method',
+              path: path
             });
-        } catch (apiErr) {
-          console.warn('Analytics: Error making page view API call:', apiErr);
-          handleApiFailure(apiErr);
-        }    } catch (err) {
+            handleApiFailure(err);
+          });
+      } catch (apiErr) {
+        console.warn('Analytics: Error making page view API call:', apiErr);
+        handleApiFailure(apiErr);
+      }
+    } catch (err) {
       console.warn('Analytics: Error in trackPageView:', err);
     }
   }, [visitorId, sessionId, currentPath, pageStartTime, analyticsDisabled]);
@@ -505,13 +506,13 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
     try {
       // Ensure proper time calculation (timeSpent should be in seconds)
       const timeInSeconds = Math.floor(timeSpent);
-      
+
       console.log(`Analytics: Updating time spent on ${path}: ${timeInSeconds} seconds`);
-      
+
       // Emit WebSocket event for time spent (real-time tracking)
       console.log('🔌 Analytics: Emitting WebSocket updateTimeSpent event');
       console.log('🔌 Analytics: WebSocket connected status:', analyticsWebSocket.isConnected());
-      
+
       if (analyticsWebSocket.isConnected()) {
         analyticsWebSocket.emit('updateTimeSpent', {
           sessionId,
@@ -536,7 +537,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
           }, 1000);
         }
       }
-      
+
       // Make API call for time tracking
       const timeApiUrl = `/api/analytics/pageviews/${sessionId}/${encodeURIComponent(path)}/time-spent`;
       console.log('📤 Analytics: updateTimeSpent API call:', {
@@ -546,7 +547,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
         path: path,
         timeSpent: timeInSeconds
       });
-      
+
       AnalyticsApi.updateTimeSpent(sessionId, path, timeInSeconds)
         .then((response) => {
           console.log('📥 Analytics: updateTimeSpent API response:', response);
@@ -554,10 +555,17 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
           handleApiSuccess();
         })
         .catch((err: any) => {
+          // 404 means the page view record doesn't exist yet — this is expected
+          // for pages that the analytics backend hasn't tracked (e.g. interview room paths)
+          const status = err?.response?.status || err?.status;
+          if (status === 404) {
+            console.warn(`Analytics: No page view record for "${path}" (404) — skipping time update`);
+            return;
+          }
           console.error('❌ Analytics: updateTimeSpent API failed:', err);
           console.error('❌ Analytics: Time spent error details:', {
             message: err?.message || 'Unknown error',
-            status: err?.status || 'No status',
+            status: status || 'No status',
             url: err?.config?.url || 'No URL',
             method: err?.config?.method || 'No method',
             sessionId: sessionId,
@@ -584,7 +592,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
     try {
       const startTime = sessionStartTime || parseInt(localStorage.getItem('analytics_session_start') || '0');
       const duration = startTime ? Math.round((Date.now() - startTime) / 1000) : 0;
-      
+
       const endData = {
         sessionId,
         exitPage: window.location.pathname,
@@ -635,13 +643,13 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
         });
         handleApiFailure(err);
       });
-        
+
       // Clean up session data
       localStorage.removeItem('analytics_session_id');
       localStorage.removeItem('analytics_session_start');
       setSessionInitialized(false);
       setPageViewCount(0);
-      
+
       console.log('Analytics: Session data cleaned up');
     } catch (err) {
       console.error('Analytics: Error ending session:', err);
@@ -652,7 +660,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
   // Data fetching methods
   const fetchStats = useCallback(async (startDate: string, endDate: string) => {
     if (analyticsDisabled) return;
-    
+
     setIsLoading(true);
     try {
       const data = await AnalyticsApi.getStats(startDate, endDate);
@@ -670,18 +678,18 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
 
   const fetchRealTimeStats = useCallback(async () => {
     if (analyticsDisabled) return;
-    
+
     try {
       // Fetch real-time stats from API
       console.log('📤 Analytics: fetchRealTimeStats API call:', {
         url: '/api/analytics/realtime',
         method: 'GET'
       });
-      
+
       const data = await AnalyticsApi.getRealTimeStats();
-      
+
       console.log('📥 Analytics: getRealTimeStats API response:', data);
-      
+
       if (data.success && data.data) {
         setRealTimeStats(data.data);
         handleApiSuccess();
@@ -705,7 +713,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
 
   const fetchTopPages = useCallback(async (startDate: string, endDate: string, limit?: number) => {
     if (analyticsDisabled) return;
-    
+
     setIsLoading(true);
     try {
       const data = await AnalyticsApi.getTopPages(startDate, endDate, limit);
@@ -722,12 +730,12 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
   }, [analyticsDisabled, handleApiFailure, handleApiSuccess]);
 
   const fetchTimeSeries = useCallback(async (
-    startDate: string, 
-    endDate: string, 
+    startDate: string,
+    endDate: string,
     granularity: 'hour' | 'day'
   ) => {
     if (analyticsDisabled) return;
-    
+
     setIsLoading(true);
     try {
       const data = await AnalyticsApi.getTimeSeriesData(startDate, endDate, granularity);
@@ -745,7 +753,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
 
   const fetchDashboard = useCallback(async (startDate: string, endDate: string) => {
     if (analyticsDisabled) return;
-    
+
     setIsLoading(true);
     try {
       const data = await AnalyticsApi.getDashboard(startDate, endDate);
@@ -762,7 +770,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
   }, [analyticsDisabled, handleApiFailure, handleApiSuccess]);
 
   // ===== WebSocket Connection Management =====
-  
+
   const connect = useCallback(async () => {
     if (!visitorId || !sessionId || analyticsDisabled) {
       console.log('Analytics: Connect blocked - not initialized');
@@ -790,9 +798,9 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
       });
 
       const response = await AnalyticsApi.connect(connectData);
-      
+
       console.log('📥 Analytics: connect API response:', response);
-      
+
       if (response.success) {
         handleApiSuccess();
         console.log('✅ Analytics: Successfully connected to WebSocket and API');
@@ -831,9 +839,9 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
       });
 
       const response = await AnalyticsApi.heartbeat(heartbeatData);
-      
+
       console.log('📥 Analytics: heartbeat API response:', response);
-      
+
       if (response.success) {
         handleApiSuccess();
         console.log('✅ Analytics: Heartbeat sent successfully (WebSocket + API)');
@@ -869,9 +877,9 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
       });
 
       const response = await AnalyticsApi.disconnect(disconnectData);
-      
+
       console.log('📥 Analytics: disconnect API response:', response);
-      
+
       if (response.success) {
         handleApiSuccess();
         console.log('✅ Analytics: Successfully disconnected from WebSocket and API');
@@ -883,10 +891,10 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
   }, [sessionId, analyticsDisabled, handleApiFailure, handleApiSuccess]);
 
   // ===== Session Management Methods =====
-  
+
   const getSessionById = useCallback(async (sessionId: string) => {
     if (analyticsDisabled) return;
-    
+
     setIsLoading(true);
     try {
       console.log('📤 Analytics: getSessionById API call:', {
@@ -896,9 +904,9 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
       });
 
       const data = await AnalyticsApi.getSessionById(sessionId);
-      
+
       console.log('📥 Analytics: getSessionById API response:', data);
-      
+
       if (data.success && data.data) {
         handleApiSuccess();
         console.log('✅ Analytics: Session data fetched successfully');
@@ -915,7 +923,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
 
   const getSessions = useCallback(async (limit: number = 20, offset: number = 0) => {
     if (analyticsDisabled) return;
-    
+
     setIsLoading(true);
     try {
       console.log('📤 Analytics: getSessions API call:', {
@@ -925,9 +933,9 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
       });
 
       const data = await AnalyticsApi.getSessions(limit, offset);
-      
+
       console.log('📥 Analytics: getSessions API response:', data);
-      
+
       if (data.success && data.data) {
         handleApiSuccess();
         console.log('✅ Analytics: Sessions list fetched successfully');
@@ -944,7 +952,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
 
   const getSessionPageViews = useCallback(async (sessionId: string) => {
     if (analyticsDisabled) return;
-    
+
     setIsLoading(true);
     try {
       console.log('📤 Analytics: getSessionPageViews API call:', {
@@ -954,9 +962,9 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
       });
 
       const data = await AnalyticsApi.getSessionPageViews(sessionId);
-      
+
       console.log('📥 Analytics: getSessionPageViews API response:', data);
-      
+
       if (data.success && data.data) {
         handleApiSuccess();
         console.log('✅ Analytics: Session page views fetched successfully');
@@ -972,10 +980,10 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
   }, [analyticsDisabled, handleApiFailure, handleApiSuccess]);
 
   // ===== Visitor Management Methods =====
-  
+
   const getUserVisitors = useCallback(async (limit: number = 50, offset: number = 0) => {
     if (analyticsDisabled) return;
-    
+
     setIsLoading(true);
     try {
       console.log('📤 Analytics: getUserVisitors API call:', {
@@ -985,9 +993,9 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
       });
 
       const data = await AnalyticsApi.getUserVisitors(limit, offset);
-      
+
       console.log('📥 Analytics: getUserVisitors API response:', data);
-      
+
       if (data.success && data.data) {
         handleApiSuccess();
         console.log('✅ Analytics: User visitors fetched successfully');
@@ -1004,7 +1012,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
 
   const getUserVisitorStats = useCallback(async () => {
     if (analyticsDisabled) return;
-    
+
     setIsLoading(true);
     try {
       console.log('📤 Analytics: getUserVisitorStats API call:', {
@@ -1013,9 +1021,9 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
       });
 
       const data = await AnalyticsApi.getUserVisitorStats();
-      
+
       console.log('📥 Analytics: getUserVisitorStats API response:', data);
-      
+
       if (data.success && data.data) {
         handleApiSuccess();
         console.log('✅ Analytics: User visitor stats fetched successfully');
@@ -1031,7 +1039,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
   }, [analyticsDisabled, handleApiFailure, handleApiSuccess]);
 
   // ===== Enhanced Utility Methods =====
-  
+
   const healthCheck = useCallback(async () => {
     try {
       console.log('📤 Analytics: healthCheck API call:', {
@@ -1040,9 +1048,9 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
       });
 
       const data = await AnalyticsApi.healthCheck();
-      
+
       console.log('📥 Analytics: healthCheck API response:', data);
-      
+
       if (data.success) {
         handleApiSuccess();
         console.log('✅ Analytics: Health check successful');
@@ -1063,7 +1071,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
   const reset = useCallback(() => {
     console.log('🔄 Analytics: Manual reset triggered');
     console.log('🔄 Analytics: Clearing all analytics data and state');
-    
+
     setStats(null);
     setRealTimeStats(null);
     setTopPages([]);
@@ -1072,15 +1080,15 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
     setError(null);
     setCurrentPath('');
     setPageViewCount(0);
-    
+
     // Clean up localStorage
     const keysToRemove = [
       'analytics_last_tracked_path',
-      'analytics_page_count', 
+      'analytics_page_count',
       'analytics_last_activity',
       'analytics_session_start'
     ];
-    
+
     keysToRemove.forEach(key => {
       const oldValue = localStorage.getItem(key);
       if (oldValue) {
@@ -1088,7 +1096,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
         console.log(`🔄 Analytics: Removed ${key}:`, oldValue);
       }
     });
-    
+
     console.log('✅ Analytics: Reset completed - ready for new session');
   }, []);
 
@@ -1104,14 +1112,14 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
       });
       return;
     }
-    
+
     const currentPathname = location.pathname;
-    
+
     // Only track if this is a different path than what's currently tracked
     if (currentPathname !== currentPath) {
       console.log(`🔄 Analytics: React Router path change detected: ${currentPath || '(none)'} -> ${currentPathname}`);
       console.log('🔌 Analytics: Will emit WebSocket trackPageView event');
-      
+
       // Track the page view immediately (WebSocket + API)
       trackPageView(currentPathname, document.title);
     }
@@ -1120,14 +1128,14 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
   // Initialize session on mount with strict persistence check
   useEffect(() => {
     console.log('🚀 Analytics: Component effect triggered, autoTrack:', autoTrack, 'analyticsDisabled:', analyticsDisabled);
-    
+
     if (autoTrack && !analyticsDisabled) {
       // Check for existing session first
       const existingSessionId = localStorage.getItem('analytics_session_id');
       const existingVisitorId = localStorage.getItem('analytics_visitor_id');
       const sessionStartTime = localStorage.getItem('analytics_session_start');
       const lastActivity = localStorage.getItem('analytics_last_activity');
-      
+
       console.log('📊 Analytics: Checking existing session data:', {
         existingSessionId: existingSessionId ? existingSessionId.slice(0, 15) + '...' : 'none',
         existingVisitorId: existingVisitorId ? existingVisitorId.slice(0, 15) + '...' : 'none',
@@ -1136,54 +1144,54 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
         currentVisitorId: visitorId ? visitorId.slice(0, 15) + '...' : 'none',
         currentSessionId: sessionId ? sessionId.slice(0, 15) + '...' : 'none'
       });
-      
+
       // If we already have these IDs in state, don't reinitialize
       if (visitorId && sessionId && visitorId === existingVisitorId && sessionId === existingSessionId) {
         console.log('✅ Analytics: Session already active, skipping initialization');
         return;
       }
-      
+
       // Check if existing session is still valid (within 24 hours and recent activity)
       const now = Date.now();
       const sessionAge = sessionStartTime ? now - parseInt(sessionStartTime) : 0;
       const lastActivityTime = lastActivity ? parseInt(lastActivity) : 0;
       const timeSinceActivity = now - lastActivityTime;
-      
+
       const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours
       const ACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
-      
+
       console.log('🕒 Analytics: Session validation:', {
         sessionAge: Math.round(sessionAge / 1000) + 's',
         timeSinceActivity: Math.round(timeSinceActivity / 1000) + 's',
         sessionValid: sessionAge < SESSION_TIMEOUT,
         activityValid: timeSinceActivity < ACTIVITY_TIMEOUT
       });
-      
-      if (existingSessionId && existingVisitorId && 
-          sessionAge < SESSION_TIMEOUT && 
-          timeSinceActivity < ACTIVITY_TIMEOUT) {
+
+      if (existingSessionId && existingVisitorId &&
+        sessionAge < SESSION_TIMEOUT &&
+        timeSinceActivity < ACTIVITY_TIMEOUT) {
         // Resume existing session
         console.log('✅ Analytics: Resuming existing session');
         setVisitorId(existingVisitorId);
         setSessionId(existingSessionId);
         setSessionStartTime(parseInt(sessionStartTime || '0'));
         setSessionInitialized(true);
-        
+
         // Restore page count
         const pageCount = localStorage.getItem('analytics_page_count');
         if (pageCount) {
           setPageViewCount(parseInt(pageCount));
           console.log('📊 Analytics: Restored page count:', pageCount);
         }
-        
+
         // Update last activity
         localStorage.setItem('analytics_last_activity', now.toString());
       } else {
         // Create new session only if we don't have valid existing one
         const reason = !existingSessionId ? 'no existing session' :
-                      !existingVisitorId ? 'no visitor ID' :
-                      sessionAge >= SESSION_TIMEOUT ? 'session expired (24h+)' :
-                      'activity timeout (30min+)';
+          !existingVisitorId ? 'no visitor ID' :
+            sessionAge >= SESSION_TIMEOUT ? 'session expired (24h+)' :
+              'activity timeout (30min+)';
         console.log('🆕 Analytics: Creating new session, reason:', reason);
         initializeSession();
       }
@@ -1196,20 +1204,20 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
   useEffect(() => {
     const handleBeforeUnload = () => {
       console.log('📜 Analytics: Tab/browser closing - ending session...');
-      
+
       if (sessionId && sessionInitialized && !analyticsDisabled) {
         const startTime = sessionStartTime || parseInt(localStorage.getItem('analytics_session_start') || '0');
         const duration = startTime ? Math.round((Date.now() - startTime) / 1000) : 0;
-        
+
         const endSessionData = {
           sessionId,
           exitPage: window.location.pathname,
           duration,
           pageViews: pageViewCount || 1,
         };
-        
+
         console.log('📜 Analytics: Sending session end beacon:', endSessionData);
-        
+
         try {
           // Use sendBeacon for reliable tracking on page unload
           if (navigator.sendBeacon) {
@@ -1235,10 +1243,10 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
           console.error('🚨 Analytics: Failed to send session end beacon:', err);
         }
       } else {
-        console.log('⏸️ Analytics: Skipping session end -', 
-          !sessionId ? 'no session ID' : 
-          !sessionInitialized ? 'not initialized' : 
-          'analytics disabled');
+        console.log('⏸️ Analytics: Skipping session end -',
+          !sessionId ? 'no session ID' :
+            !sessionInitialized ? 'not initialized' :
+              'analytics disabled');
       }
     };
 
@@ -1269,51 +1277,51 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
     // Session data
     visitorId,
     sessionId,
-    
+
     // Analytics data
     stats,
     realTimeStats,
     topPages,
     timeSeries,
     dashboard,
-    
+
     // Page tracking data
     pageViewCount,
-    
+
     // Loading states
     isLoading,
     isTracking,
-    
+
     // Error state
     error,
-    
+
     // WebSocket connection management
     connect,
     heartbeat,
     disconnect,
-    
+
     // Tracking methods
     initializeSession,
     trackPageView,
     updateTimeSpent,
     endSession,
-    
+
     // Session management methods
     getSessionById,
     getSessions,
     getSessionPageViews,
-    
+
     // Data fetching methods
     fetchStats,
     fetchRealTimeStats,
     fetchTopPages,
     fetchTimeSeries,
     fetchDashboard,
-    
+
     // Visitor management methods
     getUserVisitors,
     getUserVisitorStats,
-    
+
     // Utility methods
     healthCheck,
     clearError,

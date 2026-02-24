@@ -1,8 +1,5 @@
-import { useParams } from "react-router-dom";
-import InterviewRoomV2 from "@/components/interview/InterviewRoomV2";
+import InterviewRoomWS from "@/components/interview/InterviewRoomWS";
 
 export default function InterviewRoomPage() {
-  const { type } = useParams();
-  if (!type) return <div>No round selected</div>;
-  return <InterviewRoomV2 round={type} />;
+  return <InterviewRoomWS />;
 }

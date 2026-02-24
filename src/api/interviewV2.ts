@@ -252,6 +252,59 @@ export interface CompleteInterviewV2Response {
   };
 }
 
+// ==================== New V2 Report Interface ====================
+
+export interface QuestionAnalysis {
+  question_id: number;
+  question: string;
+  user_answer_summary: string;
+  score: number;
+  evaluation: {
+    strengths: string[];
+    weaknesses: string[];
+    ideal_answer_outline: string[];
+  };
+}
+
+export interface InterviewV2Report {
+  session_id?: string;
+  summary: {
+    overall_score: number;
+    hire_recommendation: string;
+    seniority_assessment: string;
+    confidence_assessment: string;
+  };
+  dimension_scores: {
+    technical_depth: number;
+    problem_solving: number;
+    system_design: number;
+    communication: number;
+    role_fit: number;
+  };
+  question_wise_analysis: QuestionAnalysis[];
+  skill_gap_analysis: {
+    critical_gaps: string[];
+    moderate_gaps: string[];
+    minor_gaps: string[];
+  };
+  behavioral_insights: {
+    communication_style: string;
+    thinking_pattern: string;
+    pressure_handling: string;
+  };
+  improvement_plan: {
+    immediate_actions: string[];
+    '30_day_plan': string[];
+    '90_day_plan': string[];
+  };
+  verdict: {
+    strengths_to_highlight: string[];
+    areas_to_fix_before_next_interview: string[];
+    final_recommendation_text: string;
+  };
+  conversation?: Array<{ role: string; content: string }>;
+}
+
 // ==================== API Functions ====================
 
 /**
@@ -274,7 +327,7 @@ export const startInterviewV2 = async (
   }, {
     headers: { 'Content-Type': 'application/json' }
   });
-  
+
   return response.data;
 };
 
@@ -289,17 +342,17 @@ export const startInterviewWithIDs = async (
   data: StartInterviewWithIDsRequest
 ): Promise<StartInterviewV2Response> => {
   const formData = new FormData();
-  
+
   // Required fields
   formData.append('user_id', data.user_id);
   formData.append('session_id', data.session_id);
   formData.append('role', data.role);
-  
+
   // Optional company
   if (data.company) {
     formData.append('company', data.company);
   }
-  
+
   // CV - Priority: File > MongoDB ID > Text
   // Support both cv_file and resume_file naming
   const cvFile = data.cv_file || data.resume_file;
@@ -310,7 +363,7 @@ export const startInterviewWithIDs = async (
   } else if (data.cv_text) {
     formData.append('cv_text', data.cv_text);
   }
-  
+
   // JD - Priority: File > MongoDB ID > Text
   // Support both jd_file and resume_jd naming
   const jdFile = data.jd_file || data.resume_jd;
@@ -321,11 +374,11 @@ export const startInterviewWithIDs = async (
   } else if (data.jd_text) {
     formData.append('jd_text', data.jd_text);
   }
-  
+
   const response = await axios.post('/interview/v2/start-with-ids', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
-  
+
   return response.data;
 };
 
@@ -341,20 +394,20 @@ export const submitAnswerV2 = async (
   data: SubmitAnswerV2Request
 ): Promise<SubmitAnswerV2Response> => {
   const formData = new FormData();
-  
+
   formData.append('session_id', data.session_id);
-  
+
   // Audio takes priority over text
   if (data.answer_audio) {
     formData.append('audio_file', data.answer_audio);
   } else if (data.answer) {
     formData.append('answer', data.answer);
   }
-  
+
   const response = await axios.post('/interview/v2/answer', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
-  
+
   return response.data;
 };
 
@@ -375,25 +428,25 @@ export const streamQuestion = (
   onError: (error: Error) => void
 ): (() => void) => {
   const eventSource = new EventSource(`${API_BASE_URL}/interview/v2/stream/${sessionId}`);
-  
+
   let fullQuestion = '';
-  
+
   eventSource.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      
+
       if (data.chunk) {
         // Received a text chunk
         fullQuestion += data.chunk;
         onChunk(data.chunk, fullQuestion);
       }
-      
+
       if (data.done) {
         // Streaming complete
         eventSource.close();
         onComplete(fullQuestion);
       }
-      
+
       if (data.error) {
         // Error occurred
         eventSource.close();
@@ -404,13 +457,13 @@ export const streamQuestion = (
       onError(error as Error);
     }
   };
-  
+
   eventSource.onerror = (error) => {
     console.error('EventSource error:', error);
     eventSource.close();
     onError(new Error('Streaming connection failed'));
   };
-  
+
   // Return function to cancel streaming
   return () => eventSource.close();
 };
@@ -426,11 +479,11 @@ export const getSessionState = async (
   sessionId: string
 ): Promise<SessionStateResponse> => {
   const response = await axios.get(`/interview/v2/state/${sessionId}`);
-  
+
   if (response.data.error) {
     throw new Error(response.data.error);
   }
-  
+
   return response.data;
 };
 
@@ -445,11 +498,11 @@ export const getPerformanceMetrics = async (
   sessionId: string
 ): Promise<PerformanceMetricsResponse> => {
   const response = await axios.get(`/interview/v2/performance/${sessionId}`);
-  
+
   if (response.data.error) {
     throw new Error(response.data.error);
   }
-  
+
   return response.data;
 };
 
@@ -472,7 +525,7 @@ export const completeInterviewV2 = async (
       headers: { 'Content-Type': 'application/json' }
     }
   );
-  
+
   return response.data;
 };
 
@@ -484,7 +537,7 @@ export const completeInterviewV2 = async (
  */
 export const getGlobalMetrics = async (): Promise<GlobalMetricsResponse> => {
   const response = await axios.get('/interview/v2/metrics/global');
-  
+
   return response.data;
 };
 
@@ -496,7 +549,7 @@ export const getGlobalMetrics = async (): Promise<GlobalMetricsResponse> => {
  */
 export const resetMetrics = async (): Promise<{ status: string; message: string }> => {
   const response = await axios.post('/interview/v2/metrics/reset');
-  
+
   return response.data;
 };
 
@@ -509,11 +562,11 @@ export const getInterviewStatusV2 = async (
   sessionId: string
 ): Promise<InterviewStatusV2Response> => {
   const response = await axios.get(`/v2/interview/${sessionId}/status`);
-  
+
   if (response.data.status === 'not_found') {
     throw new Error('Session not found');
   }
-  
+
   return response.data;
 };
 
@@ -537,13 +590,13 @@ export const startInterviewWithFiles = async (
 ): Promise<StartInterviewV2Response> => {
   // Generate session ID
   const sessionId = generateSessionId(userId);
-  
+
   // Validate files
   const validation = validateFiles(resumeFile, jdFile);
   if (!validation.valid) {
     throw new Error(validation.errors.join(', '));
   }
-  
+
   // Call API
   return startInterviewWithIDs({
     user_id: userId,
@@ -560,8 +613,8 @@ export const startInterviewWithFiles = async (
  */
 export const createAudioFile = (blob: Blob, sessionId: string): File => {
   const timestamp = Date.now();
-  return new File([blob], `answer_${sessionId}_${timestamp}.wav`, { 
-    type: blob.type || 'audio/wav' 
+  return new File([blob], `answer_${sessionId}_${timestamp}.wav`, {
+    type: blob.type || 'audio/wav'
   });
 };
 
@@ -579,7 +632,7 @@ export const validateFile = (file: File, fieldName: string = 'File'): { valid: b
   const allowedExtensions = ['.pdf', '.docx', '.txt'];
   const fileName = file.name.toLowerCase();
   const isValidType = allowedExtensions.some(ext => fileName.endsWith(ext));
-  
+
   if (!isValidType) {
     return { valid: false, error: `${fieldName} must be PDF, DOCX, or TXT file` };
   }
@@ -611,10 +664,10 @@ export const validateAudioFile = (file: Blob | File): { valid: boolean; error?: 
     'audio/flac',
     'audio/webm'
   ];
-  
+
   const type = file.type || '';
   const isValid = allowedTypes.some(allowed => type.includes(allowed));
-  
+
   if (!isValid) {
     return { valid: false, error: 'Audio file must be WAV, MP3, WEBM, M4A, OGG, or FLAC format' };
   }
@@ -636,11 +689,11 @@ export const validateAudioFile = (file: Blob | File): { valid: boolean; error?: 
  * Validate both resume and JD files together
  */
 export const validateFiles = (
-  resumeFile: File | null, 
+  resumeFile: File | null,
   jdFile: File | null
 ): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
-  
+
   if (!resumeFile) {
     errors.push('Resume file is required');
   } else {
@@ -649,7 +702,7 @@ export const validateFiles = (
       errors.push(resumeValidation.error);
     }
   }
-  
+
   if (!jdFile) {
     errors.push('Job description file is required');
   } else {
@@ -658,7 +711,7 @@ export const validateFiles = (
       errors.push(jdValidation.error);
     }
   }
-  
+
   return {
     valid: errors.length === 0,
     errors
@@ -718,7 +771,7 @@ export const SessionManager = {
     localStorage.setItem('session_data', JSON.stringify(data));
     localStorage.setItem('session_timestamp', Date.now().toString());
   },
-  
+
   /**
    * Get session data from localStorage
    * Returns null if expired (24 hours)
@@ -727,25 +780,25 @@ export const SessionManager = {
     const sessionId = localStorage.getItem('current_session');
     const dataStr = localStorage.getItem('session_data');
     const timestamp = localStorage.getItem('session_timestamp');
-    
+
     if (!sessionId || !dataStr || !timestamp) {
       return null;
     }
-    
+
     // Check if session is expired (24 hours)
     const isExpired = Date.now() - parseInt(timestamp) > 24 * 60 * 60 * 1000;
     if (isExpired) {
       this.clear();
       return null;
     }
-    
+
     return {
       sessionId,
       data: JSON.parse(dataStr),
       timestamp: parseInt(timestamp)
     };
   },
-  
+
   /**
    * Clear session data
    */
@@ -772,22 +825,22 @@ export const SessionManager = {
  */
 export const checkBrowserSupport = (): { supported: boolean; errors: string[] } => {
   const errors: string[] = [];
-  
+
   // Check getUserMedia support
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     errors.push('Your browser does not support audio/video recording');
   }
-  
+
   // Check FormData support
   if (!window.FormData) {
     errors.push('Your browser does not support file uploads');
   }
-  
+
   // Check EventSource support for streaming
   if (!window.EventSource) {
     console.warn('Streaming not supported, falling back to polling');
   }
-  
+
   return {
     supported: errors.length === 0,
     errors
@@ -817,10 +870,10 @@ export const handleAPIError = (error: any): string => {
   if (error.response?.data?.detail) {
     return error.response.data.detail;
   }
-  
+
   if (error.message) {
     return error.message;
   }
-  
+
   return 'An unexpected error occurred';
 };
