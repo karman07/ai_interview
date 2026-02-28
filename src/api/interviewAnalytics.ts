@@ -49,28 +49,50 @@ export interface Analytics {
 }
 
 export interface DashboardStats {
-  totalInterviews: number;
-  completedInterviews: number;
-  averageScore: number;
-  bestScore: number;
-  currentStreak: number;
-  longestStreak: number;
-  totalTimeSpent: number;
-  recentSessions: Array<{
+  // Documentation Features
+  overview: {
+    totalUsers: number;
+    totalRevenueINR: number;
+    totalInterviews: number;
+    totalResumes: number;
+  };
+  growth: {
+    newSignupsLast7Days: number;
+    conversionRate: number;
+  };
+  activityChart: Array<{
+    date: string;
+    sessions: number;
+  }>;
+  metrics: {
+    userRoleDistribution: Record<string, number>;
+    popularTopics: string[];
+    trafficSources: Record<string, number>;
+  };
+
+  // Legacy fields (optional)
+  totalInterviews?: number;
+  completedInterviews?: number;
+  averageScore?: number;
+  bestScore?: number;
+  currentStreak?: number;
+  longestStreak?: number;
+  totalTimeSpent?: number;
+  recentSessions?: Array<{
     id: string;
     round: string;
     score: number;
     date: string;
     status: string;
   }>;
-  roundStats: {
+  roundStats?: {
     [key: string]: {
       averageScore: number;
       totalSessions: number;
       bestScore: number;
     };
   };
-  externalAnalytics?: any[]; // The new array of payloads saved from the external AI backend
+  externalAnalytics?: any[];
 }
 
 export const InterviewAnalyticsApi = {

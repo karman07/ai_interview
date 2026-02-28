@@ -8,6 +8,7 @@ const routes = {
   jobsPublic: "/jobs-public",
   login: '/login',
   signup: '/signup',
+  verifyEmail: '/verify-email',
   profile: '/profile',
   completeProfile: '/complete-profile',
   dashboard: '/dashboard',

@@ -25,12 +25,16 @@ import {
 // import { baseURL } from "@/api/http";
 import { resumeService } from "@/api/resumeService";
 import { generateResumeReport } from "@/utils/pdfGenerator";
+import { usePricing } from "@/contexts/PricingContext";
+import { useNotification } from "@/contexts/NotificationContext";
 
 interface ResumeDetailsProps {
   resume: any;
 }
 
 const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
+  const { setShowPricing } = usePricing();
+  const { addNotification } = useNotification();
   console.log('Resume object in Details:', resume);
   const [openJDDialog, setOpenJDDialog] = useState(false);
   const [jdFile, setJdFile] = useState<File | null>(null);
@@ -94,8 +98,8 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 sm:p-6 overflow-x-hidden">
-      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+    <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-[#0D1117] p-2 sm:p-10">
+      <div className="max-w-none mx-auto space-y-6 sm:space-y-12">
         {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -319,11 +323,19 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                           window.location.reload();
                         } catch (error: any) {
                           console.error('Failed to improve resume:', error);
-                          setUploadError(
-                            error?.response?.data?.message ||
-                            error?.message ||
-                            'Failed to upload. Please try again.'
-                          );
+                          const errorMsg = error?.response?.data?.message || error?.message || '';
+
+                          if ((error?.response?.status === 400 || error?.status === 400) && (errorMsg.toLowerCase().includes('limit') || errorMsg.toLowerCase().includes('plan'))) {
+                            setOpenJDDialog(false);
+                            setShowPricing(true);
+                            addNotification({
+                              type: 'error',
+                              title: 'Limit Reached',
+                              message: 'You have reached your limit. Please upgrade your plan to continue.',
+                            });
+                          } else {
+                            setUploadError(errorMsg || 'Failed to upload. Please try again.');
+                          }
                         } finally {
                           setIsUploading(false);
                         }
@@ -590,67 +602,69 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume, sections, strengt
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           CV Quality Assessment
         </h3>
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-          <div className="overflow-x-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-800">
+        <div className="border border-gray-200 dark:border-gray-700 rounded-[2rem] overflow-hidden bg-white dark:bg-gray-900 shadow-sm">
+          <div className="">
+            <table className="w-full table-fixed">
+              <thead className="bg-gray-50/50 dark:bg-gray-800/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                  <th className="w-[15%] px-6 py-6 text-left text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
                     Dimension
                   </th>
-                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900 dark:text-white">
+                  <th className="w-[12%] px-6 py-6 text-center text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
                     Score
                   </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                  <th className="w-[23%] px-6 py-6 text-left text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
                     Progress
                   </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
-                    Evidence/Feedback
+                  <th className="w-[50%] px-10 py-6 text-left text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
+                    Evidence / Feedback
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
                 {Array.isArray(sections) ? sections.map((sub: any, idx: number) => {
                   const percentage = (sub.score / sub.max_score) * 100;
                   return (
-                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900">
-                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white capitalize">
+                    <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                      <td className="px-6 py-8 align-top font-bold text-gray-900 dark:text-white capitalize whitespace-nowrap">
                         {sub.dimension.replace(/_/g, " ")}
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <span className="text-lg font-bold text-gray-900 dark:text-white">{sub.score}</span>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">/ {sub.max_score}</span>
+                      <td className="px-6 py-8 text-center align-top">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 shadow-sm">
+                          <span className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{sub.score}</span>
+                          <span className="text-[10px] font-black text-gray-400 mt-1">/ {sub.max_score}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="relative w-full">
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                      <td className="px-6 py-8 align-top">
+                        <div className="relative w-full min-w-[120px]">
+                          <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-3">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${percentage}%` }}
                               transition={{ duration: 0.7 }}
                               className={`h-3 rounded-full ${percentage >= 80
-                                ? "bg-green-500"
+                                ? "bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.4)]"
                                 : percentage >= 60
-                                  ? "bg-blue-500"
+                                  ? "bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.4)]"
                                   : percentage >= 40
-                                    ? "bg-yellow-500"
-                                    : "bg-red-500"
+                                    ? "bg-yellow-500 shadow-[0_0_12px_rgba(234,179,8,0.4)]"
+                                    : "bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.4)]"
                                 }`}
                             />
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
+                          <div className="text-[10px] font-black text-gray-400 mt-2 text-right tracking-widest uppercase">
                             {Math.round(percentage)}%
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <ul className="space-y-1">
+                      <td className="px-8 py-8 align-top">
+                        <ul className="space-y-3">
                           {sub.evidence?.map((ev: string, i: number) => (
-                            <li key={i} className="text-sm text-gray-600 dark:text-gray-300 flex items-start gap-2">
-                              <CheckCircle2 className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
-                              {ev}
+                            <li key={i} className="text-sm text-gray-600 dark:text-gray-300 flex items-start gap-3 group/ev">
+                              <div className="mt-1 p-1 bg-green-50 dark:bg-green-900/20 rounded-lg group-hover/ev:bg-green-100 transition-colors">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                              </div>
+                              <span className="leading-relaxed font-medium break-words whitespace-normal">{ev}</span>
                             </li>
                           ))}
                         </ul>
@@ -660,40 +674,40 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume, sections, strengt
                 }) : Object.entries(sections).map(([key, section]: [string, any], idx: number) => {
                   const percentage = (section.score / 10) * 100;
                   return (
-                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900">
-                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white capitalize">
+                    <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                      <td className="px-6 py-8 align-top font-bold text-gray-900 dark:text-white capitalize whitespace-nowrap">
                         {key.replace(/_/g, " ")}
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <span className="text-lg font-bold text-gray-900 dark:text-white">{section.score.toFixed(1)}</span>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">/ 10</span>
+                      <td className="px-6 py-8 text-center align-top">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 shadow-sm">
+                          <span className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{section.score.toFixed(1)}</span>
+                          <span className="text-[10px] font-black text-gray-400 mt-1">/ 10</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="relative w-full">
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                      <td className="px-6 py-8 align-top">
+                        <div className="relative w-full min-w-[120px]">
+                          <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-3">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${percentage}%` }}
                               transition={{ duration: 0.7 }}
                               className={`h-3 rounded-full ${percentage >= 80
-                                ? "bg-green-500"
+                                ? "bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.4)]"
                                 : percentage >= 60
-                                  ? "bg-blue-500"
+                                  ? "bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.4)]"
                                   : percentage >= 40
-                                    ? "bg-yellow-500"
-                                    : "bg-red-500"
+                                    ? "bg-yellow-500 shadow-[0_0_12px_rgba(234,179,8,0.4)]"
+                                    : "bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.4)]"
                                 }`}
                             />
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
+                          <div className="text-[10px] font-black text-gray-400 mt-2 text-right tracking-widest uppercase">
                             {Math.round(percentage)}%
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-gray-600 dark:text-gray-300">{section.feedback}</span>
+                      <td className="px-8 py-8 align-top">
+                        <span className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed font-medium block">{section.feedback}</span>
                       </td>
                     </tr>
                   );
@@ -802,46 +816,56 @@ const JDMatchTab = ({ resume }: { resume: any }) => {
   return (
     <div className="space-y-6">
       {/* Overall Score Card */}
-      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-              Job Description Match Score
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Your resume's compatibility with the job requirements
-            </p>
+      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 rounded-[2.5rem] p-10 shadow-2xl shadow-indigo-500/20 group">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+        <div className="relative flex items-center justify-between">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+              <Brain className="w-4 h-4 text-indigo-200" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-100">AI Logic Core</span>
+            </div>
+            <div>
+              <h3 className="text-4xl font-black text-white tracking-tighter mb-2">
+                Job Match Analytics
+              </h3>
+              <p className="text-indigo-100/70 text-xs font-black uppercase tracking-[0.2em] max-w-md">
+                Synthesized Compatibility Matrix
+              </p>
+            </div>
           </div>
-          <div className="text-center">
-            <div className="text-5xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          <div className="relative text-right">
+            <div className="text-8xl font-black text-white drop-shadow-2xl tabular-nums leading-none">
               {jdMatchData.overall_score}
             </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium mt-1">out of 100</div>
+            <div className="text-[10px] font-black text-indigo-200 uppercase tracking-[0.4em] mt-3 mr-2">Fit Score Index</div>
           </div>
         </div>
       </div>
 
       {/* Match Analysis Table */}
-      <div className="border border-indigo-200 dark:border-indigo-800 rounded-xl overflow-hidden bg-white dark:bg-gray-900 shadow-sm">
-        <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-b border-indigo-200 dark:border-indigo-800">
-          <h4 className="font-semibold text-indigo-900 dark:text-indigo-100 text-lg flex items-center gap-2">
-            <Brain className="w-5 h-5" /> Detailed Match Analysis
+      <div className="border border-indigo-100 dark:border-indigo-800/50 rounded-[2.5rem] overflow-hidden bg-white dark:bg-[#0D1117] shadow-xl shadow-indigo-500/5">
+        <div className="px-8 py-6 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/20 dark:to-purple-900/20 border-b border-indigo-100 dark:border-indigo-800/50">
+          <h4 className="text-xl font-black text-indigo-900 dark:text-indigo-100 flex items-center gap-3 tracking-tighter uppercase">
+            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl">
+              <Brain className="w-5 h-5 text-indigo-600" />
+            </div>
+            Detailed Match Analysis
           </h4>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/10 dark:to-purple-900/10">
+        <div className="">
+          <table className="w-full table-fixed">
+            <thead className="bg-gradient-to-r from-indigo-50/30 to-purple-50/30 dark:from-indigo-900/10 dark:to-purple-900/10">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                <th className="w-[15%] px-6 py-6 text-left text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
                   Match Dimension
                 </th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900 dark:text-white">
+                <th className="w-[12%] px-6 py-6 text-center text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
                   Score
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white w-64">
+                <th className="w-[23%] px-6 py-6 text-left text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
                   Match Strength
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                <th className="w-[50%] px-10 py-6 text-left text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
                   Evidence & Details
                 </th>
               </tr>
@@ -850,45 +874,45 @@ const JDMatchTab = ({ resume }: { resume: any }) => {
               {jdMatchData.subscores.map((sub: any, idx: number) => {
                 const percentage = (sub.score / sub.max_score) * 100;
                 return (
-                  <tr key={idx} className="hover:bg-indigo-50/30 dark:hover:bg-indigo-900/5 transition-colors">
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${percentage >= 80 ? "bg-indigo-500" :
+                  <tr key={idx} className="hover:bg-indigo-50/30 dark:hover:bg-indigo-900/5 transition-colors border-b border-gray-50/50 dark:border-gray-800/50 last:border-none">
+                    <td className="px-6 py-10 align-top">
+                      <div className="flex items-start gap-4">
+                        <div className={`w-3 h-3 rounded-full shadow-[0_0_12px_rgba(99,102,241,0.5)] mt-2 flex-shrink-0 ${percentage >= 80 ? "bg-indigo-500" :
                           percentage >= 60 ? "bg-blue-500" :
                             percentage >= 40 ? "bg-yellow-500" : "bg-red-500"
                           }`} />
-                        <span className="font-medium text-gray-900 dark:text-white capitalize">
+                        <span className="text-base font-bold text-gray-900 dark:text-white capitalize tracking-tight whitespace-nowrap">
                           {sub.dimension.replace(/_/g, " ")}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-5 text-center">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30">
-                        <span className="text-xl font-bold text-indigo-700 dark:text-indigo-400">{sub.score}</span>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">/ {sub.max_score}</span>
+                    <td className="px-6 py-10 text-center align-top">
+                      <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[1.25rem] bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-100 dark:border-indigo-800/50 shadow-sm">
+                        <span className="text-2xl font-black text-indigo-700 dark:text-indigo-400 tabular-nums leading-none">{sub.score}</span>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">/ {sub.max_score}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
-                      <div className="space-y-2">
+                    <td className="px-6 py-10 align-top">
+                      <div className="space-y-3">
                         <div className="relative w-full">
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
+                          <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-4 overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${percentage}%` }}
                               transition={{ duration: 0.8, ease: "easeOut" }}
-                              className={`h-4 rounded-full shadow-sm ${percentage >= 80
-                                ? "bg-gradient-to-r from-indigo-500 to-purple-500"
+                              className={`h-4 rounded-full ${percentage >= 80
+                                ? "bg-gradient-to-r from-indigo-500 to-purple-500 shadow-[0_0_15px_rgba(99,102,241,0.3)]"
                                 : percentage >= 60
-                                  ? "bg-gradient-to-r from-blue-500 to-indigo-500"
+                                  ? "bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]"
                                   : percentage >= 40
-                                    ? "bg-gradient-to-r from-yellow-500 to-orange-500"
-                                    : "bg-gradient-to-r from-red-500 to-pink-500"
+                                    ? "bg-gradient-to-r from-yellow-500 to-orange-500 shadow-[0_0_15px_rgba(234,179,8,0.3)]"
+                                    : "bg-gradient-to-r from-red-500 to-pink-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]"
                                 }`}
                             />
                           </div>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className={`text-xs font-semibold ${percentage >= 80 ? "text-indigo-600 dark:text-indigo-400" :
+                        <div className="flex items-center justify-between px-1">
+                          <span className={`text-[10px] font-black uppercase tracking-[0.1em] ${percentage >= 80 ? "text-indigo-600 dark:text-indigo-400" :
                             percentage >= 60 ? "text-blue-600 dark:text-blue-400" :
                               percentage >= 40 ? "text-yellow-600 dark:text-yellow-400" :
                                 "text-red-600 dark:text-red-400"
@@ -897,24 +921,26 @@ const JDMatchTab = ({ resume }: { resume: any }) => {
                               percentage >= 60 ? "Good Match" :
                                 percentage >= 40 ? "Moderate Match" : "Needs Improvement"}
                           </span>
-                          <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                          <span className="text-[10px] font-black text-gray-500 dark:text-gray-400 tracking-tighter">
                             {Math.round(percentage)}%
                           </span>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
+                    <td className="px-8 py-10 align-top">
                       {Array.isArray(sub.evidence) ? (
-                        <ul className="space-y-2">
+                        <ul className="space-y-4">
                           {sub.evidence.map((ev: string, i: number) => (
-                            <li key={i} className="flex items-start gap-2 text-sm">
-                              <CheckCircle2 className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" />
-                              <span className="text-gray-700 dark:text-gray-300">{ev}</span>
+                            <li key={i} className="flex items-start gap-4 text-sm group/ev">
+                              <div className="mt-1 p-1 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg group-hover/ev:bg-indigo-100 dark:group-hover/ev:bg-indigo-900/40 transition-colors shadow-sm">
+                                <CheckCircle2 className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                              </div>
+                              <span className="text-gray-700 dark:text-gray-300 leading-relaxed font-semibold break-words whitespace-normal">{ev}</span>
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <span className="text-sm text-gray-700 dark:text-gray-300">{sub.evidence}</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-semibold block break-words whitespace-normal">{sub.evidence}</span>
                       )}
                     </td>
                   </tr>

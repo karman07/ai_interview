@@ -1,5 +1,19 @@
-import axios from './http';
-import { API_BASE_URL } from './http';
+import axios from 'axios';
+import { tokenStore } from './http';
+
+const API_URL = import.meta.env.VITE_AI_INTERVIEW_API || 'http://localhost:8000';
+
+const aiInterviewClient = axios.create({
+  baseURL: API_URL,
+});
+
+aiInterviewClient.interceptors.request.use((config) => {
+  const token = tokenStore.get();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 // ==================== TypeScript Interfaces ====================
 
@@ -317,7 +331,7 @@ export const startInterviewV2 = async (
   data: StartInterviewV2Request
 ): Promise<StartInterviewV2Response> => {
   // For text-based start, use JSON body (as per cURL examples)
-  const response = await axios.post('/interview/v2/start', {
+  const response = await aiInterviewClient.post('/interview/v2/start', {
     user_id: data.user_id,
     session_id: data.session_id,
     role: data.role,
@@ -375,7 +389,7 @@ export const startInterviewWithIDs = async (
     formData.append('jd_text', data.jd_text);
   }
 
-  const response = await axios.post('/interview/v2/start-with-ids', formData, {
+  const response = await aiInterviewClient.post('/interview/v2/start-with-ids', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
 
@@ -404,7 +418,7 @@ export const submitAnswerV2 = async (
     formData.append('answer', data.answer);
   }
 
-  const response = await axios.post('/interview/v2/answer', formData, {
+  const response = await aiInterviewClient.post('/interview/v2/answer', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
 
@@ -427,7 +441,7 @@ export const streamQuestion = (
   onComplete: (fullQuestion: string) => void,
   onError: (error: Error) => void
 ): (() => void) => {
-  const eventSource = new EventSource(`${API_BASE_URL}/interview/v2/stream/${sessionId}`);
+  const eventSource = new EventSource(`${API_URL}/interview/v2/stream/${sessionId}`);
 
   let fullQuestion = '';
 
@@ -478,7 +492,7 @@ export const streamQuestion = (
 export const getSessionState = async (
   sessionId: string
 ): Promise<SessionStateResponse> => {
-  const response = await axios.get(`/interview/v2/state/${sessionId}`);
+  const response = await aiInterviewClient.get(`/interview/v2/state/${sessionId}`);
 
   if (response.data.error) {
     throw new Error(response.data.error);
@@ -497,7 +511,7 @@ export const getSessionState = async (
 export const getPerformanceMetrics = async (
   sessionId: string
 ): Promise<PerformanceMetricsResponse> => {
-  const response = await axios.get(`/interview/v2/performance/${sessionId}`);
+  const response = await aiInterviewClient.get(`/interview/v2/performance/${sessionId}`);
 
   if (response.data.error) {
     throw new Error(response.data.error);
@@ -518,7 +532,7 @@ export const completeInterviewV2 = async (
   sessionId: string,
   data?: CompleteInterviewV2Request
 ): Promise<CompleteInterviewV2Response> => {
-  const response = await axios.post(
+  const response = await aiInterviewClient.post(
     `/interview/v2/complete/${sessionId}`,
     data || {},
     {
@@ -536,7 +550,7 @@ export const completeInterviewV2 = async (
  * @returns Global metrics including LLM calls, API requests, cache stats
  */
 export const getGlobalMetrics = async (): Promise<GlobalMetricsResponse> => {
-  const response = await axios.get('/interview/v2/metrics/global');
+  const response = await aiInterviewClient.get('/interview/v2/metrics/global');
 
   return response.data;
 };
@@ -548,7 +562,7 @@ export const getGlobalMetrics = async (): Promise<GlobalMetricsResponse> => {
  * @returns Success status
  */
 export const resetMetrics = async (): Promise<{ status: string; message: string }> => {
-  const response = await axios.post('/interview/v2/metrics/reset');
+  const response = await aiInterviewClient.post('/interview/v2/metrics/reset');
 
   return response.data;
 };
@@ -561,7 +575,7 @@ export const resetMetrics = async (): Promise<{ status: string; message: string 
 export const getInterviewStatusV2 = async (
   sessionId: string
 ): Promise<InterviewStatusV2Response> => {
-  const response = await axios.get(`/v2/interview/${sessionId}/status`);
+  const response = await aiInterviewClient.get(`/v2/interview/${sessionId}/status`);
 
   if (response.data.status === 'not_found') {
     throw new Error('Session not found');

@@ -7,12 +7,12 @@ import { InterviewProvider } from "@/contexts/InterviewContext";
 import { ResultsProvider } from "@/contexts/ResultsContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import NotificationToast from "@/components/common/NotificationToast";
-import PricingPage from "@/pages/Pricing/Pricing";
+import PricingDialog from "@/pages/Pricing/PricingDialog";
 import routes from "@/constants/routes";
 import AuthPage from "./pages/Auth/AuthPage";
+import VerifyEmail from "./pages/Auth/VerifyEmail";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import Profile from "./pages/Profile/Profile";
-import CompleteProfile from "./pages/Profile/CompleteProfile";
 import { PricingProvider } from "@/contexts/PricingContext";
 import Footer from "./components/layout/Footer";
 import ResumeDashboard from "@/pages/Dashboard/ResumeDashboard";
@@ -50,8 +50,8 @@ function App() {
   const hideNavbarRoutes = [
     routes.login,
     routes.signup,
+    routes.verifyEmail,
     routes.profile,
-    routes.completeProfile,
     routes.dashboard,
     routes.interview,
     routes.resources,
@@ -76,6 +76,7 @@ function App() {
     <NotificationProvider>
       <AnalyticsProvider>
         <PricingProvider>
+          <PricingDialog />
           <div className="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
             {!shouldHideNavbar && <Navbar />}
 
@@ -128,7 +129,6 @@ function App() {
                   }
                 />
                 <Route path="/analytics-test" element={<AnalyticsTest />} />
-                <Route path={routes.pricing} element={<PricingPage />} />
 
                 {/* Auth Routes */}
                 <Route
@@ -148,6 +148,9 @@ function App() {
                   }
                 />
 
+                {/* Verify Email - accessible after signup before backend login logic */}
+                <Route path={routes.verifyEmail} element={<VerifyEmail />} />
+
                 {/* Protected Routes */}
                 <Route element={<ProtectedRoute />}>
                   <Route
@@ -165,11 +168,14 @@ function App() {
                   {/* Employee Portal - Single Route */}
                   <Route path="/employee" element={<div className="flex min-h-screen"><Sidebar /><div className="flex-1"><EmployeePortal /></div></div>} />
 
-                  <Route path={routes.profile} element={<Profile />} />
-                  <Route
-                    path={routes.completeProfile}
-                    element={<CompleteProfile />}
-                  />
+                  <Route path={routes.profile} element={
+                    <div className="flex min-h-screen">
+                      <Sidebar />
+                      <div className="flex-1">
+                        <Profile />
+                      </div>
+                    </div>
+                  } />
                   <Route path={routes.interviewHome} element={
                     <div className="flex min-h-screen">
                       <Sidebar />

@@ -6,30 +6,62 @@ import InlineError from "@/components/feedback/InlineError";
 import routes from "@/constants/routes";
 import { useAuth } from "@/contexts/AuthContext";
 import BOTImage from "../../assets/bot_login.png";
-
-// 👇 import Firebase auth
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, googleProvider } from "@/firebase";
+import { UsersApi } from "@/api/users";
 
 export default function Login() {
   const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
-  const redirect = params.get("redirect") || redirectAfterLogin || routes.completeProfile;
+  const redirect = params.get("redirect") || redirectAfterLogin || routes.dashboard;
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | undefined>();
+
+  const handlePostLoginNavigation = (user: any) => {
+    if (!user.isEmailVerified) {
+      navigate('/verify-email', { replace: true });
+    } else {
+      navigate(redirect, { replace: true });
+    }
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr(undefined);
     setLoading(true);
     try {
-      await login(form);
+      // Attempt Firebase login for verification features
+      try {
+        await signInWithEmailAndPassword(auth, form.email, form.password);
+      } catch (fbErr: any) {
+        if (fbErr.code === 'auth/user-not-found' || fbErr.code === 'auth/invalid-credential') {
+          // If they exist in backend but not firebase yet, try to create them quietly
+          await createUserWithEmailAndPassword(auth, form.email, form.password).catch(() => { });
+        }
+      }
+
+      const res = await login(form);
+
+      // Check if Firebase says they are verified but backend doesn't know yet.
+      // Firebase caches the user token, so we must reload to get the latest emailVerified status.
+      if (auth.currentUser) {
+        await auth.currentUser.reload().catch(() => { });
+      }
+      if (auth.currentUser?.emailVerified && !res.user.isEmailVerified) {
+        try {
+          await UsersApi.updateVerificationStatus('email', true);
+          res.user.isEmailVerified = true;
+        } catch (e) {
+          console.error("Failed to sync email verification status post-login", e);
+        }
+      }
+
       localStorage.removeItem('redirectAfterLogin');
-      navigate(redirect, { replace: true });
+      handlePostLoginNavigation(res.user);
     } catch (error: any) {
       setErr(
         error?.response?.data?.message || "Login failed. Check your credentials."
@@ -46,9 +78,22 @@ export default function Login() {
       const result = await signInWithPopup(auth, googleProvider);
       const idToken = await result.user.getIdToken();
 
-      await googleLogin(idToken);
+      const res = await googleLogin(idToken);
+
+      if (auth.currentUser) {
+        await auth.currentUser.reload().catch(() => { });
+      }
+      if (auth.currentUser?.emailVerified && !res.user.isEmailVerified) {
+        try {
+          await UsersApi.updateVerificationStatus('email', true);
+          res.user.isEmailVerified = true;
+        } catch (e) {
+          console.error("Failed to sync email verification status post-google-login", e);
+        }
+      }
+
       localStorage.removeItem('redirectAfterLogin');
-      navigate(redirect, { replace: true });
+      handlePostLoginNavigation(res.user);
     } catch (error: any) {
       console.error("Google login error:", error);
       setErr("Google sign-in failed. Please try again.");
@@ -59,8 +104,6 @@ export default function Login() {
 
   return (
     <div className="relative min-h-screen flex bg-gradient-to-br from-indigo-100 via-white to-indigo-50">
-
-      {/* Left side illustration */}
       <div className="hidden lg:flex flex-col justify-center items-center w-1/2 px-12 relative overflow-hidden bg-gradient-to-br from-indigo-700 via-indigo-800 to-indigo-900 text-white">
         <div className="absolute inset-0 bg-indigo-900/50 backdrop-blur-sm z-0" />
         <div className="relative z-10 flex flex-col items-center text-center px-6 pt-28">
@@ -79,7 +122,6 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Right side form */}
       <div className="flex w-full lg:w-1/2 items-center justify-center px-6 lg:px-16 py-20">
         <div className="w-full max-w-md backdrop-blur-xl bg-white/90 rounded-3xl shadow-2xl p-10 border border-gray-100 transition-transform hover:scale-[1.01]">
           <h1 className="mb-3 text-3xl font-extrabold text-gray-900">
@@ -133,7 +175,6 @@ export default function Login() {
             </Link>
           </div>
 
-          {/* Google Sign-In */}
           <div className="mt-8">
             <Button
               variant="secondary"

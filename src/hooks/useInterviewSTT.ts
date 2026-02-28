@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 
-const STT_WS_BASE = "ws://localhost:9000/ws/stt";
+const STT_WS_BASE = import.meta.env.VITE_STT_WS_URL || "ws://localhost:9000/ws/stt";
 
 function float32ToInt16(float32Array: Float32Array): ArrayBuffer {
     const int16 = new Int16Array(float32Array.length);

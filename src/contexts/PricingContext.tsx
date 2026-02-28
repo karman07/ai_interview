@@ -1,11 +1,28 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { SubscriptionPlan } from "@/types/subscription";
+import { SubscriptionApi } from "@/api/subscription";
 
-import { Plan } from "@/types/plan";
+interface PlanUI {
+  id: string;
+  name: string;
+  description: string;
+  icon: string | React.ReactNode;
+  price: string;
+  numericPrice: number;
+  razorpayPlanId?: string;
+  popular: boolean;
+  features: string[];
+  limitations: string[];
+  currency: string;
+}
 
 interface PricingContextType {
-  isYearly: boolean;
-  setIsYearly: (val: boolean) => void;
-  pricingPlans: Plan[];
+  pricingPlans: PlanUI[];
+  loading: boolean;
+  error: string | null;
+  refreshPlans: () => Promise<void>;
+  showPricing: boolean;
+  setShowPricing: (val: boolean) => void;
 }
 
 const PricingContext = createContext<PricingContextType | undefined>(undefined);
@@ -16,95 +33,56 @@ export const usePricing = () => {
   return ctx;
 };
 
-
 export const PricingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isYearly, setIsYearly] = useState(false);
-  const pricingPlans: Plan[] = [
-    {
-      name: "Starter",
-      description: "Perfect for individuals starting their interview journey",
-      icon: <span role="img" aria-label="sparkles">✨</span>,
-      monthlyPrice: 0,
-      yearlyPrice: 0,
-      popular: false,
-      features: [
-        "3 AI mock interviews per month",
-        "Basic performance analytics",
-        "Resume optimization tips",
-        "Email support",
-        "Access to question library",
-        "Basic interview feedback"
-      ],
-      limitations: [
-        "Limited to 3 interviews monthly",
-        "Basic analytics only"
-      ]
-    },
-    {
-      name: "Professional",
-      description: "Ideal for serious job seekers and career changers",
-      icon: <span role="img" aria-label="zap">⚡</span>,
-      monthlyPrice: 19,
-      yearlyPrice: 15,
-      popular: true,
-      features: [
-        "Unlimited AI mock interviews",
-        "Advanced performance analytics",
-        "Personalized improvement plans",
-        "Industry-specific questions",
-        "Real-time feedback & scoring",
-        "Video interview practice",
-        "Priority email support",
-        "Resume & cover letter AI review",
-        "Interview confidence tracking"
-      ],
-      limitations: []
-    },
-    {
-      name: "Teams",
-      description: "Built for organizations and hiring teams",
-      icon: <span role="img" aria-label="users">👥</span>,
-      monthlyPrice: 49,
-      yearlyPrice: 39,
-      popular: false,
-      features: [
-        "Everything in Professional",
-        "Up to 10 team members",
-        "Candidate screening tools",
-        "Custom question banks",
-        "Team analytics dashboard",
-        "Bulk interview scheduling",
-        "API access & integrations",
-        "White-label options",
-        "Dedicated account manager",
-        "Advanced reporting"
-      ],
-      limitations: []
-    },
-    {
-      name: "Enterprise",
-      description: "Custom solutions for large organizations",
-      icon: <span role="img" aria-label="crown">👑</span>,
-      monthlyPrice: null,
-      yearlyPrice: null,
-      popular: false,
-      features: [
-        "Everything in Teams",
-        "Unlimited team members",
-        "Custom AI model training",
-        "Advanced security & compliance",
-        "Single Sign-On (SSO)",
-        "Custom integrations",
-        "On-premise deployment",
-        "24/7 phone support",
-        "Custom reporting & analytics",
-        "Dedicated success manager"
-      ],
-      limitations: []
+  const [pricingPlans, setPricingPlans] = useState<PlanUI[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showPricing, setShowPricing] = useState(false);
+
+  const transformPlans = (apiPlans: SubscriptionPlan[]): PlanUI[] => {
+    return apiPlans.map(plan => ({
+      id: (plan as any)._id || plan.id,
+      name: plan.displayName,
+      description: plan.description || "Unlock premium features to accelerate your growth.",
+      icon: plan.icon || (plan.displayName.toLowerCase().includes('starter') ? "✨" : plan.displayName.toLowerCase().includes('pro') ? "⚡" : "👥"),
+      price: plan.formattedPrice || `${plan.currency} ${plan.price / 100}`,
+      numericPrice: plan.price,
+      razorpayPlanId: plan.razorpayPlanId,
+      popular: plan.popular || false,
+      features: plan.features.filter(f => f.enabled !== false).map(f => f.description || f.name),
+      limitations: [],
+      currency: plan.currency
+    }));
+  };
+
+  const fetchPlans = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await SubscriptionApi.getActivePlans('IN');
+      const transformed = transformPlans(data);
+      setPricingPlans(transformed);
+    } catch (err: any) {
+      console.error("Failed to fetch pricing plans:", err);
+      setError("Failed to load subscription plans. Please try again later.");
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, []);
+
+  useEffect(() => {
+    fetchPlans();
+  }, [fetchPlans]);
+
   return (
-    <PricingContext.Provider value={{ isYearly, setIsYearly, pricingPlans }}>
+    <PricingContext.Provider value={{
+      pricingPlans,
+      loading,
+      error,
+      refreshPlans: fetchPlans,
+      showPricing,
+      setShowPricing
+    }}>
       {children}
     </PricingContext.Provider>
   );

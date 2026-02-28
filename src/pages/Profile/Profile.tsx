@@ -1,39 +1,168 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { UsersApi } from '@/api/users';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePricing } from '@/contexts/PricingContext';
+import { SubscriptionApi } from '@/api/subscription';
 import Input from '@/components/ui/Input';
 import Button from '../../components/ui/button';
-import InlineError from '@/components/feedback/InlineError';
-import FileInput from '@/components/ui/FileInput';
-import { useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import routes from '@/constants/routes';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  sendEmailVerification,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  ConfirmationResult
+} from 'firebase/auth';
+import { auth } from '@/firebase';
+import {
+  Mail,
+  Phone,
+  ShieldCheck,
+  ShieldAlert,
+  Globe,
+  Plus,
+  X,
+  CheckCircle2,
+  Github,
+  Linkedin,
+  User as UserIcon,
+  Building2,
+  Sparkles,
+  ChevronRight,
+  Camera,
+  Fingerprint,
+  CreditCard,
+  Zap
+} from 'lucide-react';
 
 export default function Profile() {
   const { user, refreshMe } = useAuth();
-  const [me, setMe] = useState(user);
+  const { setShowPricing } = usePricing();
   const [err, setErr] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState<string | undefined>();
-  const navigate = useNavigate()
+  const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     name: user?.name ?? '',
+    bio: user?.bio ?? '',
+    phone: user?.phone ?? '',
+    location: user?.location ?? '',
+    experienceLevel: user?.experienceLevel ?? 'Mid',
+    skills: user?.skills ?? [] as string[],
+    website: user?.website ?? '',
+    githubUrl: user?.githubUrl ?? '',
+    linkedinUrl: user?.linkedinUrl ?? '',
     company: user?.company ?? '',
     industry: user?.industry ?? '',
-    jobDescription: user?.jobDescription ?? '',
   });
 
+  const [newSkill, setNewSkill] = useState('');
+  const [verifyingEmail, setVerifyingEmail] = useState(false);
+
+  const [countries, setCountries] = useState<any[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<any>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const recaptchaVerifier = useRef<RecaptchaVerifier | null>(null);
+  const [countrySearch, setCountrySearch] = useState('');
+  const [showCountryList, setShowCountryList] = useState(false);
+  const isInitialized = useRef(false);
+  const countryDropdownRef = useRef<HTMLDivElement>(null);
+
+  const filteredCountries = useMemo(() => {
+    if (!countrySearch) return countries;
+    const lowerSearch = countrySearch.toLowerCase();
+    return countries.filter(c =>
+      c.name.common.toLowerCase().includes(lowerSearch) ||
+      c.cca2.toLowerCase().includes(lowerSearch) ||
+      (c.idd.root + (c.idd.suffixes?.[0] || '')).includes(countrySearch)
+    );
+  }, [countries, countrySearch]);
+
   useEffect(() => {
-    setMe(user ?? null);
-    if (user) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (countryDropdownRef.current && !countryDropdownRef.current.contains(event.target as Node)) {
+        setShowCountryList(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    fetch('https://restcountries.com/v3.1/all?fields=name,idd,cca2,cca3,flags,flag')
+      .then(res => res.json())
+      .then(data => {
+        const sorted = data.sort((a: any, b: any) => a.name.common.localeCompare(b.name.common));
+        setCountries(sorted);
+        const india = sorted.find((c: any) => c.cca2 === 'IN');
+        if (india) setSelectedCountry(india);
+      })
+      .catch(() => { });
+  }, []);
+
+  useEffect(() => {
+    if (user && !isInitialized.current) {
       setForm({
         name: user.name ?? '',
+        bio: user.bio ?? '',
+        phone: user.phone ?? '',
+        location: user.location ?? '',
+        experienceLevel: user.experienceLevel ?? 'Mid',
+        skills: user.skills ?? [],
+        website: user.website ?? '',
+        githubUrl: user.githubUrl ?? '',
+        linkedinUrl: user.linkedinUrl ?? '',
         company: user.company ?? '',
         industry: user.industry ?? '',
-        jobDescription: user.jobDescription ?? '',
       });
+      isInitialized.current = true;
     }
-  }, [user]);
+
+    if (params.get('verify') === 'phone') {
+      setShowPhoneModal(true);
+      setParams({});
+    }
+
+    if (params.get('status') === 'success') {
+      showSuccess('Tier upgraded successfully! Your premium features are now active.');
+      setParams({});
+      refreshMe(); // Refresh to get the new status
+    }
+  }, [user, params, setParams, refreshMe]);
+
+  const [transactions, setTransactions] = useState<any[]>([]);
+
+  useEffect(() => {
+    SubscriptionApi.getTransactions().then(data => {
+      setTransactions(Array.isArray(data) ? data : (data?.data || []));
+    }).catch(console.error);
+  }, []);
+
+  const completionProgress = useMemo(() => {
+    const fields = [
+      { val: form.name, weight: 10 },
+      { val: form.bio, weight: 15 },
+      { val: form.phone, weight: 10 },
+      { val: form.location, weight: 10 },
+      { val: form.experienceLevel, weight: 5 },
+      { val: form.skills.length > 0, weight: 20 },
+      { val: form.linkedinUrl, weight: 10 },
+      { val: form.githubUrl, weight: 10 },
+      { val: user?.profileImageUrl, weight: 10 },
+    ];
+    let score = 0;
+    fields.forEach(f => {
+      if (f.val) score += f.weight;
+    });
+    return Math.min(score, 100);
+  }, [form, user?.profileImageUrl]);
 
   const clearMessages = () => {
     setErr(undefined);
@@ -47,257 +176,721 @@ export default function Profile() {
 
   const handleSave = async () => {
     clearMessages();
+    setFieldErrors({});
     setSaving(true);
     try {
-      await UsersApi.updateMe(form);
+      const code = selectedCountry ? (selectedCountry.idd.root + (selectedCountry.idd.suffixes?.[0] || '')) : '';
+      const payload = { ...form, phone: form.phone.startsWith('+') ? form.phone : (code + form.phone) };
+      await UsersApi.updateProfile(payload);
       await refreshMe();
-      navigate(routes.completeProfile)
-      showSuccess('Profile updated successfully!');
+      showSuccess('Profile synchronized successfully!');
     } catch (error: any) {
-      setErr(error?.response?.data?.message || 'Failed to update profile.');
+      if (error?.response?.data?.errors) {
+        setFieldErrors(error.response.data.errors);
+        setErr('Validation failed. Please check the fields below.');
+      } else {
+        setErr(error?.response?.data?.message || 'Update synchronization failed.');
+      }
     } finally {
       setSaving(false);
     }
   };
 
-  const handleUploadResume = async (f: File) => {
-    clearMessages();
+  const handleVerifyEmail = async () => {
+    if (!auth.currentUser) return;
+    setVerifyingEmail(true);
     try {
-      await UsersApi.uploadResume(f);
-      await refreshMe();
-      showSuccess('Resume uploaded successfully!');
+      await sendEmailVerification(auth.currentUser);
+      showSuccess('Security verification email dispatched.');
     } catch (error: any) {
-      setErr(error?.response?.data?.message || 'Resume upload failed.');
+      setErr(error.message || 'Dispatch failed.');
+    } finally {
+      setVerifyingEmail(false);
     }
   };
 
-  const handleUploadProfileImage = async (f: File) => {
+  const setupRecaptcha = () => {
+    if (recaptchaVerifier.current) return;
+    recaptchaVerifier.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      size: 'invisible',
+    });
+  };
+
+  const handleSendOtp = async () => {
+    if (!form.phone) {
+      setErr('Contact number required.');
+      return;
+    }
     clearMessages();
+    setVerifyingOtp(true);
     try {
-      await UsersApi.uploadProfileImage(f);
-      await refreshMe();
-      showSuccess('Profile image updated successfully!');
+      setupRecaptcha();
+      const appVerifier = recaptchaVerifier.current!;
+      const code = selectedCountry ? (selectedCountry.idd.root + (selectedCountry.idd.suffixes?.[0] || '')) : '';
+      const fullPhone = form.phone.startsWith('+') ? form.phone : (code + form.phone);
+      const confirmation = await signInWithPhoneNumber(auth, fullPhone, appVerifier);
+      setConfirmationResult(confirmation);
+      setShowPhoneModal(true);
     } catch (error: any) {
-      setErr(error?.response?.data?.message || 'Image upload failed.');
+      setErr(error.message || 'OTP transmission failed.');
+    } finally {
+      setVerifyingOtp(false);
     }
   };
 
-  // Fallback avatar component
-  const ProfileAvatar = () => {
-    const initials = me?.name 
-      ? me.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-      : 'U';
-
-    return (
-      <div className="relative">
-        {me?.profileImageUrl ? (
-          <div className="relative">
-            <img
-              src={me.profileImageUrl}
-              alt={me?.name || 'Profile'}
-              className="w-24 h-24 rounded-xl object-cover shadow-lg ring-4 ring-white"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-              }}
-            />
-            <div className="hidden w-24 h-24 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg ring-4 ring-white">
-              <span className="text-white font-semibold text-2xl">{initials}</span>
-            </div>
-          </div>
-        ) : (
-          <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg ring-4 ring-white">
-            <span className="text-white font-semibold text-2xl">{initials}</span>
-          </div>
-        )}
-      </div>
-    );
+  const handleVerifyOtp = async () => {
+    if (!confirmationResult || !otp) return;
+    setVerifyingOtp(true);
+    try {
+      await confirmationResult.confirm(otp);
+      await UsersApi.updateVerificationStatus('phone', true);
+      await refreshMe();
+      setShowPhoneModal(false);
+      showSuccess('Phone identity verified.');
+    } catch (error: any) {
+      setErr('Security code mismatch.');
+    } finally {
+      setVerifyingOtp(false);
+    }
   };
+
+  const handleAddSkill = () => {
+    if (newSkill && !form.skills.includes(newSkill)) {
+      setForm(f => ({ ...f, skills: [...f.skills, newSkill] }));
+      setNewSkill('');
+    }
+  };
+
+  const handleRemoveSkill = (skill: string) => {
+    setForm(f => ({ ...f, skills: f.skills.filter(s => s !== skill) }));
+  };
+
+  const initials = useMemo(() => {
+    if (!user?.name) return 'U';
+    const names = user.name.trim().split(/\s+/);
+    if (names.length >= 2) return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+    return names[0].slice(0, 2).toUpperCase();
+  }, [user?.name]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 pt-28 pb-16">
-      <div className="mx-auto max-w-6xl px-6">
-        {/* Success Message */}
-        {success && (
-          <div className="mb-6 animate-in slide-in-from-top duration-300">
-            <div className="rounded-xl bg-green-50 border border-green-200 p-4 flex items-center gap-3 shadow-sm">
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <span className="text-green-800 font-semibold">{success}</span>
+    <div className="min-h-screen bg-blue-50/50 dark:bg-[#050609] pt-20 pb-12 transition-colors duration-500">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* Top Feature Bar */}
+        <div className="mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 bg-blue-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-500/30">
+              <UserIcon className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Account Intelligence</h1>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Optimize your professional profile for AI-driven matching.</p>
             </div>
           </div>
-        )}
 
-        <div className="rounded-2xl bg-white/90 backdrop-blur-sm p-8 shadow-xl border border-white/50">
-          {/* Header Section */}
-          <div className="flex flex-col items-center gap-8 md:flex-row md:items-start">
-            <ProfileAvatar />
-            
-            <div className="flex-1 text-center md:text-left">
-              <div className="mb-6">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                  {me?.name || 'Welcome to Your Profile'}
-                </h1>
-                <p className="text-gray-600 mt-2 flex items-center justify-center md:justify-start gap-2">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                  </svg>
-                  {me?.email}
-                </p>
+          <div className="flex items-center gap-3">
+
+            <Button
+              variant="primary"
+              onClick={handleSave}
+              disabled={saving}
+              className="px-10 bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-600/20 text-sm font-black uppercase tracking-widest py-3.5"
+            >
+              {saving ? 'Syncing...' : 'Save Profile'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Global Progress Indicator */}
+        <div className="mb-6 bg-white dark:bg-[#0D1117] rounded-[2.5rem] p-8 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-blue-600 animate-pulse" />
+                  <span className="text-xs font-black uppercase tracking-[0.2em] text-gray-400">Profile Readiness Index</span>
+                </div>
+                <span className="text-2xl font-black text-blue-600">{completionProgress}%</span>
               </div>
-              
-              <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-100">
-                  <FileInput
-                    label="Update Profile Photo" 
-                    accept="image/*" 
-                    onChange={handleUploadProfileImage}
-                  />
+              <div className="h-4 w-full bg-gray-100 dark:bg-gray-800/50 rounded-full border border-gray-200 dark:border-gray-700/50 p-1">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${completionProgress}%` }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                  className="h-full bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.4)]"
+                />
+              </div>
+              <div className="mt-4 flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${completionProgress > 30 ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">Personal</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${completionProgress > 60 ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">Professional</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${completionProgress === 100 ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">Identity</span>
                 </div>
               </div>
             </div>
-
-            {me?.resumeUrl && (
-              <div className="flex flex-col items-center md:items-end gap-3">
-                <a
-                  href={me.resumeUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clipRule="evenodd" />
-                  </svg>
-                  View Resume
-                </a>
+            {completionProgress < 100 && (
+              <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/50 p-4 rounded-2xl md:max-w-[300px]">
+                <p className="text-xs font-bold text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2">
+                  <Fingerprint className="w-4 h-4" /> Boost your score
+                </p>
+                <p className="text-[10px] text-blue-600/70 dark:text-blue-400/60 leading-relaxed font-medium">
+                  Complete your missing details to unlock premium AI mock interviews and specialized resources.
+                </p>
               </div>
             )}
           </div>
+          {/* Background design */}
+          <div className="absolute top-0 right-0 w-64 h-full bg-gradient-to-l from-blue-50 dark:from-blue-900/5 to-transparent pointer-events-none" />
+        </div>
 
-          <div className="my-10 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+        {/* Status Messaging */}
+        <AnimatePresence>
+          {(success || err) && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className={`mb-6 p-6 rounded-3xl border flex items-center gap-4 relative overflow-hidden ${success
+                ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-400'
+                : 'bg-rose-50 border-rose-200 dark:bg-rose-950/20 dark:border-rose-800/50 text-rose-800 dark:text-rose-400'
+                }`}
+            >
+              <div className={`p-3 rounded-2xl ${success ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-rose-100 dark:bg-rose-900/40'}`}>
+                {success ? <CheckCircle2 className="w-5 h-5" /> : <ShieldAlert className="w-5 h-5" />}
+              </div>
+              <div>
+                <h4 className="text-sm font-black uppercase tracking-wider">{success ? 'Success' : 'Attention Required'}</h4>
+                <p className="text-xs font-bold opacity-80 mt-0.5">{success || err}</p>
+              </div>
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-10">
+                {success ? <CheckCircle2 className="w-16 h-16" /> : <ShieldAlert className="w-16 h-16" />}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-          <div className="grid gap-8 lg:grid-cols-3">
-            {/* Main Form */}
-            <div className="lg:col-span-2">
-              <div className="bg-gradient-to-br from-white to-gray-50/50 rounded-2xl p-8 ring-1 ring-gray-100">
-                <h2 className="text-xl font-semibold text-gray-900 mb-8 flex items-center gap-3">
-                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  Profile Information
-                </h2>
-                
-                <div className="space-y-6">
-                  <Input
-                    label="Full Name"
-                    value={form.name}
-                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                    placeholder="Enter your full name"
-                    required
-                  />
-                  
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <Input
-                      label="Company"
-                      value={form.company}
-                      onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
-                      placeholder="Enter your company"
-                    />
-                    <Input
-                      label="Industry"
-                      value={form.industry}
-                      onChange={(e) => setForm((f) => ({ ...f, industry: e.target.value }))}
-                      placeholder="Enter your industry"
-                    />
-                  </div>
-                  
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-medium text-gray-700">Job Description</span>
-                    <textarea
-                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-4 text-gray-900 shadow-sm outline-none transition-all duration-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 resize-none"
-                      rows={6}
-                      value={form.jobDescription}
-                      onChange={(e) => setForm((f) => ({ ...f, jobDescription: e.target.value }))}
-                      placeholder="Describe your role, responsibilities, and key achievements..."
-                    />
-                  </label>
-                  
-                  <InlineError message={err} />
-                  
-                  <div className="flex items-center gap-4 pt-4">
-                    <Button 
-                      variant="primary"
-                      onClick={handleSave}
-                      
-                      className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
-                    >
-                      <span className="flex items-center gap-2">
-                        {saving && (
-                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                          </svg>
-                        )}
-                        {saving ? 'Saving Changes...' : 'Save Profile'}
-                      </span>
-                    </Button>
-                    
-                    <div className="text-sm text-gray-500">
-                      Changes are saved automatically when you click Save Profile
+        {/* Main Content Sections */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+
+          {/* Left Column: Identity, Presence & Trust (col-span-4) */}
+          <div className="xl:col-span-4 space-y-8">
+
+            {/* Card 1: The Identity Hub */}
+            <div className="bg-white dark:bg-[#0D1117] rounded-[3rem] border border-gray-200 dark:border-gray-800/50 shadow-sm overflow-hidden group">
+              <div className="h-40 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 relative">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+              </div>
+              <div className="px-8 pb-10 -mt-20 relative text-center">
+                <div className="relative inline-block">
+                  <div className="w-40 h-40 rounded-[3rem] bg-white dark:bg-gray-900 flex items-center justify-center border-[6px] border-[#F0F2F5] dark:border-[#050609] shadow-2xl relative overflow-hidden group/avatar">
+                    {user?.profileImageUrl ? (
+                      <img src={user.profileImageUrl} className="w-full h-full object-cover transition-transform duration-700 group-hover/avatar:scale-110" alt="" />
+                    ) : (
+                      <span className="text-5xl font-black text-blue-600">{initials}</span>
+                    )}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                      <Camera className="w-8 h-8 text-white" />
                     </div>
                   </div>
+                  <div className="absolute -bottom-2 -right-2 bg-emerald-500 w-8 h-8 rounded-2xl border-4 border-white dark:border-gray-900 shadow-lg" />
+                </div>
+
+                <div className="mt-8">
+                  <h2 className="text-2xl font-black text-gray-900 dark:text-white tabular-nums tracking-tight">{user?.name}</h2>
                 </div>
               </div>
             </div>
 
-            {/* Resume Section */}
-            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 ring-1 ring-indigo-100 h-fit">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-3">
-                <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                  </svg>
+            {/* Card 2: Subscription Intelligence */}
+            <div className="bg-white dark:bg-[#0D1117] rounded-[2.5rem] p-8 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden group">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
+                  <CreditCard className="w-5 h-5" />
                 </div>
-                Resume
-              </h3>
-              
-              <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-                Upload your resume (PDF up to 10MB) to personalize interview questions and enhance your profile.
-              </p>
-              
-              <div className="space-y-4">
-                {me?.resumeUrl && (
-                  <div className="p-4 bg-white/80 rounded-xl border border-indigo-200 flex items-center gap-3 shadow-sm">
-                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-gray-900">Current Resume</p>
-                      <p className="text-xs text-gray-500">PDF document uploaded</p>
-                    </div>
-                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight leading-none uppercase tracking-widest">Subscription</h3>
+              </div>
+
+              <div className="p-6 rounded-[2rem] bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-100/50 dark:border-blue-800/30 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Current Plan</span>
+                  <div className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 ${user?.subscriptionStatus === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-gray-500/10 text-gray-500'}`}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${user?.subscriptionStatus === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-500'}`} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">{user?.subscriptionStatus || 'Free'}</span>
                   </div>
-                )}
-                
-                <div className="bg-white/60 p-4 rounded-xl border-2 border-dashed border-indigo-200 hover:border-indigo-300 transition-colors">
-                  <FileInput 
-                    label={me?.resumeUrl ? "Upload New Resume" : "Upload Resume"} 
-                    accept="application/pdf" 
-                    onChange={handleUploadResume}
+                </div>
+
+                <h4 className="text-xl font-black text-gray-900 dark:text-white mb-4 flex items-center gap-3">
+                  {user?.subscriptionPlan && typeof user.subscriptionPlan === 'object' ? (user.subscriptionPlan as any).displayName : (user?.subscriptionPlan || 'Foundation Tier')}
+                  {user?.subscriptionStatus === 'active' && <Zap className="w-4 h-4 text-blue-600" />}
+                </h4>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[10px] font-bold text-gray-400">
+                    <span className="uppercase tracking-widest">Validity</span>
+                    <span className="text-gray-600 dark:text-gray-300">
+                      {user?.subscriptionExpiry ? new Date(user.subscriptionExpiry).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Infinite'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] border-gray-100 dark:border-gray-800 group-hover:border-blue-500/50 transition-all hover:bg-blue-50 dark:hover:bg-blue-900/10"
+                onClick={() => setShowPricing(true)}
+              >
+                Update Intelligence Tier
+                <ChevronRight className="w-3 h-3 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </div>
+
+            {/* Card 2: Digital Presence */}
+            <div className="bg-white dark:bg-[#0D1117] rounded-[2.5rem] p-8 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden group">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
+                  <Globe className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight uppercase tracking-widest leading-none">Digital Presence</h3>
+              </div>
+              <div className="space-y-4">
+                <div className="relative group/input">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/input:text-blue-500 transition-colors">
+                    <Globe className="w-4 h-4" />
+                  </div>
+                  <input
+                    value={form.website}
+                    onChange={e => setForm(f => ({ ...f, website: e.target.value }))}
+                    placeholder="Portfolio URL"
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50/50 dark:bg-gray-800/20 border border-gray-100 dark:border-gray-800 rounded-2xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all text-xs font-bold"
                   />
+                </div>
+                <div className="relative group/input">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/input:text-blue-500 transition-colors">
+                    <Linkedin className="w-4 h-4" />
+                  </div>
+                  <input
+                    value={form.linkedinUrl}
+                    onChange={e => setForm(f => ({ ...f, linkedinUrl: e.target.value }))}
+                    placeholder="LinkedIn Profile"
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50/50 dark:bg-gray-800/20 border border-gray-100 dark:border-gray-800 rounded-2xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all text-xs font-bold"
+                  />
+                </div>
+                <div className="relative group/input">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/input:text-blue-500 transition-colors">
+                    <Github className="w-4 h-4" />
+                  </div>
+                  <input
+                    value={form.githubUrl}
+                    onChange={e => setForm(f => ({ ...f, githubUrl: e.target.value }))}
+                    placeholder="GitHub Profile"
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50/50 dark:bg-gray-800/20 border border-gray-100 dark:border-gray-800 rounded-2xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all text-xs font-bold"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Trust & Security */}
+            <div className="bg-white dark:bg-[#0D1117] rounded-[2.5rem] p-8 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden group">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
+                  <Fingerprint className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight uppercase tracking-widest leading-none">Trust & Security</h3>
+              </div>
+              <div className="space-y-3">
+                <div className="p-4 bg-gray-50/50 dark:bg-gray-800/20 rounded-[1.5rem] border border-gray-100 dark:border-gray-800/50 flex items-center justify-between group/verify hover:border-blue-500/30 transition-all">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${user?.isEmailVerified ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                      <Mail className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-0.5">Primary Email</p>
+                      <p className="text-[11px] font-bold text-gray-700 dark:text-gray-300 truncate">{user?.email}</p>
+                    </div>
+                  </div>
+                  {user?.isEmailVerified ? (
+                    <div className="bg-emerald-500/10 p-2 rounded-lg">
+                      <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleVerifyEmail}
+                      disabled={verifyingEmail}
+                      className="px-4 py-2 bg-blue-600 text-white text-[9px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-600/20 active:scale-95 transition-all disabled:opacity-50"
+                    >
+                      {verifyingEmail ? '...' : 'Verify'}
+                    </button>
+                  )}
+                </div>
+                <div className="p-4 bg-gray-50/50 dark:bg-gray-800/20 rounded-[1.5rem] border border-gray-100 dark:border-gray-800/50 flex items-center justify-between group/verify hover:border-blue-500/30 transition-all">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${user?.isPhoneVerified ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                      <Phone className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-0.5">Phone Access</p>
+                      <p className="text-[11px] font-bold text-gray-700 dark:text-gray-300 truncate">{user?.phone || 'Not configured'}</p>
+                    </div>
+                  </div>
+                  {user?.isPhoneVerified ? (
+                    <div className="bg-emerald-500/10 p-2 rounded-lg">
+                      <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleSendOtp}
+                      disabled={verifyingOtp}
+                      className="px-4 py-2 bg-blue-600 text-white text-[9px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-600/20 active:scale-95 transition-all disabled:opacity-50"
+                    >
+                      {verifyingOtp ? '...' : (user?.phone ? 'Verify' : 'Link')}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Career & Bio (col-span-8) */}
+          <div className="xl:col-span-8 space-y-8">
+            <div className="bg-white dark:bg-[#0D1117] rounded-[3rem] p-10 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden group">
+              <div className="flex items-center gap-4 mb-10">
+                <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                  <Building2 className="w-7 h-7" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight uppercase tracking-widest">Career Profile</h3>
+                  <p className="text-xs font-bold text-gray-400 mt-2 uppercase tracking-[0.2em]">Detailed Professional Background</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                <Input
+                  label="Display Identity"
+                  value={form.name}
+                  onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+                  error={fieldErrors.name}
+                  className="[&_input]:py-4 [&_input]:text-xs [&_input]:rounded-3xl [&_span]:tracking-[0.2em] [&_span]:font-black"
+                />
+
+                <div className="flex flex-col">
+                  <span className="mb-2 block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Contact Communication</span>
+                  <div className="flex items-stretch bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl overflow-hidden focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/5 transition-all h-[52px]">
+                    <div className="relative border-r border-gray-100 dark:border-gray-700" ref={countryDropdownRef}>
+                      <button
+                        type="button"
+                        onClick={() => setShowCountryList(!showCountryList)}
+                        className="h-full px-5 flex items-center justify-between gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          {selectedCountry && (
+                            <>
+                              <img src={selectedCountry.flags.svg} className="w-4 h-3 object-cover rounded-sm shadow-sm" alt="" />
+                              <span className="text-[10px] font-black">{selectedCountry.idd.root}{selectedCountry.idd.suffixes?.[0] || ''}</span>
+                            </>
+                          )}
+                        </div>
+                        <ChevronRight className={`w-3 h-3 text-gray-400 transition-transform ${showCountryList ? 'rotate-90' : ''}`} />
+                      </button>
+
+                      <AnimatePresence>
+                        {showCountryList && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            className="absolute left-0 z-50 mt-2 w-64 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-2xl overflow-hidden"
+                          >
+                            <div className="p-2 border-b border-gray-100 dark:border-gray-800">
+                              <input
+                                type="text"
+                                placeholder="Search country..."
+                                autoFocus
+                                className="w-full px-3 py-2 text-[10px] font-bold bg-gray-50 dark:bg-gray-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
+                                value={countrySearch}
+                                onChange={(e) => setCountrySearch(e.target.value)}
+                              />
+                            </div>
+                            <div className="max-h-60 overflow-y-auto no-scrollbar py-2">
+                              {filteredCountries.map(c => (
+                                <button
+                                  key={c.cca2}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCountry(c);
+                                    setShowCountryList(false);
+                                    setCountrySearch('');
+                                  }}
+                                  className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-left"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <img src={c.flags.svg} className="w-5 h-3.5 object-cover rounded-sm shadow-sm" alt="" />
+                                    <span className="text-[10px] font-bold text-gray-700 dark:text-gray-300">{c.name.common}</span>
+                                  </div>
+                                  <span className="text-[10px] font-black text-blue-600">{c.idd.root}{c.idd.suffixes?.[0] || ''}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    <div className="flex-1 relative">
+                      <input
+                        type="tel"
+                        value={form.phone}
+                        onChange={(e) => {
+                          let val = e.target.value.replace(/[^\d]/g, '');
+                          const prefix = selectedCountry
+                            ? `${selectedCountry.idd.root}${selectedCountry.idd.suffixes?.[0] || ''}`.replace(/[^\d]/g, '')
+                            : '';
+                          if (prefix && val.startsWith(prefix) && val.length > prefix.length) {
+                            val = val.substring(prefix.length);
+                          }
+                          setForm(f => ({ ...f, phone: val }));
+                        }}
+                        placeholder="Enter mobile number"
+                        className="w-full h-full bg-transparent border-none px-6 py-0 text-[11px] font-black outline-none placeholder:text-gray-400 placeholder:font-bold"
+                      />
+                    </div>
+                  </div>
+                  {fieldErrors.phone && (
+                    <span className="mt-2 ml-4 text-[9px] font-black text-red-500 uppercase tracking-widest">{fieldErrors.phone}</span>
+                  )}
+                </div>
+
+                <Input
+                  label="Organization"
+                  value={form.company}
+                  onChange={(e) => setForm(f => ({ ...f, company: e.target.value }))}
+                  error={fieldErrors.company}
+                  className="[&_input]:py-4 [&_input]:text-xs [&_input]:rounded-3xl [&_span]:tracking-[0.2em] [&_span]:font-black"
+                />
+                <Input
+                  label="Industry Segment"
+                  value={form.industry}
+                  onChange={(e) => setForm(f => ({ ...f, industry: e.target.value }))}
+                  error={fieldErrors.industry}
+                  className="[&_input]:py-4 [&_input]:text-xs [&_input]:rounded-3xl [&_span]:tracking-[0.2em] [&_span]:font-black"
+                />
+                <Input
+                  label="Geographic Location"
+                  value={form.location}
+                  onChange={(e) => setForm(f => ({ ...f, location: e.target.value }))}
+                  error={fieldErrors.location}
+                  className="[&_input]:py-4 [&_input]:text-xs [&_input]:rounded-3xl [&_span]:tracking-[0.2em] [&_span]:font-black"
+                />
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 block ml-1">Ambition Scale</label>
+                  <div className="relative">
+                    <select
+                      className="w-full bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-3xl px-6 py-4 text-xs font-black outline-none transition-all appearance-none cursor-pointer uppercase tracking-widest text-gray-600 dark:text-gray-300"
+                      value={form.experienceLevel}
+                      onChange={(e) => setForm(f => ({ ...f, experienceLevel: e.target.value }))}
+                    >
+                      <option value="Junior">Junior Tier</option>
+                      <option value="Mid">Midweight</option>
+                      <option value="Senior">Senior Expert</option>
+                      <option value="Lead">Team Lead</option>
+                      <option value="Executive">Executive</option>
+                    </select>
+                    <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 rotate-90 pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-8">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 block ml-1">Professional Narrative</label>
+                <textarea
+                  className="w-full bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-[2.5rem] px-8 py-6 text-xs font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all min-h-[160px] resize-none leading-relaxed placeholder:text-gray-300 dark:placeholder:text-gray-600"
+                  value={form.bio}
+                  onChange={(e) => setForm(f => ({ ...f, bio: e.target.value }))}
+                  placeholder="Design your professional story..."
+                />
+              </div>
+
+              <div className="">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-2xl flex items-center justify-center">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight leading-none uppercase tracking-widest">Skill Inventory</h3>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-800/30 rounded-[2.5rem] p-4 border border-gray-100 dark:border-gray-800/50">
+                  <div className="flex flex-wrap gap-3 mb-6 min-h-[60px] items-center px-4">
+                    {form.skills.map((skill) => (
+                      <motion.div
+                        layout
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        key={skill}
+                        className="px-5 py-2.5 bg-blue-600 text-white rounded-2xl text-[10px] font-black border border-blue-500/30 flex items-center gap-3 group relative overflow-hidden shadow-lg shadow-blue-500/20"
+                      >
+                        <span className="relative z-10">{skill}</span>
+                        <button
+                          onClick={() => handleRemoveSkill(skill)}
+                          className="relative z-10 opacity-60 hover:opacity-100 transition-opacity bg-white/20 p-1 rounded-lg"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </motion.div>
+                    ))}
+                    {form.skills.length === 0 && (
+                      <p className="text-[10px] text-gray-400 font-bold italic uppercase tracking-widest pl-2">No expertise modules initialized...</p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex-1 group">
+                      <input
+                        type="text"
+                        placeholder="Add Core Skill"
+                        className="w-full bg-white dark:bg-gray-900 border-2 border-transparent dark:border-gray-800 rounded-2xl px-8 py-5 text-xs font-black outline-none focus:border-blue-500/50 shadow-sm transition-all"
+                        value={newSkill}
+                        onChange={(e) => setNewSkill(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())}
+                      />
+                    </div>
+                    <button
+                      onClick={handleAddSkill}
+                      className="h-[60px] w-[60px] bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-xl"
+                    >
+                      <Plus className="w-6 h-6" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Card 4: Billing History Intelligence */}
+        <div className="mt-8 bg-white dark:bg-[#0D1117] rounded-[3rem] p-8 sm:p-12 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden group">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-12">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-blue-600 text-white rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-600/30 group-hover:rotate-6 transition-transform duration-500">
+                <CreditCard className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-none uppercase tracking-widest">Billing History</h3>
+                <p className="text-[10px] font-bold text-gray-400 mt-1.5 uppercase tracking-[0.3em]">Fiscal intelligence & automated ledger</p>
+              </div>
+            </div>
+            <div className="px-5 py-2.5 bg-gray-50 dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-700/50 flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              <span className="text-[10px] font-black text-gray-600 dark:text-gray-400 uppercase tracking-widest">Real-time sync active</span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto -mx-4 sm:-mx-0">
+            <table className="w-full text-left min-w-[800px] table-fixed">
+              <thead>
+                <tr className="border-b border-gray-100 dark:border-gray-800/50">
+                  <th className="w-[18%] pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 px-4">Deployment Date</th>
+                  <th className="w-[25%] pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 px-4">Tier Identity</th>
+                  <th className="w-[17%] pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 px-4">Investment</th>
+                  <th className="w-[20%] pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 px-4">Operational Status</th>
+                  <th className="w-[20%] pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 px-4 text-right">Reference Key</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-800/20">
+                {transactions.length > 0 ? (
+                  transactions.slice(0, 5).map((tx: any) => (
+                    <tr key={tx._id} className="group/row hover:bg-gray-50/50 dark:hover:bg-blue-900/5 transition-all outline-none">
+                      <td className="py-6 text-[11px] font-bold text-gray-600 dark:text-gray-400 tabular-nums">
+                        {new Date(tx.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </td>
+                      <td className="py-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                          <span className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-wider">Premium Access</span>
+                        </div>
+                      </td>
+                      <td className="py-6 text-[12px] font-black text-gray-900 dark:text-white tabular-nums">
+                        {tx.currency} {(tx.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-6">
+                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-black text-[9px] uppercase tracking-[0.15em] shadow-sm ${tx.status === 'captured' || tx.status === 'paid'
+                          ? 'bg-blue-600 text-white shadow-blue-600/20'
+                          : tx.status === 'created'
+                            ? 'bg-amber-500/10 text-amber-500'
+                            : 'bg-red-500/10 text-red-500'
+                          }`}>
+                          {(tx.status === 'captured' || tx.status === 'paid') && <ShieldCheck className="w-3 h-3" />}
+                          {tx.status}
+                        </div>
+                      </td>
+                      <td className="py-6 text-right text-[10px] font-bold text-gray-400 font-mono tracking-tighter group-hover/row:text-blue-500 transition-colors">
+                        {tx.razorpayPaymentId || tx._id?.slice(-12) || 'REF-N/A'}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-20 text-center">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800/50 rounded-3xl flex items-center justify-center text-gray-300 dark:text-gray-600">
+                          <CreditCard className="w-8 h-8" />
+                        </div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">No transaction intelligence detected...</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Verification Modal */}
+        <AnimatePresence>
+          {showPhoneModal && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-xl">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0" onClick={() => setShowPhoneModal(false)} />
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 40 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 40 }}
+                className="relative w-full max-w-sm bg-white dark:bg-[#0D1117] rounded-[3.5rem] p-12 shadow-[0_30px_60px_rgba(0,0,0,0.3)] border border-gray-100 dark:border-gray-800/50"
+              >
+                <div className="text-center mb-12">
+                  <div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-blue-600/30">
+                    <Fingerprint className="w-10 h-10 text-white" />
+                  </div>
+                  <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Access Key</h3>
+                  <p className="text-xs font-bold text-gray-400 mt-2 uppercase tracking-[0.2em]">Sent to {form.phone}</p>
+                </div>
+
+                <div className="space-y-8">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    placeholder="000 000"
+                    className="w-full text-center text-5xl font-black tracking-[0.4em] py-8 bg-gray-50 dark:bg-gray-800/50 border-4 border-gray-100 dark:border-gray-700/50 rounded-[2.5rem] focus:border-blue-500/50 outline-none transition-all placeholder:tracking-normal"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                  />
+
+                  <Button variant="primary" className="w-full py-6 uppercase font-black tracking-widest text-sm bg-blue-600 shadow-2xl shadow-blue-600/20" onClick={handleVerifyOtp} disabled={verifyingOtp || otp.length < 6}>
+                    {verifyingOtp ? 'Verifying...' : 'Validate Access'}
+                  </Button>
+
+                  <button className="w-full text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] hover:text-blue-600 transition-all">Resend Code</button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        <div id="recaptcha-container"></div>
       </div>
     </div>
   );

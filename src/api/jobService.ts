@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Job, JobListResponse, ResumeMatchRequest, MatchResultResponse } from '../types/job';
 export type { Job, JobListResponse, ResumeMatchRequest, MatchResultResponse };
 
-const API_URL = 'http://localhost:8000'; // Recruitment Backend Service URL
+const API_URL = import.meta.env.VITE_JOB_API_URL || 'http://localhost:8080'; // Recruitment Backend Service URL
 
 // Create a dedicated axios instance for Job Service to avoid conflicts with main app auth interceptors
 const jobApiClient = axios.create({

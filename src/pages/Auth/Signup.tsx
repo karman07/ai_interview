@@ -8,7 +8,7 @@ import routes from "@/constants/routes";
 import { useAuth } from "@/contexts/AuthContext";
 import SignupIllustration from "@/assets/bot_login.png";
 import { auth, googleProvider } from "@/firebase";
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 
 export default function Signup() {
   const { signup, googleLogin } = useAuth();
@@ -23,12 +23,18 @@ export default function Signup() {
     setErr(undefined);
     setLoading(true);
     try {
+      // 1. Create user in Firebase Auth so we can use Firebase to send verification emails
+      const fbUser = await createUserWithEmailAndPassword(auth, form.email, form.password);
+      await sendEmailVerification(fbUser.user);
+
+      // 2. Create user in Backend
       await signup(form);
-      navigate(routes.completeProfile, { replace: true });
+
+      navigate(routes.verifyEmail, { replace: true, state: { email: form.email } });
     } catch (error: any) {
       setErr(
         error?.response?.data?.message ||
-          "Signup failed. Try a different email."
+        "Signup failed. Try a different email."
       );
     } finally {
       setLoading(false);
@@ -40,7 +46,7 @@ export default function Signup() {
       const result = await signInWithPopup(auth, googleProvider);
       const idToken = await result.user.getIdToken();
       await googleLogin(idToken);
-      navigate(routes.completeProfile, { replace: true });
+      navigate(routes.dashboard, { replace: true });
     } catch (error: any) {
       setErr(error.message || "Google login failed.");
     }
