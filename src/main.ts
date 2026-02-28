@@ -10,10 +10,10 @@ import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  
+
   try {
     logger.log('🚀 Starting application...');
-    
+
     const app = await NestFactory.create<NestExpressApplication>(AppModule, {
       logger: ['error', 'warn', 'log', 'debug'],
       abortOnError: false, // Don't abort on non-critical errors
@@ -27,7 +27,7 @@ async function bootstrap() {
     process.on('uncaughtException', (error) => {
       logger.error('🚨 Uncaught Exception:', error);
     });
-    
+
     // Log when requests are taking too long
     app.use((req, res, next) => {
       const start = Date.now();
@@ -40,53 +40,53 @@ async function bootstrap() {
       next();
     });
 
-  // Apply global filters, pipes, and interceptors
-  app.useGlobalFilters(new GlobalExceptionFilter());
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: false,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    }),
-  );
-  // Global timeout disabled for AI processing - connections will never timeout
-  // app.useGlobalInterceptors(new TimeoutInterceptor(360000));
+    // Apply global filters, pipes, and interceptors
+    app.useGlobalFilters(new GlobalExceptionFilter());
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        forbidNonWhitelisted: false,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
+      }),
+    );
+    // Global timeout disabled for AI processing - connections will never timeout
+    // app.useGlobalInterceptors(new TimeoutInterceptor(360000));
 
-  // Enable CORS
-  app.enableCors({
-    origin: true,
-    credentials: true,
-  });
+    // Enable CORS
+    app.enableCors({
+      origin: true,
+      credentials: true,
+    });
 
-  // Ensure upload directories exist
-  const resumeDir = path.resolve(process.env.UPLOAD_DIR ?? 'uploads/resumes');
-  const profileDir = path.resolve('uploads/profile-images');
-  const audioDir = path.resolve('uploads/audio');
-  const videoDir = path.resolve('uploads/video');
-  [resumeDir, profileDir, audioDir, videoDir].forEach((dir) => {
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  });
+    // Ensure upload directories exist
+    const resumeDir = path.resolve(process.env.UPLOAD_DIR ?? 'uploads/resumes');
+    const profileDir = path.resolve('uploads/profile-images');
+    const audioDir = path.resolve('uploads/audio');
+    const videoDir = path.resolve('uploads/video');
+    [resumeDir, profileDir, audioDir, videoDir].forEach((dir) => {
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    });
 
-  // Serve static uploads
-  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
+    // Serve static uploads
+    app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
 
-  // Start server
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-  logger.log(`🚀 Server running on http://localhost:${port}`);
-  logger.log(`📂 Uploads served at http://localhost:${port}/uploads/`);
-  logger.log(`🔗 AI Interview API: ${process.env.AI_INTERVIEW_API_BASE_URL || 'http://34.27.237.113:8000'}`);
-  logger.log('✅ Application started successfully!');
-  
-  // Log server health periodically
-  setInterval(() => {
-    const memUsage = process.memoryUsage();
-    logger.debug(`💾 Memory: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB / ${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`);
-  }, 60000); // Every minute
-  
+    // Start server
+    const port = process.env.PORT || 3000;
+    await app.listen(port);
+    logger.log(`🚀 Server running on http://localhost:${port}`);
+    logger.log(`📂 Uploads served at http://localhost:${port}/uploads/`);
+    logger.log(`🔗 AI Interview API: ${process.env.AI_INTERVIEW_API_BASE_URL || 'http://localhost:8001'}`);
+    logger.log('✅ Application started successfully!');
+
+    // Log server health periodically
+    setInterval(() => {
+      const memUsage = process.memoryUsage();
+      logger.debug(`💾 Memory: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB / ${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`);
+    }, 60000); // Every minute
+
   } catch (error) {
     logger.error('❌ Failed to start application:', error);
     process.exit(1);

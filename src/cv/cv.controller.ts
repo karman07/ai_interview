@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  Req,
 } from '@nestjs/common';
 import { AiCvApiService } from '../resume/ai-cv-api.service';
 
@@ -27,14 +28,15 @@ interface ImprovementRequest {
 export class CvController {
   private readonly logger = new Logger(CvController.name);
 
-  constructor(private readonly aiCvApiService: AiCvApiService) {}
+  constructor(private readonly aiCvApiService: AiCvApiService) { }
 
   @Post('score')
-  async scoreCv(@Body() payload: CvScoreRequest) {
+  async scoreCv(@Body() payload: CvScoreRequest, @Req() req: any) {
     this.logger.log('🎯 CV Score API called');
-    
+
     try {
-      const result = await this.aiCvApiService.scoreCv(payload.cv_text);
+      const token = req.headers?.authorization;
+      const result = await this.aiCvApiService.scoreCv(payload.cv_text, token);
       return result;
     } catch (error) {
       this.logger.error('CV scoring failed:', error.message);
@@ -46,13 +48,15 @@ export class CvController {
   }
 
   @Post('fit-index')
-  async calculateFitIndex(@Body() payload: FitIndexRequest) {
+  async calculateFitIndex(@Body() payload: FitIndexRequest, @Req() req: any) {
     this.logger.log('🎯 CV Fit Index API called');
-    
+
     try {
+      const token = req.headers?.authorization;
       const result = await this.aiCvApiService.calculateFitIndex(
         payload.cv_text,
-        payload.jd_text
+        payload.jd_text,
+        token
       );
       return result;
     } catch (error) {
@@ -65,13 +69,15 @@ export class CvController {
   }
 
   @Post('improvement')
-  async improveCv(@Body() payload: ImprovementRequest) {
+  async improveCv(@Body() payload: ImprovementRequest, @Req() req: any) {
     this.logger.log('🎯 CV Improvement API called');
-    
+
     try {
+      const token = req.headers?.authorization;
       const result = await this.aiCvApiService.getImprovementSuggestions(
         payload.cv_text,
-        payload.jd_text
+        payload.jd_text,
+        token
       );
       return result;
     } catch (error) {

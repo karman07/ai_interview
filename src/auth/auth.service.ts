@@ -139,7 +139,7 @@ export class AuthService {
   private async issueTokens(sub: string, email: string, role: string) {
     const accessToken = await this.jwt.signAsync(
       { sub, email, role },
-      { secret: process.env.JWT_ACCESS_SECRET, expiresIn: process.env.JWT_ACCESS_EXPIRES || '15m' },
+      { secret: process.env.JWT_ACCESS_SECRET, expiresIn: process.env.JWT_ACCESS_EXPIRES || '1h' },
     );
     const refreshToken = await this.jwt.signAsync(
       { sub, email, role },

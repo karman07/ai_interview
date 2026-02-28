@@ -35,6 +35,7 @@ export class ResumeService {
     jdFile: Express.Multer.File | undefined,
     jdText: string,
     userId: string,
+    token?: string
   ) {
     this.logger.log('📁 ResumeService.uploadResume called');
 
@@ -82,6 +83,7 @@ export class ResumeService {
         jdText,
         jdFile?.path,
         jdFile?.originalname,
+        token
       );
 
       const duration = Date.now() - startTime;
@@ -109,6 +111,7 @@ export class ResumeService {
           jdText,
           jdFile?.path,
           jdFile?.originalname,
+          token
         );
 
         const duration = Date.now() - startTime;
@@ -133,6 +136,7 @@ export class ResumeService {
           '', // Empty JD text
           undefined, // No JD file
           undefined,
+          token
         );
 
         const duration = Date.now() - startTime;
@@ -214,6 +218,7 @@ export class ResumeService {
     resumeId: string,
     jdFile?: Express.Multer.File,
     jdText?: string,
+    token?: string
   ) {
     this.logger.log(`🔄 Improving resume with ID: ${resumeId}`);
 
@@ -233,6 +238,7 @@ export class ResumeService {
         jdText,
         jdFile?.path,
         jdFile?.originalname,
+        token
       );
 
       const duration = Date.now() - startTime;
@@ -263,7 +269,6 @@ export class ResumeService {
     }
   }
 
-  // ✅ DELETE API: delete resume and its stats
   async deleteResume(resumeId: string, userId: string) {
     this.logger.log(`🗑️ Deleting resume with ID: ${resumeId}`);
 
