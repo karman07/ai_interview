@@ -1,11 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type UserDocument = User & Document;
 
 export enum UserRole {
-  EMPLOYEE = 'employee',
-  EMPLOYER = 'employer'
+  USER = 'user',
+  ADMIN = 'admin'
 }
 
 @Schema({ timestamps: true })
@@ -19,7 +19,7 @@ export class User {
   @Prop()
   passwordHash?: string; // optional for Google users
 
-  @Prop({ enum: UserRole, default: UserRole.EMPLOYEE })
+  @Prop({ enum: UserRole, default: UserRole.USER })
   role: UserRole;
 
   @Prop()
@@ -28,14 +28,50 @@ export class User {
   @Prop()
   industry?: string;
 
-  @Prop()
-  jobDescription?: string;
+  @Prop({ default: false })
+  isEmailVerified: boolean;
 
-  @Prop()
-  resumeUrl?: string;
+  @Prop({ default: false })
+  isPhoneVerified: boolean;
 
   @Prop()
   profileImageUrl?: string;
+
+  @Prop()
+  bio?: string;
+
+  @Prop()
+  phone?: string;
+
+  @Prop()
+  location?: string;
+
+  @Prop()
+  experienceLevel?: string;
+
+  @Prop({ type: [String], default: [] })
+  skills?: string[];
+
+  @Prop()
+  website?: string;
+
+  @Prop()
+  githubUrl?: string;
+
+  @Prop()
+  linkedinUrl?: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'Subscription' })
+  subscriptionPlan?: Types.ObjectId;
+
+  @Prop({ default: 'free' })
+  subscriptionStatus?: string; // free, active, expired, trial
+
+  @Prop()
+  subscriptionExpiry?: Date;
+
+  @Prop()
+  razorpaySubscriptionId?: string;
 
   @Prop()
   refreshTokenHash?: string;
@@ -52,3 +88,11 @@ export const UserSchema = SchemaFactory.createForClass(User);
 
 // Ensure timestamps are properly typed
 UserSchema.set('timestamps', true);
+
+// Ensure google users are always verified
+UserSchema.pre('save', function (next) {
+  if (this.googleId) {
+    this.isEmailVerified = true;
+  }
+  next();
+});

@@ -7,7 +7,7 @@ import { Result, ResultDocument } from './schemas/result.schema';
 export class ResultsService {
   constructor(
     @InjectModel(Result.name) private resultModel: Model<ResultDocument>,
-  ) {}
+  ) { }
 
   // Get all results for logged-in user
   async getMyResults(userId: string) {

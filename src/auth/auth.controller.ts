@@ -9,15 +9,15 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
-  
-  constructor(private auth: AuthService) {}
+
+  constructor(private auth: AuthService) { }
 
   @Post('signup')
-  async signup(@Body() dto: CreateUserDto, @Res({ passthrough: true }) res: Response) {
+  async signup(@Body() dto: CreateUserDto) {
     try {
       const result = await this.auth.signup(dto);
-      res.cookie('refresh_token', result.refreshToken, { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 7 * 24 * 3600 * 1000, path: '/' });
-      return { user: result.user, accessToken: result.accessToken };
+      // Tokens are no longer issued on signup. User must verify email first.
+      return { message: result.message, user: result.user };
     } catch (error) {
       this.logger.error('Signup failed:', error.message);
       throw new HttpException(error.message || 'Signup failed', HttpStatus.BAD_REQUEST);
@@ -25,11 +25,11 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(@Body() dto: CreateUserDto, @Res({ passthrough: true }) res: Response) {
+  async register(@Body() dto: CreateUserDto) {
     try {
       const result = await this.auth.signup(dto);
-      res.cookie('refresh_token', result.refreshToken, { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 7 * 24 * 3600 * 1000, path: '/' });
-      return { user: result.user, accessToken: result.accessToken, refreshToken: result.refreshToken };
+      // Tokens are no longer issued on signup. User must verify email first.
+      return { message: result.message, user: result.user };
     } catch (error) {
       this.logger.error('Registration failed:', error.message);
       throw new HttpException(error.message || 'Registration failed', HttpStatus.BAD_REQUEST);

@@ -14,7 +14,7 @@ export class Session {
   @Prop()
   userId?: string;
 
-  @Prop({ type: Date })
+  @Prop({ type: Date, index: true })
   startTime: Date;
 
   @Prop({ type: Date })

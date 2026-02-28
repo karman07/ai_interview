@@ -41,6 +41,10 @@ export class CreateSubscriptionDto {
   @IsString()
   displayName: string;
 
+  @IsNotEmpty()
+  @IsString()
+  country: string; // ISO Code (IN, US, etc.)
+
   @IsOptional()
   @IsString()
   description?: string;
@@ -103,6 +107,10 @@ export class CreateSubscriptionDto {
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
+
+  @IsOptional()
+  @IsString()
+  razorpayPlanId?: string;
 
   @IsOptional()
   metadata?: Record<string, any>;

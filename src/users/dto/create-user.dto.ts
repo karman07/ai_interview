@@ -23,7 +23,5 @@ export class CreateUserDto {
   @IsString()
   industry?: string;
 
-  @IsOptional()
-  @IsString()
-  jobDescription?: string;
+
 }

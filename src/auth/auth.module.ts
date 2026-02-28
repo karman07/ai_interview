@@ -6,14 +6,16 @@ import { AuthController } from './auth.controller';
 import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { FirebaseModule } from 'src/common/firebase/firebase.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
     UsersModule,
     FirebaseModule,
+    EmailModule,
     JwtModule.register({}), // config provided at call time in service
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtAccessStrategy, JwtRefreshStrategy],
 })
-export class AuthModule {}
+export class AuthModule { }

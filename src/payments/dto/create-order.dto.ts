@@ -15,5 +15,9 @@ export class CreateOrderDto {
   receipt?: string;
 
   @IsOptional()
+  @IsString()
+  subscriptionId?: string;
+
+  @IsOptional()
   notes?: Record<string, any>;
 }

@@ -9,4 +9,4 @@ import { Result, ResultSchema } from './schemas/result.schema';
   providers: [ResultsService],
   controllers: [ResultsController],
 })
-export class ResultsModule {}
+export class ResultsModule { }

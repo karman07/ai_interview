@@ -99,6 +99,12 @@ export class Subscription {
   @Prop({ type: [String], default: [] })
   tags: string[]; // Tags like "Best Value", "Enterprise", etc.
 
+  @Prop({ required: true, index: true })
+  country: string; // ISO Country Code (e.g., 'IN', 'US')
+
+  @Prop()
+  razorpayPlanId?: string; // For auto-pay/recurring subscriptions
+
   @Prop({ type: MongooseSchema.Types.Mixed })
   metadata: Record<string, any>; // Additional flexible data
 

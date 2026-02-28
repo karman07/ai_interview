@@ -43,6 +43,24 @@ export class ResumeService {
       throw new BadRequestException('No resume file uploaded');
     }
 
+    // ✅ ENFORCE LIMIT: Check user's subscription or free tier limit
+    const user = await this.userModel.findById(userId).populate('subscriptionPlan').exec();
+    const resumeCount = await this.resumeModel.countDocuments({ user: userId });
+
+    let limit = 5; // Default free limit
+    if (user?.subscriptionPlan) {
+      const plan = user.subscriptionPlan as any;
+      const limitFeature = plan.features?.find(f => f.name === 'Resume Upload Limit');
+      if (limitFeature) {
+        limit = limitFeature.value ?? limitFeature.limit ?? 50;
+      }
+    }
+
+    if (resumeCount >= limit) {
+      this.logger.warn(`🚫 User ${userId} reached resume limit of ${limit} (current: ${resumeCount})`);
+      throw new BadRequestException(`You have reached your limit of ${limit} resumes. Please upgrade your plan to upload more.`);
+    }
+
     this.logger.log(`📄 Processing file: ${file.originalname} at ${file.path}`);
 
     // Ensure uploads folder exists
@@ -171,13 +189,8 @@ export class ResumeService {
       improvement_resume: resume.improvement_resume
     }, null, 2));
 
-    // Update user's resumeUrl to the latest uploaded resume
-    try {
-      await this.userModel.findByIdAndUpdate(userId, { resumeUrl });
-      this.logger.log('✅ User resumeUrl updated');
-    } catch (err) {
-      this.logger.error('⚠️ Failed to update user resumeUrl:', err.message);
-    }
+    // Resume is saved in the Resume collection, 
+    // we no longer maintain a redundant resumeUrl in the User profile.
 
 
 

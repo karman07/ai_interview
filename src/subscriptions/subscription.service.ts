@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Subscription, SubscriptionDocument, SubscriptionStatus, SubscriptionType } from './schemas/subscription.schema';
+import { Model, Types } from 'mongoose';
+import { Subscription, SubscriptionDocument, SubscriptionStatus, SubscriptionType, FeatureType } from './schemas/subscription.schema';
 import {
   CreateSubscriptionDto,
   UpdateSubscriptionDto,
@@ -14,11 +14,10 @@ export class SubscriptionService {
 
   constructor(
     @InjectModel(Subscription.name) private subscriptionModel: Model<SubscriptionDocument>,
-  ) {}
+  ) { }
 
   async create(createSubscriptionDto: CreateSubscriptionDto): Promise<SubscriptionResponseDto> {
     try {
-      // Check if subscription name already exists
       const existingSubscription = await this.subscriptionModel.findOne({
         name: createSubscriptionDto.name,
       });
@@ -27,31 +26,32 @@ export class SubscriptionService {
         throw new BadRequestException(`Subscription with name '${createSubscriptionDto.name}' already exists`);
       }
 
-      // Convert price to paisa
       const priceInPaisa = Math.round(createSubscriptionDto.price * 100);
-      const originalPriceInPaisa = createSubscriptionDto.originalPrice 
-        ? Math.round(createSubscriptionDto.originalPrice * 100) 
+      const originalPriceInPaisa = createSubscriptionDto.originalPrice
+        ? Math.round(createSubscriptionDto.originalPrice * 100)
         : undefined;
 
       const subscription = new this.subscriptionModel({
         ...createSubscriptionDto,
         price: priceInPaisa,
         originalPrice: originalPriceInPaisa,
+        country: createSubscriptionDto.country.toUpperCase(),
       });
 
       await subscription.save();
-
       this.logger.log(`Subscription created: ${subscription.name}`);
-
       return this.toSubscriptionResponseDto(subscription);
     } catch (error) {
-      this.logger.error(`Failed to create subscription: ${error.message}`, error.stack);
+      this.logger.error(`Failed to create subscription: ${error.message}`);
       throw error;
     }
   }
 
-  async findAll(status?: SubscriptionStatus): Promise<SubscriptionResponseDto[]> {
-    const filter = status ? { status } : {};
+  async findAll(status?: SubscriptionStatus, country?: string): Promise<SubscriptionResponseDto[]> {
+    const filter: any = {};
+    if (status) filter.status = status;
+    if (country) filter.country = country.toUpperCase();
+
     const subscriptions = await this.subscriptionModel
       .find(filter)
       .sort({ order: 1, createdAt: 1 })
@@ -60,138 +60,173 @@ export class SubscriptionService {
     return subscriptions.map(subscription => this.toSubscriptionResponseDto(subscription));
   }
 
-  async findActive(): Promise<SubscriptionResponseDto[]> {
-    return this.findAll(SubscriptionStatus.ACTIVE);
+  async findActive(country?: string): Promise<SubscriptionResponseDto[]> {
+    return this.findAll(SubscriptionStatus.ACTIVE, country);
   }
 
   async findById(id: string): Promise<SubscriptionResponseDto> {
     const subscription = await this.subscriptionModel.findById(id);
-    if (!subscription) {
-      throw new NotFoundException('Subscription not found');
-    }
+    if (!subscription) throw new NotFoundException('Subscription not found');
     return this.toSubscriptionResponseDto(subscription);
   }
 
   async findByName(name: string): Promise<SubscriptionResponseDto> {
     const subscription = await this.subscriptionModel.findOne({ name });
-    if (!subscription) {
-      throw new NotFoundException('Subscription not found');
-    }
+    if (!subscription) throw new NotFoundException('Subscription not found');
     return this.toSubscriptionResponseDto(subscription);
   }
 
-  async update(id: string, updateSubscriptionDto: UpdateSubscriptionDto): Promise<SubscriptionResponseDto> {
-    try {
-      const updateData: any = { ...updateSubscriptionDto };
-
-      // Convert prices to paisa if provided
-      if (updateData.price !== undefined) {
-        updateData.price = Math.round(updateData.price * 100);
-      }
-      if (updateData.originalPrice !== undefined) {
-        updateData.originalPrice = Math.round(updateData.originalPrice * 100);
-      }
-
-      updateData.updatedAt = new Date();
-
-      const subscription = await this.subscriptionModel.findByIdAndUpdate(
-        id,
-        updateData,
-        { new: true, runValidators: true }
-      );
-
-      if (!subscription) {
-        throw new NotFoundException('Subscription not found');
-      }
-
-      this.logger.log(`Subscription updated: ${subscription.name}`);
-
-      return this.toSubscriptionResponseDto(subscription);
-    } catch (error) {
-      this.logger.error(`Failed to update subscription: ${error.message}`, error.stack);
-      throw error;
+  async findOneByAnyId(id: string): Promise<SubscriptionDocument | null> {
+    // Try by MongoDB ID
+    if (Types.ObjectId.isValid(id)) {
+      const sub = await this.subscriptionModel.findById(id).exec();
+      if (sub) return sub;
     }
+
+    // Try by Razorpay Plan ID or Name
+    return this.subscriptionModel.findOne({
+      $or: [
+        { razorpayPlanId: id },
+        { name: id }
+      ]
+    }).exec();
+  }
+
+  async findFirstActive(): Promise<SubscriptionDocument | null> {
+    return this.subscriptionModel.findOne({
+      status: SubscriptionStatus.ACTIVE,
+      razorpayPlanId: { $exists: true, $ne: null }
+    }).exec();
+  }
+
+  async update(id: string, updateSubscriptionDto: UpdateSubscriptionDto): Promise<SubscriptionResponseDto> {
+    const updateData: any = { ...updateSubscriptionDto };
+    if (updateData.price !== undefined) updateData.price = Math.round(updateData.price * 100);
+    if (updateData.originalPrice !== undefined) updateData.originalPrice = Math.round(updateData.originalPrice * 100);
+    if (updateData.country) updateData.country = updateData.country.toUpperCase();
+
+    const subscription = await this.subscriptionModel.findByIdAndUpdate(id, updateData, { new: true });
+    if (!subscription) throw new NotFoundException('Subscription not found');
+    return this.toSubscriptionResponseDto(subscription);
   }
 
   async remove(id: string): Promise<void> {
     const result = await this.subscriptionModel.findByIdAndDelete(id);
-    if (!result) {
-      throw new NotFoundException('Subscription not found');
-    }
-
-    this.logger.log(`Subscription deleted: ${result.name}`);
+    if (!result) throw new NotFoundException('Subscription not found');
   }
 
   async activate(id: string): Promise<SubscriptionResponseDto> {
-    return this.updateStatus(id, SubscriptionStatus.ACTIVE);
-  }
-
-  async deactivate(id: string): Promise<SubscriptionResponseDto> {
-    return this.updateStatus(id, SubscriptionStatus.INACTIVE);
-  }
-
-  async updateStatus(id: string, status: SubscriptionStatus): Promise<SubscriptionResponseDto> {
-    const subscription = await this.subscriptionModel.findByIdAndUpdate(
-      id,
-      { status, updatedAt: new Date() },
-      { new: true }
-    );
-
-    if (!subscription) {
-      throw new NotFoundException('Subscription not found');
-    }
-
-    this.logger.log(`Subscription status updated: ${subscription.name} -> ${status}`);
-
+    const subscription = await this.subscriptionModel.findByIdAndUpdate(id, { status: SubscriptionStatus.ACTIVE }, { new: true });
+    if (!subscription) throw new NotFoundException('Subscription not found');
     return this.toSubscriptionResponseDto(subscription);
   }
 
-  async getStats() {
-    const stats = await this.subscriptionModel.aggregate([
-      {
-        $group: {
-          _id: '$status',
-          count: { $sum: 1 },
-          totalRevenue: { $sum: '$price' },
-          averagePrice: { $avg: '$price' },
-        },
-      },
-    ]);
+  async deactivate(id: string): Promise<SubscriptionResponseDto> {
+    const subscription = await this.subscriptionModel.findByIdAndUpdate(id, { status: SubscriptionStatus.INACTIVE }, { new: true });
+    if (!subscription) throw new NotFoundException('Subscription not found');
+    return this.toSubscriptionResponseDto(subscription);
+  }
 
-    const typeStats = await this.subscriptionModel.aggregate([
+  async seedCountryPlans(countryCode: string) {
+    const plans = [
       {
-        $group: {
-          _id: '$type',
-          count: { $sum: 1 },
-          averagePrice: { $avg: '$price' },
-        },
+        name: `free_tier_${countryCode.toLowerCase()}`,
+        displayName: 'Free Tier',
+        country: countryCode.toUpperCase(),
+        price: 0,
+        currency: countryCode === 'IN' ? 'INR' : 'USD',
+        type: SubscriptionType.MONTHLY,
+        status: SubscriptionStatus.ACTIVE,
+        features: [
+          {
+            name: 'Resume Upload Limit',
+            description: 'Total resumes you can upload',
+            type: FeatureType.NUMERIC,
+            value: 5,
+            enabled: true,
+            limit: 5,
+            unit: 'resumes'
+          },
+          { name: 'Interviews', description: 'Limited interviews', type: FeatureType.BOOLEAN, value: true, enabled: true },
+        ],
+        order: 0
       },
-    ]);
+      {
+        name: `pro_monthly_${countryCode.toLowerCase()}`,
+        displayName: 'Pro Monthly',
+        country: countryCode.toUpperCase(),
+        price: countryCode === 'IN' ? 99900 : 2900,
+        currency: countryCode === 'IN' ? 'INR' : 'USD',
+        type: SubscriptionType.MONTHLY,
+        status: SubscriptionStatus.ACTIVE,
+        features: [
+          {
+            name: 'Resume Upload Limit',
+            description: 'Total resumes you can upload',
+            type: FeatureType.NUMERIC,
+            value: 10,
+            enabled: true,
+            limit: 10,
+            unit: 'resumes'
+          },
+          { name: 'Interviews', description: 'Unlimited premium interviews', type: FeatureType.BOOLEAN, value: true, enabled: true },
+          { name: 'AI Feedback', description: 'Deep qualitative analysis', type: FeatureType.BOOLEAN, value: true, enabled: true }
+        ],
+        order: 1
+      },
+      {
+        name: `enterprise_yearly_${countryCode.toLowerCase()}`,
+        displayName: 'Enterprise Yearly',
+        country: countryCode.toUpperCase(),
+        price: countryCode === 'IN' ? 999900 : 24900,
+        currency: countryCode === 'IN' ? 'INR' : 'USD',
+        type: SubscriptionType.YEARLY,
+        status: SubscriptionStatus.ACTIVE,
+        features: [
+          {
+            name: 'Resume Upload Limit',
+            description: 'Total resumes you can upload',
+            type: FeatureType.NUMERIC,
+            value: 1000,
+            enabled: true,
+            limit: 1000,
+            unit: 'resumes'
+          },
+          { name: 'Team Access', description: 'Up to 10 seats', type: FeatureType.NUMERIC, value: 10, enabled: true, limit: 10 }
+        ],
+        order: 2
+      }
+    ];
 
-    return {
-      byStatus: stats.reduce((acc, stat) => {
-        acc[stat._id] = {
-          count: stat.count,
-          totalRevenue: stat.totalRevenue,
-          averagePrice: stat.averagePrice,
-        };
-        return acc;
-      }, {}),
-      byType: typeStats.reduce((acc, stat) => {
-        acc[stat._id] = {
-          count: stat.count,
-          averagePrice: stat.averagePrice,
-        };
-        return acc;
-      }, {}),
-    };
+    for (const planData of plans) {
+      await this.subscriptionModel.findOneAndUpdate({ name: planData.name }, planData, { upsert: true });
+    }
+
+    // Also update any existing plans that might not have the resume limit feature
+    await this.subscriptionModel.updateMany(
+      { "features.name": { $ne: 'Resume Upload Limit' } },
+      {
+        $push: {
+          features: {
+            name: 'Resume Upload Limit',
+            description: 'Total resumes you can upload',
+            type: FeatureType.NUMERIC,
+            value: 5,
+            enabled: true,
+            limit: 5,
+            unit: 'resumes'
+          }
+        }
+      }
+    );
+
+    return { message: `Subscription plans seeded for ${countryCode} including Free Tier` };
   }
 
   private toSubscriptionResponseDto(subscription: SubscriptionDocument): SubscriptionResponseDto {
-    const priceInRupees = subscription.price / 100;
-    const originalPriceInRupees = subscription.originalPrice ? subscription.originalPrice / 100 : undefined;
+    const priceInMain = subscription.price / 100;
+    const originalPriceInMain = subscription.originalPrice ? subscription.originalPrice / 100 : undefined;
     const savings = subscription.originalPrice ? subscription.originalPrice - subscription.price : undefined;
-    const savingsInRupees = savings ? savings / 100 : undefined;
 
     return {
       id: subscription._id.toString(),
@@ -199,7 +234,7 @@ export class SubscriptionService {
       displayName: subscription.displayName,
       description: subscription.description,
       price: subscription.price,
-      formattedPrice: this.formatPrice(priceInRupees, subscription.currency),
+      formattedPrice: this.formatPrice(priceInMain, subscription.currency),
       currency: subscription.currency,
       type: subscription.type,
       duration: subscription.duration,
@@ -210,15 +245,12 @@ export class SubscriptionService {
       popularBadge: subscription.popularBadge,
       discountPercentage: subscription.discountPercentage,
       originalPrice: subscription.originalPrice,
-      formattedOriginalPrice: originalPriceInRupees 
-        ? this.formatPrice(originalPriceInRupees, subscription.currency) 
-        : undefined,
+      formattedOriginalPrice: originalPriceInMain ? this.formatPrice(originalPriceInMain, subscription.currency) : undefined,
       savings,
-      formattedSavings: savingsInRupees 
-        ? this.formatPrice(savingsInRupees, subscription.currency) 
-        : undefined,
+      formattedSavings: savings ? this.formatPrice(savings / 100, subscription.currency) : undefined,
       colorScheme: subscription.colorScheme,
       icon: subscription.icon,
+      razorpayPlanId: subscription.razorpayPlanId,
       tags: subscription.tags,
       metadata: subscription.metadata,
       createdAt: subscription.createdAt,
@@ -227,24 +259,17 @@ export class SubscriptionService {
   }
 
   private formatPrice(price: number, currency: string = 'INR'): string {
-    if (currency === 'INR') {
-      return `₹${price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-    return `${price.toFixed(2)} ${currency}`;
+    if (currency === 'INR') return `₹${price.toLocaleString('en-IN')}`;
+    return `$${price.toFixed(2)}`;
   }
 
   private formatDuration(type: SubscriptionType, duration?: number): string {
     switch (type) {
-      case SubscriptionType.LIFETIME:
-        return 'Lifetime';
-      case SubscriptionType.TRIAL:
-        return duration ? `${duration} day${duration > 1 ? 's' : ''} trial` : 'Trial';
-      case SubscriptionType.MONTHLY:
-        return '1 month';
-      case SubscriptionType.YEARLY:
-        return '1 year';
-      default:
-        return duration ? `${duration} day${duration > 1 ? 's' : ''}` : 'Custom';
+      case SubscriptionType.LIFETIME: return 'Lifetime';
+      case SubscriptionType.TRIAL: return `${duration} day trial`;
+      case SubscriptionType.MONTHLY: return '1 Month';
+      case SubscriptionType.YEARLY: return '1 Year';
+      default: return 'Custom';
     }
   }
 }

@@ -25,8 +25,17 @@ export class Payment {
   @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
   userId: Types.ObjectId;
 
-  @Prop({ required: true })
+  @Prop({ type: Types.ObjectId, ref: 'Subscription' })
+  subscriptionId?: Types.ObjectId;
+
+  @Prop({ default: 'subscription' })
+  paymentType: string; // subscription, one-time, etc.
+
+  @Prop()
   razorpayOrderId: string;
+
+  @Prop()
+  razorpaySubscriptionId: string;
 
   @Prop()
   razorpayPaymentId: string;

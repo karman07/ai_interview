@@ -1,12 +1,16 @@
-import { Controller, Post, Get, Body, Param, Query } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Query, Logger } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { TrackVisitorDto } from './dto/track-visitor.dto';
 import { StartSessionDto } from './dto/start-session.dto';
 import { TrackPageViewDto } from './dto/track-pageview.dto';
 
-@Controller('analytics')
+@Controller(['analytics', 'interviews'])
 export class AnalyticsController {
-  constructor(private readonly analyticsService: AnalyticsService) {}
+  private readonly logger = new Logger(AnalyticsController.name);
+
+  constructor(private readonly analyticsService: AnalyticsService) {
+    this.logger.log('AnalyticsController initialized with routes: /analytics and /interviews');
+  }
 
   @Post('visitors')
   async trackVisitor(@Body() dto: TrackVisitorDto) {
@@ -64,6 +68,26 @@ export class AnalyticsController {
   @Get('summary')
   async getAnalyticsSummary() {
     return this.analyticsService.getAnalyticsSummary();
+  }
+
+  @Get('admin/dashboard')
+  async getAdminDashboardStats() {
+    return this.analyticsService.getAdminDashboardStats();
+  }
+
+  @Get('admin/recent-sessions')
+  async getRecentSessions(@Query('limit') limit?: number) {
+    return this.analyticsService.getAllSessions(limit);
+  }
+
+  @Get('admin/popular-pages')
+  async getPopularPages(@Query('limit') limit?: number) {
+    return this.analyticsService.getPopularPages(limit);
+  }
+
+  @Get('dashboard-stats')
+  async getInterviewDashboardStats() {
+    return this.analyticsService.getAdminDashboardStats();
   }
 
   @Post('heartbeat')

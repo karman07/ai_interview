@@ -13,7 +13,7 @@ import { UserDocument } from './schemas/user.schema';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
@@ -52,7 +52,7 @@ export class UsersController {
     limits: { fileSize: 5 * 1024 * 1024 },
   }))
   async updateProfile(
-    @CurrentUser() user: any, 
+    @CurrentUser() user: any,
     @Body() dto: UpdateProfileDto,
     @UploadedFile() file?: Express.Multer.File
   ) {
@@ -75,21 +75,10 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch('me/resume')
-  @UseInterceptors(FileInterceptor('resume', {
-    storage: diskStorage({
-      destination: process.env.UPLOAD_DIR ?? 'uploads/resumes',
-      filename: (_req, file, cb) => {
-        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, unique + extname(file.originalname));
-      },
-    }),
-    limits: { fileSize: 10 * 1024 * 1024 },
-  }))
-  async uploadResume(@CurrentUser() user: any, @UploadedFile() file?: Express.Multer.File) {
-    const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
-    const resumeUrl = `${appUrl}/uploads/resumes/${file?.filename}`;
-    const updated: UserDocument = await this.usersService.updateProfile(user.sub, { resumeUrl });
+  @Patch('me/verify-status')
+  async updateVerificationStatus(@CurrentUser() user: any, @Body() data: { field: 'email' | 'phone'; status: boolean }) {
+    const update = data.field === 'email' ? { isEmailVerified: data.status } : { isPhoneVerified: data.status };
+    const updated: UserDocument = await this.usersService.updateProfile(user.sub, update as any);
     const { passwordHash, refreshTokenHash, ...safe } = updated.toObject();
     return safe;
   }

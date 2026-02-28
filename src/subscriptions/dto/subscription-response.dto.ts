@@ -59,6 +59,8 @@ export class SubscriptionResponseDto {
 
   icon?: string;
 
+  razorpayPlanId?: string;
+
   tags?: string[];
 
   metadata?: Record<string, any>;

@@ -23,7 +23,7 @@ export class PageView {
   @Prop()
   referrer?: string;
 
-  @Prop({ type: Date })
+  @Prop({ type: Date, index: true })
   timestamp: Date;
 
   @Prop()

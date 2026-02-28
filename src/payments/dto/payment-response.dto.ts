@@ -7,6 +7,8 @@ export class PaymentResponseDto {
 
   razorpayOrderId: string;
 
+  razorpaySubscriptionId?: string;
+
   razorpayPaymentId?: string;
 
   amount: number;
