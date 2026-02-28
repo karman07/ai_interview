@@ -4,7 +4,7 @@
  */
 
 const GOOGLE_TTS_API_KEY = import.meta.env.VITE_GOOGLE_TTS_API_KEY;
-const GOOGLE_TTS_ENDPOINT = 'https://texttospeech.googleapis.com/v1/text:synthesize';
+const GOOGLE_TTS_ENDPOINT = import.meta.env.VITE_GOOGLE_TTS_ENDPOINT || 'https://texttospeech.googleapis.com/v1/text:synthesize';
 
 interface GoogleTTSRequest {
   input: {
@@ -98,20 +98,20 @@ export const playAudioFromBase64 = (base64Audio: string): Promise<void> => {
       }
       const blob = new Blob([bytes], { type: 'audio/mp3' });
       const audioUrl = URL.createObjectURL(blob);
-      
+
       // Create audio element
       const audio = new Audio(audioUrl);
-      
+
       audio.onended = () => {
         URL.revokeObjectURL(audioUrl);
         resolve();
       };
-      
+
       audio.onerror = (error) => {
         URL.revokeObjectURL(audioUrl);
         reject(error);
       };
-      
+
       // Play the audio
       audio.play().catch(reject);
     } catch (error) {
@@ -138,7 +138,7 @@ export const speakText = async (
   }
 ): Promise<void> => {
   console.log(`🗣️ Starting Google TTS:`, text.substring(0, 50) + '...');
-  
+
   try {
     const audioContent = await synthesizeSpeech(text, options);
     await playAudioFromBase64(audioContent);
@@ -191,15 +191,15 @@ export const speakTextWithControl = (
     }
 
     console.log(`🗣️ Starting Google TTS with control:`, text.substring(0, 50) + '...');
-    
+
     try {
       isPlaybackInProgress = true;
-      
+
       // Stop any currently playing audio
       stopSpeaking();
-      
+
       const audioContent = await synthesizeSpeech(text, options);
-      
+
       // Convert base64 to blob
       const binaryString = atob(audioContent);
       const bytes = new Uint8Array(binaryString.length);
@@ -208,10 +208,10 @@ export const speakTextWithControl = (
       }
       const blob = new Blob([bytes], { type: 'audio/mp3' });
       const audioUrl = URL.createObjectURL(blob);
-      
+
       // Create audio element
       currentAudio = new Audio(audioUrl);
-      
+
       currentAudio.onended = () => {
         URL.revokeObjectURL(audioUrl);
         currentAudio = null;
@@ -219,7 +219,7 @@ export const speakTextWithControl = (
         console.log('✅ Google TTS completed successfully');
         resolve();
       };
-      
+
       currentAudio.onerror = (error) => {
         URL.revokeObjectURL(audioUrl);
         currentAudio = null;
@@ -227,7 +227,7 @@ export const speakTextWithControl = (
         console.error('❌ Audio playback error:', error);
         reject(error);
       };
-      
+
       // Play the audio
       await currentAudio.play();
     } catch (error) {

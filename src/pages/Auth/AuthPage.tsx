@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { auth, googleProvider } from "@/firebase";
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import routes from "@/constants/routes";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/Input";
@@ -50,8 +50,15 @@ export default function AuthPage() {
                 localStorage.removeItem('redirectAfterLogin');
                 navigate(redirect, { replace: true });
             } else {
+                // 1. Create Firebase user and send verification email
+                const fbUser = await createUserWithEmailAndPassword(auth, form.email, form.password);
+                await sendEmailVerification(fbUser.user);
+
+                // 2. Create user in backend (tokens are cleared inside AuthApi.signup)
                 await signup(form);
-                navigate(routes.completeProfile, { replace: true });
+
+                // 3. Navigate to verify-email page (user is NOT logged in yet)
+                navigate(routes.verifyEmail, { replace: true, state: { email: form.email } });
             }
         } catch (error: any) {
             setErr(

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const WEBSOCKET_URL = "ws://localhost:9000/ws/stream";
+const WEBSOCKET_URL = import.meta.env.VITE_INTERVIEW_WS_URL || "ws://localhost:9000/ws/stream";
 
 export interface ChatMessage {
     role: 'user' | 'model';

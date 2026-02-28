@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import {
   RadarChart,
   PolarGrid,
@@ -19,8 +19,10 @@ import {
 } from "recharts";
 
 import { useResume } from "@/contexts/ResumeContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNotification } from "@/contexts/NotificationContext";
 import StatCard from "@/components/dashboad/StatCard";
+import { usePricing } from "@/contexts/PricingContext";
 import DetailedResumeCard from "@/components/dashboad/DetailedResumeCard";
 import ResumeDetails from "@/components/dashboad/ResumeDetails";
 import {
@@ -95,7 +97,9 @@ const XMarkIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) 
 
 const ResumeDashboard: React.FC = () => {
   const { resumes, uploadResume } = useResume();
+  const { user } = useAuth();
   const { addNotification } = useNotification();
+  const { setShowPricing } = usePricing();
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [selectedResume, setSelectedResume] = useState<Resume | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -143,6 +147,30 @@ const ResumeDashboard: React.FC = () => {
     { name: 'Green Flags', value: safeResumes[0].analytics?.key_takeaways?.green_flags?.length || 0, color: COLORS[2] }
   ] : [];
 
+  // Calculate resume limit from subscription plan features
+  const resumeLimit = useMemo(() => {
+    if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
+      const limitFeature = user.subscriptionPlan.features.find(f => f.name.toLowerCase().includes('resume upload limit'));
+      if (limitFeature && typeof limitFeature.value === 'number') {
+        return limitFeature.value;
+      }
+    }
+
+    // Fallback logic based on plan status
+    if (user?.subscriptionStatus === 'active') {
+      // Check for Enterprise in case subscriptionPlan is a string
+      if (user.subscriptionPlan === 'enterprise_yearly' ||
+        (typeof user.subscriptionPlan === 'object' && user.subscriptionPlan.name === 'enterprise_yearly')) {
+        return 1000;
+      }
+      // Pro is now 10 as per latest guide
+      return 10;
+    }
+    return 5; // Default free tier
+  }, [user]);
+
+  const isAtLimit = totalResumes >= resumeLimit;
+
   const handleUpload = async (): Promise<void> => {
     if (!resumeFile) return;
     try {
@@ -165,8 +193,26 @@ const ResumeDashboard: React.FC = () => {
 
       // Show the detailed resume view (same as clicking eye button)
       setSelectedResume(uploadedResumeData);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Upload failed', err);
+
+      // Check for limit exhaustion (400 error)
+      if (err.response?.status === 400 || err.status === 400) {
+        const errorMsg = err.response?.data?.message || err.message || '';
+
+        // Show pricing if it's a limit error
+        if (errorMsg.toLowerCase().includes('limit') || errorMsg.toLowerCase().includes('plan')) {
+          setIsUploadOpen(false);
+          setShowPricing(true);
+          addNotification({
+            type: 'error',
+            title: 'Limit Reached',
+            message: 'You have reached your resume upload limit. Please upgrade your plan to continue.',
+          });
+          return;
+        }
+      }
+
       addNotification({
         type: 'error',
         title: 'Upload failed',
@@ -241,25 +287,48 @@ const ResumeDashboard: React.FC = () => {
               </h1>
               <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base lg:text-lg">Transform your career with data-driven insights</p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative">
-                <select
-                  onChange={(e) => handleDownload(e.target.value)}
-                  className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Download Data</option>
-                  <option value="json">JSON Format</option>
-                  <option value="csv">CSV Format</option>
-                </select>
-                <ArrowDownTrayIcon className="absolute right-2 top-2.5 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+              {/* Usage Indicator */}
+              <div className="flex flex-col items-end">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Upload Capacity</span>
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isAtLimit ? 'bg-red-500 text-white' : 'bg-blue-600 text-white'}`}>
+                    {totalResumes} / {resumeLimit}
+                  </span>
+                </div>
+                <div className="w-32 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-500 ${isAtLimit ? 'bg-red-500' : 'bg-blue-600'}`}
+                    style={{ width: `${Math.min((totalResumes / resumeLimit) * 100, 100)}%` }}
+                  />
+                </div>
               </div>
-              <button
-                onClick={() => setIsUploadOpen(true)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 shadow-sm hover:shadow-md"
-              >
-                <CloudArrowUpIcon className="w-5 h-5" />
-                Upload Resume
-              </button>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative">
+                  <select
+                    onChange={(e) => handleDownload(e.target.value)}
+                    className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Download Data</option>
+                    <option value="json">JSON Format</option>
+                    <option value="csv">CSV Format</option>
+                  </select>
+                  <ArrowDownTrayIcon className="absolute right-2 top-2.5 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
+                </div>
+                <button
+                  onClick={() => setIsUploadOpen(true)}
+                  disabled={isAtLimit}
+                  className={`px-6 py-2 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 shadow-sm hover:shadow-md ${isAtLimit
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed border border-gray-200 dark:border-gray-700'
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                    }`}
+                  title={isAtLimit ? "You've reached your plan limit. Upgrade for more storage." : "Upload New Resume"}
+                >
+                  <CloudArrowUpIcon className="w-5 h-5" />
+                  {isAtLimit ? 'Limit Reached' : 'Upload Resume'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -501,9 +570,11 @@ const ResumeDashboard: React.FC = () => {
                     <div
                       className={`mt-4 border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 ${isDragOver
                         ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                        : isAtLimit
+                          ? 'border-red-100 dark:border-red-900/20 bg-red-50/10 dark:bg-red-900/5 cursor-not-allowed'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                         }`}
-                      onClick={() => resumeInputRef.current?.click()}
+                      onClick={() => !isAtLimit && resumeInputRef.current?.click()}
                       onDragOver={(e) => {
                         e.preventDefault();
                         setIsDragOver(true);
@@ -615,10 +686,12 @@ const ResumeDashboard: React.FC = () => {
 
         {/* Resume Detail View */}
         <Dialog open={!!selectedResume} onOpenChange={(open) => !open && setSelectedResume(null)}>
-          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto mx-4">
-            <DialogHeader>
-              <DialogTitle>Resume Details</DialogTitle>
-            </DialogHeader>
+          <DialogContent className="max-w-none w-[95vw] max-h-[96vh] overflow-y-auto p-0 bg-white dark:bg-[#0D1117] border-none shadow-2xl">
+            <div className="sr-only">
+              <DialogHeader>
+                <DialogTitle>Resume Details</DialogTitle>
+              </DialogHeader>
+            </div>
             {selectedResume && <ResumeDetails resume={selectedResume} />}
           </DialogContent>
         </Dialog>

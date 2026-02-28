@@ -1,9 +1,10 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import routes from '@/constants/routes';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function ProtectedRoute() {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -12,6 +13,12 @@ export default function ProtectedRoute() {
       </div>
     );
   }
+
   if (!user) return <Navigate to={routes.login} replace />;
+
+  if (!user.isEmailVerified && location.pathname !== routes.verifyEmail) {
+    return <Navigate to={routes.verifyEmail} replace />;
+  }
+
   return <Outlet />;
 }

@@ -1,4 +1,19 @@
-import axios from './http';
+import axios from 'axios';
+import { tokenStore } from './http';
+
+const API_URL = import.meta.env.VITE_AI_INTERVIEW_API || 'http://localhost:8000';
+
+const aiInterviewClient = axios.create({
+  baseURL: API_URL,
+});
+
+aiInterviewClient.interceptors.request.use((config) => {
+  const token = tokenStore.get();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 export interface StartInterviewRequest {
   user_id: string;
@@ -120,7 +135,7 @@ export interface InterviewReport {
 export const startInterview = async (
   data: StartInterviewRequest
 ): Promise<StartInterviewResponse> => {
-  const response = await axios.post('/ai-interview/start', data);
+  const response = await aiInterviewClient.post('/ai-interview/start', data);
   return response.data;
 };
 
@@ -130,7 +145,7 @@ export const startInterview = async (
 export const startInterviewWithCVText = async (
   data: StartInterviewRequest
 ): Promise<StartInterviewResponse> => {
-  const response = await axios.post('/ai-interview/start-with-cv-text', data);
+  const response = await aiInterviewClient.post('/ai-interview/start-with-cv-text', data);
   return response.data;
 };
 
@@ -152,8 +167,8 @@ export const startInterviewWithResume = async (
   formData.append('industry', data.industry);
   formData.append('jd', data.jd);
   formData.append('round_type', data.round_type);
-  
-  const response = await axios.post('/ai-interview/start-with-resume', formData, {
+
+  const response = await aiInterviewClient.post('/ai-interview/start-with-resume', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
   return response.data;
@@ -171,8 +186,8 @@ export const submitAnswer = async (
   formData.append('user_id', userId);
   formData.append('session_id', sessionId);
   formData.append('audio_file', audioFile);
-  
-  const response = await axios.post('/ai-interview/answer', formData, {
+
+  const response = await aiInterviewClient.post('/ai-interview/answer', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
   return response.data;
@@ -185,7 +200,7 @@ export const getInterviewState = async (
   userId: string,
   sessionId: string
 ): Promise<InterviewState> => {
-  const response = await axios.get(`/ai-interview/state/${userId}/${sessionId}`);
+  const response = await aiInterviewClient.get(`/ai-interview/state/${userId}/${sessionId}`);
   return response.data;
 };
 
@@ -200,19 +215,19 @@ export const uploadResponse = async (data: {
   responseDuration?: number;
 }) => {
   const formData = new FormData();
-  
+
   data.files.forEach(file => {
     formData.append('files', file);
   });
-  
+
   formData.append('question_id', data.questionId);
   if (data.text) formData.append('text', data.text);
   if (data.responseDuration) formData.append('response_duration', data.responseDuration.toString());
-  
-  const response = await axios.post(`/ai-interview/session/${data.sessionId}/upload-response`, formData, {
+
+  const response = await aiInterviewClient.post(`/ai-interview/session/${data.sessionId}/upload-response`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
-  
+
   return response.data;
 };
 
@@ -227,14 +242,14 @@ export const submitAnswerWithMedia = async (data: {
   videoUrl?: string;
   responseDuration?: number;
 }) => {
-  const response = await axios.post(`/ai-interview/session/${data.sessionId}/answer`, {
+  const response = await aiInterviewClient.post(`/ai-interview/session/${data.sessionId}/answer`, {
     question_id: data.questionId,
     text: data.text,
     audio_url: data.audioUrl,
     video_url: data.videoUrl,
     response_duration: data.responseDuration
   });
-  
+
   return response.data;
 };
 
@@ -245,7 +260,7 @@ export const getInterviewReport = async (
   userId: string,
   sessionId: string
 ): Promise<InterviewReport> => {
-  const response = await axios.get(`/ai-interview/report/${userId}/${sessionId}`);
+  const response = await aiInterviewClient.get(`/ai-interview/report/${userId}/${sessionId}`);
   return response.data;
 };
 
@@ -255,7 +270,7 @@ export const getInterviewReport = async (
 export const getUserSessions = async (
   userId: string
 ): Promise<Record<string, InterviewState>> => {
-  const response = await axios.get(`/ai-interview/sessions/${userId}`);
+  const response = await aiInterviewClient.get(`/ai-interview/sessions/${userId}`);
   return response.data;
 };
 
@@ -263,7 +278,7 @@ export const getUserSessions = async (
  * List all sessions (admin)
  */
 export const getAllSessions = async (): Promise<Record<string, InterviewState>> => {
-  const response = await axios.get('/ai-interview/sessions');
+  const response = await aiInterviewClient.get('/ai-interview/sessions');
   return response.data;
 };
 
@@ -277,7 +292,7 @@ export const createSession = async (data: {
   cv_file_id?: string;
   jd_file_id?: string;
 }) => {
-  const response = await axios.post('/ai-interview/session/create', data);
+  const response = await aiInterviewClient.post('/ai-interview/session/create', data);
   return response.data;
 };
 
@@ -285,7 +300,7 @@ export const createSession = async (data: {
  * Get session details
  */
 export const getSessionDetails = async (sessionId: string) => {
-  const response = await axios.get(`/ai-interview/session/${sessionId}`);
+  const response = await aiInterviewClient.get(`/ai-interview/session/${sessionId}`);
   return response.data;
 };
 
@@ -293,7 +308,7 @@ export const getSessionDetails = async (sessionId: string) => {
  * Get next question in session
  */
 export const getNextQuestion = async (sessionId: string) => {
-  const response = await axios.get(`/ai-interview/session/${sessionId}/next-question`);
+  const response = await aiInterviewClient.get(`/ai-interview/session/${sessionId}/next-question`);
   return response.data;
 };
 
@@ -301,7 +316,7 @@ export const getNextQuestion = async (sessionId: string) => {
  * Get session report
  */
 export const getSessionReport = async (sessionId: string) => {
-  const response = await axios.get(`/ai-interview/session/${sessionId}/report`);
+  const response = await aiInterviewClient.get(`/ai-interview/session/${sessionId}/report`);
   return response.data;
 };
 
@@ -309,6 +324,6 @@ export const getSessionReport = async (sessionId: string) => {
  * Delete session
  */
 export const deleteSession = async (sessionId: string) => {
-  const response = await axios.delete(`/ai-interview/session/${sessionId}`);
+  const response = await aiInterviewClient.delete(`/ai-interview/session/${sessionId}`);
   return response.data;
 };

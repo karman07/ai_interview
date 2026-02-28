@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 
-const TTS_API_URL = "http://localhost:9000/api/tts";
+const TTS_API_URL = import.meta.env.VITE_TTS_API_URL || "http://localhost:9000/api/tts";
 
 interface AudioWithBlob extends HTMLAudioElement {
     _blobUrl?: string;

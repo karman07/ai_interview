@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { AuthPayload, LoginDto, SignupDto, User } from "@/types/user";
 import { AuthApi } from "@/api/auth";
 import { UsersApi } from "@/api/users";
-import http, { tokenStore } from "@/api/http";
+import http, { tokenStore, userStore } from "@/api/http";
 
 type AuthState = {
   user: User | null;
@@ -24,15 +24,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const bootstrap = async () => {
     try {
       const accessToken = localStorage.getItem('access_token');
-      if (accessToken) {
+      if (accessToken && accessToken !== 'null' && accessToken !== 'undefined') {
         tokenStore.set(accessToken);
         const me = await UsersApi.me();
         setUser(me);
       } else {
+        // No token – ensure in-memory state is clean too
+        tokenStore.set(null);
+        userStore.set(null);
         setUser(null);
       }
     } catch {
-      await AuthApi.logout().catch(() => {});
+      // Token was invalid/expired – clear everything locally, no need to call backend
+      localStorage.removeItem('access_token');
+      tokenStore.set(null);
+      userStore.set(null);
       setUser(null);
     } finally {
       setLoading(false);
@@ -61,17 +67,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       signup: async (dto) => {
         const res = await AuthApi.signup(dto);
-        if (res.accessToken) {
-          localStorage.setItem('access_token', res.accessToken);
-          tokenStore.set(res.accessToken);
-        }
-        const me = await UsersApi.me();
-        setUser(me);
         return res;
       },
 
       logout: async () => {
-        await AuthApi.logout();
+        await AuthApi.logout().catch(() => { });
         localStorage.removeItem('access_token');
         tokenStore.set(null);
         setUser(null);
