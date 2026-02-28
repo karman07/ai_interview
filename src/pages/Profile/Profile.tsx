@@ -5,8 +5,7 @@ import { usePricing } from '@/contexts/PricingContext';
 import { SubscriptionApi } from '@/api/subscription';
 import Input from '@/components/ui/Input';
 import Button from '../../components/ui/button';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import routes from '@/constants/routes';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   sendEmailVerification,
@@ -43,7 +42,7 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState<string | undefined>();
   const [params, setParams] = useSearchParams();
-  const navigate = useNavigate();
+
 
   const [form, setForm] = useState({
     name: user?.name ?? '',
