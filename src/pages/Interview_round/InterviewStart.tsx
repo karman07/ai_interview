@@ -7,7 +7,7 @@ import Button from "@/components/ui/button";
 import {
   Briefcase, Building2, FileText, Layers, Loader2, ArrowRight,
   Users, Code, Lightbulb, MessageCircle,
-  Award, BarChart3, Eye, Upload, X, CheckCircle
+  Award, BarChart3, Eye, Upload, X, CheckCircle, Clock
 } from "lucide-react";
 import { InterviewAnalyticsApi, type Analytics, type RoundStats } from "@/api/interviewAnalytics";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,6 +42,7 @@ export default function InterviewStart() {
   const [loading, setLoading] = useState(false);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [error, setError] = useState<string>("");
+  const [duration, setDuration] = useState<number>(30);
 
   useEffect(() => {
     InterviewAnalyticsApi.getAnalytics().then(setAnalytics).catch(console.error);
@@ -139,6 +140,7 @@ export default function InterviewStart() {
         company: details.company,
         roundType: type || 'technical',
         userId: user._id,
+        duration,
       };
 
       localStorage.setItem('ws_interview_setup', JSON.stringify(setupData));
@@ -371,6 +373,33 @@ export default function InterviewStart() {
                       </button>
                     </div>
                   )}
+                </div>
+
+                {/* Duration Selector */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <Clock className="w-4 h-4" /> Interview Duration
+                  </label>
+                  <div className="flex gap-3">
+                    {[
+                      { value: 15, label: '⚡ 15 min', desc: 'Quick round' },
+                      { value: 30, label: '⏱️ 30 min', desc: 'Standard' },
+                      { value: 0, label: '🎯 No Limit', desc: 'Full interview' },
+                    ].map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setDuration(opt.value)}
+                        className={`flex-1 flex flex-col items-center gap-1 px-4 py-3 rounded-xl border-2 transition-all font-medium text-sm ${duration === opt.value
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 shadow-sm'
+                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500'
+                          }`}
+                      >
+                        <span>{opt.label}</span>
+                        <span className="text-xs opacity-70">{opt.desc}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <Button

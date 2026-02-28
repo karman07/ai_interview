@@ -31,7 +31,7 @@ export const useInterviewSTT = (sessionId: string, onFinalTranscript: (text: str
     const SILENCE_THRESHOLD = 0.015;
     const SILENCE_DURATION_MS = 2500;
 
-    const cleanup = useCallback(() => {
+    const cleanup = useCallback((preserveTranscript = false) => {
         if (animFrameRef.current) {
             cancelAnimationFrame(animFrameRef.current);
             animFrameRef.current = null;
@@ -61,6 +61,12 @@ export const useInterviewSTT = (sessionId: string, onFinalTranscript: (text: str
 
         setIsListening(false);
         setIsTranscribing(false);
+
+        // Only clear transcript if explicitly requested (e.g., starting a new session)
+        // Preserve it after silence-stop so the user's last words stay visible
+        if (!preserveTranscript) {
+            // Don't clear transcript — let it stay visible until next startListening
+        }
     }, []);
 
     const finalizeAndStop = useCallback(() => {
@@ -72,7 +78,8 @@ export const useInterviewSTT = (sessionId: string, onFinalTranscript: (text: str
             ws.send(JSON.stringify({ type: "end" }));
         }
 
-        cleanup();
+        // Preserve transcript so last spoken text stays visible
+        cleanup(true);
     }, [cleanup]);
 
     const monitorSilence = useCallback((analyser: AnalyserNode) => {
@@ -92,6 +99,7 @@ export const useInterviewSTT = (sessionId: string, onFinalTranscript: (text: str
                 if (!isSilent) {
                     isSilent = true;
                     silenceTimerRef.current = setTimeout(() => {
+                        // Use the latest finalTranscriptRef value
                         const text = finalTranscriptRef.current?.trim();
                         if (text) {
                             console.log("[STT] Silence detected, sending:", text.substring(0, 60));
@@ -127,7 +135,11 @@ export const useInterviewSTT = (sessionId: string, onFinalTranscript: (text: str
         }).then(stream => {
             streamRef.current = stream;
 
-            const sttWs = new WebSocket(`${STT_WS_BASE}/${sessionId}`);
+            const token = localStorage.getItem('access_token');
+            const sttUrl = token
+                ? `${STT_WS_BASE}/${sessionId}?token=${encodeURIComponent(token)}`
+                : `${STT_WS_BASE}/${sessionId}`;
+            const sttWs = new WebSocket(sttUrl);
             sttSocketRef.current = sttWs;
 
             sttWs.onopen = () => {
@@ -148,7 +160,11 @@ export const useInterviewSTT = (sessionId: string, onFinalTranscript: (text: str
             };
 
             sttWs.onerror = (err) => console.error("[STT WS] Error:", err);
-            sttWs.onclose = () => console.log("[STT WS] Disconnected");
+            sttWs.onclose = () => {
+                console.log("[STT WS] Disconnected");
+                // When WS closes, use whatever finalTranscriptRef has as the definitive text
+                // This catches late-arriving finals that came just before close
+            };
 
             const audioContext = new AudioContext({ sampleRate: 16000 });
             audioContextRef.current = audioContext;

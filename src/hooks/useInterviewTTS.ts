@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-
-const TTS_API_URL = import.meta.env.VITE_TTS_API_URL || "http://localhost:9000/api/tts";
+import { synthesizeSpeech } from '@/services/googleTTS';
 
 interface AudioWithBlob extends HTMLAudioElement {
     _blobUrl?: string;
@@ -8,19 +7,21 @@ interface AudioWithBlob extends HTMLAudioElement {
 
 async function fetchAudio(text: string): Promise<AudioWithBlob | null> {
     try {
-        const response = await fetch(TTS_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text }),
-        });
-        if (!response.ok) return null;
+        const base64Audio = await synthesizeSpeech(text);
 
-        const blob = await response.blob();
+        // Convert base64 to blob
+        const binaryString = atob(base64Audio);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: 'audio/mp3' });
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url) as AudioWithBlob;
         audio._blobUrl = url;
         return audio;
-    } catch {
+    } catch (err) {
+        console.error('[TTS] Failed to fetch audio:', err);
         return null;
     }
 }

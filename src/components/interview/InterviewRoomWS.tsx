@@ -41,17 +41,23 @@ export default function InterviewRoomWS() {
                 interviewType: parsed.roundType || type || 'technical',
                 role: parsed.role || '',
                 company: parsed.company || '',
+                duration: parsed.duration || 0,
             });
         } catch {
             setError('Failed to parse interview setup data.');
         }
     }, [type]);
 
-    // ── Generate a unique client ID ──
-    const clientId = useMemo(
-        () => `ws_${user?._id || 'anon'}_${Date.now()}`,
-        [user]
-    );
+    // ── Generate a stable client ID that survives page refresh ──
+    const clientId = useMemo(() => {
+        const key = 'ws_interview_client_id';
+        let id = localStorage.getItem(key);
+        if (!id) {
+            id = `ws_${user?._id || 'anon'}_${Date.now()}`;
+            localStorage.setItem(key, id);
+        }
+        return id;
+    }, [user]);
 
     // ── Hooks ──
     const { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded } =
@@ -165,6 +171,7 @@ export default function InterviewRoomWS() {
             });
 
             localStorage.removeItem('ws_interview_setup');
+            localStorage.removeItem('ws_interview_client_id');
 
             // Navigate to results page
             navigate(`/interview/results/${clientId}`);

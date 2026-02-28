@@ -11,14 +11,13 @@ interface LanguageConfig {
 
 const LANGUAGES: LanguageConfig[] = [
     { id: 'python', name: 'Python', ext: 'py', compiler: 'python', version: '3.10.0', template: '# Write your solution here\n\ndef solution():\n    pass\n\n# Example usage\nif __name__ == "__main__":\n    solution()\n' },
-    { id: 'cpp', name: 'C++', ext: 'cpp', compiler: 'gcc', version: '10.2.0', template: '#include <iostream>\n#include <vector>\n#include <string>\nusing namespace std;\n\nint main() {\n    // Write your solution here\n    \n    return 0;\n}\n' },
+    { id: 'cpp', name: 'C++', ext: 'cpp', compiler: 'c++', version: '10.2.0', template: '#include <iostream>\n#include <vector>\n#include <string>\nusing namespace std;\n\nint main() {\n    // Write your solution here\n    \n    return 0;\n}\n' },
     { id: 'java', name: 'Java', ext: 'java', compiler: 'java', version: '15.0.2', template: 'import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // Write your solution here\n        System.out.println("Hello");\n    }\n}\n' },
-    { id: 'javascript', name: 'JavaScript', ext: 'js', compiler: 'node', version: '18.15.0', template: '// Write your solution here\n\nfunction solution() {\n    return "Hello";\n}\n\n// Example usage\nconsole.log(solution());\n' },
+    { id: 'javascript', name: 'JavaScript', ext: 'js', compiler: 'javascript', version: '18.15.0', template: '// Write your solution here\n\nfunction solution() {\n    return "Hello";\n}\n\n// Example usage\nconsole.log(solution());\n' },
     { id: 'typescript', name: 'TypeScript', ext: 'ts', compiler: 'typescript', version: '5.0.3', template: '// Write your solution here\n\nfunction solution(): void {\n    console.log("Hello");\n}\n\n// Example usage\nsolution();\n' },
     { id: 'go', name: 'Go', ext: 'go', compiler: 'go', version: '1.16.2', template: 'package main\n\nimport "fmt"\n\nfunc main() {\n    // Write your solution here\n    fmt.Println("Hello")\n}\n' },
     { id: 'rust', name: 'Rust', ext: 'rs', compiler: 'rust', version: '1.68.2', template: 'fn main() {\n    // Write your solution here\n    println!("Hello");\n}\n' },
-    { id: 'csharp', name: 'C#', ext: 'cs', compiler: 'mono', version: '6.12.0', template: 'using System;\nusing System.Collections.Generic;\n\nclass Solution {\n    static void Main(string[] args) {\n        // Write your solution here\n        Console.WriteLine("Hello");\n    }\n}\n' },
-    { id: 'ruby', name: 'Ruby', ext: 'rb', compiler: 'ruby', version: '3.0.1', template: '# Write your solution here\n\ndef solution\n  puts "Hello"\nend\n\n# Example usage\nsolution\n' },
+    { id: 'c', name: 'C', ext: 'c', compiler: 'gcc', version: '10.2.0', template: '#include <stdio.h>\n\nint main() {\n    // Write your solution here\n    printf("Hello\\n");\n    return 0;\n}\n' },
 ];
 
 interface WSCodeEditorProps {
@@ -79,7 +78,8 @@ export const WSCodeEditor: React.FC<WSCodeEditorProps> = ({ onSubmitCode }) => {
         const startTime = performance.now();
 
         try {
-            const response = await fetch('/piston/api/v2/execute', {
+            const apiBase = import.meta.env.VITE_AI_INTERVIEW_API || 'http://localhost:8001';
+            const response = await fetch(`${apiBase}/api/v1/code/execute`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
