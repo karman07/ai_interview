@@ -46,7 +46,7 @@ export class AiCvApiService {
   private readonly timeout: number;
 
   constructor(private readonly configService: ConfigService) {
-    this.baseUrl = this.configService.get<string>('AI_INTERVIEW_API_BASE_URL', 'http://localhost:9000');
+    this.baseUrl = this.configService.get<string>('AI_INTERVIEW_API_BASE_URL', 'http://localhost:8001');
     this.timeout = this.configService.get<number>('AI_INTERVIEW_API_TIMEOUT', 60000);
 
     this.axiosInstance = axios.create({
@@ -97,12 +97,15 @@ export class AiCvApiService {
   /**
    * Score CV quality
    */
-  async scoreCv(cvText: string): Promise<CvScoreResponse> {
+  async scoreCv(cvText: string, token?: string): Promise<CvScoreResponse> {
     try {
-      const endpoint = this.configService.get<string>('AI_CV_SCORE_ENDPOINT', '/v1/cv/score');
-      const response = await this.axiosInstance.post(endpoint, { cv_text: cvText }, {
-        headers: { 'Content-Type': 'application/json' }
-      });
+      const endpoint = this.configService.get<string>('AI_CV_SCORE_ENDPOINT', '/api/v1/cv/score');
+      const headers: any = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = token;
+
+      const response = await this.axiosInstance.post(endpoint, {
+        cv_text: cvText
+      }, { headers });
       return response.data;
     } catch (error) {
       this.logger.error('Failed to score CV', error);
@@ -116,15 +119,16 @@ export class AiCvApiService {
   /**
    * Calculate CV fit index with job description
    */
-  async calculateFitIndex(cvText: string, jdText: string): Promise<CvFitIndexResponse> {
+  async calculateFitIndex(cvText: string, jdText: string, token?: string): Promise<CvFitIndexResponse> {
     try {
-      const endpoint = this.configService.get<string>('AI_CV_FIT_INDEX_ENDPOINT', '/v1/cv/fit-index');
+      const endpoint = this.configService.get<string>('AI_CV_FIT_INDEX_ENDPOINT', '/api/v1/cv/fit-index');
+      const headers: any = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = token;
+
       const response = await this.axiosInstance.post(endpoint, {
         cv_text: cvText,
         jd_text: jdText
-      }, {
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }, { headers });
       return response.data;
     } catch (error) {
       this.logger.error('Failed to calculate fit index', error);
@@ -138,15 +142,16 @@ export class AiCvApiService {
   /**
    * Get CV improvement suggestions
    */
-  async getImprovementSuggestions(cvText: string, jdText: string): Promise<CvImprovementResponse> {
+  async getImprovementSuggestions(cvText: string, jdText: string, token?: string): Promise<CvImprovementResponse> {
     try {
-      const endpoint = this.configService.get<string>('AI_CV_IMPROVEMENT_ENDPOINT', '/v1/cv/improvement');
+      const endpoint = this.configService.get<string>('AI_CV_IMPROVEMENT_ENDPOINT', '/api/v1/cv/improvement');
+      const headers: any = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = token;
+
       const response = await this.axiosInstance.post(endpoint, {
         cv_text: cvText,
         jd_text: jdText
-      }, {
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }, { headers });
       return response.data;
     } catch (error) {
       this.logger.error('Failed to get improvement suggestions', error);
@@ -165,13 +170,14 @@ export class AiCvApiService {
     originalName: string,
     jdText?: string,
     jdFilePath?: string,
-    jdFileName?: string
+    jdFileName?: string,
+    token?: string
   ): Promise<any> {
     const startTime = Date.now();
     this.logger.log(`🚀 Starting CV evaluation for: ${originalName}`);
 
     try {
-      const endpoint = this.configService.get<string>('AI_CV_EVALUATE_UPLOAD_ENDPOINT', '/v1/upload/cv_evaluate');
+      const endpoint = this.configService.get<string>('AI_CV_EVALUATE_UPLOAD_ENDPOINT', '/api/v1/upload/cv_evaluate');
       this.logger.log(`🎯 Endpoint: ${this.baseUrl}${endpoint}`);
 
       // Check if file exists
@@ -205,11 +211,14 @@ export class AiCvApiService {
       }
 
       this.logger.log('📤 Sending request to AI service...');
+      const headers: any = {
+        ...formData.getHeaders(),
+        'Accept': 'application/json',
+      };
+      if (token) headers['Authorization'] = token;
+
       const response = await this.axiosInstance.post(endpoint, formData, {
-        headers: {
-          ...formData.getHeaders(),
-          'Accept': 'application/json',
-        },
+        headers,
         maxBodyLength: Infinity,
         maxContentLength: Infinity,
         timeout: 120000, // 2 minutes timeout
@@ -247,13 +256,14 @@ export class AiCvApiService {
     originalName: string,
     jdText?: string,
     jdFilePath?: string,
-    jdFileName?: string
+    jdFileName?: string,
+    token?: string
   ): Promise<any> {
     const startTime = Date.now();
     this.logger.log(`🔄 Starting CV improvement for: ${originalName}`);
 
     try {
-      const endpoint = this.configService.get<string>('AI_CV_IMPROVEMENT_UPLOAD_ENDPOINT', '/v1/upload/cv_improvement');
+      const endpoint = this.configService.get<string>('AI_CV_IMPROVEMENT_UPLOAD_ENDPOINT', '/api/v1/upload/cv_improvement');
       this.logger.log(`🎯 Endpoint: ${this.baseUrl}${endpoint}`);
 
       // Check if file exists
@@ -290,11 +300,14 @@ export class AiCvApiService {
       this.logger.log(`  - jd_file: ${jdFilePath ? jdFileName : 'not provided'}`);
 
       this.logger.log('📤 Sending improvement request to AI service...');
+      const headers: any = {
+        ...formData.getHeaders(),
+        'Accept': 'application/json',
+      };
+      if (token) headers['Authorization'] = token;
+
       const response = await this.axiosInstance.post(endpoint, formData, {
-        headers: {
-          ...formData.getHeaders(),
-          'Accept': 'application/json',
-        },
+        headers,
         maxBodyLength: Infinity,
         maxContentLength: Infinity,
         timeout: 120000, // 2 minutes timeout

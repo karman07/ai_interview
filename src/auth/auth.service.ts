@@ -12,7 +12,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwt: JwtService,
     private firebase: FirebaseService,
-  ) {}
+  ) { }
 
   async signup(dto: CreateUserDto) {
     // Use passed role or default to 'employee'
@@ -50,32 +50,32 @@ export class AuthService {
     return this.safeResponse(user, tokens);
   }
 
-async googleLogin(idToken: string) {
-  const decoded = await this.firebase.verifyGoogleToken(idToken);
-  let user = await this.usersService.findByGoogleId(decoded.uid);
+  async googleLogin(idToken: string) {
+    const decoded = await this.firebase.verifyGoogleToken(idToken);
+    let user = await this.usersService.findByGoogleId(decoded.uid);
 
-  if (!user) {
-    user = await this.usersService.findByEmail(decoded.email);
     if (!user) {
-      user = await this.usersService.createGoogleUser({
-        name: decoded.name ?? 'Google User',
-        email: decoded.email,
-        googleId: decoded.uid,
-        profileImageUrl: decoded.picture,
-      });
-    } else {
+      user = await this.usersService.findByEmail(decoded.email);
+      if (!user) {
+        user = await this.usersService.createGoogleUser({
+          name: decoded.name ?? 'Google User',
+          email: decoded.email,
+          googleId: decoded.uid,
+          profileImageUrl: decoded.picture,
+        });
+      } else {
 
-      user.googleId = decoded.uid;
-      await user.save();
+        user.googleId = decoded.uid;
+        await user.save();
+      }
     }
+
+    const userId = user._id.toString();
+    const tokens = await this.issueTokens(userId, user.email, user.role);
+    await this.saveRefresh(userId, tokens.refreshToken);
+
+    return this.safeResponse(user, tokens);
   }
-
-  const userId = user._id.toString();
-  const tokens = await this.issueTokens(userId, user.email, user.role);
-  await this.saveRefresh(userId, tokens.refreshToken);
-
-  return this.safeResponse(user, tokens);
-}
 
 
 
@@ -95,7 +95,7 @@ async googleLogin(idToken: string) {
   private async issueTokens(sub: string, email: string, role: string) {
     const accessToken = await this.jwt.signAsync(
       { sub, email, role },
-      { secret: process.env.JWT_ACCESS_SECRET, expiresIn: process.env.JWT_ACCESS_EXPIRES || '15m' },
+      { secret: process.env.JWT_ACCESS_SECRET, expiresIn: process.env.JWT_ACCESS_EXPIRES || '1h' },
     );
     const refreshToken = await this.jwt.signAsync(
       { sub, email, role },

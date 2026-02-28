@@ -108,11 +108,13 @@ export class ResumeController {
 
       let resume;
       try {
+        const token = req.headers?.authorization;
         resume = await this.resumeService.uploadResume(
           resumeFile,
           jdFile,
           jdText,
           userId,
+          token
         );
       } catch (serviceError) {
         this.logger.error('💥 ResumeService.uploadResume failed:', serviceError.message);
@@ -287,15 +289,18 @@ export class ResumeController {
     @Param('id') id: string,
     @UploadedFiles() files: Express.Multer.File[],
     @Body('jd_text') jdText: string,
+    @Req() req: any,
   ) {
     this.logger.log(`🔄 Resume improvement API called for ID: ${id}`);
 
     try {
       const jdFile = files?.[0];
+      const token = req.headers?.authorization;
       const updatedResume = await this.resumeService.improveResume(
         id,
         jdFile,
         jdText,
+        token
       );
 
       this.logger.log('✅ Resume improved successfully');
