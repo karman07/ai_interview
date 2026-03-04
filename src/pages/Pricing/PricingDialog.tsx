@@ -162,7 +162,10 @@ const PricingDialog = () => {
                     const currentPlanId = user?.subscriptionPlan && typeof user.subscriptionPlan === 'object'
                       ? (user.subscriptionPlan as any)._id || (user.subscriptionPlan as any).id
                       : user?.subscriptionPlan;
-                    const isCurrentPlan = plan.id === currentPlanId && user?.subscriptionStatus === 'active';
+
+                    const isFreeTier = plan.name.toLowerCase().includes('free');
+                    const hasNoActivePlan = !user?.subscriptionPlan || user?.subscriptionStatus !== 'active';
+                    const isCurrentPlan = (plan.id === currentPlanId && user?.subscriptionStatus === 'active') || (hasNoActivePlan && isFreeTier);
 
                     return (
                       <motion.div

@@ -30,6 +30,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/dialog/dialog";
 
 import { Resume } from '@/types/Resume';
@@ -523,7 +524,7 @@ const ResumeDashboard: React.FC = () => {
             {resumes.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {safeResumes.map((resume) => (
-                  <DetailedResumeCard key={resume._id} resume={resume} />
+                  <DetailedResumeCard key={resume.id || resume._id} resume={resume} />
                 ))}
               </div>
             ) : (
@@ -690,6 +691,9 @@ const ResumeDashboard: React.FC = () => {
             <div className="sr-only">
               <DialogHeader>
                 <DialogTitle>Resume Details</DialogTitle>
+                <DialogDescription>
+                  Detailed analysis and scoring of the selected resume.
+                </DialogDescription>
               </DialogHeader>
             </div>
             {selectedResume && <ResumeDetails resume={selectedResume} />}

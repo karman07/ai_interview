@@ -4,9 +4,18 @@ export type { Job, JobListResponse, ResumeMatchRequest, MatchResultResponse };
 
 const API_URL = import.meta.env.VITE_JOB_API_URL || 'http://localhost:8080'; // Recruitment Backend Service URL
 
-// Create a dedicated axios instance for Job Service to avoid conflicts with main app auth interceptors
+// Create a dedicated axios instance for Job Service
 const jobApiClient = axios.create({
-  baseURL: API_URL,
+  baseURL: `${API_URL}/jobs`,
+});
+
+// Add auth interceptor for Job Service
+jobApiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token');
+  if (token && token !== 'null' && token !== 'undefined') {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export const fetchJobs = async (params: any = {}): Promise<JobListResponse> => {
@@ -21,7 +30,7 @@ export const fetchJobs = async (params: any = {}): Promise<JobListResponse> => {
 
   try {
     console.log(`[jobService] Fetching jobs from ${API_URL}/jobs with params:`, params);
-    const response = await jobApiClient.get(`/jobs?${queryParams.toString()}`);
+    const response = await jobApiClient.get(`?${queryParams.toString()}`);
     return response.data;
   } catch (error) {
     console.error("fetchJobs Error:", error);
@@ -31,7 +40,7 @@ export const fetchJobs = async (params: any = {}): Promise<JobListResponse> => {
 
 export const getEngineeringTypes = async (): Promise<string[]> => {
   try {
-    const response = await jobApiClient.get(`/jobs/engineering-types`);
+    const response = await jobApiClient.get(`/engineering-types`);
     if (response.data && Array.isArray(response.data.engineering_types)) {
       return response.data.engineering_types;
     }
@@ -49,7 +58,7 @@ export const getEngineeringTypes = async (): Promise<string[]> => {
 
 export const getLocations = async (): Promise<string[]> => {
   try {
-    const response = await jobApiClient.get(`/jobs/locations`);
+    const response = await jobApiClient.get(`/locations`);
     if (response.data && Array.isArray(response.data.locations)) {
       return response.data.locations;
     }
@@ -86,7 +95,7 @@ export const parseResume = async (file: File): Promise<any> => {
 
 export const getJobById = async (jobId: string): Promise<Job> => {
   try {
-    const response = await jobApiClient.get(`/jobs/${jobId}`);
+    const response = await jobApiClient.get(`/${jobId}`);
     return response.data;
   } catch (error) {
     console.warn("Get Job By ID failed", error);

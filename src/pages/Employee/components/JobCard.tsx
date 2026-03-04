@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, DollarSign, Heart, Bookmark, ChevronRight } from 'lucide-react';
 import { Job } from '../../../api/jobService';
@@ -13,7 +14,7 @@ interface JobCardProps {
     formatSalary: (min?: number | null, max?: number | null) => string;
 }
 
-const JobCard = ({
+const JobCard = forwardRef<HTMLDivElement, JobCardProps>(({
     job,
     idx,
     favorites,
@@ -22,13 +23,14 @@ const JobCard = ({
     toggleBookmark,
     handleJobClick,
     formatSalary
-}: JobCardProps) => {
+}, ref) => {
     const jobId = job.job_id || (job as any)._id;
     const isFavorited = favorites.has(jobId);
     const isBookmarked = bookmarks.has(jobId);
 
     return (
         <motion.div
+            ref={ref}
             layout
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -139,6 +141,6 @@ const JobCard = ({
             </div>
         </motion.div>
     );
-};
+});
 
 export default JobCard;

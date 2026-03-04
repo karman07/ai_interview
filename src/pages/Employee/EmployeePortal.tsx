@@ -260,7 +260,7 @@ const EmployeePortal = () => {
   const [isResumeFiltered, setIsResumeFiltered] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const loadJobs = useCallback(async (skipValue = skip) => {
+  const loadJobs = useCallback(async (skipValue: number) => {
     const userId = user?._id || (user as any)?.id;
     if (isResumeFiltered) return;
 
@@ -278,8 +278,6 @@ const EmployeePortal = () => {
             console.error("Remote favorites fetch failed, falling back to local filter", err);
           }
         }
-        // Local fallback: filter current jobs list, or we might need a way to fetch specific IDs
-        // For now, let's keep the user on the current list but filter it
         setJobs(prev => prev.filter(j => favorites.has(j.job_id || (j as any)._id)));
         setTotalJobs(favorites.size);
         return;
@@ -326,23 +324,22 @@ const EmployeePortal = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, isResumeFiltered, showFavorites, showBookmarks, skip, location, minStipend, isRemote, isInternship, selectedCategory]);
+  }, [user, isResumeFiltered, showFavorites, showBookmarks, location, minStipend, isRemote, isInternship, selectedCategory]);
 
+  // Reset skip only when filters change
+  useEffect(() => {
+    setSkip(0);
+  }, [keyword, location, minStipend, isRemote, isInternship, selectedCategory, showFavorites, showBookmarks]);
+
+  // Load jobs when skip or filters change (debounced)
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!isResumeFiltered) {
-        setSkip(0);
-        loadJobs(0);
+        loadJobs(skip);
       }
-    }, 500);
+    }, 300);
     return () => clearTimeout(timer);
-  }, [keyword, location, minStipend, isRemote, isInternship, selectedCategory, showFavorites, showBookmarks, loadJobs, isResumeFiltered]);
-
-  useEffect(() => {
-    if (!isResumeFiltered) {
-      loadJobs(skip);
-    }
-  }, [skip, loadJobs, isResumeFiltered]);
+  }, [skip, keyword, location, minStipend, isRemote, isInternship, selectedCategory, showFavorites, showBookmarks, loadJobs, isResumeFiltered]);
 
   const handleResumeFilterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {

@@ -21,9 +21,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "../dialog/dialog";
-// import { baseURL } from "@/api/http";
 import { resumeService } from "@/api/resumeService";
+import aiHttp from "@/api/aiHttp";
 import { generateResumeReport } from "@/utils/pdfGenerator";
 import { usePricing } from "@/contexts/PricingContext";
 import { useNotification } from "@/contexts/NotificationContext";
@@ -69,28 +70,47 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
     }, 500);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_AI_INTERVIEW_API}/v1/resume/final-enhanced`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(resume),
-      });
+      const response = await aiHttp.post('/api/v1/resume/final-enhanced', resume);
+      const data = response.data;
 
-      if (!response.ok) throw new Error('Failed to generate enhanced resume');
-
-      const data = await response.json();
       clearInterval(progressInterval);
       setProgress(100);
 
-      const resumeBuilderUrl = import.meta.env.VITE_RESUME_BUILDER_URL || 'http://localhost:5173';
-      const queryParams = new URLSearchParams({ data: JSON.stringify(data) }).toString();
-      const fullUrl = `${resumeBuilderUrl}?${queryParams}`;
+      // Open in a new window/tab as a specialized "Resume App"
+      const resumeBuilderUrl = import.meta.env.VITE_RESUME_BUILDER_URL || 'http://localhost:5173/resume-builder';
+      const queryParams = new URLSearchParams({
+        data: JSON.stringify(data),
+        mode: 'standalone' // Flag for "new app" feel
+      }).toString();
+      const fullUrl = `${resumeBuilderUrl}${resumeBuilderUrl.includes('?') ? '&' : '?'}${queryParams}`;
       setEnhancedResumeUrl(fullUrl);
-    } catch (error) {
+
+      addNotification({
+        type: 'success',
+        title: 'Success!',
+        message: 'Your enhanced resume is ready for the builder.',
+      });
+    } catch (error: any) {
       clearInterval(progressInterval);
-      console.error('Error downloading enhanced resume:', error);
-      alert('Failed to generate enhanced resume. Please try again.');
+      console.error('Full Error Object:', error);
+
+      if (error?.response) {
+        console.error('Error Response Data:', error.response.data);
+        console.error('Error Response Status:', error.response.status);
+      }
+
+      if (error?.response?.status === 422) {
+        console.error('Pydantic Validation Error Details:', error.response.data);
+      }
+
+      const errorMsgRaw = error?.response?.data?.detail || error?.message || 'Failed to generate enhanced resume.';
+      const errorMsg = typeof errorMsgRaw === 'object' ? JSON.stringify(errorMsgRaw) : errorMsgRaw;
+
+      addNotification({
+        type: 'error',
+        title: 'Enhancement Failed',
+        message: errorMsg,
+      });
       setShowProgressDialog(false);
     } finally {
       setIsDownloadingResume(false);
@@ -238,6 +258,9 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                     <DialogTitle className="text-xl font-semibold">
                       Upload Job Description
                     </DialogTitle>
+                    <DialogDescription>
+                      Upload a JD file or paste the text to get a tailored resume analysis and enhancement.
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 pt-2">
                     <div
@@ -377,6 +400,11 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                 <DialogTitle className="text-xl font-semibold">
                   {enhancedResumeUrl ? 'Resume Ready!' : 'Generating Enhanced Resume'}
                 </DialogTitle>
+                <DialogDescription>
+                  {enhancedResumeUrl
+                    ? 'Your AI-powered resume has been generated and is ready for use.'
+                    : 'We are using AI to optimize your resume content based on the target job profile.'}
+                </DialogDescription>
               </DialogHeader>
 
               {!enhancedResumeUrl ? (

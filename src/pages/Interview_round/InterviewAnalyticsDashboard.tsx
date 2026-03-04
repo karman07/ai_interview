@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   TrendingUp,
   Award,
@@ -18,6 +18,8 @@ import {
 } from 'recharts';
 import { InterviewAnalyticsApi } from '@/api/interviewAnalytics';
 import { InterviewV2Report } from '@/api/interviewV2';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePricing } from '@/contexts/PricingContext';
 
 interface ExternalAnalyticsSession extends InterviewV2Report {
   timestamp: string;
@@ -30,6 +32,8 @@ interface InterviewAnalyticsDashboardProps {
 export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAnalyticsDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState<ExternalAnalyticsSession[]>([]);
+  const { user } = useAuth();
+  const { setShowPricing } = usePricing();
 
   useEffect(() => {
     loadData();
@@ -53,8 +57,20 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
     }
   };
 
-  // Compute Aggregated Stats
+  const interviewLimit = useMemo(() => {
+    if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
+      const limitFeature = user.subscriptionPlan.features.find(f => f.name.toLowerCase().includes('interview limit'));
+      if (limitFeature && typeof limitFeature.value === 'number') {
+        return limitFeature.value;
+      }
+    }
+    return user?.subscriptionStatus === 'active' ? 10 : 5;
+  }, [user]);
+
   const totalInterviews = sessions.length;
+  const isAtLimit = totalInterviews >= interviewLimit;
+
+  // Compute Aggregated Stats
   const averageScore = totalInterviews > 0
     ? sessions.reduce((acc, s) => acc + (s.summary?.overall_score || 0), 0) / totalInterviews
     : 0;
@@ -113,20 +129,41 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">AI Interview Analytics</h1>
               <p className="text-gray-600 dark:text-gray-400">Track your performance across all AI-evaluated dimensions</p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-xl shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30">
-                <Trophy className="w-5 h-5" />
-                <span className="font-semibold text-lg">Avg Score: {averageScore.toFixed(1)}</span>
+            <div className="flex items-center gap-6">
+              {/* Usage Indicator */}
+              <div className="flex flex-col items-end">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Interview Capacity</span>
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isAtLimit ? 'bg-red-500 text-white' : 'bg-indigo-600 text-white'}`}>
+                    {totalInterviews} / {interviewLimit}
+                  </span>
+                </div>
+                <div className="w-32 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-500 ${isAtLimit ? 'bg-red-500' : 'bg-indigo-600'}`}
+                    style={{ width: `${Math.min((totalInterviews / interviewLimit) * 100, 100)}%` }}
+                  />
+                </div>
               </div>
-              {onStartNew && (
-                <button
-                  onClick={onStartNew}
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-medium transition-all duration-300 shadow-sm"
-                >
-                  <Zap className="w-5 h-5" />
-                  Start New Interview
-                </button>
-              )}
+
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-xl shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30">
+                  <Trophy className="w-5 h-5" />
+                  <span className="font-semibold text-lg">Avg Score: {averageScore.toFixed(1)}</span>
+                </div>
+                {onStartNew && (
+                  <button
+                    onClick={() => isAtLimit ? setShowPricing(true) : onStartNew()}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium transition-all duration-300 shadow-sm ${isAtLimit
+                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border border-gray-200 dark:border-gray-700 cursor-not-allowed'
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                      }`}
+                  >
+                    <Zap className="w-5 h-5" />
+                    {isAtLimit ? 'Limit reached' : 'Start New Interview'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

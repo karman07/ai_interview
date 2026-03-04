@@ -36,6 +36,7 @@ import AnalyticsTest from "./pages/Test/AnalyticsTest";
 import ContactPage from "./pages/contact/ContactPage";
 import JobsPublicPage from "./pages/JobsPublic";
 import EmployeePortal from "./pages/Employee/EmployeePortal";
+import ResumeBuilder from "./pages/ResumeBuilder";
 
 const RedirectIfLoggedIn = ({ children }: { children: JSX.Element }) => {
   const { user } = useAuth();
@@ -62,6 +63,7 @@ function App() {
     routes.lessonDetails,
     routes.interviewHome,
     routes.interviewHistory,
+    routes.resumeBuilder,
   ];
   const shouldHideNavbar =
     hideNavbarRoutes.includes(location.pathname) ||
@@ -76,214 +78,215 @@ function App() {
     <NotificationProvider>
       <AnalyticsProvider>
         <PricingProvider>
-          <PricingDialog />
-          <div className="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
-            {!shouldHideNavbar && <Navbar />}
+          <InterviewProvider>
+            <ResultsProvider>
+              <PricingDialog />
+              <div className="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
+                {!shouldHideNavbar && <Navbar />}
 
-            <NotificationToast />
+                <NotificationToast />
 
-            <div className="flex-grow">
-              <Routes>
-                {/* Public Routes */}
-                <Route path={routes.home} element={<Home />} />
-                <Route path={routes.about} element={<About />} />
-                <Route path={routes.contact} element={<ContactPage />} />
-                <Route path={routes.jobsPublic} element={<JobsPublicPage />} />
-                <Route
-                  path={routes.interview}
-                  element={
-                    <div className="flex min-h-screen">
-                      <Sidebar />
-                      <div className="flex-1">
-                        <InterviewProvider>
-                          <ResultsProvider>
+                <div className="flex-grow">
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route path={routes.home} element={<Home />} />
+                    <Route path={routes.about} element={<About />} />
+                    <Route path={routes.contact} element={<ContactPage />} />
+                    <Route path={routes.jobsPublic} element={<JobsPublicPage />} />
+                    <Route
+                      path={routes.interview}
+                      element={
+                        <div className="flex min-h-screen">
+                          <Sidebar />
+                          <div className="flex-1">
                             <InterviewApp />
-                          </ResultsProvider>
-                        </InterviewProvider>
-                      </div>
-                    </div>
-                  }
-                />
-
-                <Route
-                  path={routes.jobListings}
-                  element={
-                    <div className="flex min-h-screen">
-                      <Sidebar />
-                      <div className="flex-1">
-                        <JobSearch />
-                      </div>
-                    </div>
-                  }
-                />
-
-                <Route
-                  path={routes.resources}
-                  element={
-                    <div className="flex min-h-screen">
-                      <Sidebar />
-                      <div className="flex-1">
-                        <ResourcesHub />
-                      </div>
-                    </div>
-                  }
-                />
-                <Route path="/analytics-test" element={<AnalyticsTest />} />
-
-                {/* Auth Routes */}
-                <Route
-                  path={routes.login}
-                  element={
-                    <RedirectIfLoggedIn>
-                      <AuthPage />
-                    </RedirectIfLoggedIn>
-                  }
-                />
-                <Route
-                  path={routes.signup}
-                  element={
-                    <RedirectIfLoggedIn>
-                      <AuthPage />
-                    </RedirectIfLoggedIn>
-                  }
-                />
-
-                {/* Verify Email - accessible after signup before backend login logic */}
-                <Route path={routes.verifyEmail} element={<VerifyEmail />} />
-
-                {/* Protected Routes */}
-                <Route element={<ProtectedRoute />}>
-                  <Route
-                    path={routes.dashboard}
-                    element={
-                      <div className="flex min-h-screen">
-                        <Sidebar />
-                        <div className="flex-1">
-                          <ResumeDashboard />
+                          </div>
                         </div>
-                      </div>
-                    }
-                  />
+                      }
+                    />
 
-                  {/* Employee Portal - Single Route */}
-                  <Route path="/employee" element={<div className="flex min-h-screen"><Sidebar /><div className="flex-1"><EmployeePortal /></div></div>} />
-
-                  <Route path={routes.profile} element={
-                    <div className="flex min-h-screen">
-                      <Sidebar />
-                      <div className="flex-1">
-                        <Profile />
-                      </div>
-                    </div>
-                  } />
-                  <Route path={routes.interviewHome} element={
-                    <div className="flex min-h-screen">
-                      <Sidebar />
-                      <div className="flex-1">
-                        <InterviewHome />
-                      </div>
-                    </div>
-                  }
-                  />
-                  <Route path={routes.interviewStart(":type")} element={
-                    <div className="flex min-h-screen">
-                      <Sidebar />
-                      <div className="flex-1">
-                        <InterviewStart />
-                      </div>
-                    </div>
-                  }
-                  />
-                  <Route path={routes.interviewRoom(":type")} element={
-                    <div className="flex min-h-screen">
-                      <Sidebar />
-                      <div className="flex-1">
-                        <InterviewRoomPage />
-                      </div>
-                    </div>
-                  } />
-
-                  <Route path={routes.interviewHistory} element={
-                    <div className="flex min-h-screen">
-                      <Sidebar />
-                      <div className="flex-1">
-                        <InterviewHistory />
-                      </div>
-                    </div>
-                  } />
-
-                  <Route path="/interview/results/:sessionId" element={
-                    <div className="flex min-h-screen">
-                      <Sidebar />
-                      <div className="flex-1">
-                        <InterviewResultsV2 />
-                      </div>
-                    </div>
-                  } />
-                </Route>
-
-                <Route element={<ProtectedRoute />}>
-                  <Route
-                    path={routes.subjects}
-                    element={
-                      <div className="flex min-h-screen">
-                        <Sidebar />
-                        <div className="flex-1">
-                          <SubjectsProvider>
-                            <ProgressProvider>
-                              <SubjectsPage />
-                            </ProgressProvider>
-                          </SubjectsProvider>
+                    <Route
+                      path={routes.jobListings}
+                      element={
+                        <div className="flex min-h-screen">
+                          <Sidebar />
+                          <div className="flex-1">
+                            <JobSearch />
+                          </div>
                         </div>
-                      </div>
-                    }
-                  />
+                      }
+                    />
 
-                  <Route
-                    path={routes.subjectDetails(":id")}
-                    element={
-                      <div className="flex min-h-screen">
-                        <Sidebar />
-                        <div className="flex-1">
-                          <SubjectsProvider>
-                            <ProgressProvider>
-                              <LessonsProvider>
-                                <SubjectDetailsPage />
-                              </LessonsProvider>
-                            </ProgressProvider>
-                          </SubjectsProvider>
+                    <Route
+                      path={routes.resources}
+                      element={
+                        <div className="flex min-h-screen">
+                          <Sidebar />
+                          <div className="flex-1">
+                            <ResourcesHub />
+                          </div>
                         </div>
-                      </div>
-                    }
-                  />
-                  <Route
-                    path={routes.lessonDetails(":subjectId")}
-                    element={
-                      <div className="flex min-h-screen">
-                        {/* <Sidebar /> */}
-                        <div className="flex-1">
-                          <SubjectsProvider>
-                            <ProgressProvider>
-                              <LessonsProvider>
-                                <LessonDetailsPage />
-                              </LessonsProvider>
-                            </ProgressProvider>
-                          </SubjectsProvider>
+                      }
+                    />
+                    <Route path="/analytics-test" element={<AnalyticsTest />} />
+
+                    {/* Auth Routes */}
+                    <Route
+                      path={routes.login}
+                      element={
+                        <RedirectIfLoggedIn>
+                          <AuthPage />
+                        </RedirectIfLoggedIn>
+                      }
+                    />
+                    <Route
+                      path={routes.signup}
+                      element={
+                        <RedirectIfLoggedIn>
+                          <AuthPage />
+                        </RedirectIfLoggedIn>
+                      }
+                    />
+
+                    {/* Verify Email - accessible after signup before backend login logic */}
+                    <Route path={routes.verifyEmail} element={<VerifyEmail />} />
+
+                    {/* Protected Routes */}
+                    <Route element={<ProtectedRoute />}>
+                      <Route
+                        path={routes.dashboard}
+                        element={
+                          <div className="flex min-h-screen">
+                            <Sidebar />
+                            <div className="flex-1">
+                              <ResumeDashboard />
+                            </div>
+                          </div>
+                        }
+                      />
+
+                      {/* Employee Portal - Single Route */}
+                      <Route path="/employee" element={<div className="flex min-h-screen"><Sidebar /><div className="flex-1"><EmployeePortal /></div></div>} />
+
+                      <Route path={routes.profile} element={
+                        <div className="flex min-h-screen">
+                          <Sidebar />
+                          <div className="flex-1">
+                            <Profile />
+                          </div>
                         </div>
-                      </div>
-                    }
-                  />
-                </Route>
+                      } />
+                      <Route path={routes.interviewHome} element={
+                        <div className="flex min-h-screen">
+                          <Sidebar />
+                          <div className="flex-1">
+                            <InterviewHome />
+                          </div>
+                        </div>
+                      }
+                      />
+                      <Route path={routes.interviewStart(":type")} element={
+                        <div className="flex min-h-screen">
+                          <Sidebar />
+                          <div className="flex-1">
+                            <InterviewStart />
+                          </div>
+                        </div>
+                      }
+                      />
+                      <Route path={routes.interviewRoom(":type")} element={
+                        <div className="flex min-h-screen">
+                          <Sidebar />
+                          <div className="flex-1">
+                            <InterviewRoomPage />
+                          </div>
+                        </div>
+                      } />
+
+                      <Route path={routes.interviewHistory} element={
+                        <div className="flex min-h-screen">
+                          <Sidebar />
+                          <div className="flex-1">
+                            <InterviewHistory />
+                          </div>
+                        </div>
+                      } />
+
+                      <Route path="/interview/results/:sessionId" element={
+                        <div className="flex min-h-screen">
+                          <Sidebar />
+                          <div className="flex-1">
+                            <InterviewResultsV2 />
+                          </div>
+                        </div>
+                      } />
+                      <Route path={routes.resumeBuilder} element={<ResumeBuilder />} />
+                    </Route>
+
+                    <Route element={<ProtectedRoute />}>
+                      <Route
+                        path={routes.subjects}
+                        element={
+                          <div className="flex min-h-screen">
+                            <Sidebar />
+                            <div className="flex-1">
+                              <SubjectsProvider>
+                                <ProgressProvider>
+                                  <SubjectsPage />
+                                </ProgressProvider>
+                              </SubjectsProvider>
+                            </div>
+                          </div>
+                        }
+                      />
+
+                      <Route
+                        path={routes.subjectDetails(":id")}
+                        element={
+                          <div className="flex min-h-screen">
+                            <Sidebar />
+                            <div className="flex-1">
+                              <SubjectsProvider>
+                                <ProgressProvider>
+                                  <LessonsProvider>
+                                    <SubjectDetailsPage />
+                                  </LessonsProvider>
+                                </ProgressProvider>
+                              </SubjectsProvider>
+                            </div>
+                          </div>
+                        }
+                      />
+                      <Route
+                        path={routes.lessonDetails(":subjectId")}
+                        element={
+                          <div className="flex min-h-screen">
+                            {/* <Sidebar /> */}
+                            <div className="flex-1">
+                              <SubjectsProvider>
+                                <ProgressProvider>
+                                  <LessonsProvider>
+                                    <LessonDetailsPage />
+                                  </LessonsProvider>
+                                </ProgressProvider>
+                              </SubjectsProvider>
+                            </div>
+                          </div>
+                        }
+                      />
+                    </Route>
 
 
 
-                {/* Catch-all: redirect unknown routes to home */}
-                <Route path="*" element={<Navigate to={routes.home} replace />} />
-              </Routes>
-            </div>
+                    {/* Catch-all: redirect unknown routes to home */}
+                    <Route path="*" element={<Navigate to={routes.home} replace />} />
+                  </Routes>
+                </div>
 
-            {!shouldHideNavbar && <Footer />}
-          </div>
+                {!shouldHideNavbar && <Footer />}
+              </div>
+            </ResultsProvider>
+          </InterviewProvider>
         </PricingProvider>
       </AnalyticsProvider>
     </NotificationProvider>

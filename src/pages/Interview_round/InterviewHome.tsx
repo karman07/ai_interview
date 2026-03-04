@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   ArrowRight,
   Code,
@@ -8,6 +8,9 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import InterviewAnalyticsDashboard from "./InterviewAnalyticsDashboard";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePricing } from "@/contexts/PricingContext";
+import { useResults } from "@/contexts/ResultsContext";
 
 type InterviewCardProps = {
   type: string;
@@ -15,9 +18,11 @@ type InterviewCardProps = {
   icon: React.ReactNode;
   color: string;
   navigate: ReturnType<typeof useNavigate>;
+  isAtLimit: boolean;
+  onLimitExceeded: () => void;
 };
 
-function InterviewCard({ type, description, icon, color, navigate }: InterviewCardProps) {
+function InterviewCard({ type, description, icon, color, navigate, isAtLimit, onLimitExceeded }: InterviewCardProps) {
   // Extract text color from gradient prop (simplification)
   const getTextColor = (gradientClass: string) => {
     if (gradientClass.includes('blue')) return 'text-blue-600 dark:text-blue-400';
@@ -62,12 +67,13 @@ function InterviewCard({ type, description, icon, color, navigate }: InterviewCa
 
         {/* Action button */}
         <button
-          onClick={() =>
-            navigate(`/interview/start/${type.toLowerCase()}`)
-          }
-          className="mt-8 w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 font-medium text-sm group-hover:border-gray-300 dark:group-hover:border-gray-600"
+          onClick={() => isAtLimit ? onLimitExceeded() : navigate(`/interview/start/${type.toLowerCase()}`)}
+          className={`mt-8 w-full flex items-center justify-center gap-2 border px-4 py-3 rounded-lg transition-all duration-300 font-medium text-sm group-hover:border-gray-300 dark:group-hover:border-gray-600 ${isAtLimit
+            ? 'bg-gray-50 dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed'
+            : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+            }`}
         >
-          Start Interview
+          {isAtLimit ? 'Limit Reached' : 'Start Interview'}
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
@@ -78,7 +84,31 @@ function InterviewCard({ type, description, icon, color, navigate }: InterviewCa
 
 export default function InterviewHome() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { setShowPricing } = usePricing();
+  const { results, fetchMine } = useResults();
   const [showInterviewSelection, setShowInterviewSelection] = useState(false);
+
+  React.useEffect(() => {
+    fetchMine();
+  }, []);
+
+  const interviewLimit = useMemo(() => {
+    if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
+      const limitFeature = user.subscriptionPlan.features.find(f => f.name.toLowerCase().includes('interview limit'));
+      if (limitFeature && typeof limitFeature.value === 'number') {
+        return limitFeature.value;
+      }
+    }
+    return user?.subscriptionStatus === 'active' ? 10 : 5;
+  }, [user]);
+
+  const currentInterviews = results?.length || 0;
+  const isAtLimit = currentInterviews >= interviewLimit;
+
+  const handleLimitExceeded = () => {
+    setShowPricing(true);
+  };
 
   const rounds = [
     {
@@ -152,7 +182,16 @@ export default function InterviewHome() {
         <div className="max-w-7xl mx-auto px-6 py-16">
           <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
             {rounds.map((round) => (
-              <InterviewCard key={round.type} type={round.type} description={round.description} icon={round.icon} color={round.color} navigate={navigate} />
+              <InterviewCard
+                key={round.type}
+                type={round.type}
+                description={round.description}
+                icon={round.icon}
+                color={round.color}
+                navigate={navigate}
+                isAtLimit={isAtLimit}
+                onLimitExceeded={handleLimitExceeded}
+              />
             ))}
           </div>
 

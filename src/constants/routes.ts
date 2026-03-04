@@ -23,6 +23,7 @@ const routes = {
   interviewRoom: (type: string) => `/interview/room/${type}`,
   interviewResults: '/interview/results',
   interviewHistory: '/interview/history',
+  resumeBuilder: '/resume-builder',
 };
 
 export default routes;

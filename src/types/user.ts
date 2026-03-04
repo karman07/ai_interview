@@ -22,6 +22,8 @@ export interface User {
   subscriptionPlan?: string | SubscriptionPlan;
   subscriptionExpiry?: string | Date;
   razorpaySubscriptionId?: string;
+  resumeCount?: number;
+  interviewCount?: number;
   googleId?: string;
   company?: string;
   industry?: string;

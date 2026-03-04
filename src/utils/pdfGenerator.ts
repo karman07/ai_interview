@@ -168,6 +168,21 @@ export const generateResumeReport = (resume: Resume) => {
         }
     }
 
+    // --- Trademark/Footer ---
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text('© 2026 AI Interview Coach™ | Confidential & Proprietary', 105, 290, { align: 'center' });
+        doc.text(`Page ${i} of ${pageCount}`, 190, 290, { align: 'right' });
+
+        // Add a small logo-like text or actual trademark
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(33, 150, 243);
+        doc.text('AI Interview Coach', 14, 290);
+    }
+
     // Save the PDF
     doc.save(`Resume_Analysis_${resume.filename.replace(/\.[^/.]+$/, "")}.pdf`);
 };
