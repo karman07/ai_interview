@@ -8,7 +8,15 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  UseGuards,
+  Req,
+  BadRequestException,
 } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+import { User, UserDocument } from '../users/schemas/user.schema';
+import { Result, ResultDocument } from '../results/schemas/result.schema';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 interface SessionCreate {
   role: string;
@@ -30,15 +38,43 @@ interface AnswerCreate {
 export class SessionsController {
   private readonly logger = new Logger(SessionsController.name);
 
+  constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Result.name) private resultModel: Model<ResultDocument>,
+  ) { }
+
   @Get()
+  @UseGuards(JwtAuthGuard)
   async listSessions() {
     this.logger.log('📋 List sessions API called');
     return { sessions: [] };
   }
 
   @Post()
-  async createSession(@Body() payload: SessionCreate) {
+  @UseGuards(JwtAuthGuard)
+  async createSession(@Body() payload: SessionCreate, @Req() req) {
     this.logger.log('🆕 Create session API called');
+
+    const userId = req.user.sub;
+    const user = await this.userModel.findById(userId).populate('subscriptionPlan').exec();
+
+    // Count completed interviews (results)
+    const interviewCount = await this.resultModel.countDocuments({ owner: new Types.ObjectId(userId) });
+
+    let limit = 5; // Default free limit
+    if (user?.subscriptionPlan) {
+      const plan = user.subscriptionPlan as any;
+      const limitFeature = plan.features?.find(f => f.name === 'Interview Limit');
+      if (limitFeature) {
+        limit = limitFeature.value ?? limitFeature.limit ?? 50;
+      }
+    }
+
+    if (interviewCount >= limit) {
+      this.logger.warn(`🚫 User ${userId} reached interview limit of ${limit} (current: ${interviewCount})`);
+      throw new BadRequestException(`You have reached your limit of ${limit} interviews. Please upgrade your plan to take more.`);
+    }
+
     return {
       id: 'session_' + Date.now(),
       ...payload,
@@ -50,6 +86,7 @@ export class SessionsController {
   }
 
   @Get(':session_id')
+  @UseGuards(JwtAuthGuard)
   async getSession(@Param('session_id') sessionId: string) {
     this.logger.log(`🔍 Get session API called: ${sessionId}`);
     return {
@@ -61,12 +98,14 @@ export class SessionsController {
   }
 
   @Delete(':session_id')
+  @UseGuards(JwtAuthGuard)
   async deleteSession(@Param('session_id') sessionId: string) {
     this.logger.log(`🗑️ Delete session API called: ${sessionId}`);
     return { message: 'Session deleted successfully' };
   }
 
   @Get(':session_id/next-question')
+  @UseGuards(JwtAuthGuard)
   async getNextQuestion(@Param('session_id') sessionId: string) {
     this.logger.log(`❓ Get next question API called: ${sessionId}`);
     return {
@@ -78,6 +117,7 @@ export class SessionsController {
   }
 
   @Post(':session_id/answer')
+  @UseGuards(JwtAuthGuard)
   async submitAnswer(
     @Param('session_id') sessionId: string,
     @Body() payload: AnswerCreate
@@ -91,6 +131,7 @@ export class SessionsController {
   }
 
   @Get(':session_id/report')
+  @UseGuards(JwtAuthGuard)
   async getSessionReport(@Param('session_id') sessionId: string) {
     this.logger.log(`📊 Get session report API called: ${sessionId}`);
     return {
@@ -105,36 +146,12 @@ export class SessionsController {
   }
 
   @Post(':session_id/jd-text')
+  @UseGuards(JwtAuthGuard)
   async addJdText(
     @Param('session_id') sessionId: string,
     @Body() jdData: any
   ) {
     this.logger.log(`📝 Add JD text API called: ${sessionId}`);
     return { message: 'JD text added successfully' };
-  }
-
-  @Get('resume/:resume_id')
-  async getResumeDetails(@Param('resume_id') resumeId: string) {
-    this.logger.log(`📄 Get resume details API called: ${resumeId}`);
-    return {
-      id: resumeId,
-      filename: 'resume.pdf',
-      content: 'Resume content...'
-    };
-  }
-
-  @Get('debug/resumes')
-  async listAllResumes() {
-    this.logger.log('🐛 Debug list all resumes API called');
-    return { resumes: [] };
-  }
-
-  @Get('debug/resume/:resume_id')
-  async debugGetResume(@Param('resume_id') resumeId: string) {
-    this.logger.log(`🐛 Debug get resume API called: ${resumeId}`);
-    return {
-      id: resumeId,
-      debug_info: 'Debug information...'
-    };
   }
 }

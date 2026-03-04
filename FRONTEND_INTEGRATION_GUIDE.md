@@ -17,7 +17,7 @@ This route now returns the user profile with the `subscriptionPlan` fully popula
   "email": "john@example.com",
   "role": "user",
   "subscriptionStatus": "active",
-  "subscriptionExpiry": "2024-04-27T07:30:00.000Z",
+  "subscriptionExpiry": "2026-04-27T07:30:00.000Z",
   "subscriptionPlan": {
     "_id": "65f0987654321fedcba09876",
     "name": "pro_monthly",

@@ -76,6 +76,12 @@ export class User {
   @Prop()
   refreshTokenHash?: string;
 
+  @Prop({ default: 0 })
+  resumeCount: number;
+
+  @Prop({ default: 0 })
+  interviewCount: number;
+
   @Prop()
   googleId?: string;
 

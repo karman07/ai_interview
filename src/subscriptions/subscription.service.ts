@@ -147,6 +147,15 @@ export class SubscriptionService {
             limit: 5,
             unit: 'resumes'
           },
+          {
+            name: 'Interview Limit',
+            description: 'Total interviews you can take',
+            type: FeatureType.NUMERIC,
+            value: 5,
+            enabled: true,
+            limit: 5,
+            unit: 'interviews'
+          },
           { name: 'Interviews', description: 'Limited interviews', type: FeatureType.BOOLEAN, value: true, enabled: true },
         ],
         order: 0
@@ -168,6 +177,15 @@ export class SubscriptionService {
             enabled: true,
             limit: 10,
             unit: 'resumes'
+          },
+          {
+            name: 'Interview Limit',
+            description: 'Total interviews you can take',
+            type: FeatureType.NUMERIC,
+            value: 10,
+            enabled: true,
+            limit: 10,
+            unit: 'interviews'
           },
           { name: 'Interviews', description: 'Unlimited premium interviews', type: FeatureType.BOOLEAN, value: true, enabled: true },
           { name: 'AI Feedback', description: 'Deep qualitative analysis', type: FeatureType.BOOLEAN, value: true, enabled: true }

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "AI Interview Platform - Complete API Collection",
-    "_postman_id": "ai-interview-platform-2024",
+    "_postman_id": "ai-interview-platform-2026",
     "description": "Complete API collection for AI Interview Platform including WebSocket events, REST endpoints, Authentication, Resume, and Interview Rounds",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -75,8 +75,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             }
           }
         },
@@ -99,8 +104,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "register"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
             }
           }
         }
@@ -141,8 +151,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/ai-interview/start",
-              "host": ["{{baseUrl}}"],
-              "path": ["ai-interview", "start"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai-interview",
+                "start"
+              ]
             }
           }
         },
@@ -162,8 +177,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/ai-interview/answer",
-              "host": ["{{baseUrl}}"],
-              "path": ["ai-interview", "answer"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai-interview",
+                "answer"
+              ]
             }
           }
         },
@@ -174,8 +194,15 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/ai-interview/state/{{user_id}}/{{session_id}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["ai-interview", "state", "{{user_id}}", "{{session_id}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai-interview",
+                "state",
+                "{{user_id}}",
+                "{{session_id}}"
+              ]
             }
           }
         },
@@ -186,8 +213,15 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/ai-interview/report/{{user_id}}/{{session_id}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["ai-interview", "report", "{{user_id}}", "{{session_id}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai-interview",
+                "report",
+                "{{user_id}}",
+                "{{session_id}}"
+              ]
             }
           }
         },
@@ -198,8 +232,14 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/ai-interview/sessions/{{user_id}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["ai-interview", "sessions", "{{user_id}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai-interview",
+                "sessions",
+                "{{user_id}}"
+              ]
             }
           }
         },
@@ -219,8 +259,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/ai-interview/session/create",
-              "host": ["{{baseUrl}}"],
-              "path": ["ai-interview", "session", "create"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai-interview",
+                "session",
+                "create"
+              ]
             }
           }
         },
@@ -231,8 +277,15 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/ai-interview/session/{{session_id}}/next-question",
-              "host": ["{{baseUrl}}"],
-              "path": ["ai-interview", "session", "{{session_id}}", "next-question"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai-interview",
+                "session",
+                "{{session_id}}",
+                "next-question"
+              ]
             }
           }
         }
@@ -257,8 +310,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/ai-cv/score",
-              "host": ["{{baseUrl}}"],
-              "path": ["ai-cv", "score"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai-cv",
+                "score"
+              ]
             }
           }
         },
@@ -278,8 +336,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/ai-cv/fit-index",
-              "host": ["{{baseUrl}}"],
-              "path": ["ai-cv", "fit-index"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai-cv",
+                "fit-index"
+              ]
             }
           }
         },
@@ -299,8 +362,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/ai-cv/improvement",
-              "host": ["{{baseUrl}}"],
-              "path": ["ai-cv", "improvement"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai-cv",
+                "improvement"
+              ]
             }
           }
         },
@@ -320,8 +388,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/ai-cv/evaluate-vs-jd",
-              "host": ["{{baseUrl}}"],
-              "path": ["ai-cv", "evaluate-vs-jd"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai-cv",
+                "evaluate-vs-jd"
+              ]
             }
           }
         }
@@ -352,8 +425,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/resume/upload",
-              "host": ["{{baseUrl}}"],
-              "path": ["resume", "upload"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resume",
+                "upload"
+              ]
             }
           }
         },
@@ -364,8 +442,12 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/resume",
-              "host": ["{{baseUrl}}"],
-              "path": ["resume"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resume"
+              ]
             }
           }
         },
@@ -386,8 +468,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/resume/:resumeId/improve",
-              "host": ["{{baseUrl}}"],
-              "path": ["resume", ":resumeId", "improve"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resume",
+                ":resumeId",
+                "improve"
+              ],
               "variable": [
                 {
                   "key": "resumeId",
@@ -418,8 +506,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/interviews/start",
-              "host": ["{{baseUrl}}"],
-              "path": ["interviews", "start"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "interviews",
+                "start"
+              ]
             }
           }
         },
@@ -430,8 +523,14 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/interviews/history/{{user_id}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["interviews", "history", "{{user_id}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "interviews",
+                "history",
+                "{{user_id}}"
+              ]
             }
           }
         },
@@ -442,8 +541,14 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/interviews/results/{{user_id}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["interviews", "results", "{{user_id}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "interviews",
+                "results",
+                "{{user_id}}"
+              ]
             }
           }
         }
@@ -460,9 +565,13 @@
             "url": {
               "raw": "ws://localhost:3000/technical",
               "protocol": "ws",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "3000",
-              "path": ["technical"]
+              "path": [
+                "technical"
+              ]
             },
             "description": "**WebSocket Events:**\n\n**Emit (Send):**\n- `start` - Start interview\n  ```json\n  {\n    \"userId\": \"user123\",\n    \"role\": \"Backend Engineer\",\n    \"company\": \"Acme\",\n    \"jobDescription\": \"Node.js expert\",\n    \"experience\": \"5 years\",\n    \"cv\": \"Resume text\"\n  }\n  ```\n\n- `answer` - Submit answer\n  ```json\n  {\n    \"id\": \"record_id\",\n    \"userId\": \"user123\",\n    \"answer\": \"My answer\"\n  }\n  ```\n\n**Listen (Receive):**\n- `question` - Receive new question\n- `feedback` - Receive feedback on answer\n- `finalReport` - Receive final report when interview ends"
           }
@@ -475,9 +584,13 @@
             "url": {
               "raw": "ws://localhost:3000/behavioral",
               "protocol": "ws",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "3000",
-              "path": ["behavioral"]
+              "path": [
+                "behavioral"
+              ]
             },
             "description": "Same events as Technical Interview WebSocket"
           }
@@ -490,9 +603,13 @@
             "url": {
               "raw": "ws://localhost:3000/hr",
               "protocol": "ws",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "3000",
-              "path": ["hr"]
+              "path": [
+                "hr"
+              ]
             },
             "description": "**Emit:**\n- `start` - `{\"userId\": \"user123\", \"role\": \"Candidate\", \"company\": \"Acme\", \"cv\": \"Resume\"}`\n- `answer` - `{\"id\": \"record_id\", \"userId\": \"user123\", \"answer\": \"My answer\"}`\n\n**Listen:**\n- `question`, `feedback`, `finalReport`"
           }
@@ -505,9 +622,13 @@
             "url": {
               "raw": "ws://localhost:3000/problem",
               "protocol": "ws",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "3000",
-              "path": ["problem"]
+              "path": [
+                "problem"
+              ]
             },
             "description": "Same events as Technical Interview WebSocket"
           }
