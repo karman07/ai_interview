@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { tokenStore } from './http';
 import { Job, JobListResponse, ResumeMatchRequest, MatchResultResponse } from '../types/job';
 export type { Job, JobListResponse, ResumeMatchRequest, MatchResultResponse };
 
@@ -11,8 +12,8 @@ const jobApiClient = axios.create({
 
 // Add auth interceptor for Job Service
 jobApiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token');
-  if (token && token !== 'null' && token !== 'undefined') {
+  const token = tokenStore.get();
+  if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
