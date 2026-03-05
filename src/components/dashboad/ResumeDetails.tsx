@@ -28,6 +28,7 @@ import aiHttp from "@/api/aiHttp";
 import { generateResumeReport } from "@/utils/pdfGenerator";
 import { usePricing } from "@/contexts/PricingContext";
 import { useNotification } from "@/contexts/NotificationContext";
+import ResumeBuilder from "@/pages/ResumeBuilder";
 
 interface ResumeDetailsProps {
   resume: any;
@@ -46,7 +47,8 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
   const [isDownloadingResume, setIsDownloadingResume] = useState(false);
   const [showProgressDialog, setShowProgressDialog] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [enhancedResumeUrl, setEnhancedResumeUrl] = useState<string | null>(null);
+  const [enhancedResumeData, setEnhancedResumeData] = useState<any>(null);
+  const [showBuilderModal, setShowBuilderModal] = useState(false);
 
   const hasImprovement = Boolean(resume?.enhancement);
   const hasJDMatch = Boolean(resume?.analytics?.jd_match?.subscores?.length > 0);
@@ -55,11 +57,33 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
   const strengths = resume.analytics?.strengths || resume.analytics?.key_takeaways?.green_flags || [];
   const weaknesses = resume.analytics?.weaknesses || resume.analytics?.key_takeaways?.red_flags || [];
 
+
   const handleDownloadEnhancedResume = async () => {
+    // Check local cache first
+    const cacheKey = `enhanced_resume_${resume._id}`;
+    const cachedData = localStorage.getItem(cacheKey);
+
+    if (cachedData) {
+      try {
+        const parsedData = JSON.parse(cachedData);
+        setEnhancedResumeData(parsedData);
+        setShowBuilderModal(true);
+        addNotification({
+          type: 'success',
+          title: 'Loaded from Cache',
+          message: 'Your previously enhanced resume is ready.',
+        });
+        return;
+      } catch (e) {
+        console.error("Failed to parse cached resume data, fetching fresh.");
+        localStorage.removeItem(cacheKey);
+      }
+    }
+
     setIsDownloadingResume(true);
     setShowProgressDialog(true);
     setProgress(0);
-    setEnhancedResumeUrl(null);
+    setEnhancedResumeData(null);
 
     // Simulate progress
     const progressInterval = setInterval(() => {
@@ -76,14 +100,8 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
       clearInterval(progressInterval);
       setProgress(100);
 
-      // Open in a new window/tab as a specialized "Resume App"
-      const resumeBuilderUrl = import.meta.env.VITE_RESUME_BUILDER_URL || 'http://localhost:5173/resume-builder';
-      const queryParams = new URLSearchParams({
-        data: JSON.stringify(data),
-        mode: 'standalone' // Flag for "new app" feel
-      }).toString();
-      const fullUrl = `${resumeBuilderUrl}${resumeBuilderUrl.includes('?') ? '&' : '?'}${queryParams}`;
-      setEnhancedResumeUrl(fullUrl);
+      setEnhancedResumeData(data);
+      localStorage.setItem(cacheKey, JSON.stringify(data));
 
       addNotification({
         type: 'success',
@@ -398,16 +416,16 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle className="text-xl font-semibold">
-                  {enhancedResumeUrl ? 'Resume Ready!' : 'Generating Enhanced Resume'}
+                  {enhancedResumeData ? 'Resume Ready!' : 'Generating Enhanced Resume'}
                 </DialogTitle>
                 <DialogDescription>
-                  {enhancedResumeUrl
+                  {enhancedResumeData
                     ? 'Your AI-powered resume has been generated and is ready for use.'
                     : 'We are using AI to optimize your resume content based on the target job profile.'}
                 </DialogDescription>
               </DialogHeader>
 
-              {!enhancedResumeUrl ? (
+              {!enhancedResumeData ? (
                 <div className="space-y-4 py-4">
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -443,16 +461,17 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                   <div className="flex gap-3">
                     <Button
                       onClick={() => {
-                        window.open(enhancedResumeUrl, '_blank');
+                        setShowProgressDialog(false);
+                        setShowBuilderModal(true);
                       }}
                       className="flex-1 bg-indigo-600 hover:bg-indigo-700"
                     >
-                      Open Resume
+                      Open Resume Editor
                     </Button>
                     <Button
                       onClick={() => {
                         setShowProgressDialog(false);
-                        setEnhancedResumeUrl(null);
+                        setEnhancedResumeData(null);
                         setProgress(0);
                       }}
                       variant="outline"
@@ -461,6 +480,17 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                       Close
                     </Button>
                   </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* Builder Modal */}
+          <Dialog open={showBuilderModal} onOpenChange={setShowBuilderModal}>
+            <DialogContent className="max-w-[95vw] w-full h-[95vh] p-0 m-0 overflow-y-auto bg-gray-100 flex flex-col pt-10">
+              {enhancedResumeData && (
+                <div className="relative min-h-full">
+                  <ResumeBuilder initialResumeData={enhancedResumeData} />
                 </div>
               )}
             </DialogContent>

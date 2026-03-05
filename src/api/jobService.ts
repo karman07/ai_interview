@@ -12,7 +12,7 @@ const jobApiClient = axios.create({
 
 // Add auth interceptor for Job Service
 jobApiClient.interceptors.request.use((config) => {
-  const token = tokenStore.get();
+  const token = tokenStore.get() || localStorage.getItem('access_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

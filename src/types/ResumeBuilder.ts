@@ -10,38 +10,46 @@ export interface ResumeBuilderData {
     };
     professional_summary: string;
     skills: {
-        frontend: string[];
-        backend: string[];
-        tools_cloud: string[];
+        programming_languages?: string[];
+        frameworks?: string[];
+        tools?: string[];
+        other?: string[];
     };
     experience: {
-        title: string;
+        role?: string;
+        title?: string;
         company: string;
-        location: string;
+        location?: string;
         duration: string;
-        description: string[];
-        technologies: string[];
+        description?: string[];
+        responsibilities?: string[];
+        technologies?: string[];
     }[];
     projects: {
-        name: string;
+        name?: string;
+        title?: string;
         description: string;
-        technologies: string[];
-        github: string;
-        demo: string;
-        highlights: string[];
+        technologies?: string[];
+        github?: string;
+        demo?: string;
+        link?: string;
+        highlights?: string[];
     }[];
     education: {
         degree: string;
-        field: string;
+        field?: string;
         institution: string;
-        duration: string;
-        gpa: string;
+        duration?: string;
+        year?: string;
+        gpa?: string;
+        details?: string;
     }[];
     achievements: string[];
     certifications: {
         name: string;
         issuer: string;
-        date: string;
+        date?: string;
+        year?: string;
     }[];
     languages: {
         language: string;

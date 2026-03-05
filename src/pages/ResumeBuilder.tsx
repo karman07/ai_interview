@@ -25,9 +25,9 @@ const initialData: { status: string; resume_content: ResumeBuilderData } = {
         },
         "professional_summary": "Deeply experienced Full-Stack Developer with a focus on modern web technologies...",
         "skills": {
-            "frontend": ["JavaScript", "TypeScript", "React"],
-            "backend": ["Node.js", "Express.js", "FastAPI"],
-            "tools_cloud": ["Git", "Docker", "AWS"]
+            "programming_languages": ["JavaScript", "TypeScript", "React"],
+            "frameworks": ["Node.js", "Express.js", "FastAPI"],
+            "tools": ["Git", "Docker", "AWS"]
         },
         "experience": [
             {
@@ -75,8 +75,12 @@ const initialData: { status: string; resume_content: ResumeBuilderData } = {
     }
 };
 
-const ResumeBuilder: React.FC = () => {
-    const [resumeData, setResumeData] = useState(initialData);
+interface ResumeBuilderProps {
+    initialResumeData?: { status: string; resume_content: ResumeBuilderData };
+}
+
+const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ initialResumeData }) => {
+    const [resumeData, setResumeData] = useState(initialResumeData || initialData);
     const [activePanel, setActivePanel] = useState<'customize' | 'content'>('customize');
     const [settings, setSettings] = useState<ResumeBuilderSettings>({
         selectedTemplate: 'Standard',
@@ -87,6 +91,8 @@ const ResumeBuilder: React.FC = () => {
     });
 
     useEffect(() => {
+        if (initialResumeData) return; // Skip URL parsing if used as an embedded component/modal
+
         const params = new URLSearchParams(window.location.search);
         const dataParam = params.get('data');
         const jsonParam = params.get('json');
@@ -106,7 +112,7 @@ const ResumeBuilder: React.FC = () => {
                 console.error('Invalid JSON in json query parameter:', e);
             }
         }
-    }, []);
+    }, [initialResumeData]);
 
     const handleDownload = () => {
         generatePDF('resume-preview', `Resume_${resumeData.resume_content.personal_info.name.replace(/\s+/g, '_')}.pdf`);

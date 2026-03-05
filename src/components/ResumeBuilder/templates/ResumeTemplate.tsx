@@ -113,22 +113,28 @@ const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
                         Skills
                     </h2>
                     <div className="grid grid-cols-1 gap-2 text-sm">
-                        {skills.frontend && (
+                        {skills.programming_languages && skills.programming_languages.length > 0 && (
                             <div className="flex">
-                                <span className="font-bold w-32 shrink-0">Frontend:</span>
-                                <span>{skills.frontend.join(', ')}</span>
+                                <span className="font-bold w-48 shrink-0">Programming Languages:</span>
+                                <span>{skills.programming_languages.join(', ')}</span>
                             </div>
                         )}
-                        {skills.backend && (
+                        {skills.frameworks && skills.frameworks.length > 0 && (
                             <div className="flex">
-                                <span className="font-bold w-32 shrink-0">Backend:</span>
-                                <span>{skills.backend.join(', ')}</span>
+                                <span className="font-bold w-48 shrink-0">Frameworks:</span>
+                                <span>{skills.frameworks.join(', ')}</span>
                             </div>
                         )}
-                        {skills.tools_cloud && (
+                        {skills.tools && skills.tools.length > 0 && (
                             <div className="flex">
-                                <span className="font-bold w-32 shrink-0">Tools & Cloud:</span>
-                                <span>{skills.tools_cloud.join(', ')}</span>
+                                <span className="font-bold w-48 shrink-0">Tools:</span>
+                                <span>{skills.tools.join(', ')}</span>
+                            </div>
+                        )}
+                        {skills.other && skills.other.length > 0 && (
+                            <div className="flex">
+                                <span className="font-bold w-48 shrink-0">Other:</span>
+                                <span>{skills.other.join(', ')}</span>
                             </div>
                         )}
                     </div>
@@ -155,7 +161,7 @@ const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
                                             fontSize: `calc(1.125rem * var(--heading-scale))`,
                                             color: gray800
                                         }}>
-                                        {job.title}
+                                        {job.role || job.title}
                                     </h3>
                                     <span className="text-sm font-medium" style={{ color: gray600 }}>{job.duration}</span>
                                 </div>
@@ -164,7 +170,7 @@ const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
                                     <span>{job.location}</span>
                                 </div>
                                 <ul className="list-disc list-outside ml-4 text-sm space-y-1">
-                                    {job.description.map((desc, i) => (
+                                    {(job.responsibilities || job.description)?.map((desc, i) => (
                                         <li key={i}>{desc}</li>
                                     ))}
                                 </ul>
@@ -194,20 +200,22 @@ const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
                                             fontSize: `calc(1.125rem * var(--heading-scale))`,
                                             color: gray800
                                         }}>
-                                        {proj.name}
+                                        {proj.title || proj.name}
                                     </h3>
                                     <div className="flex gap-2 text-xs">
                                         {proj.github && <a href={proj.github} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--primary-color)' }}>GitHub</a>}
-                                        {proj.demo && <a href={proj.demo} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--primary-color)' }}>Demo</a>}
+                                        {(proj.link || proj.demo) && <a href={proj.link || proj.demo} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--primary-color)' }}>Link</a>}
                                     </div>
                                 </div>
                                 <p className="text-sm mb-2">{proj.description}</p>
-                                <div className="mb-2">
-                                    <span className="text-xs font-bold" style={{ color: gray600 }}>Tech Stack: </span>
-                                    <span className="text-xs italic" style={{ color: '#6b7280' }}>{proj.technologies.join(', ')}</span>
-                                </div>
+                                {proj.technologies && proj.technologies.length > 0 && (
+                                    <div className="mb-2">
+                                        <span className="text-xs font-bold" style={{ color: gray600 }}>Tech Stack: </span>
+                                        <span className="text-xs italic" style={{ color: '#6b7280' }}>{proj.technologies.join(', ')}</span>
+                                    </div>
+                                )}
                                 <ul className="list-disc list-outside ml-4 text-sm space-y-1">
-                                    {proj.highlights.map((highlight, i) => (
+                                    {proj.highlights?.map((highlight, i) => (
                                         <li key={i}>{highlight}</li>
                                     ))}
                                 </ul>
@@ -233,12 +241,13 @@ const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
                             <div key={index}>
                                 <div className="flex justify-between font-bold text-sm">
                                     <span>{edu.institution}</span>
-                                    <span>{edu.duration}</span>
+                                    <span>{edu.duration || edu.year}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span>{edu.degree} - {edu.field}</span>
+                                    <span>{edu.degree} {edu.field && `- ${edu.field}`}</span>
                                     {edu.gpa && <span>GPA: {edu.gpa}</span>}
                                 </div>
+                                {edu.details && <p className="text-sm mt-1">{edu.details}</p>}
                             </div>
                         ))}
                     </div>
@@ -257,7 +266,7 @@ const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
                         Key Achievements
                     </h2>
                     <ul className="list-disc list-outside ml-4 text-sm space-y-1">
-                        {achievements.map((ach, index) => (
+                        {achievements?.map((ach, index) => (
                             <li key={index}>{ach}</li>
                         ))}
                     </ul>
@@ -277,10 +286,10 @@ const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
                             Certifications
                         </h2>
                         <ul className="text-sm space-y-2">
-                            {certifications.map((cert, index) => (
+                            {certifications?.map((cert, index) => (
                                 <li key={index} className="flex flex-col">
                                     <span className="font-bold">{cert.name}</span>
-                                    <span className="text-xs" style={{ color: gray600 }}>{cert.issuer} | {cert.date}</span>
+                                    <span className="text-xs" style={{ color: gray600 }}>{cert.issuer} {cert.date || cert.year ? `| ${cert.date || cert.year}` : ''}</span>
                                 </li>
                             ))}
                         </ul>
@@ -298,7 +307,7 @@ const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
                             Languages
                         </h2>
                         <ul className="text-sm space-y-1">
-                            {languages.map((lang, index) => (
+                            {languages?.map((lang, index) => (
                                 <li key={index}>
                                     <span className="font-bold">{lang.language}: </span>
                                     <span>{lang.proficiency}</span>
