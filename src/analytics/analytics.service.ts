@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Visitor, VisitorDocument } from './schemas/visitor.schema';
 import { Session, SessionDocument } from './schemas/session.schema';
 import { PageView, PageViewDocument } from './schemas/pageview.schema';
@@ -272,7 +272,7 @@ export class AnalyticsService {
   }
 
   // Professional Admin Dashboard Stats
-  async getAdminDashboardStats() {
+  async getAdminDashboardStats(userId?: string) {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -338,6 +338,19 @@ export class AnalyticsService {
       { $sort: { count: -1 } }
     ]);
 
+    let externalAnalytics = [];
+    if (userId) {
+      const results = await this.resultModel
+        .find({ owner: new Types.ObjectId(userId) })
+        .sort({ createdAt: -1 })
+        .exec();
+
+      externalAnalytics = results.map(r => ({
+        ...r.toObject(),
+        timestamp: r.createdAt,
+      }));
+    }
+
     return {
       overview: {
         totalUsers,
@@ -362,6 +375,7 @@ export class AnalyticsService {
         sources: trafficSources.map(s => ({ source: s._id || 'direct', count: s.count })),
         devices: deviceBreakdown.reduce((acc, curr) => ({ ...acc, [curr._id || 'desktop']: curr.count }), {})
       },
+      externalAnalytics,
       updatedAt: now
     };
   }

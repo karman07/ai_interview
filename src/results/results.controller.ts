@@ -1,11 +1,11 @@
-import { Controller, Get, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { ResultsService } from './results.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
-@Controller('results')
+@Controller(['results', 'enhanced-interview'])
 @UseGuards(JwtAuthGuard)
 export class ResultsController {
-  constructor(private readonly service: ResultsService) {}
+  constructor(private readonly service: ResultsService) { }
 
   @Get('mine')
   async getMyResults(@Req() req) {
@@ -18,5 +18,12 @@ export class ResultsController {
   async getResultById(@Req() req, @Param('id') id: string) {
     const userId = req.user.sub;
     return this.service.getResultById(userId, id);
+  }
+
+  @Post('external-analytics')
+  async storeExternalAnalytics(@Req() req, @Body() data: any) {
+    const userId = req.user.sub;
+    // console.log('Storing external analytics for user:', userId);
+    return this.service.createEnhancedResult(userId, data);
   }
 }

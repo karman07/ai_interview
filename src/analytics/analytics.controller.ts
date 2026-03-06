@@ -1,8 +1,9 @@
-import { Controller, Post, Get, Body, Param, Query, Logger } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Query, Logger, UseGuards, Req } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { TrackVisitorDto } from './dto/track-visitor.dto';
 import { StartSessionDto } from './dto/start-session.dto';
 import { TrackPageViewDto } from './dto/track-pageview.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @Controller(['analytics', 'interviews'])
 export class AnalyticsController {
@@ -86,8 +87,10 @@ export class AnalyticsController {
   }
 
   @Get('dashboard-stats')
-  async getInterviewDashboardStats() {
-    return this.analyticsService.getAdminDashboardStats();
+  @UseGuards(JwtAuthGuard)
+  async getInterviewDashboardStats(@Req() req) {
+    const userId = req.user?.sub;
+    return this.analyticsService.getAdminDashboardStats(userId);
   }
 
   @Post('heartbeat')

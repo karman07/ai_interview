@@ -1,0 +1,14 @@
+node_modules
+dist
+.git
+.env
+.env.*
+*.md
+.eslintrc*
+.prettierrc
+.vscode
+.DS_Store
+uploads
+test
+postman
+*.postman_collection.json
