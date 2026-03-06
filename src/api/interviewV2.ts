@@ -308,8 +308,8 @@ export interface InterviewV2Report {
   };
   improvement_plan: {
     immediate_actions: string[];
-    '30_day_plan': string[];
-    '90_day_plan': string[];
+    plan_1_week: string[];
+    plan_1_month: string[];
   };
   verdict: {
     strengths_to_highlight: string[];

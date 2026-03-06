@@ -23,6 +23,7 @@ const routes = {
   interviewRoom: (type: string) => `/interview/room/${type}`,
   interviewResults: '/interview/results',
   interviewHistory: '/interview/history',
+  interviewDetails: (sessionId: string) => `/interview/details/${sessionId}`,
   resumeBuilder: '/resume-builder',
 };
 

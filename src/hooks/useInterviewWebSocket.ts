@@ -23,6 +23,7 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
     const [isStreamingResponse, setIsStreamingResponse] = useState(false);
     const [feedback, setFeedback] = useState<any>(null);
     const [interviewEnded, setInterviewEnded] = useState(false);
+    const [isEnding, setIsEnding] = useState(false);
     const feedbackRef = useRef<any>(null);
 
     const isStreamingResponseRef = useRef(false);
@@ -117,6 +118,7 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
                 feedbackRef.current = data.feedback;
                 setFeedback(data.feedback);
                 setInterviewEnded(true);
+                setIsEnding(false); // Reset once we have feedback and end signal
             }
         };
 
@@ -157,6 +159,7 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
 
     const sendEndSession = useCallback(() => {
         if (socket && isConnected) {
+            setIsEnding(true);
             socket.send(JSON.stringify({ type: 'end_session' }));
         }
     }, [socket, isConnected]);
@@ -167,5 +170,5 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
         }
     }, [clientId, initData, connect]);
 
-    return { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded };
+    return { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding };
 };

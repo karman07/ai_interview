@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback } from 'react';
-import { synthesizeSpeech } from '@/services/googleTTS';
 
 interface AudioWithBlob extends HTMLAudioElement {
     _blobUrl?: string;
@@ -7,15 +6,21 @@ interface AudioWithBlob extends HTMLAudioElement {
 
 async function fetchAudio(text: string): Promise<AudioWithBlob | null> {
     try {
-        const base64Audio = await synthesizeSpeech(text);
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`${import.meta.env.VITE_AI_INTERVIEW_API}/api/v1/tts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ text }),
+        });
 
-        // Convert base64 to blob
-        const binaryString = atob(base64Audio);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
+        if (!response.ok) {
+            throw new Error(`TTS API error: ${response.status}`);
         }
-        const blob = new Blob([bytes], { type: 'audio/mp3' });
+
+        const blob = await response.blob();
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url) as AudioWithBlob;
         audio._blobUrl = url;

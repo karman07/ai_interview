@@ -11,6 +11,7 @@ import { WSVideoPanel } from './ws/VideoPanel';
 import { WSTranscriptPanel } from './ws/TranscriptPanel';
 import { WSCodeEditor } from './ws/CodeEditor';
 import { WSInterviewTimer } from './ws/InterviewTimer';
+import { ThreeAvatar } from './ws/ThreeAvatar';
 import { Loader2 } from 'lucide-react';
 
 /**
@@ -60,7 +61,7 @@ export default function InterviewRoomWS() {
     }, [user]);
 
     // ── Hooks ──
-    const { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded } =
+    const { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding } =
         useInterviewWebSocket(clientId, setupData);
     const { formattedTime } = useInterviewTimer();
     const { videoRef, isActive: webcamActive, startCamera, toggleCamera } = useInterviewWebcam();
@@ -248,13 +249,10 @@ export default function InterviewRoomWS() {
                 <div className="max-w-[1800px] mx-auto w-full flex gap-4 p-4 min-h-0">
                     {/* Left Column: Video + Transcript */}
                     <div className="w-[380px] flex-shrink-0 flex flex-col gap-4 min-h-0 overflow-hidden">
-                        <div className="h-[300px]">
-                            <WSVideoPanel
+                        <div className="h-[280px]">
+                            <ThreeAvatar
                                 isSpeaking={isSpeaking}
                                 isListening={isListening}
-                                isTranscribing={isTranscribing}
-                                webcamRef={videoRef}
-                                webcamActive={webcamActive}
                             />
                         </div>
                         <div className="flex-1 min-h-0">
@@ -329,6 +327,31 @@ export default function InterviewRoomWS() {
                     </button>
                 </div>
             </div>
+            {/* Loading Overlay when ending session */}
+            {isEnding && (
+                <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-md flex items-center justify-center animate-in fade-in duration-500">
+                    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-12 max-w-lg w-full text-center shadow-2xl flex flex-col items-center gap-6">
+                        <div className="relative">
+                            <div className="w-24 h-24 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center animate-pulse">
+                                    <div className="w-6 h-6 rounded-full bg-blue-500" />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                            <h2 className="text-3xl font-bold text-white tracking-tight">Finishing Interview</h2>
+                            <p className="text-blue-200/60 font-medium">Please wait while we analyze your performance and generate your detailed feedback report...</p>
+                        </div>
+                        <div className="flex gap-2 items-center text-blue-400 text-xs font-bold uppercase tracking-widest mt-4">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce [animation-delay:-0.3s]"></span>
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce [animation-delay:-0.15s]"></span>
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce"></span>
+                            Generating Insights
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

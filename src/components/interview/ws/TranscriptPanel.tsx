@@ -30,7 +30,7 @@ export const WSTranscriptPanel: React.FC<TranscriptPanelProps> = ({ messages, tr
     };
 
     return (
-        <div className="flex flex-col h-full rounded-2xl overflow-hidden bg-white border border-gray-200">
+        <div className="flex flex-col h-full rounded-2xl overflow-hidden bg-white border border-gray-200 max-h-[calc(100vh-200px)] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
                 <div className="flex items-center gap-3">

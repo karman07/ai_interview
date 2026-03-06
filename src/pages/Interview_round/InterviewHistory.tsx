@@ -162,7 +162,7 @@ export default function InterviewHistory() {
                 className="group bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all shadow-sm hover:shadow-md cursor-pointer"
                 onClick={() => {
                   if (session.session_id) {
-                    navigate(`/interview/results/${session.session_id}`);
+                    navigate(`/interview/details/${session.session_id}`);
                   }
                 }}
               >

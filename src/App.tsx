@@ -31,6 +31,7 @@ import InterviewStart from "./pages/Interview_round/InterviewStart";
 import InterviewRoomPage from "./pages/Interview_round/InterviewRoomPage";
 import InterviewHistory from "./pages/Interview_round/InterviewHistory";
 import InterviewResultsV2 from "./pages/Interview_round/InterviewResultsV2";
+import InterviewSessionDetails from "./pages/Interview_round/InterviewSessionDetails";
 import { AnalyticsProvider } from "./contexts/AnalyticsContext";
 import AnalyticsTest from "./pages/Test/AnalyticsTest";
 import ContactPage from "./pages/contact/ContactPage";
@@ -217,6 +218,14 @@ function App() {
                           <Sidebar />
                           <div className="flex-1">
                             <InterviewResultsV2 />
+                          </div>
+                        </div>
+                      } />
+                      <Route path="/interview/details/:sessionId" element={
+                        <div className="flex min-h-screen">
+                          <Sidebar />
+                          <div className="flex-1">
+                            <InterviewSessionDetails />
                           </div>
                         </div>
                       } />
