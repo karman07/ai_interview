@@ -30,7 +30,7 @@ const sidebarRoutes = [
         path: "/dashboard",
       },
       {
-        label: "ai for job",
+        label: "AI Interview",
         icon: <Zap size={18} />,
         description: "Practice with AI interviewer",
         path: "/interview_round",

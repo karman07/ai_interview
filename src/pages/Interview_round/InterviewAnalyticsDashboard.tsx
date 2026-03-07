@@ -205,7 +205,7 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
               {/* Compact Session Capacity */}
               <div className="bg-white/60 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50 rounded-xl px-5 py-2.5 flex items-center gap-6 shadow-sm transition-colors hover:border-blue-400/30">
                 <div className="flex flex-col gap-1">
-                  <span className="text-[9px] font-black text-slate-400 underline decoration-blue-500/30 underline-offset-4 uppercase tracking-[0.1em]">Capacity</span>
+                  <span className="text-[9px] font-black text-slate-400 underline decoration-blue-500/30 underline-offset-4 uppercase tracking-[0.1em]">Interview Capacity</span>
                   <div className="flex items-baseline gap-1">
                     <span className={`text-xl font-black ${isAtLimit ? 'text-rose-500' : 'text-slate-900 dark:text-white'}`}>{currentMonthlyUsage}</span>
                     <span className="text-[10px] text-slate-400 font-bold">/ {interviewLimit}</span>

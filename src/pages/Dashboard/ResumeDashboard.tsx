@@ -293,7 +293,7 @@ const ResumeDashboard: React.FC = () => {
               {/* Usage Indicator */}
               <div className="flex flex-col items-end">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Upload Capacity</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Interview Capacity</span>
                   <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isAtLimit ? 'bg-red-500 text-white' : 'bg-blue-600 text-white'}`}>
                     {totalResumes} / {resumeLimit}
                   </span>
