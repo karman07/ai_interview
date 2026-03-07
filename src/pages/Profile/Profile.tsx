@@ -9,14 +9,10 @@ import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   sendEmailVerification,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-  ConfirmationResult
 } from 'firebase/auth';
 import { auth } from '@/firebase';
 import {
   Mail,
-  Phone,
   ShieldCheck,
   ShieldAlert,
   Globe,
@@ -43,11 +39,9 @@ export default function Profile() {
   const [success, setSuccess] = useState<string | undefined>();
   const [params, setParams] = useSearchParams();
 
-
   const [form, setForm] = useState({
     name: user?.name ?? '',
     bio: user?.bio ?? '',
-    phone: user?.phone ?? '',
     location: user?.location ?? '',
     experienceLevel: user?.experienceLevel ?? 'Mid',
     skills: user?.skills ?? [] as string[],
@@ -60,58 +54,14 @@ export default function Profile() {
 
   const [newSkill, setNewSkill] = useState('');
   const [verifyingEmail, setVerifyingEmail] = useState(false);
-
-  const [countries, setCountries] = useState<any[]>([]);
-  const [selectedCountry, setSelectedCountry] = useState<any>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [showPhoneModal, setShowPhoneModal] = useState(false);
-  const [otp, setOtp] = useState('');
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-  const [verifyingOtp, setVerifyingOtp] = useState(false);
-  const recaptchaVerifier = useRef<RecaptchaVerifier | null>(null);
-  const [countrySearch, setCountrySearch] = useState('');
-  const [showCountryList, setShowCountryList] = useState(false);
   const isInitialized = useRef(false);
-  const countryDropdownRef = useRef<HTMLDivElement>(null);
-
-  const filteredCountries = useMemo(() => {
-    if (!countrySearch) return countries;
-    const lowerSearch = countrySearch.toLowerCase();
-    return countries.filter(c =>
-      c.name.common.toLowerCase().includes(lowerSearch) ||
-      c.cca2.toLowerCase().includes(lowerSearch) ||
-      (c.idd.root + (c.idd.suffixes?.[0] || '')).includes(countrySearch)
-    );
-  }, [countries, countrySearch]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (countryDropdownRef.current && !countryDropdownRef.current.contains(event.target as Node)) {
-        setShowCountryList(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    fetch('https://restcountries.com/v3.1/all?fields=name,idd,cca2,cca3,flags,flag')
-      .then(res => res.json())
-      .then(data => {
-        const sorted = data.sort((a: any, b: any) => a.name.common.localeCompare(b.name.common));
-        setCountries(sorted);
-        const india = sorted.find((c: any) => c.cca2 === 'IN');
-        if (india) setSelectedCountry(india);
-      })
-      .catch(() => { });
-  }, []);
 
   useEffect(() => {
     if (user && !isInitialized.current) {
       setForm({
         name: user.name ?? '',
         bio: user.bio ?? '',
-        phone: user.phone ?? '',
         location: user.location ?? '',
         experienceLevel: user.experienceLevel ?? 'Mid',
         skills: user.skills ?? [],
@@ -122,11 +72,6 @@ export default function Profile() {
         industry: user.industry ?? '',
       });
       isInitialized.current = true;
-    }
-
-    if (params.get('verify') === 'phone') {
-      setShowPhoneModal(true);
-      setParams({});
     }
 
     if (params.get('status') === 'success') {
@@ -148,8 +93,7 @@ export default function Profile() {
     const fields = [
       { val: form.name, weight: 10 },
       { val: form.bio, weight: 15 },
-      { val: form.phone, weight: 10 },
-      { val: form.location, weight: 10 },
+      { val: form.location, weight: 15 },
       { val: form.experienceLevel, weight: 5 },
       { val: form.skills.length > 0, weight: 20 },
       { val: form.linkedinUrl, weight: 10 },
@@ -178,9 +122,7 @@ export default function Profile() {
     setFieldErrors({});
     setSaving(true);
     try {
-      const code = selectedCountry ? (selectedCountry.idd.root + (selectedCountry.idd.suffixes?.[0] || '')) : '';
-      const payload = { ...form, phone: form.phone.startsWith('+') ? form.phone : (code + form.phone) };
-      await UsersApi.updateProfile(payload);
+      await UsersApi.updateProfile(form);
       await refreshMe();
       showSuccess('Profile synchronized successfully!');
     } catch (error: any) {
@@ -196,60 +138,15 @@ export default function Profile() {
   };
 
   const handleVerifyEmail = async () => {
-    if (!auth.currentUser) return;
+    if (!user?.email) return;
     setVerifyingEmail(true);
     try {
-      await sendEmailVerification(auth.currentUser);
-      showSuccess('Security verification email dispatched.');
+      await sendEmailVerification(auth.currentUser!);
+      showSuccess('Verification email sent! Please check your inbox.');
     } catch (error: any) {
-      setErr(error.message || 'Dispatch failed.');
+      setErr(error.message || 'Failed to send verification email.');
     } finally {
       setVerifyingEmail(false);
-    }
-  };
-
-  const setupRecaptcha = () => {
-    if (recaptchaVerifier.current) return;
-    recaptchaVerifier.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      size: 'invisible',
-    });
-  };
-
-  const handleSendOtp = async () => {
-    if (!form.phone) {
-      setErr('Contact number required.');
-      return;
-    }
-    clearMessages();
-    setVerifyingOtp(true);
-    try {
-      setupRecaptcha();
-      const appVerifier = recaptchaVerifier.current!;
-      const code = selectedCountry ? (selectedCountry.idd.root + (selectedCountry.idd.suffixes?.[0] || '')) : '';
-      const fullPhone = form.phone.startsWith('+') ? form.phone : (code + form.phone);
-      const confirmation = await signInWithPhoneNumber(auth, fullPhone, appVerifier);
-      setConfirmationResult(confirmation);
-      setShowPhoneModal(true);
-    } catch (error: any) {
-      setErr(error.message || 'OTP transmission failed.');
-    } finally {
-      setVerifyingOtp(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (!confirmationResult || !otp) return;
-    setVerifyingOtp(true);
-    try {
-      await confirmationResult.confirm(otp);
-      await UsersApi.updateVerificationStatus('phone', true);
-      await refreshMe();
-      setShowPhoneModal(false);
-      showSuccess('Phone identity verified.');
-    } catch (error: any) {
-      setErr('Security code mismatch.');
-    } finally {
-      setVerifyingOtp(false);
     }
   };
 
@@ -288,7 +185,6 @@ export default function Profile() {
           </div>
 
           <div className="flex items-center gap-3">
-
             <Button
               variant="primary"
               onClick={handleSave}
@@ -319,20 +215,6 @@ export default function Profile() {
                   className="h-full bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.4)]"
                 />
               </div>
-              <div className="mt-4 flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${completionProgress > 30 ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-                  <span className="text-[10px] font-bold text-gray-500 uppercase">Personal</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${completionProgress > 60 ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-                  <span className="text-[10px] font-bold text-gray-500 uppercase">Professional</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${completionProgress === 100 ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-                  <span className="text-[10px] font-bold text-gray-500 uppercase">Identity</span>
-                </div>
-              </div>
             </div>
             {completionProgress < 100 && (
               <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/50 p-4 rounded-2xl md:max-w-[300px]">
@@ -345,7 +227,6 @@ export default function Profile() {
               </div>
             )}
           </div>
-          {/* Background design */}
           <div className="absolute top-0 right-0 w-64 h-full bg-gradient-to-l from-blue-50 dark:from-blue-900/5 to-transparent pointer-events-none" />
         </div>
 
@@ -368,20 +249,13 @@ export default function Profile() {
                 <h4 className="text-sm font-black uppercase tracking-wider">{success ? 'Success' : 'Attention Required'}</h4>
                 <p className="text-xs font-bold opacity-80 mt-0.5">{success || err}</p>
               </div>
-              <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-10">
-                {success ? <CheckCircle2 className="w-16 h-16" /> : <ShieldAlert className="w-16 h-16" />}
-              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Main Content Sections */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-
-          {/* Left Column: Identity, Presence & Trust (col-span-4) */}
           <div className="xl:col-span-4 space-y-8">
-
-            {/* Card 1: The Identity Hub */}
             <div className="bg-white dark:bg-[#0D1117] rounded-[3rem] border border-gray-200 dark:border-gray-800/50 shadow-sm overflow-hidden group">
               <div className="h-40 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 relative">
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
@@ -398,16 +272,13 @@ export default function Profile() {
                       <Camera className="w-8 h-8 text-white" />
                     </div>
                   </div>
-                  <div className="absolute -bottom-2 -right-2 bg-emerald-500 w-8 h-8 rounded-2xl border-4 border-white dark:border-gray-900 shadow-lg" />
                 </div>
-
                 <div className="mt-8">
                   <h2 className="text-2xl font-black text-gray-900 dark:text-white tabular-nums tracking-tight">{user?.name}</h2>
                 </div>
               </div>
             </div>
 
-            {/* Card 2: Subscription Intelligence */}
             <div className="bg-white dark:bg-[#0D1117] rounded-[2.5rem] p-8 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden group">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
@@ -415,7 +286,6 @@ export default function Profile() {
                 </div>
                 <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight leading-none uppercase tracking-widest">Subscription</h3>
               </div>
-
               <div className="p-6 rounded-[2rem] bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-100/50 dark:border-blue-800/30 mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Current Plan</span>
@@ -424,22 +294,11 @@ export default function Profile() {
                     <span className="text-[10px] font-black uppercase tracking-widest">{user?.subscriptionStatus || 'Free'}</span>
                   </div>
                 </div>
-
                 <h4 className="text-xl font-black text-gray-900 dark:text-white mb-4 flex items-center gap-3">
                   {user?.subscriptionPlan && typeof user.subscriptionPlan === 'object' ? (user.subscriptionPlan as any).displayName : (user?.subscriptionPlan || 'Foundation Tier')}
                   {user?.subscriptionStatus === 'active' && <Zap className="w-4 h-4 text-blue-600" />}
                 </h4>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[10px] font-bold text-gray-400">
-                    <span className="uppercase tracking-widest">Validity</span>
-                    <span className="text-gray-600 dark:text-gray-300">
-                      {user?.subscriptionExpiry ? new Date(user.subscriptionExpiry).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Infinite'}
-                    </span>
-                  </div>
-                </div>
               </div>
-
               <Button
                 variant="outline"
                 className="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] border-gray-100 dark:border-gray-800 group-hover:border-blue-500/50 transition-all hover:bg-blue-50 dark:hover:bg-blue-900/10"
@@ -450,7 +309,6 @@ export default function Profile() {
               </Button>
             </div>
 
-            {/* Card 2: Digital Presence */}
             <div className="bg-white dark:bg-[#0D1117] rounded-[2.5rem] p-8 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden group">
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
@@ -495,7 +353,6 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Card 3: Trust & Security */}
             <div className="bg-white dark:bg-[#0D1117] rounded-[2.5rem] p-8 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden group">
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
@@ -528,35 +385,10 @@ export default function Profile() {
                     </button>
                   )}
                 </div>
-                <div className="p-4 bg-gray-50/50 dark:bg-gray-800/20 rounded-[1.5rem] border border-gray-100 dark:border-gray-800/50 flex items-center justify-between group/verify hover:border-blue-500/30 transition-all">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${user?.isPhoneVerified ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
-                      <Phone className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-0.5">Phone Access</p>
-                      <p className="text-[11px] font-bold text-gray-700 dark:text-gray-300 truncate">{user?.phone || 'Not configured'}</p>
-                    </div>
-                  </div>
-                  {user?.isPhoneVerified ? (
-                    <div className="bg-emerald-500/10 p-2 rounded-lg">
-                      <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                    </div>
-                  ) : (
-                    <button
-                      onClick={handleSendOtp}
-                      disabled={verifyingOtp}
-                      className="px-4 py-2 bg-blue-600 text-white text-[9px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-600/20 active:scale-95 transition-all disabled:opacity-50"
-                    >
-                      {verifyingOtp ? '...' : (user?.phone ? 'Verify' : 'Link')}
-                    </button>
-                  )}
-                </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Career & Bio (col-span-8) */}
           <div className="xl:col-span-8 space-y-8">
             <div className="bg-white dark:bg-[#0D1117] rounded-[3rem] p-10 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden group">
               <div className="flex items-center gap-4 mb-10">
@@ -577,93 +409,6 @@ export default function Profile() {
                   error={fieldErrors.name}
                   className="[&_input]:py-4 [&_input]:text-xs [&_input]:rounded-3xl [&_span]:tracking-[0.2em] [&_span]:font-black"
                 />
-
-                <div className="flex flex-col">
-                  <span className="mb-2 block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Contact Communication</span>
-                  <div className="flex items-stretch bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl overflow-hidden focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/5 transition-all h-[52px]">
-                    <div className="relative border-r border-gray-100 dark:border-gray-700" ref={countryDropdownRef}>
-                      <button
-                        type="button"
-                        onClick={() => setShowCountryList(!showCountryList)}
-                        className="h-full px-5 flex items-center justify-between gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          {selectedCountry && (
-                            <>
-                              <img src={selectedCountry.flags.svg} className="w-4 h-3 object-cover rounded-sm shadow-sm" alt="" />
-                              <span className="text-[10px] font-black">{selectedCountry.idd.root}{selectedCountry.idd.suffixes?.[0] || ''}</span>
-                            </>
-                          )}
-                        </div>
-                        <ChevronRight className={`w-3 h-3 text-gray-400 transition-transform ${showCountryList ? 'rotate-90' : ''}`} />
-                      </button>
-
-                      <AnimatePresence>
-                        {showCountryList && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="absolute left-0 z-50 mt-2 w-64 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-2xl overflow-hidden"
-                          >
-                            <div className="p-2 border-b border-gray-100 dark:border-gray-800">
-                              <input
-                                type="text"
-                                placeholder="Search country..."
-                                autoFocus
-                                className="w-full px-3 py-2 text-[10px] font-bold bg-gray-50 dark:bg-gray-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-                                value={countrySearch}
-                                onChange={(e) => setCountrySearch(e.target.value)}
-                              />
-                            </div>
-                            <div className="max-h-60 overflow-y-auto no-scrollbar py-2">
-                              {filteredCountries.map(c => (
-                                <button
-                                  key={c.cca2}
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedCountry(c);
-                                    setShowCountryList(false);
-                                    setCountrySearch('');
-                                  }}
-                                  className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-left"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <img src={c.flags.svg} className="w-5 h-3.5 object-cover rounded-sm shadow-sm" alt="" />
-                                    <span className="text-[10px] font-bold text-gray-700 dark:text-gray-300">{c.name.common}</span>
-                                  </div>
-                                  <span className="text-[10px] font-black text-blue-600">{c.idd.root}{c.idd.suffixes?.[0] || ''}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    <div className="flex-1 relative">
-                      <input
-                        type="tel"
-                        value={form.phone}
-                        onChange={(e) => {
-                          let val = e.target.value.replace(/[^\d]/g, '');
-                          const prefix = selectedCountry
-                            ? `${selectedCountry.idd.root}${selectedCountry.idd.suffixes?.[0] || ''}`.replace(/[^\d]/g, '')
-                            : '';
-                          if (prefix && val.startsWith(prefix) && val.length > prefix.length) {
-                            val = val.substring(prefix.length);
-                          }
-                          setForm(f => ({ ...f, phone: val }));
-                        }}
-                        placeholder="Enter mobile number"
-                        className="w-full h-full bg-transparent border-none px-6 py-0 text-[11px] font-black outline-none placeholder:text-gray-400 placeholder:font-bold"
-                      />
-                    </div>
-                  </div>
-                  {fieldErrors.phone && (
-                    <span className="mt-2 ml-4 text-[9px] font-black text-red-500 uppercase tracking-widest">{fieldErrors.phone}</span>
-                  )}
-                </div>
 
                 <Input
                   label="Organization"
@@ -715,7 +460,7 @@ export default function Profile() {
                 />
               </div>
 
-              <div className="">
+              <div>
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-2xl flex items-center justify-center">
                     <Sparkles className="w-5 h-5" />
@@ -771,125 +516,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Card 4: Billing History Intelligence */}
-        <div className="mt-8 bg-white dark:bg-[#0D1117] rounded-[3rem] p-8 sm:p-12 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden group">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-12">
-            <div className="flex items-center gap-6">
-              <div className="w-16 h-16 bg-blue-600 text-white rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-600/30 group-hover:rotate-6 transition-transform duration-500">
-                <CreditCard className="w-8 h-8" />
-              </div>
-              <div>
-                <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-none uppercase tracking-widest">Billing History</h3>
-                <p className="text-[10px] font-bold text-gray-400 mt-1.5 uppercase tracking-[0.3em]">Fiscal intelligence & automated ledger</p>
-              </div>
-            </div>
-            <div className="px-5 py-2.5 bg-gray-50 dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-700/50 flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-[10px] font-black text-gray-600 dark:text-gray-400 uppercase tracking-widest">Real-time sync active</span>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto -mx-4 sm:-mx-0">
-            <table className="w-full text-left min-w-[800px] table-fixed">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-800/50">
-                  <th className="w-[18%] pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 px-4">Deployment Date</th>
-                  <th className="w-[25%] pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 px-4">Tier Identity</th>
-                  <th className="w-[17%] pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 px-4">Investment</th>
-                  <th className="w-[20%] pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 px-4">Operational Status</th>
-                  <th className="w-[20%] pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 px-4 text-right">Reference Key</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-800/20">
-                {transactions.length > 0 ? (
-                  transactions.slice(0, 5).map((tx: any) => (
-                    <tr key={tx._id} className="group/row hover:bg-gray-50/50 dark:hover:bg-blue-900/5 transition-all outline-none">
-                      <td className="py-6 text-[11px] font-bold text-gray-600 dark:text-gray-400 tabular-nums">
-                        {new Date(tx.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </td>
-                      <td className="py-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-                          <span className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-wider">Premium Access</span>
-                        </div>
-                      </td>
-                      <td className="py-6 text-[12px] font-black text-gray-900 dark:text-white tabular-nums">
-                        {tx.currency} {(tx.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-6">
-                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-black text-[9px] uppercase tracking-[0.15em] shadow-sm ${tx.status === 'captured' || tx.status === 'paid'
-                          ? 'bg-blue-600 text-white shadow-blue-600/20'
-                          : tx.status === 'created'
-                            ? 'bg-amber-500/10 text-amber-500'
-                            : 'bg-red-500/10 text-red-500'
-                          }`}>
-                          {(tx.status === 'captured' || tx.status === 'paid') && <ShieldCheck className="w-3 h-3" />}
-                          {tx.status}
-                        </div>
-                      </td>
-                      <td className="py-6 text-right text-[10px] font-bold text-gray-400 font-mono tracking-tighter group-hover/row:text-blue-500 transition-colors">
-                        {tx.razorpayPaymentId || tx._id?.slice(-12) || 'REF-N/A'}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="py-20 text-center">
-                      <div className="flex flex-col items-center gap-4">
-                        <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800/50 rounded-3xl flex items-center justify-center text-gray-300 dark:text-gray-600">
-                          <CreditCard className="w-8 h-8" />
-                        </div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">No transaction intelligence detected...</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Verification Modal */}
-        <AnimatePresence>
-          {showPhoneModal && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-xl">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0" onClick={() => setShowPhoneModal(false)} />
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0, y: 40 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.9, opacity: 0, y: 40 }}
-                className="relative w-full max-w-sm bg-white dark:bg-[#0D1117] rounded-[3.5rem] p-12 shadow-[0_30px_60px_rgba(0,0,0,0.3)] border border-gray-100 dark:border-gray-800/50"
-              >
-                <div className="text-center mb-12">
-                  <div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-blue-600/30">
-                    <Fingerprint className="w-10 h-10 text-white" />
-                  </div>
-                  <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Access Key</h3>
-                  <p className="text-xs font-bold text-gray-400 mt-2 uppercase tracking-[0.2em]">Sent to {form.phone}</p>
-                </div>
-
-                <div className="space-y-8">
-                  <input
-                    type="text"
-                    maxLength={6}
-                    placeholder="000 000"
-                    className="w-full text-center text-5xl font-black tracking-[0.4em] py-8 bg-gray-50 dark:bg-gray-800/50 border-4 border-gray-100 dark:border-gray-700/50 rounded-[2.5rem] focus:border-blue-500/50 outline-none transition-all placeholder:tracking-normal"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                  />
-
-                  <Button variant="primary" className="w-full py-6 uppercase font-black tracking-widest text-sm bg-blue-600 shadow-2xl shadow-blue-600/20" onClick={handleVerifyOtp} disabled={verifyingOtp || otp.length < 6}>
-                    {verifyingOtp ? 'Verifying...' : 'Validate Access'}
-                  </Button>
-
-                  <button className="w-full text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] hover:text-blue-600 transition-all">Resend Code</button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-
-        <div id="recaptcha-container"></div>
       </div>
     </div>
   );

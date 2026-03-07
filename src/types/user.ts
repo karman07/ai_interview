@@ -8,9 +8,7 @@ export interface User {
   email: string;
   role?: Role;
   isEmailVerified?: boolean;
-  isPhoneVerified?: boolean;
   bio?: string;
-  phone?: string;
   location?: string;
   experienceLevel?: string;
   skills?: string[];
@@ -51,7 +49,6 @@ export interface LoginDto {
 export interface UpdateProfileDto {
   name?: string;
   bio?: string;
-  phone?: string;
   location?: string;
   experienceLevel?: string;
   skills?: string[];

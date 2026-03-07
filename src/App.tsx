@@ -196,11 +196,8 @@ function App() {
                       }
                       />
                       <Route path={routes.interviewRoom(":type")} element={
-                        <div className="flex min-h-screen">
-                          <Sidebar />
-                          <div className="flex-1">
-                            <InterviewRoomPage />
-                          </div>
+                        <div className="flex-1">
+                          <InterviewRoomPage />
                         </div>
                       } />
 

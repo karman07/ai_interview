@@ -11,6 +11,7 @@ import InterviewAnalyticsDashboard from "./InterviewAnalyticsDashboard";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePricing } from "@/contexts/PricingContext";
 import { useResults } from "@/contexts/ResultsContext";
+import { InterviewAnalyticsApi } from "@/api/interviewAnalytics";
 
 type InterviewCardProps = {
   type: string;
@@ -88,22 +89,37 @@ export default function InterviewHome() {
   const { setShowPricing } = usePricing();
   const { results, fetchMine } = useResults();
   const [showInterviewSelection, setShowInterviewSelection] = useState(false);
+  const [analytics, setAnalytics] = useState<any>(null);
 
   React.useEffect(() => {
     fetchMine();
+    InterviewAnalyticsApi.getAnalytics().then(setAnalytics).catch(console.error);
   }, []);
 
   const interviewLimit = useMemo(() => {
+    // 1. Try fetching from analytics (direct from DB)
+    if (analytics?.plan?.features) {
+      const limitFeature = analytics.plan.features.find((f: any) =>
+        f.name.toLowerCase().includes('interview limit')
+      );
+      if (limitFeature && typeof (limitFeature.value ?? limitFeature.limit) === 'number') {
+        return limitFeature.value ?? limitFeature.limit;
+      }
+    }
+
+    // 2. Fallback to auth context popuplate check
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
       const limitFeature = user.subscriptionPlan.features.find(f => f.name.toLowerCase().includes('interview limit'));
       if (limitFeature && typeof limitFeature.value === 'number') {
         return limitFeature.value;
       }
     }
-    return user?.subscriptionStatus === 'active' ? 10 : 5;
-  }, [user]);
 
-  const currentInterviews = results?.length || 0;
+    // 3. Absolute default
+    return user?.subscriptionStatus === 'active' ? 10 : 3;
+  }, [user, analytics]);
+
+  const currentInterviews = analytics?.overall?.monthlyInterviews ?? analytics?.overall?.totalInterviews ?? results?.length ?? 0;
   const isAtLimit = currentInterviews >= interviewLimit;
 
   const handleLimitExceeded = () => {

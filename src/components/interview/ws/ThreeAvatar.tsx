@@ -97,56 +97,69 @@ const AvatarModel = ({ isSpeaking, isListening }: AvatarProps) => {
     const time = state.clock.getElapsedTime();
 
     if (group.current) {
-      // Idle movement
-      const breathing = Math.sin(time * 0.5) * 0.008;
-      group.current.position.y = -1.35 + breathing; // Reset to original baseline
+      // Idle movement: subtle breathing and slight sway
+      const breathing = Math.sin(time * 0.8) * 0.005;
+      group.current.position.y = -1.35 + breathing;
       group.current.rotation.y = Math.sin(time * 0.2) * 0.02;
+      group.current.rotation.x = Math.cos(time * 0.3) * 0.01;
     }
 
-    // --- PROCEDURAL LIP SYNC ---
+    // --- ENHANCED PROCEDURAL LIP SYNC ---
     speakingMeshes.forEach(obj => {
       const morphs = obj.morphTargetDictionary;
       if (!morphs) return;
 
       if (isSpeaking) {
-        speechTimer.current += 16;
-        if (speechTimer.current > (70 + Math.random() * 90)) {
-          speechTimer.current = 0;
+        speechTimer.current += 1; // Count frames for easier control
+
+        // Rapidly change target visemes for "speech jitter"
+        if (speechTimer.current % 5 === 0) { // Every ~80ms at 60fps
           const pool = VISIME_MAP.mouthOpen.concat(VISIME_MAP.transitional);
           currentViseme.current = pool[Math.floor(Math.random() * pool.length)];
         }
 
-        // Try Visemes first
-        let foundVisemeMatch = false;
+        const intensity = 0.4 + Math.sin(time * 12) * 0.4; // Varied intensity
+
         Object.keys(morphs).forEach(key => {
           if (key.startsWith('viseme_')) {
-            foundVisemeMatch = true;
-            const target = (key === currentViseme.current) ? 0.9 : 0;
+            const isCurrent = key === currentViseme.current;
+            const target = isCurrent ? intensity : 0;
+
+            // Fast lerp for responsive lip movement
             obj.morphTargetInfluences[morphs[key]] = THREE.MathUtils.lerp(
               obj.morphTargetInfluences[morphs[key]],
               target,
-              0.4
+              0.3
             );
           }
         });
 
-        // ARKit Fallback (jawOpen) if no visemes or as secondary movement
+        // Jaw movement synced with intensity
         if (morphs['jawOpen'] !== undefined) {
-          const jawTarget = foundVisemeMatch ? (Math.random() * 0.3) : (Math.random() * 0.6 + 0.2);
+          const jawTarget = intensity * 0.5 + (Math.random() * 0.2);
           obj.morphTargetInfluences[morphs['jawOpen']] = THREE.MathUtils.lerp(
             obj.morphTargetInfluences[morphs['jawOpen']],
             jawTarget,
-            0.35
+            0.25
+          );
+        }
+
+        // Subtle mouth stretch/smile during speech
+        if (morphs['mouthSmile'] !== undefined) {
+          obj.morphTargetInfluences[morphs['mouthSmile']] = THREE.MathUtils.lerp(
+            obj.morphTargetInfluences[morphs['mouthSmile']],
+            0.1,
+            0.1
           );
         }
       } else {
-        // Close mouth smoothly
+        // Return to neutral state
         Object.keys(morphs).forEach(key => {
-          if (key.startsWith('viseme_') || key === 'jawOpen') {
+          if (key.startsWith('viseme_') || key === 'jawOpen' || key === 'mouthSmile') {
             obj.morphTargetInfluences[morphs[key]] = THREE.MathUtils.lerp(
               obj.morphTargetInfluences[morphs[key]],
               0,
-              0.2
+              0.15
             );
           }
         });
@@ -154,9 +167,10 @@ const AvatarModel = ({ isSpeaking, isListening }: AvatarProps) => {
 
       // Automatic Blinking
       if (morphs['eyeBlinkLeft'] !== undefined) {
-        const blink = Math.sin(time * 1.5) > 0.99 ? 1 : 0;
-        obj.morphTargetInfluences[morphs['eyeBlinkLeft']] = THREE.MathUtils.lerp(obj.morphTargetInfluences[morphs['eyeBlinkLeft']], blink, 0.5);
-        obj.morphTargetInfluences[morphs['eyeBlinkRight']] = THREE.MathUtils.lerp(obj.morphTargetInfluences[morphs['eyeBlinkRight']], blink, 0.5);
+        // Blink pattern: random intervals
+        const blinkValue = (Math.sin(time * 2) > 0.995 || Math.sin(time * 5) > 0.99) ? 1 : 0;
+        obj.morphTargetInfluences[morphs['eyeBlinkLeft']] = THREE.MathUtils.lerp(obj.morphTargetInfluences[morphs['eyeBlinkLeft']], blinkValue, 0.4);
+        obj.morphTargetInfluences[morphs['eyeBlinkRight']] = THREE.MathUtils.lerp(obj.morphTargetInfluences[morphs['eyeBlinkRight']], blinkValue, 0.4);
       }
     });
 

@@ -62,6 +62,7 @@ const itemVars: Variants = {
 export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAnalyticsDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState<ExternalAnalyticsSession[]>([]);
+  const [dashboardData, setDashboardData] = useState<any>(null);
   const { user } = useAuth();
   const { setShowPricing } = usePricing();
 
@@ -72,6 +73,7 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
   const loadData = async () => {
     try {
       const data = await InterviewAnalyticsApi.getDashboardStats();
+      setDashboardData(data);
       if (data && data.externalAnalytics) {
         const sorted = [...data.externalAnalytics].sort(
           (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
@@ -86,17 +88,32 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
   };
 
   const interviewLimit = useMemo(() => {
+    // 1. Try fetching from dashboardData (direct from DB)
+    if (dashboardData?.overview?.plan?.features) {
+      const limitFeature = dashboardData.overview.plan.features.find((f: any) =>
+        f.name.toLowerCase().includes('interview limit')
+      );
+      if (limitFeature && typeof (limitFeature.value ?? limitFeature.limit) === 'number') {
+        return limitFeature.value ?? limitFeature.limit;
+      }
+    }
+
+    // 2. Fallback to auth context popuplate check
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
       const limitFeature = user.subscriptionPlan.features.find(f => f.name.toLowerCase().includes('interview limit'));
       if (limitFeature && typeof limitFeature.value === 'number') {
         return limitFeature.value;
       }
     }
-    return user?.subscriptionStatus === 'active' ? 10 : 5;
-  }, [user]);
 
-  const totalInterviews = sessions.length;
-  const isAtLimit = totalInterviews >= interviewLimit;
+    // 3. Absolute default
+    return user?.subscriptionStatus === 'active' ? 10 : 3;
+  }, [user, dashboardData]);
+
+  // Use monthly usage for capacity display, total historical sessions for everything else
+  const currentMonthlyUsage = dashboardData?.overview?.monthlyInterviews ?? sessions.length;
+  const totalInterviews = dashboardData?.overview?.totalInterviews ?? sessions.length;
+  const isAtLimit = currentMonthlyUsage >= interviewLimit;
 
   const averageScore = totalInterviews > 0
     ? sessions.reduce((acc, s) => acc + (s.summary?.overall_score || 0), 0) / totalInterviews
@@ -190,7 +207,7 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
                 <div className="flex flex-col gap-1">
                   <span className="text-[9px] font-black text-slate-400 underline decoration-blue-500/30 underline-offset-4 uppercase tracking-[0.1em]">Capacity</span>
                   <div className="flex items-baseline gap-1">
-                    <span className={`text-xl font-black ${isAtLimit ? 'text-rose-500' : 'text-slate-900 dark:text-white'}`}>{totalInterviews}</span>
+                    <span className={`text-xl font-black ${isAtLimit ? 'text-rose-500' : 'text-slate-900 dark:text-white'}`}>{currentMonthlyUsage}</span>
                     <span className="text-[10px] text-slate-400 font-bold">/ {interviewLimit}</span>
                   </div>
                 </div>
@@ -198,12 +215,12 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
                 <div className="w-24 flex flex-col gap-1.5">
                   <div className="flex justify-between text-[8px] font-bold text-slate-400/60 uppercase">
                     <span>Usage</span>
-                    <span>{Math.round((totalInterviews / interviewLimit) * 100)}%</span>
+                    <span>{Math.round((currentMonthlyUsage / interviewLimit) * 100)}%</span>
                   </div>
                   <div className="h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: `${Math.min((totalInterviews / interviewLimit) * 100, 100)}%` }}
+                      animate={{ width: `${Math.min((currentMonthlyUsage / interviewLimit) * 100, 100)}%` }}
                       className={`h-full ${isAtLimit ? 'bg-rose-500' : 'bg-blue-600'}`}
                     />
                   </div>
@@ -218,8 +235,8 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
                     whileTap={{ scale: 0.99 }}
                     onClick={() => isAtLimit ? setShowPricing(true) : onStartNew()}
                     className={`flex items-center gap-3 px-6 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all duration-300 shadow-lg ${isAtLimit
-                        ? 'bg-rose-600 text-white shadow-rose-500/10'
-                        : 'bg-blue-600 text-white shadow-blue-600/10 hover:bg-blue-700'
+                      ? 'bg-rose-600 text-white shadow-rose-500/10'
+                      : 'bg-blue-600 text-white shadow-blue-600/10 hover:bg-blue-700'
                       }`}
                   >
                     <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center">
@@ -289,25 +306,25 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
               {/* Radar Chart Card */}
               <motion.div
                 variants={itemVars}
-                className="bg-white dark:bg-slate-900/60 backdrop-blur-md p-8 rounded-[2rem] border border-blue-100 dark:border-slate-800 shadow-sm overflow-hidden"
+                className="bg-white dark:bg-slate-900/60 backdrop-blur-md p-8 rounded-[2.5rem] border border-blue-100 dark:border-slate-800 shadow-sm overflow-hidden"
               >
                 <div className="flex items-center justify-between mb-10">
                   <div className="space-y-1">
                     <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Skill Matrix</h3>
-                    <p className="text-slate-500 text-sm font-medium">Aggregated performance across dimensions</p>
+                    <p className="text-slate-500 text-sm font-medium">Aggregated performance across 5 key dimensions</p>
                   </div>
-                  <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
-                    <Brain className="w-6 h-6 text-blue-600" />
+                  <div className="p-4 bg-blue-600 rounded-2xl shadow-lg shadow-blue-200 dark:shadow-none">
+                    <Brain className="w-6 h-6 text-white" />
                   </div>
                 </div>
 
-                <div className="h-[350px] w-full mt-4">
+                <div className="h-[400px] w-full mt-4 flex items-center justify-center">
                   <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart data={radarData}>
-                      <PolarGrid stroke="#e2e8f0" className="dark:stroke-slate-800" />
+                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                      <PolarGrid stroke="#e2e8f0" className="opacity-50 dark:opacity-20" />
                       <PolarAngleAxis
                         dataKey="subject"
-                        tick={{ fill: '#64748b', fontSize: 13, fontWeight: 700 }}
+                        tick={{ fill: '#64748b', fontSize: 12, fontWeight: 800 }}
                       />
                       <PolarRadiusAxis
                         angle={90}
@@ -316,15 +333,30 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
                         tick={false}
                       />
                       <Radar
-                        name="Mock Score"
+                        name="Average Score"
                         dataKey="score"
                         stroke="#2563eb"
-                        strokeWidth={3}
-                        fill="#3b82f6"
-                        fillOpacity={0.25}
+                        strokeWidth={4}
+                        fill="url(#radarGradient)"
+                        fillOpacity={0.6}
                       />
+                      <defs>
+                        <linearGradient id="radarGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={1} />
+                          <stop offset="95%" stopColor="#2563eb" stopOpacity={0.8} />
+                        </linearGradient>
+                      </defs>
                     </RadarChart>
                   </ResponsiveContainer>
+                </div>
+
+                <div className="mt-8 flex flex-wrap justify-center gap-6">
+                  {radarData.map((d, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{d.subject}</span>
+                      <span className="text-sm font-black text-slate-900 dark:text-white">{d.score.toFixed(1)}</span>
+                    </div>
+                  ))}
                 </div>
               </motion.div>
 

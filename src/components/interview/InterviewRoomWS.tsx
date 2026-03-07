@@ -7,12 +7,11 @@ import { useInterviewTimer } from '@/hooks/useInterviewTimer';
 import { useInterviewWebcam } from '@/hooks/useInterviewWebcam';
 import { useInterviewSTT } from '@/hooks/useInterviewSTT';
 import { useInterviewTTS } from '@/hooks/useInterviewTTS';
-import { WSVideoPanel } from './ws/VideoPanel';
 import { WSTranscriptPanel } from './ws/TranscriptPanel';
 import { WSCodeEditor } from './ws/CodeEditor';
 import { WSInterviewTimer } from './ws/InterviewTimer';
 import { ThreeAvatar } from './ws/ThreeAvatar';
-import { Loader2, Mic, MicOff, Video, VideoOff, LogOut, ShieldCheck, Zap } from 'lucide-react';
+import { Loader2, Mic, MicOff, Video, VideoOff, LogOut, ShieldCheck, Zap, Code } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
@@ -68,6 +67,9 @@ export default function InterviewRoomWS() {
     const { videoRef, isActive: webcamActive, startCamera, toggleCamera } = useInterviewWebcam();
     const { isSpeaking, speak, cancel } = useInterviewTTS();
 
+    // ── UI States ──
+    const [showCodeEditor, setShowCodeEditor] = useState(false);
+
     // TTS buffering refs
     const bufferRef = useRef('');
     const processedTextLengthRef = useRef(0);
@@ -77,6 +79,23 @@ export default function InterviewRoomWS() {
     useEffect(() => {
         startCamera();
     }, [startCamera]);
+
+    // ── Auto-detect if AI requires code ──
+    useEffect(() => {
+        if (messages.length === 0) return;
+        const lastMsg = messages[messages.length - 1];
+        if (lastMsg.role === 'model') {
+            // Check if AI sent a code block or explicitly mentioned coding
+            const codingKeywords = ['code', 'implement', 'function', 'algorithm', 'editor', 'programming', 'write a', 'snippet'];
+            const content = lastMsg.content.toLowerCase();
+            const hasCodeBlock = lastMsg.content.includes('```');
+            const mentionsCoding = codingKeywords.some(keyword => content.includes(keyword));
+
+            if (hasCodeBlock || mentionsCoding) {
+                setShowCodeEditor(true);
+            }
+        }
+    }, [messages]);
 
     // ── TTS Buffering Logic (same as original App.jsx) ──
     useEffect(() => {
@@ -230,58 +249,58 @@ export default function InterviewRoomWS() {
 
     return (
         <div className="h-screen bg-[#F8FAFF] dark:bg-slate-950 flex flex-col overflow-hidden text-slate-900 dark:text-slate-100 font-sans selection:bg-blue-100 selection:text-blue-900">
-            {/* Header */}
-            <header className="h-20 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border-b border-blue-50 dark:border-slate-800 shrink-0 z-20">
-                <div className="max-w-[1920px] mx-auto h-full px-6 flex items-center justify-between">
-                    <div className="flex items-center gap-5">
-                        <motion.div
-                            initial={{ rotate: -10, scale: 0.9 }}
-                            animate={{ rotate: 0, scale: 1 }}
-                            className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-200 dark:shadow-blue-900/20"
-                        >
-                            AI
-                        </motion.div>
-                        <div className="space-y-0.5">
-                            <h1 className="text-xl font-black tracking-tight flex items-center gap-2">
+            {/* Header: Minimal & Immersive */}
+            <header className="h-16 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border-b border-blue-50/50 dark:border-slate-800/50 shrink-0 z-20">
+                <div className="max-w-[1920px] mx-auto h-full px-8 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="flex flex-col">
+                            <h1 className="text-sm font-black tracking-tight flex items-center gap-2">
                                 <span className="text-blue-600 capitalize">{type || 'Technical'}</span>
-                                <span className="opacity-40 font-medium">Session</span>
+                                <span className="opacity-30">/</span>
+                                <span className="text-slate-400 font-bold">{setupData.company || 'Private Session'}</span>
                             </h1>
-                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] flex items-center gap-2">
-                                <ShieldCheck className="w-3.5 h-3.5 text-blue-500/50" />
-                                {setupData.role || 'General'} AT {setupData.company || 'Private Cloud'}
-                            </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
-                        <div className="px-5 py-2.5 bg-slate-900 dark:bg-white rounded-2xl shadow-xl shadow-slate-200 dark:shadow-none transition-all flex items-center gap-3">
-                            <WSInterviewTimer formattedTime={formattedTime} />
-                        </div>
+                    <div className="flex items-center gap-4">
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setShowCodeEditor(!showCodeEditor)}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${showCodeEditor ? 'bg-blue-600 text-white border-blue-500' : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'}`}
+                        >
+                            <Code className="w-3.5 h-3.5" />
+                            {showCodeEditor ? 'Close Editor' : 'Open Editor'}
+                        </motion.button>
 
-                        {/* Connection Badge */}
-                        <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all ${isConnected ? 'bg-green-50 text-green-700 border-green-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
-                            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-rose-500 animate-pulse'}`} />
-                            {isConnected ? 'Real-time Link Active' : 'Link Interrupted'}
+                        <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
+
+                        <div className="flex items-center gap-2">
+                            <WSInterviewTimer formattedTime={formattedTime} />
+                            <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500' : 'bg-rose-500 animate-pulse'}`} />
                         </div>
                     </div>
                 </div>
             </header>
 
             {/* Content Area */}
-            <main className="flex-1 min-h-0 flex flex-col p-6 gap-6">
-                <div className="flex-1 min-h-0 flex gap-6 max-w-[1920px] mx-auto w-full">
+            <main className="flex-1 min-h-0 flex flex-col p-4 md:p-6 gap-4">
+                <div className="flex-1 min-h-0 flex gap-4 max-w-[1600px] mx-auto w-full">
 
-                    {/* Perspective: Left UI */}
-                    <div className="w-[420px] flex flex-col gap-6 shrink-0 min-h-0 overflow-hidden">
+                    {/* Left UI: Always visible */}
+                    <motion.div
+                        animate={{ width: showCodeEditor ? 380 : "100%", maxWidth: showCodeEditor ? 380 : 800 }}
+                        className="flex flex-col gap-4 shrink-0 min-h-0 overflow-hidden mx-auto"
+                    >
                         {/* Avatar / Interviewer Card */}
-                        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-blue-50 dark:border-slate-800 shadow-sm overflow-hidden h-[340px] relative group">
+                        <div className={`bg-white dark:bg-slate-900 rounded-[2rem] border border-blue-50 dark:border-slate-800 shadow-sm overflow-hidden relative group transition-all duration-500 ${showCodeEditor ? 'h-[300px]' : 'h-[380px]'}`}>
                             <ThreeAvatar
                                 isSpeaking={isSpeaking}
                                 isListening={isListening}
                             />
 
-                            {/* User Webcam PIP */}
-                            <div className="absolute top-6 right-6 w-32 h-40 rounded-3xl overflow-hidden border-2 border-white/20 shadow-2xl backdrop-blur-md bg-slate-900/40 group-hover:scale-105 transition-all duration-500 z-10">
+                            {/* User Webcam PIP: More minimal */}
+                            <div className="absolute top-4 right-4 w-24 h-32 rounded-2xl overflow-hidden border border-white/10 shadow-xl backdrop-blur-md bg-slate-900/40 z-10">
                                 {webcamActive ? (
                                     <video
                                         ref={videoRef}
@@ -291,28 +310,22 @@ export default function InterviewRoomWS() {
                                         className="w-full h-full object-cover scale-x-[-1]"
                                     />
                                 ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-slate-800/50">
-                                        <div className="w-8 h-8 rounded-full bg-slate-700/50 flex items-center justify-center">
-                                            <VideoOff className="w-4 h-4 text-slate-500" />
-                                        </div>
-                                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Feed Off</span>
+                                    <div className="w-full h-full flex items-center justify-center bg-slate-800/40">
+                                        <VideoOff className="w-4 h-4 text-slate-600" />
                                     </div>
                                 )}
                             </div>
 
-                            {/* AI Identity Card Overlay */}
-                            <div className="absolute bottom-6 left-6 right-6 p-4 bg-white/10 dark:bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-slate-800/30 flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                    <p className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em]">Interviewer</p>
-                                    <h3 className="text-sm font-black text-blue-400 tracking-wide uppercase">Nexus Pro Engine</h3>
-                                </div>
-                                <div className="flex gap-1.5 h-4 items-center">
-                                    {[1, 2, 3, 4].map(i => (
+                            {/* Identity Overlay: Compact */}
+                            <div className="absolute bottom-4 left-4 right-4 p-3 bg-black/20 backdrop-blur-md rounded-xl border border-white/5 flex items-center justify-between">
+                                <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">Nexus Pro Engine</span>
+                                <div className="flex gap-1 h-3 items-center">
+                                    {[1, 2, 3].map(i => (
                                         <motion.div
                                             key={i}
-                                            animate={isSpeaking ? { height: [4, 16, 4] } : { height: 4 }}
-                                            transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.1 }}
-                                            className="w-1 bg-blue-500/80 rounded-full"
+                                            animate={isSpeaking ? { height: [3, 12, 3] } : { height: 3 }}
+                                            transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.1 }}
+                                            className="w-0.5 bg-blue-400 rounded-full"
                                         />
                                     ))}
                                 </div>
@@ -329,82 +342,61 @@ export default function InterviewRoomWS() {
                                 isTranscribing={isTranscribing}
                             />
                         </div>
-                    </div>
+                    </motion.div>
 
-                    {/* Perspective: Center UI (Code/Task) */}
-                    <div className="flex-1 min-w-0 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-blue-50 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
-                        <WSCodeEditor onSubmitCode={handleSubmitCode} />
-                    </div>
+                    {/* Perspective: Center/Right UI (Code/Task) */}
+                    <AnimatePresence>
+                        {showCodeEditor && (
+                            <motion.div
+                                initial={{ x: 40, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                exit={{ x: 40, opacity: 0 }}
+                                className="flex-1 min-w-0 bg-white dark:bg-slate-900 rounded-[2rem] border border-blue-50 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col"
+                            >
+                                <WSCodeEditor onSubmitCode={handleSubmitCode} />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </main>
 
-            {/* Interaction Bar */}
-            <footer className="h-24 bg-white/80 dark:bg-black/40 backdrop-blur-2xl border-t border-blue-50 dark:border-slate-900 px-8 flex items-center justify-center relative z-20">
-                <div className="max-w-[1920px] w-full flex items-center justify-between">
+            {/* Interaction Bar: Compact footer */}
+            <footer className="h-20 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-t border-blue-50/50 dark:border-slate-900/50 px-8 flex items-center justify-center relative z-20">
+                <div className="max-w-[1600px] w-full flex items-center justify-between">
 
-                    {/* Media Switches */}
-                    <div className="flex items-center gap-3">
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                    <div className="flex items-center gap-2">
+                        <button
                             onClick={toggleCamera}
-                            className={`p-4 rounded-2xl transition-all border flex items-center gap-3 font-bold text-xs uppercase tracking-widest ${webcamActive
-                                ? 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-200 border-slate-100 dark:border-slate-700'
-                                : 'bg-rose-50 dark:bg-rose-950/30 text-rose-500 border-rose-100 dark:border-rose-900/30 shadow-inner'}`}
+                            className={`p-3 rounded-xl transition-all border ${webcamActive ? 'bg-white dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-slate-700' : 'bg-rose-50 text-rose-500 border-rose-100'}`}
                         >
-                            {webcamActive ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
-                            <span className="hidden lg:block">{webcamActive ? 'Camera On' : 'Camera Off'}</span>
-                        </motion.button>
-
-                        <div className="h-10 w-px bg-slate-100 dark:bg-slate-800 mx-2" />
-
-                        <div className="flex items-center gap-2 group">
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Environment Secure</span>
-                        </div>
+                            {webcamActive ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+                        </button>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2 hidden sm:block">Encrypted Link</span>
                     </div>
 
-                    {/* Primary Command */}
-                    <div className="absolute left-1/2 -translate-x-1/2 -top-12">
+                    {/* Primary Command: Smaller & Scaled */}
+                    <div className="absolute left-1/2 -translate-x-1/2 -top-10">
                         <motion.button
-                            whileHover={{ scale: 1.05, y: -4 }}
+                            whileHover={{ scale: 1.05, y: -2 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={handleToggleMic}
-                            className={`flex flex-col items-center justify-center w-28 h-28 rounded-full transition-all duration-300 shadow-2xl ${isListening
-                                ? 'bg-rose-500 text-white shadow-rose-200 dark:shadow-rose-900/40 ring-8 ring-rose-500/20'
-                                : 'bg-blue-600 text-white shadow-blue-200 dark:shadow-blue-900/40 hover:bg-blue-700 ring-8 ring-blue-600/10'
+                            className={`flex flex-col items-center justify-center w-24 h-24 rounded-full transition-all duration-300 shadow-xl ${isListening
+                                ? 'bg-rose-500 text-white shadow-rose-200 dark:shadow-rose-900/20'
+                                : 'bg-blue-600 text-white shadow-blue-200 dark:shadow-blue-900/20'
                                 }`}
                         >
-                            {isListening ? (
-                                <>
-                                    <MicOff className="w-8 h-8 mb-1" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Mute</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Mic className="w-8 h-8 mb-1" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Speak</span>
-                                </>
-                            )}
+                            {isListening ? <MicOff className="w-6 h-6 mb-1" /> : <Mic className="w-6 h-6 mb-1" />}
+                            <span className="text-[9px] font-black uppercase tracking-widest">{isListening ? 'Stop' : 'Speak'}</span>
                         </motion.button>
                     </div>
 
-                    {/* Session Exit */}
-                    <div className="flex items-center gap-4">
-                        <div className="hidden xl:flex items-center gap-1.5 px-4 py-2 bg-blue-50/50 dark:bg-blue-500/5 rounded-full text-[10px] font-bold text-blue-600/60 uppercase tracking-widest">
-                            <ShieldCheck className="w-3.5 h-3.5" />
-                            Encrypted Stream
-                        </div>
-
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                    <div className="flex items-center gap-3">
+                        <button
                             onClick={handleEndSession}
-                            className="flex items-center gap-3 px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-100 transition-all shadow-sm"
+                            className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-900 dark:bg-rose-900/20 text-white dark:text-rose-400 transition-all hover:bg-slate-800"
                         >
-                            <LogOut className="w-5 h-5" />
-                            Finish Interview
-                        </motion.button>
+                            Finish
+                        </button>
                     </div>
                 </div>
             </footer>

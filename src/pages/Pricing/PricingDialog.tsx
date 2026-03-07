@@ -74,7 +74,6 @@ const PricingDialog = () => {
         prefill: {
           name: user.name,
           email: user.email,
-          contact: user.phone
         },
         theme: {
           color: "#2563EB",

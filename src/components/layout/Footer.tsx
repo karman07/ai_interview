@@ -7,10 +7,10 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
           <div className="lg:col-span-2">
             <div className="flex items-center mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
-                <Brain className="w-6 h-6 text-white" />
+              <div className="h-10 mr-3">
+                <img src="/logo.png" alt="ai for job" className="h-full w-auto object-contain" />
               </div>
-              <span className="text-2xl font-bold">AI Interview Coach</span>
+              <span className="text-2xl font-black uppercase italic tracking-tighter">ai for job</span>
             </div>
             <p className="text-gray-300 dark:text-gray-400 mb-6 leading-relaxed max-w-md">
               Empowering professionals worldwide with AI-powered interview preparation.
@@ -63,8 +63,8 @@ export default function Footer() {
                 <Mail className="w-5 h-5 text-indigo-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-gray-300 dark:text-gray-400">Email us</p>
-                  <a href="mailto:hello@aiinterviewcoach.com" className="text-white hover:text-indigo-400 transition-colors">
-                    hello@aiinterviewcoach.com
+                  <a href="mailto:hello@aiforjob.com" className="text-white hover:text-indigo-400 transition-colors">
+                    hello@aiforjob.com
                   </a>
                 </div>
               </div>
@@ -94,7 +94,7 @@ export default function Footer() {
         <div className="border-t border-gray-800 dark:border-gray-700 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8 mb-4 md:mb-0">
-              <p className="text-gray-300 dark:text-gray-400 text-sm">© 2025 AI Interview Coach. All rights reserved.</p>
+              <p className="text-gray-300 dark:text-gray-400 text-sm">© 2025 ai for job. All rights reserved.</p>
               <div className="flex space-x-6 text-sm">
                 <a href="#" className="text-gray-300 dark:text-gray-400 hover:text-white transition-colors">Privacy Policy</a>
                 <a href="#" className="text-gray-300 dark:text-gray-400 hover:text-white transition-colors">Terms of Service</a>

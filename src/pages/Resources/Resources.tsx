@@ -20,6 +20,9 @@ interface Resource {
   color: string;
   borderColor: string;
   accentColor: string;
+  thumbnail: string;
+  downloadUrl?: string;
+  externalUrl?: string;
 }
 
 const ResourceCard = ({ resource }: { resource: Resource }) => {
@@ -27,106 +30,145 @@ const ResourceCard = ({ resource }: { resource: Resource }) => {
   const maxLength = 120; // Character limit for initial view
   const shouldShowReadMore = resource.description.length > maxLength;
 
+  const handleClick = (e: React.MouseEvent) => {
+    // If we click the "Read more" button or links specifically, don't trigger card-level click
+    const targetUrl = resource.downloadUrl && resource.downloadUrl !== '#'
+      ? resource.downloadUrl
+      : resource.externalUrl;
+
+    if (targetUrl && targetUrl !== '#') {
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
     <div
-      className="group relative bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md cursor-pointer flex flex-col h-full"
+      onClick={handleClick}
+      className="group relative bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-xl cursor-pointer flex flex-col h-full overflow-hidden"
     >
-      {/* Featured Badge */}
-      {resource.featured && (
-        <div className="absolute top-4 right-4 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide">
-          FEATURED
-        </div>
-      )}
+      {/* Course Thumbnail */}
+      <div className="relative h-48 w-full overflow-hidden">
+        <img
+          src={resource.thumbnail}
+          alt={resource.title}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent" />
 
-      {/* Resource Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <div className={`p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg ${resource.accentColor} dark:text-blue-400`}>
-            {resource.icon}
+        {/* Featured Badge */}
+        {resource.featured && (
+          <div className="absolute top-4 right-4 bg-amber-400 text-gray-900 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide shadow-lg flex items-center gap-1">
+            <Star className="w-3 h-3 fill-current" />
+            FEATURED
           </div>
-          <div>
-            <div className="flex items-center space-x-2 mb-1">
-              <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                {resource.category}
-              </span>
-            </div>
-            <div className="text-xs font-medium text-gray-400 dark:text-gray-500">
+        )}
+
+        <div className="absolute bottom-4 left-4 right-4">
+          <div className="flex items-center space-x-2">
+            <span className={`px-2 py-1 rounded-md bg-white/20 backdrop-blur-md text-[10px] font-bold text-white uppercase tracking-wider border border-white/30`}>
+              {resource.category}
+            </span>
+            <span className="px-2 py-1 rounded-md bg-white/10 backdrop-blur-sm text-[10px] font-medium text-blue-100 uppercase tracking-wider">
               {resource.type}
-            </div>
+            </span>
           </div>
         </div>
-        {!resource.featured && (
-          <div className="flex items-center space-x-1 text-xs font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md">
+      </div>
+
+      <div className="p-6 flex flex-col flex-grow">
+        {/* Resource Header */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className={`p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 ${resource.accentColor}`}>
+              {resource.icon}
+            </div>
+          </div>
+          <div className="flex items-center space-x-1 text-xs font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-600">
             <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
             <span>{resource.rating}</span>
           </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-        {resource.title}
-      </h3>
-
-      <div className="mb-6 flex-grow">
-        <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-          {isExpanded || !shouldShowReadMore
-            ? resource.description
-            : `${resource.description.substring(0, maxLength)}...`}
-        </p>
-        {shouldShowReadMore && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsExpanded(!isExpanded);
-            }}
-            className="mt-2 flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-medium transition-colors"
-          >
-            {isExpanded ? (
-              <>
-                Show less <ChevronUp className="h-3 w-3" />
-              </>
-            ) : (
-              <>
-                Read more <ChevronDown className="h-3 w-3" />
-              </>
-            )}
-          </button>
-        )}
-      </div>
-
-      {/* Tags */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {resource.tags.slice(0, 3).map((tag, tagIndex) => (
-          <span
-            key={tagIndex}
-            className="px-2.5 py-1 bg-gray-50 dark:bg-gray-700/50 text-xs font-medium text-gray-600 dark:text-gray-400 rounded-md border border-gray-100 dark:border-gray-600"
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
-
-      {/* Metadata Footer */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700 mt-auto">
-        <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-          <div className="flex items-center space-x-1.5">
-            <Clock className="w-3.5 h-3.5" />
-            <span>{resource.duration}</span>
-          </div>
-          <div className="flex items-center space-x-1.5">
-            <Users className="w-3.5 h-3.5" />
-            <span>{resource.students.toLocaleString()}</span>
-          </div>
         </div>
 
-        <div className="flex gap-2">
-          <button className="text-gray-400 hover:text-blue-600 transition-colors">
-            <Download className="w-4 h-4" />
-          </button>
-          <button className="text-gray-400 hover:text-blue-600 transition-colors">
-            <ExternalLink className="w-4 h-4" />
-          </button>
+        {/* Content */}
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+          {resource.title}
+        </h3>
+
+        <div className="mb-6 flex-grow">
+          <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+            {isExpanded || !shouldShowReadMore
+              ? resource.description
+              : `${resource.description.substring(0, maxLength)}...`}
+          </p>
+          {shouldShowReadMore && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(!isExpanded);
+              }}
+              className="mt-2 flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-medium transition-colors"
+            >
+              {isExpanded ? (
+                <>
+                  Show less <ChevronUp className="h-3 w-3" />
+                </>
+              ) : (
+                <>
+                  Read more <ChevronDown className="h-3 w-3" />
+                </>
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* Tags */}
+        <div className="flex flex-wrap gap-2">
+          {resource.tags.slice(0, 3).map((tag, tagIndex) => (
+            <span
+              key={tagIndex}
+              className="px-2.5 py-1 bg-gray-50 dark:bg-gray-700/50 text-xs font-medium text-gray-600 dark:text-gray-400 rounded-md border border-gray-100 dark:border-gray-600"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between pt-auto border-t border-gray-100 dark:border-gray-700 mt-6 pt-4">
+          <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex items-center space-x-1.5">
+              <Clock className="w-3.5 h-3.5" />
+              <span>{resource.duration}</span>
+            </div>
+            <div className="flex items-center space-x-1.5">
+              <Users className="w-3.5 h-3.5" />
+              <span>{resource.students.toLocaleString()}</span>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            {resource.downloadUrl && (
+              <a
+                href={resource.downloadUrl}
+                onClick={(e) => e.stopPropagation()}
+                className="text-gray-400 hover:text-blue-600 transition-colors p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg"
+                title="Download PDF"
+              >
+                <Download className="w-4 h-4" />
+              </a>
+            )}
+            {resource.externalUrl && (
+              <a
+                href={resource.externalUrl}
+                onClick={(e) => e.stopPropagation()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-blue-600 transition-colors p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg"
+                title="View Source"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -159,7 +201,10 @@ const ResourcesHub = () => {
       tags: ["DSA", "Algorithms", "Interview Prep", "FAANG", "System Design"],
       color: "from-blue-50 to-indigo-50",
       borderColor: "border-blue-200",
-      accentColor: "text-blue-600"
+      accentColor: "text-blue-600",
+      thumbnail: "/thumbnails/dsa_mastery.png",
+      downloadUrl: "#",
+      externalUrl: "https://github.com/trekhleb/javascript-algorithms"
     },
     {
       id: 2,
@@ -179,7 +224,10 @@ const ResourcesHub = () => {
       tags: ["System Design", "Architecture", "Microservices", "Scalability", "DevOps"],
       color: "from-purple-50 to-violet-50",
       borderColor: "border-purple-200",
-      accentColor: "text-purple-600"
+      accentColor: "text-purple-600",
+      thumbnail: "/thumbnails/system_design.png",
+      downloadUrl: "#",
+      externalUrl: "https://github.com/donnemartin/system-design-primer"
     },
     {
       id: 3,
@@ -199,7 +247,10 @@ const ResourcesHub = () => {
       tags: ["Mathematics", "Engineering", "Calculus", "Linear Algebra", "JEE Advanced"],
       color: "from-emerald-50 to-green-50",
       borderColor: "border-emerald-200",
-      accentColor: "text-emerald-600"
+      accentColor: "text-emerald-600",
+      thumbnail: "/thumbnails/math_engineering.png",
+      downloadUrl: "#",
+      externalUrl: "https://www.khanacademy.org/math"
     },
     {
       id: 4,
@@ -219,7 +270,10 @@ const ResourcesHub = () => {
       tags: ["React", "TypeScript", "Frontend", "Performance", "Testing"],
       color: "from-cyan-50 to-blue-50",
       borderColor: "border-cyan-200",
-      accentColor: "text-cyan-600"
+      accentColor: "text-cyan-600",
+      thumbnail: "/thumbnails/frontend_dev.png",
+      downloadUrl: "#",
+      externalUrl: "https://frontendmasters.com/guides/learning-roadmap/"
     },
     {
       id: 5,
@@ -239,7 +293,10 @@ const ResourcesHub = () => {
       tags: ["Business English", "IELTS", "Professional Communication", "Presentations"],
       color: "from-amber-50 to-yellow-50",
       borderColor: "border-amber-200",
-      accentColor: "text-amber-600"
+      accentColor: "text-amber-600",
+      thumbnail: "/thumbnails/language_comm.png",
+      downloadUrl: "#",
+      externalUrl: "https://www.britishcouncil.org/"
     },
     {
       id: 6,
@@ -259,7 +316,10 @@ const ResourcesHub = () => {
       tags: ["Machine Learning", "MLOps", "Python", "Production Systems", "AI Engineering"],
       color: "from-rose-50 to-red-50",
       borderColor: "border-rose-200",
-      accentColor: "text-rose-600"
+      accentColor: "text-rose-600",
+      thumbnail: "/thumbnails/ml_production.png",
+      downloadUrl: "#",
+      externalUrl: "https://ml-ops.org/"
     },
     {
       id: 7,
@@ -279,7 +339,10 @@ const ResourcesHub = () => {
       tags: ["Quantitative Finance", "Trading", "Risk Management", "Algorithms"],
       color: "from-indigo-50 to-blue-50",
       borderColor: "border-indigo-200",
-      accentColor: "text-indigo-600"
+      accentColor: "text-indigo-600",
+      thumbnail: "/thumbnails/finance.png",
+      downloadUrl: "#",
+      externalUrl: "https://www.investopedia.com/quantitative-analysis-4773315"
     },
     {
       id: 8,
@@ -299,11 +362,80 @@ const ResourcesHub = () => {
       tags: ["UX Design", "User Research", "Design Systems", "Accessibility", "Prototyping"],
       color: "from-pink-50 to-rose-50",
       borderColor: "border-pink-200",
-      accentColor: "text-pink-600"
+      accentColor: "text-pink-600",
+      thumbnail: "/thumbnails/ux_design.png",
+      downloadUrl: "#",
+      externalUrl: "https://www.nngroup.com/articles/"
+    },
+    {
+      id: 9,
+      title: "Professional Resume Structure - Akash",
+      description: "A comprehensive example of a high-impact technical resume. Learn how to structure your experience, skills, and projects to catch the eye of top recruiters.",
+      category: "Career",
+      type: "Reference PDF",
+      icon: <FileText className="w-5 h-5" />,
+      duration: "Reference",
+      studyTime: "5-10 mins",
+      downloads: 1240,
+      students: 3100,
+      rating: 4.8,
+      difficulty: "Beginner",
+      lastUpdated: "2026-03-01",
+      featured: false,
+      tags: ["Resume", "Career", "Technical", "Blueprint"],
+      color: "from-slate-50 to-gray-50",
+      borderColor: "border-slate-200",
+      accentColor: "text-slate-600",
+      thumbnail: "/thumbnails/resume_blueprint.png",
+      downloadUrl: "/resources/akash_resume.pdf"
+    },
+    {
+      id: 10,
+      title: "Executive Resume Blueprint - Isha",
+      description: "Analyze the layout and content strategy used in this executive-level resume. Perfect for understanding how to highlight leadership and strategic impact.",
+      category: "Career",
+      type: "Reference PDF",
+      icon: <FileText className="w-5 h-5" />,
+      duration: "Reference",
+      studyTime: "5-10 mins",
+      downloads: 980,
+      students: 2450,
+      rating: 4.9,
+      difficulty: "Intermediate",
+      lastUpdated: "2026-03-05",
+      featured: true,
+      tags: ["Resume", "Executive", "Strategy", "Impact"],
+      color: "from-slate-50 to-gray-50",
+      borderColor: "border-slate-200",
+      accentColor: "text-slate-600",
+      thumbnail: "/thumbnails/resume_blueprint.png",
+      downloadUrl: "/resources/isha_resume.pdf"
+    },
+    {
+      id: 11,
+      title: "Tech Role Job Description Analysis",
+      description: "A deep dive into common technical job descriptions. Learn to identify key requirements, hidden expectations, and how to tailor your profile accordingly.",
+      category: "Career",
+      type: "Case Study",
+      icon: <Users className="w-5 h-5" />,
+      duration: "Case Study",
+      studyTime: "15-20 mins",
+      downloads: 2100,
+      students: 5200,
+      rating: 4.7,
+      difficulty: "Intermediate",
+      lastUpdated: "2026-03-07",
+      featured: false,
+      tags: ["Job Description", "Analysis", "Recruitment", "Interviews"],
+      color: "from-emerald-50 to-teal-50",
+      borderColor: "border-emerald-200",
+      accentColor: "text-emerald-600",
+      thumbnail: "/thumbnails/jd_analysis.png",
+      downloadUrl: "/resources/dine3d_jd.pdf"
     }
   ];
 
-  const categories = ['All', 'Programming', 'Web Development', 'Mathematics', 'Data Science', 'Language', 'Finance', 'Design'];
+  const categories = ['All', 'Programming', 'Web Development', 'Mathematics', 'Data Science', 'Language', 'Finance', 'Design', 'Career'];
 
   const sortedAndFilteredResources = useMemo(() => {
     let filtered = resources.filter(resource => {

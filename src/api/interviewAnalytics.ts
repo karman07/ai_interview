@@ -32,6 +32,7 @@ export interface Analytics {
   overall: {
     totalInterviews: number;
     completedInterviews: number;
+    monthlyInterviews: number;
     overallAverageScore: number;
     bestOverallScore: number;
     currentStreak: number;
@@ -46,6 +47,11 @@ export interface Analytics {
     averageScore: number;
     timeSpent: number;
   }>;
+  plan?: {
+    name: string;
+    displayName: string;
+    features: any[];
+  };
 }
 
 export interface DashboardStats {
@@ -55,6 +61,13 @@ export interface DashboardStats {
     totalRevenueINR: number;
     totalInterviews: number;
     totalResumes: number;
+    monthlyInterviews?: number;
+    monthlyResumes?: number;
+    plan?: {
+      name: string;
+      displayName: string;
+      features: any[];
+    };
   };
   growth: {
     newSignupsLast7Days: number;

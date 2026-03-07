@@ -34,7 +34,7 @@ export const UsersApi = {
   /**
    * Sync Firebase verification results to the backend.
    */
-  updateVerificationStatus: async (field: 'email' | 'phone', status: boolean): Promise<User> => {
+  updateVerificationStatus: async (field: 'email', status: boolean): Promise<User> => {
     const { data } = await http.patch<User>('/users/me/verify-status', { field, status });
     return data;
   },

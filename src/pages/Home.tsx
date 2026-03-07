@@ -27,10 +27,10 @@ const HeroSection = ({ onStart, onResume }: { onStart: () => void, onResume: () 
         <span className="text-sm font-medium tracking-wide">AI-POWERED PREPARATION</span>
       </div>
 
-      <h1 className="text-5xl md:text-7xl font-bold text-slate-900 dark:text-slate-50 leading-tight tracking-tight mb-6">
-        Build Your Career with an <br />
+      <h1 className="text-5xl md:text-7xl font-bold text-slate-900 dark:text-slate-50 leading-tight tracking-tight mb-6 lowercase italic">
+        Build Your Career with <br />
         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
-          AI Career Operating System
+          ai for job
         </span>
       </h1>
 
@@ -114,7 +114,7 @@ const PillarsSection = ({ navigate }: { navigate: (path: string) => void }) => (
       <div className="grid md:grid-cols-2 gap-6">
         <PillarCard
           icon={Mic}
-          title="AI Interview Coach"
+          title="ai for job Coach"
           content="Practice Coding, Behavioral, HR, and System Design interviews. Receive structured feedback, communication scoring, confidence analysis, and improvement roadmaps."
           cta="Start Mock Interview"
           onClick={() => navigate('/interview/start/behavioral')} // Defaulting to one type or generic start
@@ -152,7 +152,7 @@ const WhySection = () => (
         <div>
           <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 mb-8 leading-tight">
             Why Top Candidates <br />
-            Choose <span className="text-indigo-600 dark:text-indigo-400">This Platform</span>
+            Choose <span className="text-indigo-600 dark:text-indigo-400 italic">ai for job</span>
           </h2>
 
           <div className="space-y-6">
@@ -231,7 +231,7 @@ const FinalCTA = ({ onStart, onResume }: { onStart: () => void, onResume: () => 
           onClick={onStart}
         >
           <Zap className="w-5 h-5 mr-3" />
-          Start AI Interview Practice
+          Start ai for job Practice
         </Button>
         <Button
           variant="success"
