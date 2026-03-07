@@ -93,6 +93,13 @@ export class AnalyticsController {
     return this.analyticsService.getAdminDashboardStats(userId);
   }
 
+  @Get('analytics')
+  @UseGuards(JwtAuthGuard)
+  async getUserAnalytics(@Req() req) {
+    const userId = req.user?.sub;
+    return this.analyticsService.getAnalytics(userId);
+  }
+
   @Post('heartbeat')
   async heartbeat(@Body() data: { sessionId: string; visitorId: string; path?: string }) {
     return this.analyticsService.heartbeat(data);

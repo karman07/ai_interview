@@ -28,9 +28,6 @@ export class UpdateProfileDto {
   @IsString()
   bio?: string;
 
-  @IsOptional()
-  @IsString()
-  phone?: string;
 
   @IsOptional()
   @IsString()

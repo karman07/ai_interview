@@ -58,22 +58,25 @@ export class SessionsController {
     const userId = req.user.sub;
     const user = await this.userModel.findById(userId).populate('subscriptionPlan').exec();
 
-    // Count completed interviews (results)
-    const interviewCount = await this.resultModel.countDocuments({ owner: new Types.ObjectId(userId) });
+    // Use monthly counter on user object
+    const currentUsage = user?.interviewCount || 0;
 
-    let limit = 5; // Default free limit
+    let limit = 3; // Default free limit as requested (was 5)
     if (user?.subscriptionPlan) {
       const plan = user.subscriptionPlan as any;
       const limitFeature = plan.features?.find(f => f.name === 'Interview Limit');
       if (limitFeature) {
-        limit = limitFeature.value ?? limitFeature.limit ?? 50;
+        limit = limitFeature.value ?? limitFeature.limit ?? 3;
       }
     }
 
-    if (interviewCount >= limit) {
-      this.logger.warn(`🚫 User ${userId} reached interview limit of ${limit} (current: ${interviewCount})`);
-      throw new BadRequestException(`You have reached your limit of ${limit} interviews. Please upgrade your plan to take more.`);
+    if (currentUsage >= limit) {
+      this.logger.warn(`🚫 User ${userId} reached monthly interview limit of ${limit} (current: ${currentUsage})`);
+      throw new BadRequestException(`You have reached your monthly limit of ${limit} interviews. Your limit will reset on the 1st of next month.`);
     }
+
+    // Increment monthly usage counter
+    await this.userModel.findByIdAndUpdate(userId, { $inc: { interviewCount: 1 } });
 
     return {
       id: 'session_' + Date.now(),

@@ -31,8 +31,6 @@ export class User {
   @Prop({ default: false })
   isEmailVerified: boolean;
 
-  @Prop({ default: false })
-  isPhoneVerified: boolean;
 
   @Prop()
   profileImageUrl?: string;
@@ -40,8 +38,6 @@ export class User {
   @Prop()
   bio?: string;
 
-  @Prop()
-  phone?: string;
 
   @Prop()
   location?: string;

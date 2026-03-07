@@ -271,6 +271,141 @@ export class AnalyticsService {
     };
   }
 
+  // Get user-specific analytics (for frontend dashboard)
+  async getAnalytics(userId: string) {
+    const [results, currentUser] = await Promise.all([
+      this.resultModel
+        .find({ owner: new Types.ObjectId(userId) })
+        .sort({ createdAt: 1 })
+        .exec(),
+      this.userModel.findById(userId).populate('subscriptionPlan').exec()
+    ]);
+
+    const plan = {
+      name: (currentUser?.subscriptionPlan as any)?.name || 'free_tier_in',
+      displayName: (currentUser?.subscriptionPlan as any)?.displayName || 'Free Tier',
+      features: (currentUser?.subscriptionPlan as any)?.features || []
+    };
+
+    if (!results || results.length === 0) {
+      return {
+        userId,
+        technical: { totalSessions: 0, completedSessions: 0, averageScore: 0, bestScore: 0, improvementTrend: 0 },
+        behavioral: { totalSessions: 0, completedSessions: 0, averageScore: 0, bestScore: 0, improvementTrend: 0 },
+        problemSolving: { totalSessions: 0, completedSessions: 0, averageScore: 0, bestScore: 0, improvementTrend: 0 },
+        hr: { totalSessions: 0, completedSessions: 0, averageScore: 0, bestScore: 0, improvementTrend: 0 },
+        overall: {
+          totalInterviews: 0,
+          completedInterviews: 0,
+          overallAverageScore: 0,
+          bestOverallScore: 0,
+          currentStreak: 0,
+          longestStreak: 0,
+          totalTimeSpent: 0,
+          strengths: [],
+          areasForImprovement: [],
+        },
+        monthlyProgress: [],
+      };
+    }
+
+    // Default everything to technical for now as Result schema doesn't have roundType yet
+    const technicalResults = results.filter(r => (r as any).roundType === 'technical' || !(r as any).roundType);
+    const behavioralResults = results.filter(r => (r as any).roundType === 'behavioral');
+    const problemSolvingResults = results.filter(r => (r as any).roundType === 'problem-solving');
+    const hrResults = results.filter(r => (r as any).roundType === 'hr');
+
+    const calculateStats = (res: any[]) => {
+      const total = res.length;
+      if (total === 0) return { totalSessions: 0, completedSessions: 0, averageScore: 0, bestScore: 0, improvementTrend: 0 };
+      const avg = res.reduce((sum, r) => sum + (r.summary?.overall_score || 0), 0) / total;
+      const best = Math.max(...res.map(r => r.summary?.overall_score || 0));
+      return {
+        totalSessions: total,
+        completedSessions: total,
+        averageScore: avg / 10, // Converting 0-100 to 0-10 if frontend expects 0-10 (Reviewing Radar usage)
+        bestScore: best / 10,
+        improvementTrend: 0,
+      };
+    };
+
+    // Calculate streaks
+    let currentStreak = 0;
+    let longestStreak = 0;
+    if (results.length > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let lastDate: Date | null = null;
+      let tempStreak = 0;
+
+      for (const res of results) {
+        const resDate = new Date(res.createdAt!);
+        resDate.setHours(0, 0, 0, 0);
+
+        if (!lastDate) {
+          tempStreak = 1;
+        } else {
+          const diffDays = (resDate.getTime() - lastDate.getTime()) / (1000 * 3600 * 24);
+          if (diffDays === 1) {
+            tempStreak++;
+          } else if (diffDays > 1) {
+            tempStreak = 1;
+          }
+        }
+        lastDate = resDate;
+        longestStreak = Math.max(longestStreak, tempStreak);
+      }
+
+      const diffFromToday = (today.getTime() - lastDate!.getTime()) / (1000 * 3600 * 24);
+      currentStreak = diffFromToday <= 1 ? tempStreak : 0;
+    }
+
+    const overallAverageScore = results.reduce((sum, r) => sum + (r.summary?.overall_score || 0), 0) / results.length;
+    const bestOverallScore = Math.max(...results.map(r => r.summary?.overall_score || 0));
+
+    // Monthly Progress
+    const monthlyGroups = results.reduce((acc, res) => {
+      const date = new Date(res.createdAt!);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!acc[key]) acc[key] = { sessionsCount: 0, totalScore: 0 };
+      acc[key].sessionsCount++;
+      acc[key].totalScore += (res.summary?.overall_score || 0);
+      return acc;
+    }, {} as Record<string, { sessionsCount: number; totalScore: number }>);
+
+    const monthlyProgress = Object.keys(monthlyGroups).sort().map(month => ({
+      month,
+      sessionsCount: monthlyGroups[month].sessionsCount,
+      averageScore: monthlyGroups[month].totalScore / monthlyGroups[month].sessionsCount / 10,
+      timeSpent: monthlyGroups[month].sessionsCount * 30,
+    }));
+
+    const lastResult = results[results.length - 1];
+
+    return {
+      userId,
+      technical: calculateStats(technicalResults),
+      behavioral: calculateStats(behavioralResults),
+      problemSolving: calculateStats(problemSolvingResults),
+      hr: calculateStats(hrResults),
+      overall: {
+        totalInterviews: results.length,
+        completedInterviews: results.length,
+        monthlyInterviews: currentUser?.interviewCount || 0,
+        overallAverageScore: overallAverageScore / 10,
+        bestOverallScore: bestOverallScore / 10,
+        currentStreak,
+        longestStreak,
+        totalTimeSpent: results.length * 30,
+        strengths: lastResult?.summary?.key_strengths || [],
+        areasForImprovement: lastResult?.summary?.key_areas_for_improvement || [],
+      },
+      monthlyProgress,
+      plan
+    };
+  }
+
   // Professional Admin Dashboard Stats
   async getAdminDashboardStats(userId?: string) {
     const now = new Date();
@@ -284,7 +419,8 @@ export class AnalyticsService {
       totalResumes,
       totalRevenueData,
       activeSessions,
-      newUsersLast7Days
+      newUsersLast7Days,
+      currentUser
     ] = await Promise.all([
       this.userModel.countDocuments(),
       this.resultModel.countDocuments(),
@@ -294,10 +430,36 @@ export class AnalyticsService {
         { $group: { _id: null, total: { $sum: '$amount' } } }
       ]),
       this.sessionModel.countDocuments({ isActive: true }),
-      this.userModel.countDocuments({ createdAt: { $gte: sevenDaysAgo } })
+      this.userModel.countDocuments({ createdAt: { $gte: sevenDaysAgo } }),
+      userId ? this.userModel.findById(userId).populate('subscriptionPlan').exec() : Promise.resolve(null)
     ]);
 
-    const totalRevenue = totalRevenueData[0]?.total ? totalRevenueData[0].total / 100 : 0; // Convert paisa to INR
+    const totalRevenue = totalRevenueData[0]?.total ? totalRevenueData[0].total / 100 : 0;
+
+    const overview: any = {
+      totalUsers,
+      totalInterviews,
+      totalResumes,
+      totalRevenue,
+      activeSessions,
+      growth: {
+        newUsersLast7Days,
+        conversionRate: totalUsers > 0 ? (totalRevenueData[0]?.total ? (totalRevenueData[0].total / 100) / totalUsers : 0).toFixed(2) : 0
+      }
+    };
+
+    if (currentUser) {
+      overview.monthlyInterviews = currentUser.interviewCount || 0;
+      overview.monthlyResumes = currentUser.resumeCount || 0;
+      overview.totalInterviews = await this.resultModel.countDocuments({ owner: new Types.ObjectId(userId) });
+      overview.totalResumes = await this.resumeModel.countDocuments({ user: userId });
+
+      overview.plan = {
+        name: (currentUser.subscriptionPlan as any)?.name || 'free_tier_in',
+        displayName: (currentUser.subscriptionPlan as any)?.displayName || 'Free Tier',
+        features: (currentUser.subscriptionPlan as any)?.features || []
+      };
+    }
 
     // 2. Recent Activity (Last 7 Days)
     const recentActivity = await this.sessionModel.aggregate([
@@ -318,7 +480,7 @@ export class AnalyticsService {
       { $group: { _id: '$role', count: { $sum: 1 } } }
     ]);
 
-    // 4. Popular Interview Topics (extracted from jobDescription in Result)
+    // 4. Popular Interview Topics
     const popularTopics = await this.resultModel.aggregate([
       { $group: { _id: '$jobDescription', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
@@ -352,17 +514,7 @@ export class AnalyticsService {
     }
 
     return {
-      overview: {
-        totalUsers,
-        totalInterviews,
-        totalResumes,
-        totalRevenue,
-        activeSessions,
-        growth: {
-          newUsersLast7Days,
-          conversionRate: totalUsers > 0 ? (totalRevenueData[0]?.total ? (totalRevenueData[0].total / 100) / totalUsers : 0).toFixed(2) : 0
-        }
-      },
+      overview,
       activityChart: recentActivity,
       userMetrics: {
         roles: userBreakdown.reduce((acc, curr) => ({ ...acc, [curr._id || 'unknown']: curr.count }), {}),

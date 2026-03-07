@@ -76,8 +76,8 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('me/verify-status')
-  async updateVerificationStatus(@CurrentUser() user: any, @Body() data: { field: 'email' | 'phone'; status: boolean }) {
-    const update = data.field === 'email' ? { isEmailVerified: data.status } : { isPhoneVerified: data.status };
+  async updateVerificationStatus(@CurrentUser() user: any, @Body() data: { field: 'email'; status: boolean }) {
+    const update = { isEmailVerified: data.status };
     const updated: UserDocument = await this.usersService.updateProfile(user.sub, update as any);
     const { passwordHash, refreshTokenHash, ...safe } = updated.toObject();
     return safe;

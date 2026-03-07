@@ -46,20 +46,23 @@ export class ResumeService {
 
     // ✅ ENFORCE LIMIT: Check user's subscription or free tier limit
     const user = await this.userModel.findById(userId).populate('subscriptionPlan').exec();
-    const resumeCount = await this.resumeModel.countDocuments({ user: userId });
+
+    // Use the monthly counter on the user object
+    const currentUsage = user?.resumeCount || 0;
 
     let limit = 5; // Default free limit
     if (user?.subscriptionPlan) {
       const plan = user.subscriptionPlan as any;
-      const limitFeature = plan.features?.find(f => f.name === 'Resume Upload Limit');
+      // Standardized name: 'Resume Limit'
+      const limitFeature = plan.features?.find(f => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit');
       if (limitFeature) {
-        limit = limitFeature.value ?? limitFeature.limit ?? 50;
+        limit = limitFeature.value ?? limitFeature.limit ?? 5;
       }
     }
 
-    if (resumeCount >= limit) {
-      this.logger.warn(`🚫 User ${userId} reached resume limit of ${limit} (current: ${resumeCount})`);
-      throw new BadRequestException(`You have reached your limit of ${limit} resumes. Please upgrade your plan to upload more.`);
+    if (currentUsage >= limit) {
+      this.logger.warn(`🚫 User ${userId} reached monthly resume limit of ${limit} (current: ${currentUsage})`);
+      throw new BadRequestException(`You have reached your monthly limit of ${limit} resumes. Your limit will reset on the 1st of next month.`);
     }
 
     this.logger.log(`📄 Processing file: ${file.originalname} at ${file.path}`);
@@ -179,6 +182,8 @@ export class ResumeService {
     this.logger.log('💾 About to save resume to database...');
     try {
       await resume.save();
+      // Increment monthly usage counter
+      await this.userModel.findByIdAndUpdate(userId, { $inc: { resumeCount: 1 } });
       this.logger.log('✅ Resume saved successfully to database');
     } catch (saveError) {
       this.logger.error('💥 Database save error:', saveError.message);

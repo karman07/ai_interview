@@ -5,6 +5,7 @@ import { UsersController } from './users.controller';
 import { User, UserSchema } from './schemas/user.schema';
 import { Subscription, SubscriptionSchema } from '../subscriptions/schemas/subscription.schema';
 import { FirebaseService } from 'src/common/firebase/firebase.service';
+import { UsageCronService } from './usage-cron.service';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { FirebaseService } from 'src/common/firebase/firebase.service';
     ])
   ],
   controllers: [UsersController],
-  providers: [UsersService, FirebaseService],
+  providers: [UsersService, FirebaseService, UsageCronService],
   exports: [UsersService],
 })
 export class UsersModule { }

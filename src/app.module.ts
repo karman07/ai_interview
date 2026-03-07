@@ -35,11 +35,15 @@ import { SessionsModule } from './sessions/sessions.module';
 import { AudioModule } from './audio/audio.module';
 import { EmailModule } from './email/email.module';
 import { JobsModule } from './jobs/jobs.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     // Global configuration
     ConfigModule.forRoot({ isGlobal: true }),
+
+    // Scheduling
+    ScheduleModule.forRoot(),
 
     // MongoDB connection with optimized settings
     MongooseModule.forRoot(process.env.MONGO_URI, {

@@ -3,24 +3,26 @@ require('dotenv').config();
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/ai-interview';
 
+const FeatureSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    description: { type: String, required: true },
+    type: { type: String, required: true, enum: ['boolean', 'numeric', 'text'] },
+    value: { type: mongoose.Schema.Types.Mixed },
+    enabled: { type: Boolean, default: true },
+    limit: { type: Number },
+    unit: { type: String }
+}, { _id: false });
+
 const SubscriptionSchema = new mongoose.Schema({
     name: { type: String, required: true, unique: true },
     displayName: { type: String, required: true },
     description: String,
     price: { type: Number, required: true },
     currency: { type: String, default: 'INR' },
-    type: { type: String, required: true },
+    type: { type: String, required: true, enum: ['monthly', 'yearly', 'lifetime', 'trial'] },
     duration: Number,
-    features: [{
-        name: String,
-        description: String,
-        type: String,
-        value: mongoose.Schema.Types.Mixed,
-        enabled: Boolean,
-        limit: Number,
-        unit: String
-    }],
-    status: { type: String, default: 'active' },
+    features: [FeatureSchema],
+    status: { type: String, default: 'active', enum: ['active', 'inactive', 'draft', 'deprecated'] },
     order: { type: Number, default: 0 },
     popularBadge: Boolean,
     country: { type: String, required: true },
