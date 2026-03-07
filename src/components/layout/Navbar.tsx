@@ -67,7 +67,7 @@ export default function Navbar() {
               <img
                 src="/logo.png"
                 alt="ai for job"
-                className="h-full w-auto object-contain"
+                className="h-full w-auto object-contain dark:invert"
               />
             </div>
             <div className="flex flex-col">

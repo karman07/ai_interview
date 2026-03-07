@@ -50,20 +50,20 @@ const JobsPublicPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 selection:bg-indigo-500/30 transition-colors duration-500">
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 selection:bg-blue-500/30 transition-colors duration-500">
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden bg-white dark:bg-slate-950">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-indigo-500/5 blur-[120px] rounded-full opacity-50 pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-blue-500/5 blur-[120px] rounded-full opacity-50 pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-          <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 mb-8 backdrop-blur-sm">
-            <Sparkles className="w-4 h-4 mr-2 text-indigo-500" />
+          <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 mb-8 backdrop-blur-sm">
+            <Sparkles className="w-4 h-4 mr-2 text-blue-500" />
             <span className="text-sm font-medium tracking-wide">CAREER OPPORTUNITIES</span>
           </div>
 
           <h1 className="text-4xl md:text-6xl font-bold text-slate-900 dark:text-white leading-tight tracking-tight mb-6">
-            Find Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">Dream Job</span>
+            Find Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-600 dark:from-blue-400 dark:to-blue-400">Dream Job</span>
           </h1>
           <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
             Discover opportunities from top companies. Filter by your engineering discipline and apply directly.
@@ -77,7 +77,7 @@ const JobsPublicPage = () => {
       <section className="py-12 px-6 max-w-5xl mx-auto">
         {loading ? (
           <div className="text-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto"></div>
             <p className="mt-4 text-slate-500 dark:text-slate-400 text-sm font-medium">Loading opportunities...</p>
           </div>
         ) : (
@@ -86,16 +86,16 @@ const JobsPublicPage = () => {
               jobs.map((job) => (
                 <div
                   key={job.job_id}
-                  className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 hover:border-indigo-500/50 transition-all duration-300 group shadow-sm hover:shadow-md"
+                  className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 hover:border-blue-500/50 transition-all duration-300 group shadow-sm hover:shadow-md"
                 >
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
                     <div className="flex-1">
                       <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0 border border-indigo-100 dark:border-indigo-800">
-                          <Building2 className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                        <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0 border border-blue-100 dark:border-blue-800">
+                          <Building2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                             {job.title}
                           </h3>
                           <p className="text-base font-medium text-slate-700 dark:text-slate-300 mb-3">{job.company}</p>
@@ -169,7 +169,7 @@ const JobsPublicPage = () => {
         {/* Login CTA */}
         {!isAuthenticated && !loading && jobs.length > 0 && (
           <div className="mt-16 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 md:p-12 text-center">
-            <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-600 dark:text-indigo-400 shadow-sm">
+            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-600 dark:text-blue-400 shadow-sm">
               <Lock className="w-8 h-8" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">

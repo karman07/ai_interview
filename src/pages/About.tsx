@@ -17,20 +17,20 @@ const AboutUs = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 selection:bg-indigo-500/30 transition-colors duration-500">
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 selection:bg-blue-500/30 transition-colors duration-500">
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden bg-white dark:bg-slate-950">
 
         <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-          <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 mb-8 backdrop-blur-sm">
-            <Sparkles className="w-4 h-4 mr-2 text-indigo-500" />
+          <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 mb-8 backdrop-blur-sm">
+            <Sparkles className="w-4 h-4 mr-2 text-blue-500" />
             <span className="text-sm font-medium tracking-wide">OUR MISSION</span>
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold text-slate-900 dark:text-white leading-tight tracking-tight mb-6">
             Democratizing <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-600 dark:from-blue-400 dark:to-blue-400">
               Career Success
             </span>
           </h1>
@@ -51,9 +51,9 @@ const AboutUs = () => {
               { label: "Success Rate", value: "94%", icon: TrendingUp },
               { label: "Countries Reached", value: "150+", icon: Globe },
             ].map((stat, idx) => (
-              <div key={idx} className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 text-center hover:border-indigo-500/50 transition-colors">
-                <div className="w-12 h-12 mx-auto bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center mb-4">
-                  <stat.icon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+              <div key={idx} className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 text-center hover:border-blue-500/50 transition-colors">
+                <div className="w-12 h-12 mx-auto bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center mb-4">
+                  <stat.icon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="text-4xl font-bold text-slate-900 dark:text-white mb-2">{stat.value}</div>
                 <div className="text-slate-600 dark:text-slate-400 font-medium">{stat.label}</div>
@@ -83,8 +83,8 @@ const AboutUs = () => {
             <div className="relative">
               <div className="relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-8 shadow-xl">
                 <div className="flex items-start gap-4 mb-6">
-                  <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0">
-                    <Target className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
+                    <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">The Goal</h3>
@@ -92,8 +92,8 @@ const AboutUs = () => {
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center flex-shrink-0">
-                    <Heart className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
+                    <Heart className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">The Heart</h3>
@@ -122,7 +122,7 @@ const AboutUs = () => {
               { title: "Excellence", desc: "Delivering the highest quality feedback.", icon: Award },
             ].map((item, idx) => (
               <div key={idx} className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 hover:shadow-lg transition-shadow">
-                <item.icon className="w-8 h-8 text-indigo-600 dark:text-indigo-400 mb-4" />
+                <item.icon className="w-8 h-8 text-blue-600 dark:text-blue-400 mb-4" />
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{item.title}</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">{item.desc}</p>
               </div>
@@ -136,7 +136,7 @@ const AboutUs = () => {
         <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
           <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-8">
             Join the Revolution in <br />
-            <span className="text-indigo-600 dark:text-indigo-400">Career Preparation</span>
+            <span className="text-blue-600 dark:text-blue-400">Career Preparation</span>
           </h2>
           <Button
             variant="primary"

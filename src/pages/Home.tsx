@@ -22,14 +22,14 @@ const HeroSection = ({ onStart, onResume }: { onStart: () => void, onResume: () 
   <section className="relative pt-32 pb-24 overflow-hidden bg-white dark:bg-slate-950">
 
     <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-      <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 mb-8 backdrop-blur-sm">
-        <Sparkles className="w-4 h-4 mr-2 text-indigo-400" />
+      <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 mb-8 backdrop-blur-sm">
+        <Sparkles className="w-4 h-4 mr-2 text-blue-400" />
         <span className="text-sm font-medium tracking-wide">AI-POWERED PREPARATION</span>
       </div>
 
       <h1 className="text-5xl md:text-7xl font-bold text-slate-900 dark:text-slate-50 leading-tight tracking-tight mb-6 lowercase italic">
         Build Your Career with <br />
-        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
+        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-600 dark:from-blue-400 dark:to-blue-400">
           ai for job
         </span>
       </h1>
@@ -75,13 +75,13 @@ const PillarCard = ({
   onClick: () => void
 }) => (
   <div
-    className="group relative bg-white dark:bg-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-700 hover:border-indigo-500/50 rounded-2xl p-8 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 flex flex-col items-start backdrop-blur-md"
+    className="group relative bg-white dark:bg-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-700 hover:border-blue-500/50 rounded-2xl p-8 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 flex flex-col items-start backdrop-blur-md"
   >
     <div className="w-14 h-14 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-      <Icon className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
+      <Icon className="w-7 h-7 text-blue-600 dark:text-blue-400" />
     </div>
 
-    <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
+    <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-300 transition-colors">
       {title}
     </h3>
 
@@ -91,7 +91,7 @@ const PillarCard = ({
 
     <button
       onClick={onClick}
-      className="flex items-center text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors uppercase tracking-wider"
+      className="flex items-center text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors uppercase tracking-wider"
     >
       {cta}
       <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -152,7 +152,7 @@ const WhySection = () => (
         <div>
           <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 mb-8 leading-tight">
             Why Top Candidates <br />
-            Choose <span className="text-indigo-600 dark:text-indigo-400 italic">ai for job</span>
+            Choose <span className="text-blue-600 dark:text-blue-400 italic">ai for job</span>
           </h2>
 
           <div className="space-y-6">
@@ -187,7 +187,7 @@ const WhySection = () => (
               </div>
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-4">
                 <span className="text-slate-600 dark:text-slate-400">Response Quality</span>
-                <span className="text-purple-500 dark:text-purple-400 font-bold">Top 5%</span>
+                <span className="text-blue-500 dark:text-blue-400 font-bold">Top 5%</span>
               </div>
               <div className="pt-2">
                 <div className="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -205,7 +205,7 @@ const WhySection = () => (
 const TransformationSection = () => (
   <section className="py-24 bg-slate-50 dark:bg-slate-900 border-y border-slate-200 dark:border-slate-800">
     <div className="max-w-4xl mx-auto px-6 text-center">
-      <Cpu className="w-16 h-16 text-indigo-600 dark:text-indigo-500 mx-auto mb-8 opacity-80" />
+      <Cpu className="w-16 h-16 text-blue-600 dark:text-blue-500 mx-auto mb-8 opacity-80" />
       <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 mb-8 leading-tight">
         "Your Career Is a System. <br />
         We Built the Infrastructure."
@@ -227,7 +227,7 @@ const FinalCTA = ({ onStart, onResume }: { onStart: () => void, onResume: () => 
       <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
         <Button
           variant="primary"
-          className="px-10 py-5 text-xl w-full sm:w-auto shadow-2xl shadow-indigo-500/20"
+          className="px-10 py-5 text-xl w-full sm:w-auto shadow-2xl shadow-blue-500/20"
           onClick={onStart}
         >
           <Zap className="w-5 h-5 mr-3" />
@@ -255,7 +255,7 @@ const Home = () => {
   const handleAnalyzeResume = () => navigate("/dashboard");
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 selection:bg-indigo-500/30 transition-colors duration-500">
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 selection:bg-blue-500/30 transition-colors duration-500">
       <main>
         <HeroSection onStart={handleStartPractice} onResume={handleAnalyzeResume} />
         <PillarsSection navigate={navigate} />

@@ -24,20 +24,20 @@ const ContactPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 selection:bg-indigo-500/30 transition-colors duration-500">
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 selection:bg-blue-500/30 transition-colors duration-500">
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden bg-white dark:bg-slate-950">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-indigo-500/5 blur-[120px] rounded-full opacity-50 pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-blue-500/5 blur-[120px] rounded-full opacity-50 pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-          <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 mb-8 backdrop-blur-sm">
-            <MessageCircle className="w-4 h-4 mr-2 text-indigo-500" />
+          <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 mb-8 backdrop-blur-sm">
+            <MessageCircle className="w-4 h-4 mr-2 text-blue-500" />
             <span className="text-sm font-medium tracking-wide">GET IN TOUCH</span>
           </div>
 
           <h1 className="text-4xl md:text-6xl font-bold text-slate-900 dark:text-white leading-tight tracking-tight mb-6">
-            We'd Love to <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">Hear From You</span>
+            We'd Love to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-600 dark:from-blue-400 dark:to-blue-400">Hear From You</span>
           </h1>
           <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
             Whether you have a question about features, pricing, or just want to say hello, our team is ready to answer all your questions.
@@ -48,10 +48,10 @@ const ContactPage = () => {
       {/* Contact Form + Info */}
       <section className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 px-6 pb-24">
         {/* Left: Contact Form */}
-        <div ref={formRef} className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-8 md:p-12 hover:border-indigo-500/30 transition-all duration-300">
+        <div ref={formRef} className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-8 md:p-12 hover:border-blue-500/30 transition-all duration-300">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center border border-indigo-100 dark:border-indigo-800">
-              <Send className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+            <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center border border-blue-100 dark:border-blue-800">
+              <Send className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Send us a Message</h2>
           </div>
@@ -70,7 +70,7 @@ const ContactPage = () => {
                     required
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white px-4 py-3 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all duration-300 placeholder:text-slate-400"
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white px-4 py-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 placeholder:text-slate-400"
                     placeholder="John Doe"
                   />
                   {isTyping.name && (
@@ -93,7 +93,7 @@ const ContactPage = () => {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white px-4 py-3 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all duration-300 placeholder:text-slate-400"
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white px-4 py-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 placeholder:text-slate-400"
                     placeholder="john@example.com"
                   />
                   {isTyping.email && (
@@ -115,7 +115,7 @@ const ContactPage = () => {
                   required
                   value={formData.message}
                   onChange={handleChange}
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white px-4 py-3 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all duration-300 resize-none placeholder:text-slate-400"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white px-4 py-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 resize-none placeholder:text-slate-400"
                   placeholder="Tell us what's on your mind..."
                 ></textarea>
                 {isTyping.message && (
@@ -158,8 +158,8 @@ const ContactPage = () => {
         <div className="flex flex-col justify-between space-y-8">
           <div className="bg-slate-900 dark:bg-slate-800 text-white rounded-2xl p-8 md:p-12 space-y-8 relative overflow-hidden shadow-xl">
             {/* Background glow for card */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl" />
 
             <div className="relative z-10">
               <h2 className="text-3xl font-bold mb-4">Contact Information</h2>
@@ -172,7 +172,7 @@ const ContactPage = () => {
                   href="mailto:karmansingharora01@gmail.com"
                   className="flex items-start gap-4 p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-white/10 transition-all duration-300 group cursor-pointer"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center group-hover:scale-105 transition-transform text-indigo-400">
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform text-blue-400">
                     <Mail className="w-6 h-6" />
                   </div>
                   <div>
@@ -185,7 +185,7 @@ const ContactPage = () => {
                   href="tel:+918813947793"
                   className="flex items-start gap-4 p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-white/10 transition-all duration-300 group cursor-pointer"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center group-hover:scale-105 transition-transform text-purple-400">
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform text-blue-400">
                     <Phone className="w-6 h-6" />
                   </div>
                   <div>
@@ -214,13 +214,13 @@ const ContactPage = () => {
 
           {/* Additional Info Cards */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 hover:border-indigo-500/30 transition-all duration-300 group">
-              <Clock className="w-8 h-8 text-indigo-600 dark:text-indigo-400 mb-4 group-hover:scale-110 transition-transform" />
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 hover:border-blue-500/30 transition-all duration-300 group">
+              <Clock className="w-8 h-8 text-blue-600 dark:text-blue-400 mb-4 group-hover:scale-110 transition-transform" />
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Response Time</h3>
               <p className="text-sm text-slate-600 dark:text-slate-400">Within 24 hours</p>
             </div>
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 hover:border-purple-500/30 transition-all duration-300 group">
-              <Globe className="w-8 h-8 text-purple-600 dark:text-purple-400 mb-4 group-hover:scale-110 transition-transform" />
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 hover:border-blue-500/30 transition-all duration-300 group">
+              <Globe className="w-8 h-8 text-blue-600 dark:text-blue-400 mb-4 group-hover:scale-110 transition-transform" />
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Available</h3>
               <p className="text-sm text-slate-600 dark:text-slate-400">global 24/7 Support</p>
             </div>

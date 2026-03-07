@@ -85,7 +85,7 @@ export default function Sidebar() {
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 h-16 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <div className="h-8">
-            <img src="/logo.png" alt="ai for job" className="h-full w-auto object-contain" />
+            <img src="/logo.png" alt="ai for job" className="h-full w-auto object-contain dark:invert" />
           </div>
           <h2 className="text-lg font-black text-gray-900 dark:text-white uppercase italic tracking-tighter">
             ai for job
@@ -161,7 +161,7 @@ export default function Sidebar() {
           <div className="p-6">
             <div className="flex items-center gap-3 mb-10 px-2 group cursor-pointer" onClick={() => navigate('/dashboard')}>
               <div className="h-10 transition-transform duration-300 group-hover:scale-110">
-                <img src="/logo.png" alt="ai for job" className="h-full w-auto object-contain" />
+                <img src="/logo.png" alt="ai for job" className="h-full w-auto object-contain dark:invert" />
               </div>
               <div className="flex flex-col">
                 <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tighter leading-none uppercase italic">
