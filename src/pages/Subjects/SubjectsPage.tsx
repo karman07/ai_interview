@@ -3,23 +3,27 @@ import { SubjectsList } from "@/components/Subjects/SubjectsList";
 const SubjectsPage: React.FC = () => {
   return (
 
-    <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* Header Section */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">
-              Explore Our Subjects
+    <div className="min-h-screen bg-white dark:bg-[#0B0F19]">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full" />
+      </div>
+
+      {/* Immersive Header */}
+      <div className="relative pt-20 pb-12 border-b border-slate-100 dark:border-slate-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="max-w-3xl">
+            <h1 className="text-5xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white mb-6 leading-tight">
+              Curriculum <span className="text-blue-600">Hub</span>
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Discover comprehensive learning materials across various disciplines
+            <p className="text-xl text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+              Accelerate your professional growth with specialized curricula curated for high-impact AI careers.
             </p>
           </div>
         </div>
       </div>
 
       {/* Content Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-white dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         <SubjectsList />
       </div>
     </div>

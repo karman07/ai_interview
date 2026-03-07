@@ -22,55 +22,43 @@ export default function SidebarItem({
   return (
     <div
       className={cn(
-        "group relative rounded-lg px-3 py-3 cursor-pointer transition-all duration-200",
-        "border border-transparent",
+        "group relative rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-300",
         active
-          ? "border-gray-300 dark:border-gray-600 shadow-sm bg-primary/10 dark:bg-primary/20"
-          : "hover:bg-white dark:hover:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-600"
+          ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+          : "hover:bg-slate-100 dark:hover:bg-slate-800/50"
       )}
       onClick={onClick}
     >
-      {/* Active indicator */}
-      {active && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r bg-primary" />
-      )}
-
       <div className="relative flex items-center justify-between">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          {/* Icon container */}
+        <div className="flex items-center gap-3.5 flex-1 min-w-0">
           <div
-            className={`flex-shrink-0 p-1.5 rounded-md ${active ? 'text-primary dark:text-primary' : 'text-gray-600 dark:text-gray-400'
-              }`}
+            className={cn(
+              "flex-shrink-0 p-1 rounded-lg transition-transform duration-300 group-hover:scale-110",
+              active ? "text-white" : "text-slate-500 dark:text-slate-400"
+            )}
           >
             {icon}
           </div>
 
-          {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2">
               <span
-                className={`text-sm font-medium truncate ${active ? 'text-primary dark:text-primary' : 'text-gray-900 dark:text-white'
-                  }`}
+                className={cn(
+                  "text-[13px] font-bold tracking-tight transition-colors duration-300",
+                  active ? "text-white" : "text-slate-700 dark:text-slate-200"
+                )}
               >
                 {label}
               </span>
 
-              {/* Badge */}
               {badge && (
-                <span
-                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-white bg-secondary"
-                >
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-black bg-rose-500 text-white uppercase tracking-tighter">
                   {badge}
                 </span>
               )}
             </div>
-
-            {/* Description */}
-            {description && (
-              <p
-                className={`text-xs leading-relaxed ${active ? 'text-primary dark:text-primary' : 'text-gray-600 dark:text-gray-400'
-                  }`}
-              >
+            {description && !active && (
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate font-medium mt-0.5 group-hover:text-slate-500 transition-colors">
                 {description}
               </p>
             )}

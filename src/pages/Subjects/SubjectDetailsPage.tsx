@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE_URL, baseURL } from "@/api/http";
 import { useLessons } from "@/contexts/LessonsContext";
-import { ArrowLeft, BookOpen, Clock, User, Tag, TrendingUp, Play, CheckCircle, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Clock, User, Tag, TrendingUp, Play, CheckCircle, ChevronDown, ChevronUp, CheckCircle2, Target } from "lucide-react";
 import { useProgress } from "@/contexts/ProgressContext";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "@/api/http";
+import { cn } from "@/utils/cn";
 
 interface Subject {
   _id: string;
@@ -19,6 +21,17 @@ interface Subject {
   updatedAt: string;
 }
 
+const renderFormattedText = (text?: string) => {
+  if (!text) return null;
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="text-slate-900 dark:text-white font-black">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+};
+
 interface LessonCardProps {
   lesson: any;
   index: number;
@@ -30,62 +43,84 @@ const LessonCard: React.FC<LessonCardProps> = ({ lesson, index }) => {
   const lessonProgress = getProgressForLesson(lesson._id);
   const isCompleted = lessonProgress?.status === 'completed';
 
-  const maxLength = 150;
-  const shouldShowReadMore = lesson.description && lesson.description.length > maxLength;
-
   return (
-    <div className="group p-5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200 cursor-pointer hover:shadow-md">
-      <div className="flex items-start gap-4">
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm">
-          {index + 1}
-        </div>
-        <div className="flex-grow">
-          <div className="flex items-center gap-2 mb-1.5">
-            <h3 className="font-bold text-gray-900 dark:text-white text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
-              {lesson.title}
-            </h3>
-            {isCompleted && (
-              <CheckCircle2 className="h-4 w-4 text-green-500 fill-green-500/10" />
-            )}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: index * 0.05 }}
+      onClick={() => setIsExpanded(!isExpanded)}
+      className="group bg-white dark:bg-slate-900 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 rounded-[2rem] border border-slate-100 dark:border-slate-800/50 p-6 transition-all duration-500 cursor-pointer relative overflow-hidden flex flex-col gap-6 active:scale-[0.98]"
+    >
+      {/* Background Decor */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-blue-500/10 transition-colors" />
+
+      {/* Header Info */}
+      <div className="flex items-start justify-between gap-4 relative z-10">
+        <div className="flex gap-4 items-start">
+          <div className={cn(
+            "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border transition-all duration-500",
+            isCompleted
+              ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+              : "bg-blue-500/5 border-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:border-blue-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-blue-600/20"
+          )}>
+            {isCompleted ? <CheckCircle2 className="w-5 h-5" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-            {isExpanded || !shouldShowReadMore
-              ? lesson.description
-              : `${lesson.description.substring(0, maxLength)}...`}
-          </p>
-          {shouldShowReadMore && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsExpanded(!isExpanded);
-              }}
-              className="mt-2 flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-medium transition-colors"
-            >
-              {isExpanded ? (
-                <>
-                  Show less <ChevronUp className="h-3 w-3" />
-                </>
-              ) : (
-                <>
-                  Read more <ChevronDown className="h-3 w-3" />
-                </>
-              )}
-            </button>
-          )}
-        </div>
-        <div className="flex-shrink-0">
-          {isCompleted ? (
-            <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
+
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">Part {index + 1}</span>
+              {isCompleted && <span className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] px-2 py-0.5 bg-emerald-500/10 rounded-full">Completed</span>}
             </div>
-          ) : (
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              <Play className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            </div>
-          )}
+            <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight group-hover:text-blue-600 transition-colors">
+              {renderFormattedText(lesson.title)}
+            </h3>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Description Content */}
+      <div className="relative z-10">
+        <div className={cn(
+          "text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium transition-all duration-500",
+          !isExpanded && "line-clamp-3"
+        )}>
+          {renderFormattedText(lesson.description)}
+        </div>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsExpanded(!isExpanded);
+          }}
+          className="mt-4 flex items-center gap-2 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] hover:opacity-80 transition-opacity"
+        >
+          {isExpanded ? (
+            <>Hide Overview <ChevronUp className="h-3 w-3" /></>
+          ) : (
+            <>Read Overview <ChevronDown className="h-3 w-3" /></>
+          )}
+        </button>
+      </div>
+
+      {/* Footer Stats */}
+      <div className="pt-6 border-t border-slate-50 dark:border-slate-800/50 flex items-center justify-between relative z-10">
+        <div className="flex gap-4">
+          <div className="flex items-center gap-1.5 text-slate-400">
+            <Clock className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-black uppercase tracking-widest">35 Min</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-slate-400">
+            <BookOpen className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Interactive Video</span>
+          </div>
+        </div>
+
+        <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+          <Play className="w-3 h-3 fill-current ml-0.5" />
+        </div>
+      </div>
+    </motion.div>
   );
 };
 
@@ -113,6 +148,12 @@ const SubjectDetailsPage: React.FC = () => {
       fetchLessons(id);
     }
   }, [id, fetchLessons]);
+
+  const getImageUrl = (url: string) => {
+    if (!url) return "";
+    if (url.startsWith('http')) return url;
+    return `${baseURL}${url}`;
+  };
 
   if (loading) {
     return (
@@ -147,158 +188,157 @@ const SubjectDetailsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="group flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors text-sm"
-        >
-          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform duration-200" />
-          Back to subjects
-        </button>
+    <div className="min-h-screen bg-white dark:bg-[#0B0F19]">
+      {/* Background Gradient */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/5 blur-[120px] rounded-full" />
+      </div>
 
-        {/* Subject Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-          {subject.thumbnailUrl && (
-            <div className="relative h-64 overflow-hidden">
-              <img
-                src={`${baseURL}${subject.thumbnailUrl}`}
-                alt={subject.title}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-8">
-                <h1 className="text-3xl font-bold text-white drop-shadow-md">{subject.title}</h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 relative z-10">
+        <div className="flex flex-col gap-16">
+
+          {/* Top Section: Header & Image */}
+          <div className="flex flex-col lg:flex-row gap-12 items-start">
+            <div className="flex-1 space-y-10">
+              {/* Breadcrumb & Navigation */}
+              <button
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-2 group text-slate-400 hover:text-blue-600 font-bold transition-all text-[11px] uppercase tracking-widest"
+              >
+                <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                Preparation Center
+              </button>
+
+              {/* Immersive Course Header */}
+              <div className="space-y-8">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-4"
+                >
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">
+                    Advanced Curriculum
+                  </div>
+                  <h1 className="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.05]">
+                    {subject.title}
+                  </h1>
+                </motion.div>
+
+                {/* Action Stats Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-1.5 bg-slate-50 dark:bg-slate-900/40 rounded-3xl border border-slate-100 dark:border-slate-800/50 max-w-2xl">
+                  {[
+                    { icon: Tag, label: "Category", val: subject.category || "General", color: "blue" },
+                    { icon: Clock, label: "Commitment", val: subject.estimatedTime || "Self-paced", color: "emerald" },
+                    { icon: User, label: "Curated By", val: subject.author || "Nexus AI", color: "blue" }
+                  ].map((stat, i) => (
+                    <div key={i} className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800/50 flex flex-col gap-3">
+                      <div className={`w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600`}>
+                        <stat.icon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{stat.val}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Start CTA */}
+                <div className="pt-2">
+                  <button
+                    onClick={() => lessons.length > 0 && navigate(`/lessons/${subject._id}`)}
+                    disabled={lessons.length === 0}
+                    className="px-10 py-5 rounded-[2rem] bg-blue-600 text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-500/40 hover:bg-blue-700 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+                  >
+                    <Play className="h-5 w-5 fill-current" />
+                    {lessons.length > 0 ? "Begin Learning Path" : "Syncing Curriculum..."}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Hero Thumbnail */}
+            <div className="lg:w-[450px] shrink-0">
+              <div className="rounded-[3rem] overflow-hidden aspect-[4/3] relative group shadow-2xl border-4 border-white dark:border-slate-800">
+                <img
+                  src={getImageUrl(subject.thumbnailUrl)}
+                  alt={subject.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-40" />
+              </div>
+            </div>
+          </div>
+
+          {/* Curriculum Breakdown */}
+          {Array.isArray((subject as any).content) && (
+            <div className="space-y-8">
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Curriculum Breakdown</h2>
+              </div>
+              <div className="grid md:grid-cols-2 gap-6">
+                {(subject as any).content.map((block: { heading: string; points: string[] }, i: number) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    className="bg-slate-50 dark:bg-slate-900/40 rounded-3xl p-8 border border-slate-100 dark:border-slate-800/50 relative group overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 p-4 opacity-[0.05] group-hover:opacity-[0.1] transition-opacity">
+                      <span className="text-8xl font-black text-slate-900 dark:text-white">0{i + 1}</span>
+                    </div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 pr-10">
+                      {block.heading.replace(/\*+/g, '').trim()}
+                    </h3>
+                    <div className="grid gap-3">
+                      {block.points.map((pt, j) => (
+                        <div key={j} className="flex gap-3 text-slate-600 dark:text-slate-400 items-start">
+                          <CheckCircle className="h-5 w-5 text-blue-500 shrink-0" />
+                          <span className="text-sm font-medium pr-2">{pt}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             </div>
           )}
 
-          <div className="p-8 space-y-6">
-            {!subject.thumbnailUrl && (
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {subject.title}
-              </h1>
-            )}
-
-            <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
-              {subject.description}
-            </p>
-
-            {/* Enhanced Meta Info */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-gray-100 dark:border-gray-700">
-              {subject.category && (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800">
-                  <div className="text-blue-600 dark:text-blue-400">
-                    <Tag className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Category</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{subject.category}</p>
-                  </div>
-                </div>
-              )}
-
-              {subject.level && (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800">
-                  <div className="text-amber-600 dark:text-amber-400">
-                    <TrendingUp className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Level</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{subject.level}</p>
-                  </div>
-                </div>
-              )}
-
-              {subject.estimatedTime && (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800">
-                  <div className="text-emerald-600 dark:text-emerald-400">
-                    <Clock className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Duration</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{subject.estimatedTime}</p>
-                  </div>
-                </div>
-              )}
-
-              {subject.author && (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-purple-50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-800">
-                  <div className="text-purple-600 dark:text-purple-400">
-                    <User className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Author</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{subject.author}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Start Button */}
-            <div className="pt-4">
-              <button
-                onClick={() => {
-                  if (lessons.length > 0) {
-                    navigate(`/lessons/${subject._id}`);
-                  }
-                }}
-                disabled={lessons.length === 0}
-                className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-              >
-                <Play className="h-5 w-5" />
-                <span>
-                  {lessons.length > 0 ? "Start Your Learning Journey" : "Loading Lessons..."}
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Content Sections */}
-        {Array.isArray((subject as any).content) && (
+          {/* Detailed Description */}
           <div className="space-y-6">
-            {(subject as any).content.map((block: { heading: string; points: string[] }, i: number) => (
-              <div
-                key={i}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
-              >
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
-                  {block.heading.replace(/\*+/g, '').trim()}
-                </h2>
-                <ul className="space-y-2">
-                  {block.points.map((pt, j) => (
-                    <li key={j} className="flex items-start gap-3 text-gray-600 dark:text-gray-300 leading-relaxed text-base">
-                      <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                      <span>{pt}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-6 bg-slate-300 dark:bg-slate-700 rounded-full" />
+              <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">About this Course</h2>
+            </div>
+            <div className="text-lg text-slate-500 dark:text-slate-400 leading-relaxed max-w-4xl font-medium whitespace-pre-wrap">
+              {renderFormattedText(subject.description || "Master the core concepts of this subject with our expert-designed curriculum pathway.")}
+            </div>
           </div>
-        )}
 
-        {/* Lessons Section */}
-        {lessons.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <BookOpen className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Course Lessons</h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-semibold border border-gray-200 dark:border-gray-700">
-                {lessons.length}
+          {/* Structured Lessons List: Now Full Width at the Bottom */}
+          <div className="space-y-8 pt-6">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-500/5 rounded-xl border border-blue-500/10">
+                  <BookOpen className="h-5 w-5 text-blue-600" />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Structured Content</h3>
+              </div>
+              <span className="px-4 py-1.5 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-black uppercase tracking-widest">
+                {lessons.length} Learning Modules
               </span>
             </div>
 
-            <div className="grid gap-3">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {lessons.map((lesson, index) => (
                 <LessonCard key={lesson._id} lesson={lesson} index={index} />
               ))}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Input from "@/components/common/Input";
@@ -7,10 +7,11 @@ import Button from "@/components/ui/button";
 import {
   Briefcase, Building2, FileText, Layers, Loader2, ArrowRight,
   Users, Code, Lightbulb, MessageCircle,
-  Award, BarChart3, Eye, Upload, X, CheckCircle, Clock
+  Award, BarChart3, Eye, Upload, X, CheckCircle, Clock, TrendingUp
 } from "lucide-react";
 import { InterviewAnalyticsApi, type Analytics, type RoundStats } from "@/api/interviewAnalytics";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePricing } from "@/contexts/PricingContext";
 
 interface InterviewDetails {
   role: string;
@@ -26,6 +27,7 @@ export default function InterviewStart() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { setShowPricing } = usePricing();
 
   const preFilledData = location.state as {
     role?: string;
@@ -60,10 +62,26 @@ export default function InterviewStart() {
   const roundData = analytics && type ? analytics[roundMap[type] as keyof Analytics] : null;
   const stats = (roundData && typeof roundData === 'object' && 'averageScore' in roundData) ? roundData as RoundStats : null;
 
+  const interviewLimit = useMemo(() => {
+    const planName = (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object')
+      ? (user.subscriptionPlan as any).name
+      : user?.subscriptionPlan;
+
+    if (user?.subscriptionStatus === 'active' || (planName && planName !== 'free_tier_in')) {
+      if (planName?.toString().includes('pro_tier_200')) return 20;
+      if (planName?.toString().includes('pro_tier_100')) return 10;
+      if (planName?.toString().includes('enterprise')) return 1000;
+    }
+
+    return 3; // Default free tier
+  }, [user]);
+
+  const totalInterviewsTaken = analytics?.overall?.totalInterviews || 0;
+  const isAtLimit = totalInterviewsTaken >= interviewLimit;
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'resume' | 'jd') => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file type
       const allowedExtensions = ['.pdf', '.docx', '.txt'];
       const fileName = file.name.toLowerCase();
       const isValidType = allowedExtensions.some(ext => fileName.endsWith(ext));
@@ -93,20 +111,31 @@ export default function InterviewStart() {
     }
   };
 
+  const readFileAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsText(file);
+    });
+  };
+
   const handleStart = async () => {
-    // Validation
+    if (isAtLimit) {
+      setShowPricing(true);
+      return;
+    }
+
     if (!details.role || !details.company) {
       setError("Please fill in role and company");
       return;
     }
 
-    // Either resume file/text is required
     if (!details.resumeFile && !details.resumeText) {
       setError("Please provide your resume (upload file or enter text)");
       return;
     }
 
-    // Either JD file/text is required
     if (!details.jdFile && !details.jobDescription) {
       setError("Please provide job description (upload file or enter text)");
       return;
@@ -121,7 +150,6 @@ export default function InterviewStart() {
     setError("");
 
     try {
-      // Extract text from files if needed
       let resumeText = details.resumeText;
       let jdText = details.jobDescription;
 
@@ -132,7 +160,6 @@ export default function InterviewStart() {
         jdText = await readFileAsText(details.jdFile);
       }
 
-      // Save raw setup data for the Python WebSocket backend
       const setupData = {
         resumeText,
         jdText,
@@ -144,26 +171,12 @@ export default function InterviewStart() {
       };
 
       localStorage.setItem('ws_interview_setup', JSON.stringify(setupData));
-
-      // Navigate to the interview room
       navigate(`/interview/room/${type}`);
     } catch (err: any) {
       setError(err.message || 'Failed to prepare interview');
       setLoading(false);
     }
   };
-
-  // Helper to read file as text
-  const readFileAsText = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsText(file);
-    });
-  };
-
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -207,6 +220,25 @@ export default function InterviewStart() {
                         <p className="text-xs text-gray-600 dark:text-gray-400">Total</p>
                         <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{stats.totalSessions}</p>
                       </div>
+                    </div>
+                    <div className="pt-4 border-t border-gray-100 dark:border-gray-700/50">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Session Capacity</span>
+                        <span className={`text-[10px] font-black ${isAtLimit ? 'text-red-500' : 'text-blue-600'}`}>
+                          {totalInterviewsTaken} / {interviewLimit}
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full transition-all duration-500 ${isAtLimit ? 'bg-red-500' : 'bg-blue-600'}`}
+                          style={{ width: `${Math.min((totalInterviewsTaken / interviewLimit) * 100, 100)}%` }}
+                        />
+                      </div>
+                      {isAtLimit && (
+                        <p className="mt-2 text-[10px] text-amber-600 font-bold flex items-center gap-1">
+                          <Lightbulb className="w-3 h-3" /> Upgrade to take more
+                        </p>
+                      )}
                     </div>
                   </>
                 ) : (
@@ -391,8 +423,8 @@ export default function InterviewStart() {
                         type="button"
                         onClick={() => setDuration(opt.value)}
                         className={`flex-1 flex flex-col items-center gap-1 px-4 py-3 rounded-xl border-2 transition-all font-medium text-sm ${duration === opt.value
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 shadow-sm'
-                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500'
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 shadow-sm'
+                          : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500'
                           }`}
                       >
                         <span>{opt.label}</span>
@@ -404,16 +436,23 @@ export default function InterviewStart() {
 
                 <Button
                   onClick={handleStart}
-                  disabled={loading || !details.role || !details.company || (!details.resumeFile && !details.resumeText) || (!details.jdFile && !details.jobDescription)}
-                  className={`w-full flex items-center justify-center gap-3 ${details.role && details.company && (details.resumeFile || details.resumeText) && (details.jdFile || details.jobDescription)
-                    ? `bg-gradient-to-r ${info.color}`
-                    : 'bg-gray-300'
-                    } text-white font-bold py-4 rounded-2xl`}
+                  disabled={loading || (!isAtLimit && (!details.role || !details.company || (!details.resumeFile && !details.resumeText) || (!details.jdFile && !details.jobDescription)))}
+                  className={`w-full flex items-center justify-center gap-3 ${isAtLimit
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20'
+                    : (details.role && details.company && (details.resumeFile || details.resumeText) && (details.jdFile || details.jobDescription))
+                      ? `bg-gradient-to-r ${info.color}`
+                      : 'bg-gray-300'
+                    } text-white font-bold py-4 rounded-2xl transition-all active:scale-[0.98]`}
                 >
                   {loading ? (
                     <>
                       <Loader2 className="animate-spin w-6 h-6" />
                       Starting Interview with AI...
+                    </>
+                  ) : isAtLimit ? (
+                    <>
+                      <span>Upgrade to Continue</span>
+                      <TrendingUp className="w-5 h-5" />
                     </>
                   ) : (
                     <>

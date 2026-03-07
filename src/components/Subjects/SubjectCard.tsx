@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/utils/cn";
 import { Subject } from "@/contexts/SubjectsContext";
 import { baseURL } from "@/api/http";
 import {
@@ -12,17 +13,35 @@ import {
   Star,
 } from "lucide-react";
 import { useProgress } from "@/contexts/ProgressContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SubjectCardProps {
   subject: Subject;
   onClick?: (subject: Subject) => void; // Optional callback
 }
 
+const renderFormattedText = (text?: string) => {
+  if (!text) return null;
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="text-slate-900 dark:text-white font-extrabold">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+};
+
 export const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) => {
   const { getProgressForLesson, progress: apiProgress } = useProgress();
   const navigate = useNavigate();
   const [progressPercent, setProgressPercent] = useState(0);
   const [progressStatus, setProgressStatus] = useState<'not-started' | 'in-progress' | 'completed'>('not-started');
+
+  const getImageUrl = (url: string) => {
+    if (!url) return "";
+    if (url.startsWith('http')) return url;
+    return `${baseURL}${url}`;
+  };
 
   // Calculate overall progress for the subject based on all lessons
   const calculateSubjectProgress = useCallback(() => {
@@ -147,120 +166,83 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) =>
   return (
     <div
       onClick={handleClick}
-      className="group relative bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300 hover:shadow-lg cursor-pointer flex flex-col h-full"
+      className="group bg-white dark:bg-slate-900/40 rounded-[2rem] border border-slate-100 dark:border-slate-800/50 hover:border-blue-500/30 transition-all duration-500 cursor-pointer flex flex-col h-full relative overflow-hidden active:scale-[0.98] shadow-sm hover:shadow-xl hover:shadow-blue-500/10"
     >
-      {/* Thumbnail */}
-      <div className="relative h-48 w-full overflow-hidden rounded-t-xl bg-gray-100 dark:bg-gray-900">
-        {subject.thumbnailUrl ? (
-          <>
-            <img
-              src={`${baseURL}${subject.thumbnailUrl}`}
-              alt={subject.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-            {/* Status badge */}
-            <div
-              className={`absolute top-3 left-3 px-2.5 py-1 rounded-md text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color} flex items-center gap-1.5 shadow-sm`}
-            >
-              {statusInfo.icon && <statusInfo.icon className="h-3.5 w-3.5" />}
-              <span>{statusInfo.text}</span>
-            </div>
-          </>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-50 dark:bg-gray-800">
-            <BookOpen className="h-12 w-12 text-gray-300 dark:text-gray-600" />
-            <div
-              className={`absolute top-3 left-3 px-2.5 py-1 rounded-md text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color} flex items-center gap-1.5 shadow-sm`}
-            >
-              {statusInfo.icon && <statusInfo.icon className="h-3.5 w-3.5" />}
-              <span>{statusInfo.text}</span>
-            </div>
+      {/* Immersive Thumbnail */}
+      <div className="relative h-52 w-full overflow-hidden">
+        <img
+          src={getImageUrl(subject.thumbnailUrl)}
+          alt={subject.title}
+          className="w-full h-full object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-110"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-60" />
+
+        {/* Category Overlay */}
+        {subject.category && (
+          <div className="absolute top-5 left-5">
+            <span className="px-3 py-1.5 rounded-lg bg-slate-900/60 backdrop-blur-xl border border-white/10 text-[10px] font-black text-white uppercase tracking-[0.15em] shadow-2xl">
+              {subject.category}
+            </span>
           </div>
         )}
+
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-5 flex flex-col space-y-4">
-        {/* Title + Rating */}
-        <div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1.5 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-            {subject.title}
-          </h3>
+      <div className="flex-1 p-6 flex flex-col">
+        <div className="flex flex-col gap-3">
+          {/* Title - Fixed height for 2 lines */}
+          <div className="h-14">
+            <h3 className="text-[19px] font-black text-slate-900 dark:text-white leading-[1.3] group-hover:text-blue-600 transition-colors duration-300 line-clamp-2">
+              {subject.title}
+            </h3>
+          </div>
 
-          <div className="flex items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`h-3.5 w-3.5 ${i < 4 ? "text-amber-400 fill-current" : "text-gray-200 dark:text-gray-700"
-                  }`}
-              />
-            ))}
-            <span className="text-xs text-gray-500 dark:text-gray-400 ml-1 font-medium">(4.0)</span>
+          {/* Description - Fixed height for 3 lines */}
+          <div className="h-[60px]">
+            <div className="text-[13px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed line-clamp-3">
+              {renderFormattedText(subject.description || "Comprehensive curriculum designed for industry mastery.")}
+            </div>
           </div>
         </div>
 
-        {/* Description */}
-        <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed line-clamp-2 flex-1">
-          {subject.description}
-        </p>
+        {/* Progress System & Footer */}
+        <div className="mt-auto pt-6 space-y-5">
+          {/* Mastery Section - Only space-occupying if exists, but consistently placed */}
+          <div className="min-h-[32px] flex flex-col justify-end">
+            {(progress || progressPercent > 0) && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <span>Subject Mastery</span>
+                  <span className="text-blue-600">{progressPercent}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800/50 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progressPercent}%` }}
+                    className={`h-full ${progressStatus === "completed" ? "bg-emerald-500" : "bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.4)]"}`}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
-        {/* Tags */}
-        <div className="flex flex-wrap gap-2">
-          {subject.category && (
-            <div
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium ${getCategoryColor(
-                subject.category
-              )}`}
-            >
-              <Tag className="h-3 w-3" />
-              {subject.category}
+          <div className="flex items-center justify-between pt-5 border-t border-slate-100 dark:border-slate-800/50">
+            <div className="flex items-center gap-5">
+              <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
+                <Clock className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">{subject.estimatedTime || "Async"}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
+                <BookOpen className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">{subject.lessons?.length || 0} Lessons</span>
+              </div>
             </div>
-          )}
-          {subject.level && (
-            <div
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium ${getLevelColor(
-                subject.level
-              )}`}
-            >
-              <TrendingUp className="h-3 w-3" />
-              {subject.level}
-            </div>
-          )}
-        </div>
 
-        {/* Progress Logic - Simplified Linear Bar */}
-        {(progress || progressPercent > 0) && (
-          <div className="space-y-2 pt-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-500 dark:text-gray-400 font-medium">Progress</span>
-              <span className="text-gray-900 dark:text-white font-bold">{progressPercent}%</span>
-            </div>
-            <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${progressStatus === "completed"
-                  ? "bg-emerald-500"
-                  : "bg-blue-600"
-                  }`}
-                style={{ width: `${progressPercent}%` }}
-              />
+            <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center border border-slate-100 dark:border-slate-800 group-hover:bg-blue-600 group-hover:border-blue-600 group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-blue-500/20">
+              <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
             </div>
           </div>
-        )}
-
-        {/* Time + Lessons Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700 mt-auto">
-          {subject.estimatedTime && (
-            <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
-              <Clock className="h-3.5 w-3.5" />
-              <span className="text-xs font-medium">{subject.estimatedTime}</span>
-            </div>
-          )}
-          {subject.lessons && subject.lessons.length > 0 && (
-            <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
-              <BookOpen className="h-3.5 w-3.5" />
-              <span className="text-xs font-medium">{subject.lessons.length} lessons</span>
-            </div>
-          )}
         </div>
       </div>
     </div>

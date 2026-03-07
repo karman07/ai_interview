@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Bell, Sparkles, Heart, Bookmark, Filter, Grid3x3, List, X } from 'lucide-react';
+import { Sparkles, Heart, Bookmark, Filter, Grid3x3, List, X } from 'lucide-react';
+import { cn } from '@/utils/cn';
 
 interface PortalActionsProps {
     setShowSubscriptionModal: (v: boolean) => void;
@@ -35,100 +36,69 @@ const PortalActions = ({
 }: PortalActionsProps) => {
     return (
         <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-wrap items-center gap-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-3xl p-2 sm:p-2.5 rounded-2xl sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-700/50 shadow-[0_20px_40px_rgba(0,0,0,0.08)]"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+            className="flex flex-wrap items-center gap-2.5 p-1.5 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-xl shadow-slate-200/20 dark:shadow-none"
         >
-            {/* Primary Action Group */}
-            <div className="flex items-center gap-2 pr-2 sm:pr-4 border-r border-gray-100 dark:border-gray-700/50">
+            <div className="flex items-center gap-2 pr-2.5 border-r border-slate-200 dark:border-slate-800/60 ml-1">
                 <button
-                    onClick={() => setShowSubscriptionModal(true)}
-                    className="p-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl flex items-center justify-center gap-2 bg-gray-900 dark:bg-blue-600 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group"
+                    onClick={() => isResumeFiltered ? clearResumeFilter() : fileInputRef.current?.click()}
+                    className={cn(
+                        "px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 font-black text-[10px] uppercase tracking-widest border shadow-sm",
+                        isResumeFiltered
+                            ? "bg-rose-50 dark:bg-rose-900/20 text-rose-600 border-rose-100 dark:border-rose-900/30"
+                            : "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/20"
+                    )}
                 >
-                    <Bell className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                    <span className="hidden sm:inline font-black text-xs uppercase tracking-wider">Alerts</span>
+                    {isResumeFiltered ? <X className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+                    {isResumeFiltered ? 'Clear Match' : 'Match Resume'}
+                    {!isResumeFiltered && (
+                        <span className="ml-1 px-1 py-0.5 bg-white/20 rounded text-[7px] border border-white/20">BETA</span>
+                    )}
                 </button>
-
-                <div className="relative group/match">
-                    <button
-                        onClick={() => isResumeFiltered ? clearResumeFilter() : fileInputRef.current?.click()}
-                        className={`p-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl flex items-center justify-center gap-2 transition-all duration-300 font-extrabold text-xs uppercase tracking-wider border relative overflow-hidden ${isResumeFiltered
-                            ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-100 dark:border-red-900/30'
-                            : 'bg-blue-600 text-white shadow-xl shadow-blue-500/25 border-blue-500 hover:bg-blue-700 hover:-translate-y-0.5'
-                            }`}
-                    >
-                        {!isResumeFiltered && (
-                            <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/20 opacity-0 group-hover/match:opacity-100 transition-opacity duration-700" />
-                        )}
-
-                        {isResumeFiltered ? <X className="w-5 h-5" /> : <Sparkles className="w-4.5 h-4.5" />}
-                        <span className="hidden sm:inline relative z-10">{isResumeFiltered ? 'Clear' : 'Match'}</span>
-
-                        {!isResumeFiltered && (
-                            <div className="hidden lg:block ml-1.5 px-1.5 py-0.5 bg-white/20 backdrop-blur-md rounded-md text-[8px] font-black tracking-tighter uppercase border border-white/30">
-                                Beta
-                            </div>
-                        )}
-                    </button>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleResumeFilterUpload}
-                        className="hidden"
-                        accept=".pdf,.doc,.docx"
-                    />
-                </div>
+                <input type="file" ref={fileInputRef} onChange={handleResumeFilterUpload} className="hidden" accept=".pdf,.doc,.docx" />
             </div>
 
-            {/* Secondary Tools Group */}
-            <div className="flex items-center gap-1 sm:gap-1.5 pl-1 sm:pl-2">
-                {/* Bookmarks Toggle */}
+            <div className="flex items-center gap-1.5 px-1">
                 <button
-                    onClick={() => {
-                        setShowBookmarks(!showBookmarks);
-                        if (!showBookmarks) setShowFavorites(false);
-                    }}
-                    className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl transition-all duration-300 ${showBookmarks
-                        ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-500 border border-blue-100 dark:border-blue-900/30'
-                        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                        }`}
+                    onClick={() => { setShowBookmarks(!showBookmarks); if (!showBookmarks) setShowFavorites(false); }}
+                    className={cn(
+                        "p-2.5 rounded-xl transition-all duration-300 border",
+                        showBookmarks ? "bg-blue-50 dark:bg-blue-900/30 border-blue-100 dark:border-blue-800 text-blue-600" : "text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 border-transparent"
+                    )}
                 >
-                    <Bookmark className={`w-5 h-5 ${showBookmarks ? 'fill-current' : ''}`} />
+                    <Bookmark className={cn("w-4 h-4", showBookmarks && "fill-current")} />
                 </button>
 
-                {/* Favorites Toggle */}
                 <button
-                    onClick={() => {
-                        setShowFavorites(!showFavorites);
-                        if (!showFavorites) setShowBookmarks(false);
-                    }}
-                    className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl transition-all duration-300 ${showFavorites
-                        ? 'bg-pink-50 dark:bg-pink-900/20 text-pink-500 border border-pink-100 dark:border-pink-900/30'
-                        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                        }`}
+                    onClick={() => { setShowFavorites(!showFavorites); if (!showFavorites) setShowBookmarks(false); }}
+                    className={cn(
+                        "p-2.5 rounded-xl transition-all duration-300 border",
+                        showFavorites ? "bg-rose-50 dark:bg-rose-900/30 border-rose-100 dark:border-rose-800 text-rose-500" : "text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 border-transparent"
+                    )}
                 >
-                    <Heart className={`w-5 h-5 ${showFavorites ? 'fill-current' : ''}`} />
+                    <Heart className={cn("w-4 h-4", showFavorites && "fill-current")} />
                 </button>
 
                 <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl transition-all duration-300 ${showFilters
-                        ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border border-blue-100 dark:border-blue-900/30'
-                        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                        }`}
+                    className={cn(
+                        "p-2.5 rounded-xl transition-all duration-300 border",
+                        showFilters ? "bg-blue-50 dark:bg-blue-900/30 border-blue-100 dark:border-blue-800 text-blue-600" : "text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 border-transparent"
+                    )}
                 >
-                    <Filter className="w-5 h-5" />
+                    <Filter className="w-4 h-4" />
                 </button>
 
-                <div className="hidden sm:block w-px h-6 bg-gray-100 dark:bg-gray-700/50 mx-1 sm:mx-2"></div>
+                <div className="w-px h-5 bg-slate-200 dark:bg-slate-800 mx-1"></div>
 
-                <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-900/50 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-gray-100 dark:border-gray-800">
-                    <button onClick={() => setViewMode('grid')} className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-800 shadow-md text-blue-600' : 'text-gray-400 opacity-50'}`}>
-                        <Grid3x3 className="w-4 sm:w-4.5 h-4 sm:h-4.5" />
+                <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <button onClick={() => setViewMode('grid')} className={cn("p-1.5 rounded-lg transition-all", viewMode === 'grid' ? "bg-white dark:bg-slate-700 shadow-sm text-blue-600" : "text-slate-400 opacity-60")}>
+                        <Grid3x3 className="w-3.5 h-3.5" />
                     </button>
-                    <button onClick={() => setViewMode('table')} className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-800 shadow-md text-blue-600' : 'text-gray-400 opacity-50'}`}>
-                        <List className="w-4 sm:w-4.5 h-4 sm:h-4.5" />
+                    <button onClick={() => setViewMode('table')} className={cn("p-1.5 rounded-lg transition-all", viewMode === 'table' ? "bg-white dark:bg-slate-700 shadow-sm text-blue-600" : "text-slate-400 opacity-60")}>
+                        <List className="w-3.5 h-3.5" />
                     </button>
                 </div>
             </div>

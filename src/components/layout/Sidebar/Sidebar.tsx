@@ -159,13 +159,16 @@ export default function Sidebar() {
           className="fixed top-0 left-0 w-64 h-screen border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-y-auto no-scrollbar"
         >
           <div className="p-6">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary shadow-sm">
-                <Target size={18} className="text-primary-foreground" />
+            <div className="flex items-center gap-3 mb-10 px-2 group cursor-pointer" onClick={() => navigate('/dashboard')}>
+              <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform duration-300">
+                <Target size={22} className="text-white" />
               </div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-                AI Coach
-              </h2>
+              <div className="flex flex-col">
+                <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-widest leading-none">
+                  NEXUS
+                </h2>
+                <span className="text-[10px] font-bold text-blue-600 tracking-widest uppercase mt-1">AI COACH</span>
+              </div>
             </div>
 
             {sidebarRoutes.map((section, sectionIndex) => (
@@ -184,20 +187,20 @@ export default function Sidebar() {
             ))}
 
             {/* Theme Toggle */}
-            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800/50">
               <button
                 onClick={toggleTheme}
-                className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-white dark:hover:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-600 border border-transparent transition-all duration-200"
+                className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-300 group"
               >
-                <div className="flex-shrink-0 p-1.5 rounded-md text-gray-600 dark:text-gray-400">
-                  {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                <div className="flex-shrink-0 p-1 rounded-lg text-slate-500 dark:text-slate-400 group-hover:scale-110 transition-transform duration-300">
+                  {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
                 </div>
                 <div className="flex-1 min-w-0 text-left">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                  <span className="text-[13px] font-bold text-slate-700 dark:text-slate-200">
+                    {theme === 'dark' ? 'Light Appearance' : 'Night Mode'}
                   </span>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    Switch to {theme === 'dark' ? 'light' : 'dark'} theme
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                    Toggle system theme
                   </p>
                 </div>
               </button>

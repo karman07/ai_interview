@@ -1,4 +1,5 @@
 import React from 'react';
+import { Timer } from 'lucide-react';
 
 interface InterviewTimerProps {
     formattedTime: string;
@@ -6,9 +7,11 @@ interface InterviewTimerProps {
 
 export const WSInterviewTimer: React.FC<InterviewTimerProps> = ({ formattedTime }) => {
     return (
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50 border border-gray-200">
-            <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-            <span className="text-sm font-semibold tracking-wider text-gray-800" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+        <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400">
+                <Timer className="w-4 h-4" />
+            </div>
+            <span className="text-sm font-black tracking-[0.1em] text-white tabular-nums px-1" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                 {formattedTime}
             </span>
         </div>

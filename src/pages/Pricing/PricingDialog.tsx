@@ -156,7 +156,7 @@ const PricingDialog = () => {
                   variants={containerVariants}
                   initial="hidden"
                   animate="visible"
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8"
+                  className={`grid grid-cols-1 md:grid-cols-2 ${pricingPlans.length === 3 ? 'lg:grid-cols-3 max-w-6xl mx-auto' : 'lg:grid-cols-4'} gap-6 lg:gap-8`}
                 >
                   {pricingPlans.map((plan) => {
                     const currentPlanId = user?.subscriptionPlan && typeof user.subscriptionPlan === 'object'

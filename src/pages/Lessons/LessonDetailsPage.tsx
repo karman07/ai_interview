@@ -22,11 +22,26 @@ import Plyr from "plyr-react";
 import "plyr-react/plyr.css";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis } from "recharts";
+import axios from "@/api/http";
+import { cn } from "@/utils/cn";
 
 interface StoredState {
   lastLessonId: string | null;
   lastSubLessonId: string | null;
 }
+
+const renderFormattedText = (text?: string) => {
+  if (!text) return null;
+  // First cleanse image markdown if any
+  const cleansed = text.replace(/!\[.*?\]\(.*?\)/g, '').trim();
+  const parts = cleansed.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="text-slate-900 dark:text-white font-black">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+};
 
 const LessonDetailsPage: React.FC = () => {
   const { subjectId } = useParams<{ subjectId: string }>();
@@ -215,40 +230,39 @@ const LessonDetailsPage: React.FC = () => {
     : [];
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="flex h-screen bg-white dark:bg-[#0B0F19]">
       {/* Enhanced Sidebar */}
-      <aside className="w-96 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border-r border-white/50 dark:border-gray-700/50 shadow-2xl overflow-y-auto">
-        <div className="p-6 border-b border-slate-200/50 dark:border-gray-700/50 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800">
+      <aside className="w-80 bg-slate-50 dark:bg-slate-900/40 border-r border-slate-100 dark:border-slate-800/50 flex flex-col h-full shadow-2xl shrink-0">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-800/50">
           <button
             onClick={() => navigate(-1)}
-            className="group flex items-center gap-3 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-semibold transition-all duration-200 hover:gap-4 mb-4"
+            className="group flex items-center gap-2 text-slate-400 hover:text-blue-600 font-bold transition-all text-[10px] uppercase tracking-widest mb-6"
           >
-            <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-200" />
-            Back to Subjects
+            <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-1" />
+            Back to subjects
           </button>
 
           {/* Progress Overview */}
-          <div className="bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-xl p-4 border border-white/50 dark:border-gray-600/50">
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/50 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Target className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                Course Progress
-              </h3>
-              <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">{overallProgress}%</span>
+              <div className="flex items-center gap-2">
+                <Target className="h-3.5 w-3.5 text-blue-600" />
+                <h3 className="font-black text-slate-900 dark:text-white text-[9px] uppercase tracking-widest">
+                  Course Progress
+                </h3>
+              </div>
+              <span className="text-xs font-black text-blue-600">{overallProgress}%</span>
             </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-400 dark:to-indigo-500 h-2 rounded-full transition-all duration-500"
+                className="bg-blue-600 h-full rounded-full transition-all duration-1000 ease-out"
                 style={{ width: `${overallProgress}%` }}
               ></div>
             </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-              {completedCount} of {lessons.length} lessons completed
-            </p>
           </div>
         </div>
 
-        <div className="p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {lessons.map((lesson, lessonIndex) => {
             const lessonProgress = progressMap[lesson._id];
             const isCurrentLesson = currentLesson?._id === lesson._id;
@@ -256,51 +270,40 @@ const LessonDetailsPage: React.FC = () => {
             const isInProgress = lessonProgress?.status === 'in-progress';
 
             return (
-              <div key={lesson._id} className="space-y-2">
-                <div className={`p-3 rounded-lg border transition-all duration-300 ${isCurrentLesson
-                  ? "bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-600 shadow-md"
-                  : "bg-white/60 dark:bg-gray-700/40 border-gray-200 dark:border-gray-600 hover:bg-white/80 dark:hover:bg-gray-700/60"
-                  }`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className={`p-1.5 rounded-md ${isCompleted
-                      ? "bg-green-100 dark:bg-green-900/50"
-                      : isInProgress
-                        ? "bg-yellow-100 dark:bg-yellow-900/50"
-                        : "bg-gray-100 dark:bg-gray-700"
-                      }`}>
-                      {isCompleted ? (
-                        <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                      ) : isInProgress ? (
-                        <Clock className="h-3.5 w-3.5 text-yellow-600 dark:text-yellow-400" />
-                      ) : (
-                        <BookOpen className="h-3.5 w-3.5 text-gray-600 dark:text-gray-400" />
-                      )}
+              <div key={lesson._id} className="space-y-1">
+                <div className={cn(
+                  "p-3 rounded-2xl border transition-all duration-500",
+                  isCurrentLesson
+                    ? "bg-white dark:bg-slate-900 border-blue-500/30 shadow-md shadow-blue-500/5"
+                    : "bg-transparent border-transparent opacity-60 hover:opacity-100"
+                )}>
+                  <div className="flex items-start gap-2 mb-2">
+                    <div className={cn(
+                      "w-7 h-7 rounded-xl flex items-center justify-center shrink-0 border transition-all duration-300",
+                      isCompleted
+                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
+                        : isInProgress
+                          ? "bg-blue-500/10 border-blue-500/20 text-blue-600"
+                          : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400"
+                    )}>
+                      {isCompleted ? <CheckCircle2 className="h-3.5 w-3.5" /> : <BookOpen className="h-3.5 w-3.5" />}
                     </div>
-                    <h3 className="font-semibold text-xs text-slate-900 dark:text-white flex-1 truncate">{lesson.title}</h3>
-                    <div className="flex items-center gap-1.5">
-                      <div className="text-xs px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-gray-600 text-slate-600 dark:text-gray-300 font-medium">
-                        #{lessonIndex + 1}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0">
+                        <span className="text-[7px] font-black text-blue-600 uppercase tracking-widest">Part {lessonIndex + 1}</span>
                       </div>
-                      {lessonProgress?.score && (
-                        <div className="text-xs px-1.5 py-0.5 rounded-md bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-300 font-medium">
-                          {lessonProgress.score}%
-                        </div>
-                      )}
+                      <h3 className="font-black text-[11px] text-slate-900 dark:text-white truncate">{lesson.title}</h3>
                     </div>
                   </div>
 
-                  {lesson.description && (
-                    <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1 leading-relaxed">{lesson.description}</p>
-                  )}
-
-                  <div className="space-y-1.5 mt-2">
+                  <div className="space-y-0.5">
                     {(lesson.subLessons?.length > 0
                       ? lesson.subLessons
                       : [{ _id: lesson._id, title: lesson.title, content: lesson.content, order: 1 }]
                     ).map((sub, subIndex) => {
                       const isActive = currentSubLesson?._id === sub._id;
                       return (
-                        <div
+                        <button
                           key={sub._id}
                           onClick={() => {
                             const subLessons = lesson.subLessons?.length > 0
@@ -310,51 +313,47 @@ const LessonDetailsPage: React.FC = () => {
                             setCurrentSubLesson(sub);
                             setQuizMode(false);
                           }}
-                          className={`group p-2 rounded-md cursor-pointer transition-all duration-200 ${isActive
-                            ? "bg-blue-100 dark:bg-blue-900/40 border border-blue-300 dark:border-blue-600"
-                            : "hover:bg-gray-50 dark:hover:bg-gray-600/40 border border-transparent"
-                            }`}
+                          className={cn(
+                            "w-full flex items-center gap-2 p-1.5 rounded-lg transition-all duration-300 group/item",
+                            isActive
+                              ? "bg-blue-600 text-white"
+                              : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          )}
                         >
-                          <div className="flex items-center gap-2">
-                            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${isActive ? "bg-blue-600 text-white" : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
-                              }`}>
-                              {subIndex + 1}
-                            </div>
-                            <span className="text-xs font-medium text-slate-800 dark:text-gray-200 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors flex-1 truncate">
-                              {sub.title}
-                            </span>
-                            {isActive && (
-                              <Play className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                            )}
+                          <div className={cn(
+                            "w-4 h-4 rounded-md flex items-center justify-center text-[8px] font-black transition-all",
+                            isActive ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-400 group-hover/item:bg-blue-500/10 group-hover/item:text-blue-600"
+                          )}>
+                            {subIndex + 1}
                           </div>
-                        </div>
+                          <span className="text-[9px] font-bold text-left flex-1 truncate">{sub.title}</span>
+                          {isActive && <Play className="h-2 w-2 fill-current" />}
+                        </button>
                       );
                     })}
                   </div>
 
                   {quizzes[lesson._id] && quizzes[lesson._id].length > 0 && (
-                    <div
+                    <button
                       onClick={() => {
                         setCurrentLesson(lesson);
                         setQuizMode(true);
                       }}
-                      className={`group p-2 mt-2 rounded-md cursor-pointer transition-all duration-200 border ${quizMode && currentLesson._id === lesson._id
-                        ? "bg-green-100 dark:bg-green-900/40 border-green-300 dark:border-green-600"
-                        : "hover:bg-green-50 dark:hover:bg-green-900/20 border-green-200 dark:border-green-700"
-                        }`}
+                      className={cn(
+                        "w-full flex items-center gap-2 p-1.5 mt-1.5 rounded-lg border-2 border-dashed transition-all duration-300",
+                        quizMode && currentLesson._id === lesson._id
+                          ? "bg-emerald-500 border-emerald-500 text-white"
+                          : "border-emerald-500/10 dark:border-emerald-500/5 text-emerald-500 hover:bg-emerald-500/10"
+                      )}
                     >
-                      <div className="flex items-center gap-2">
-                        <div className="p-1 rounded-md bg-green-100 dark:bg-green-800">
-                          <HelpCircle className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                        </div>
-                        <span className="text-xs font-medium text-slate-800 dark:text-gray-200 group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors flex-1">
-                          Quiz
-                        </span>
-                        <div className="text-xs px-1.5 py-0.5 rounded-md bg-green-200 dark:bg-green-700 text-green-700 dark:text-green-300 font-medium">
-                          {quizzes[lesson._id].length}Q
-                        </div>
+                      <div className={cn(
+                        "w-4 h-4 rounded-md flex items-center justify-center transition-all",
+                        quizMode && currentLesson._id === lesson._id ? "bg-white/20" : "bg-emerald-500/10"
+                      )}>
+                        <HelpCircle className="h-2 w-2" />
                       </div>
-                    </div>
+                      <span className="text-[8px] font-black uppercase tracking-widest flex-1 text-left">Practice Quiz</span>
+                    </button>
                   )}
                 </div>
               </div>
@@ -372,85 +371,77 @@ const LessonDetailsPage: React.FC = () => {
         </div>
       </aside>
 
-      {/* Enhanced Main Content */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-[#0B0F19]">
         {/* Enhanced Progress Header */}
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-white/50 dark:border-gray-700/50 shadow-sm p-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900">
-                  <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                Learning Progress
-              </h1>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-100 to-green-100 dark:from-emerald-900 dark:to-green-900">
-                  <Award className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                  <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{overallProgress}% Complete</span>
-                </div>
+        <div className="sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800/50 p-4 shadow-sm">
+          <div className="max-w-5xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600">
+                <Target className="h-4 w-4" />
               </div>
+              <h1 className="text-xs font-black text-slate-900 dark:text-white tracking-tight uppercase">Learning Progress</h1>
             </div>
 
-            <div className="relative">
-              <div className="w-full bg-slate-200 dark:bg-gray-600 rounded-full h-3 overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-400 dark:to-indigo-500 h-3 rounded-full transition-all duration-700 ease-out"
-                  style={{ width: `${overallProgress}%` }}
-                ></div>
-              </div>
-              <div className="absolute -top-1 transition-all duration-700 ease-out" style={{ left: `${overallProgress}%` }}>
-                <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400 transform -translate-x-1/2" />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[8px] font-black text-emerald-600 uppercase tracking-widest">
+                  <Award className="h-2.5 w-2.5" />
+                  {overallProgress}% Complete
+                </div>
+                <div className="w-24 bg-slate-100 dark:bg-slate-800 rounded-full h-0.5 overflow-hidden">
+                  <div
+                    className="bg-emerald-500 h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${overallProgress}%` }}
+                  ></div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <div className="p-8">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-5xl mx-auto">
             {!quizMode ? (
               <>
-                {/* Enhanced Lesson Header */}
-                <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 dark:border-gray-700/50 p-8 mb-8 hover:shadow-xl transition-all duration-300">
-                  <div className="flex items-start gap-4 mb-6">
-                    <div className="p-3 rounded-xl bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900">
-                      <Play className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                {/* Immersive Lesson Header */}
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800/50 p-8 mb-6 shadow-sm">
+                  <div className="flex items-start gap-5">
+                    <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
+                      <Play className="h-5 w-5 fill-current" />
                     </div>
                     <div className="flex-1">
-                      <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{currentSubLesson.title}</h1>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 text-[9px] font-black uppercase tracking-widest">
+                          Lesson {lessons.findIndex(l => l._id === currentLesson._id) + 1}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 text-[9px] font-black uppercase tracking-widest">
+                          {currentLesson.subLessons?.length || 1} Parts
+                        </span>
+                      </div>
+                      <h1 className="text-2xl font-black text-slate-900 dark:text-white leading-tight tracking-tight mb-4">
+                        {currentSubLesson.title}
+                      </h1>
+
                       {currentLesson.description && (
-                        <div className="mb-4">
-                          <p className={`text-lg text-slate-600 dark:text-gray-400 ${!expandedDescription ? 'line-clamp-2' : ''}`}>
-                            {currentLesson.description}
-                          </p>
-                          {currentLesson.description.length > 150 && (
-                            <button
-                              onClick={() => setExpandedDescription(!expandedDescription)}
-                              className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium flex items-center gap-1 transition-colors"
-                            >
-                              {expandedDescription ? (
-                                <>
-                                  Show less <ChevronUp className="h-4 w-4" />
-                                </>
-                              ) : (
-                                <>
-                                  Read more <ChevronDown className="h-4 w-4" />
-                                </>
-                              )}
-                            </button>
-                          )}
+                        <div>
+                          <div className={cn(
+                            "text-[14px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium whitespace-pre-wrap",
+                            !expandedDescription && "line-clamp-1"
+                          )}>
+                            {renderFormattedText(currentLesson.description)}
+                          </div>
+                          <button
+                            onClick={() => setExpandedDescription(!expandedDescription)}
+                            className="mt-2 flex items-center gap-2 text-blue-600 text-[9px] font-black uppercase tracking-widest hover:opacity-80 transition-opacity"
+                          >
+                            {expandedDescription ? (
+                              <>Show Less <ChevronUp className="h-2.5 w-2.5" /></>
+                            ) : (
+                              <>Detailed Description <ChevronDown className="h-2.5 w-2.5" /></>
+                            )}
+                          </button>
                         </div>
                       )}
-                      <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-gray-400">
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          <span>Lesson {lessons.findIndex(l => l._id === currentLesson._id) + 1}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <FileText className="h-4 w-4" />
-                          <span>{currentLesson.subLessons?.length || 1} Parts</span>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -508,26 +499,32 @@ const LessonDetailsPage: React.FC = () => {
                   }
                 </div>
 
-                {/* Enhanced Content Sections */}
-                {currentSubLesson.content.map((block, i) => (
-                  <div
-                    key={i}
-                    className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 dark:border-gray-700/50 p-8 mb-6 hover:shadow-xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 transform hover:-translate-y-1"
-                  >
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
-                      <div className="w-2 h-8 bg-gradient-to-b from-blue-500 to-indigo-600 dark:from-blue-400 dark:to-indigo-500 rounded-full"></div>
-                      {block.heading.replace(/\*+/g, '').trim()}
-                    </h2>
-                    <ul className="space-y-3">
-                      {block.points.map((pt, j) => (
-                        <li key={j} className="flex items-start gap-3 text-slate-700 dark:text-gray-300 leading-relaxed">
-                          <CheckCircle2 className="h-5 w-5 text-green-500 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                          <span className="text-lg">{pt}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                {/* Content Sections */}
+                <div className="space-y-6 mb-8">
+                  {currentSubLesson.content.map((block, i) => (
+                    <div
+                      key={i}
+                      className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800/50 p-8 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-500"
+                    >
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+                        <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase">
+                          {block.heading.replace(/\*+/g, '').trim()}
+                        </h2>
+                      </div>
+                      <div className="space-y-3">
+                        {block.points.map((pt, j) => (
+                          <div key={j} className="flex items-start gap-3 text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                            <CheckCircle2 className="h-4 w-4 text-blue-500 mt-1 shrink-0" />
+                            <div className="text-[15px] flex-1">
+                              {renderFormattedText(pt)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
                 {/* Enhanced Navigation */}
                 <div className="flex justify-between items-center mt-8">
@@ -564,35 +561,42 @@ const LessonDetailsPage: React.FC = () => {
 
                     {quizzes[currentLesson._id]?.length > 0 ? (
                       <>
-                        <div className="space-y-8">
+                        <div className="space-y-10">
                           {quizzes[currentLesson._id].map((q, i) => (
-                            <div key={q._id} className="p-6 rounded-xl bg-gradient-to-r from-slate-50 to-slate-100 dark:from-gray-700 dark:to-gray-600 border border-slate-200 dark:border-gray-600">
-                              <p className="font-bold text-xl text-slate-900 dark:text-white mb-4 flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center text-sm font-bold">
+                            <div key={q._id} className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800/50 p-10 shadow-sm transition-all duration-500">
+                              <div className="flex items-center gap-4 mb-8">
+                                <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-sm font-black shadow-lg shadow-blue-600/20">
                                   {i + 1}
                                 </div>
-                                {q.question}
-                              </p>
-                              <div className="grid gap-3 mt-4">
+                                <h3 className="text-xl font-black text-slate-900 dark:text-white leading-tight">
+                                  {q.question}
+                                </h3>
+                              </div>
+
+                              <div className="grid gap-4">
                                 {q.options.map((opt) => (
                                   <button
                                     key={opt}
                                     onClick={() =>
                                       setSelectedAnswers((prev) => ({ ...prev, [q._id]: opt }))
                                     }
-                                    className={`text-left py-4 px-6 rounded-xl border-2 transition-all duration-200 transform hover:scale-102 ${selectedAnswers[q._id] === opt
-                                      ? "bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 border-blue-300 dark:border-blue-600 shadow-md"
-                                      : "border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 hover:border-slate-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800"
-                                      }`}
+                                    className={cn(
+                                      "group text-left p-6 rounded-2xl border-2 transition-all duration-300 relative overflow-hidden",
+                                      selectedAnswers[q._id] === opt
+                                        ? "bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-600/20 scale-[1.02]"
+                                        : "bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700 hover:border-blue-500/50 text-slate-700 dark:text-slate-300"
+                                    )}
                                   >
-                                    <div className="flex items-center gap-3">
-                                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedAnswers[q._id] === opt
-                                        ? "bg-blue-600 border-blue-600 text-white"
-                                        : "border-slate-300 dark:border-gray-500"
-                                        }`}>
-                                        {selectedAnswers[q._id] === opt && <span className="text-xs">✓</span>}
+                                    <div className="flex items-center gap-4 relative z-10">
+                                      <div className={cn(
+                                        "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
+                                        selectedAnswers[q._id] === opt
+                                          ? "bg-white border-white text-blue-600"
+                                          : "border-slate-300 dark:border-slate-600"
+                                      )}>
+                                        {selectedAnswers[q._id] === opt && <CheckCircle2 className="h-3.5 w-3.5" />}
                                       </div>
-                                      <span className="font-medium text-slate-900 dark:text-white">{opt}</span>
+                                      <span className="font-bold text-[15px]">{opt}</span>
                                     </div>
                                   </button>
                                 ))}
@@ -687,16 +691,16 @@ const LessonDetailsPage: React.FC = () => {
                     )}
 
                     {/* Results Section */}
-                    <div className="text-center bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl p-8">
-                      <div className="p-4 rounded-xl bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 inline-block mb-6">
-                        <Award className="h-12 w-12 text-blue-600 dark:text-blue-400" />
+                    <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-12 shadow-sm border border-slate-100 dark:border-slate-800/50 text-center">
+                      <div className="w-24 h-24 rounded-[2rem] bg-blue-500/10 flex items-center justify-center text-blue-600 mx-auto mb-10">
+                        <Award className="h-12 w-12" />
                       </div>
-                      <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                        Quiz Results
-                      </h2>
 
-                      <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
+                      <h2 className="text-4xl font-black text-slate-900 dark:text-white mb-4 tracking-tight uppercase">Quiz Performance</h2>
+                      <p className="text-slate-500 dark:text-slate-400 font-medium mb-12">Congratulations on completing the assessment module.</p>
+
+                      <div className="grid lg:grid-cols-2 gap-10 mb-12">
+                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] p-8 flex items-center justify-center shadow-inner">
                           <PieChart width={300} height={250}>
                             <Pie data={quizData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
                               {quizData.map((entry, index) => (
@@ -708,52 +712,46 @@ const LessonDetailsPage: React.FC = () => {
                           </PieChart>
                         </div>
 
-                        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
-                          <BarChart width={300} height={250} data={quizData}>
-                            <XAxis dataKey="name" />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                          </BarChart>
+                        <div className="flex flex-col gap-6 justify-center">
+                          <div className="p-8 rounded-[2rem] bg-emerald-500/10 border border-emerald-500/20 text-center">
+                            <div className="text-5xl font-black text-emerald-600 mb-2">{quizResults.correct}</div>
+                            <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Correct Answers</div>
+                          </div>
+                          <div className="p-8 rounded-[2rem] bg-rose-500/10 border border-rose-500/20 text-center">
+                            <div className="text-5xl font-black text-rose-600 mb-2">{quizResults.wrong}</div>
+                            <div className="text-[10px] font-black text-rose-600 uppercase tracking-widest">Wrong Points</div>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="mt-8 grid grid-cols-2 gap-6 max-w-md mx-auto">
-                        <div className="p-4 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-700">
-                          <div className="text-3xl font-bold text-emerald-700 dark:text-emerald-400">{quizResults.correct}</div>
-                          <div className="text-sm font-medium text-emerald-600 dark:text-emerald-300">Correct Answers</div>
+                      <div className="max-w-2xl mx-auto border-t border-slate-100 dark:border-slate-800/50 pt-12">
+                        <div className="flex items-center justify-between mb-6">
+                          <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Final Mastery Score</span>
+                          <span className="text-2xl font-black text-blue-600">
+                            {Math.round((quizResults.correct / (quizResults.correct + quizResults.wrong)) * 100)}%
+                          </span>
                         </div>
-                        <div className="p-4 rounded-xl bg-red-100 dark:bg-red-900/40 border border-red-200 dark:border-red-700">
-                          <div className="text-3xl font-bold text-red-700 dark:text-red-400">{quizResults.wrong}</div>
-                          <div className="text-sm font-medium text-red-600 dark:text-red-300">Wrong Answers</div>
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden shadow-inner">
+                          <div
+                            className="bg-blue-600 h-full rounded-full transition-all duration-[1.5s] ease-out shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+                            style={{
+                              width: `${Math.round((quizResults.correct / (quizResults.correct + quizResults.wrong)) * 100)}%`
+                            }}
+                          ></div>
                         </div>
-                      </div>
 
-                      <div className="mt-8">
-                        <div className="text-6xl mb-4">
-                          {quizResults.correct > quizResults.wrong ? "🎉" : quizResults.correct === quizResults.wrong ? "👍" : ""}
-                        </div>
-                        <p className="text-xl font-semibold text-slate-700 dark:text-gray-300">
-                          {quizResults.correct > quizResults.wrong
-                            ? "Excellent work! You've mastered this topic!"
-                            : quizResults.correct === quizResults.wrong
-                              ? "Good effort! Keep learning to improve!"
+                        <div className="mt-12">
+                          <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4 leading-tight">
+                            {quizResults.correct > quizResults.wrong
+                              ? "Excellent work! You've mastered this topic!"
                               : "Keep practicing! Review the lesson and try again."}
-                        </p>
-
-                        <div className="mt-6">
-                          <div className="text-lg font-medium text-slate-600 dark:text-gray-400 mb-2">
-                            Your Score: {Math.round((quizResults.correct / (quizResults.correct + quizResults.wrong)) * 100)}%
-                          </div>
-                          <div className="w-full bg-slate-200 dark:bg-gray-600 rounded-full h-4">
-                            <div
-                              className="bg-gradient-to-r from-emerald-500 to-green-600 h-4 rounded-full transition-all duration-700"
-                              style={{
-                                width: `${Math.round((quizResults.correct / (quizResults.correct + quizResults.wrong)) * 100)}%`
-                              }}
-                            ></div>
-                          </div>
+                          </h3>
+                          <button
+                            onClick={() => setQuizMode(false)}
+                            className="px-10 py-5 rounded-2xl bg-blue-600 text-white font-black uppercase tracking-widest text-xs hover:bg-blue-700 transition-all hover:shadow-xl hover:shadow-blue-600/20"
+                          >
+                            Return to lesson content
+                          </button>
                         </div>
                       </div>
                     </div>

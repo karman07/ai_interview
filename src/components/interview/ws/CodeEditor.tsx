@@ -1,4 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
+import {
+    Code2,
+    ChevronDown,
+    RotateCcw,
+    Play,
+    Send,
+    Terminal,
+    X,
+    Cpu,
+    CheckCircle2,
+    Command
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface LanguageConfig {
     id: string;
@@ -93,19 +106,19 @@ export const WSCodeEditor: React.FC<WSCodeEditorProps> = ({ onSubmitCode }) => {
             setExecutionTime(elapsed);
 
             if (!response.ok) {
-                setOutput(`Error: API returned status ${response.status}\n\nTip: The code execution service may be temporarily unavailable.`);
+                setOutput(`Error: Execution failed (HTTP ${response.status})\n\nCheck your syntax and try again.`);
             } else {
                 const result = await response.json();
-                const runOutput = result.run?.output || 'No output';
+                const runOutput = result.run?.output || 'No output collected.';
                 const compileOutput = result.compile?.output || '';
                 const stderr = result.run?.stderr || '';
 
                 let fullOutput = '';
-                if (compileOutput) fullOutput += `[Compile]\n${compileOutput}\n\n`;
+                if (compileOutput) fullOutput += `❯ COMPILATION\n${compileOutput}\n\n`;
                 if (stderr && stderr !== runOutput) {
-                    fullOutput += `[Stderr]\n${stderr}\n\n`;
+                    fullOutput += `❯ STDERR\n${stderr}\n\n`;
                 }
-                fullOutput += `[Output]\n${runOutput}`;
+                fullOutput += `❯ RESULT\n${runOutput}`;
 
                 setOutput(fullOutput.trim());
             }
@@ -113,7 +126,7 @@ export const WSCodeEditor: React.FC<WSCodeEditorProps> = ({ onSubmitCode }) => {
             const elapsed = Math.round(performance.now() - startTime);
             setExecutionTime(elapsed);
             const errorMessage = err instanceof Error ? err.message : String(err);
-            setOutput(`Network Error: ${errorMessage}\n\nMake sure you have internet connectivity.`);
+            setOutput(`Network failure: ${errorMessage}\n\nPlease check your connection.`);
         } finally {
             setIsRunning(false);
         }
@@ -122,63 +135,85 @@ export const WSCodeEditor: React.FC<WSCodeEditorProps> = ({ onSubmitCode }) => {
     const lineCount = code.split('\n').length;
 
     return (
-        <div className="flex flex-col h-full rounded-2xl overflow-hidden bg-white border border-gray-200">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-                <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-gray-800">Code Editor</span>
+        <div className="flex flex-col h-full bg-slate-950 rounded-[2.5rem] overflow-hidden border border-slate-800 shadow-2xl relative">
+            {/* Header / Toolbar */}
+            <div className="flex items-center justify-between px-8 py-6 bg-slate-900 border-b border-slate-800 shrink-0">
+                <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 border border-blue-500/20">
+                            <Code2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-black text-white tracking-widest uppercase">Editor</h3>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{language.name} 3.x</p>
+                        </div>
+                    </div>
+
+                    <div className="h-8 w-px bg-slate-800" />
 
                     {/* Language Selector */}
                     <div className="relative" ref={dropdownRef}>
-                        <button
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                             onClick={() => setShowLangDropdown(!showLangDropdown)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all"
-                            style={{ background: 'rgba(59, 130, 246, 0.08)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.15)' }}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 text-slate-100 text-[11px] font-black uppercase tracking-wider transition-all border border-slate-700 hover:border-blue-500/50"
                         >
                             {language.name}
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${showLangDropdown ? 'rotate-180' : ''}`} />
+                        </motion.button>
 
-                        {showLangDropdown && (
-                            <div className="absolute top-full left-0 mt-1 py-1 rounded-lg shadow-lg z-50 min-w-[160px] max-h-[280px] overflow-y-auto bg-white border border-gray-200">
-                                {LANGUAGES.map(lang => (
-                                    <button
-                                        key={lang.id}
-                                        onClick={() => handleLanguageChange(lang)}
-                                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${lang.id === language.id ? 'text-blue-500 bg-blue-50' : 'text-gray-700 hover:bg-gray-50'}`}
-                                    >
-                                        {lang.name}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                        <AnimatePresence>
+                            {showLangDropdown && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    className="absolute top-full left-0 mt-3 py-2 rounded-2xl shadow-2xl z-[100] min-w-[180px] bg-slate-900 border border-slate-800 backdrop-blur-3xl"
+                                >
+                                    {LANGUAGES.map(lang => (
+                                        <button
+                                            key={lang.id}
+                                            onClick={() => handleLanguageChange(lang)}
+                                            className={`w-full text-left px-5 py-2.5 text-xs font-bold transition-all ${lang.id === language.id ? 'text-blue-400 bg-blue-400/5' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                                        >
+                                            {lang.name}
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <button
+                <div className="flex items-center gap-3">
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => { setCode(language.template); setOutput(''); setShowOutput(false); }}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-700 transition-colors hover:bg-gray-50"
+                        className="p-3 rounded-xl text-slate-500 hover:text-white transition-all bg-slate-800/50 border border-transparent hover:border-slate-700"
+                        title="Reset Code"
                     >
-                        Reset
-                    </button>
+                        <RotateCcw className="w-4 h-4" />
+                    </motion.button>
 
-                    <button
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={handleRun}
                         disabled={isRunning}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all text-white"
-                        style={{
-                            background: isRunning ? '#e5e7eb' : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-                            color: isRunning ? '#9ca3af' : 'white',
-                            cursor: isRunning ? 'not-allowed' : 'pointer',
-                        }}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-[1.25rem] text-xs font-black uppercase tracking-widest transition-all ${isRunning
+                                ? 'bg-slate-800 text-slate-500'
+                                : 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-400'
+                            }`}
                     >
-                        {isRunning ? 'Running...' : 'Run Code'}
-                    </button>
+                        {isRunning ? <Cpu className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                        {isRunning ? 'Executing...' : 'Run Lab'}
+                    </motion.button>
 
-                    <button
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => {
                             if (onSubmitCode) {
                                 onSubmitCode(code, language);
@@ -187,37 +222,36 @@ export const WSCodeEditor: React.FC<WSCodeEditorProps> = ({ onSubmitCode }) => {
                             }
                         }}
                         disabled={submitted || !code.trim()}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all text-white"
-                        style={{
-                            background: submitted ? 'rgba(34, 197, 94, 0.1)' : 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-                            color: submitted ? '#22c55e' : 'white',
-                            cursor: submitted ? 'default' : 'pointer',
-                        }}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-[1.25rem] text-xs font-black uppercase tracking-widest transition-all ${submitted
+                                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
+                                : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500'
+                            }`}
                     >
-                        {submitted ? '✓ Sent!' : 'Submit to Interviewer'}
-                    </button>
+                        {submitted ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                        {submitted ? 'Verified!' : 'Submit'}
+                    </motion.button>
                 </div>
             </div>
 
-            {/* Code Area */}
-            <div className="flex-1 flex min-h-0">
-                <div className="flex flex-1 min-h-0">
-                    {/* Line Numbers */}
-                    <div className="py-3 pl-3 pr-2 select-none overflow-hidden flex flex-col text-xs text-gray-400 bg-gray-50" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                        {Array.from({ length: lineCount }, (_, i) => (
-                            <div key={i} className="leading-[1.6]">{i + 1}</div>
+            {/* Editing Surface */}
+            <div className="flex-1 flex min-h-0 relative">
+                <div className="flex-1 min-h-0 flex">
+                    {/* Gutters */}
+                    <div className="py-6 pl-6 pr-4 select-none overflow-hidden flex flex-col text-[11px] font-mono text-slate-700 bg-slate-950/50 border-r border-slate-900 text-right min-w-[60px]">
+                        {Array.from({ length: 1 + Math.max(lineCount, 50) }, (_, i) => (
+                            <div key={i} className="leading-[1.8] h-[1.8em]">{i + 1}</div>
                         ))}
                     </div>
 
-                    {/* Code Input */}
-                    <div className="flex-1 min-w-0 relative">
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 bg-slate-950 relative">
                         <textarea
                             ref={textareaRef}
                             value={code}
                             onChange={(e) => setCode(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            className="w-full h-full py-3 px-4 overflow-auto resize-none outline-none text-sm leading-[1.6] text-gray-800 bg-white"
-                            style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                            className="w-full h-full py-6 px-6 resize-none outline-none text-[13px] leading-[1.8] text-slate-300 bg-transparent font-mono selection:bg-blue-500/30 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent"
+                            style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}
                             spellCheck={false}
                             autoCapitalize="off"
                             autoCorrect="off"
@@ -225,37 +259,67 @@ export const WSCodeEditor: React.FC<WSCodeEditorProps> = ({ onSubmitCode }) => {
                     </div>
                 </div>
 
-                {/* Output Panel */}
-                {showOutput && (
-                    <div className="w-2/5 flex flex-col border-l border-gray-200">
-                        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50">
-                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Output</span>
-                            <button onClick={() => setShowOutput(false)} className="text-gray-500 hover:text-gray-700 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        <pre className="flex-1 overflow-auto p-4 text-xs leading-relaxed text-gray-700 whitespace-pre-wrap" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                            {output}
-                        </pre>
-                    </div>
-                )}
+                {/* Intelligent Output Panel */}
+                <AnimatePresence>
+                    {showOutput && (
+                        <motion.div
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            className="absolute top-0 right-0 w-[38%] h-full bg-slate-900 border-l border-slate-800 shadow-[-20px_0_40px_rgba(0,0,0,0.4)] z-50 flex flex-col"
+                        >
+                            <div className="px-6 py-5 border-b border-slate-800 flex items-center justify-between shrink-0">
+                                <div className="flex items-center gap-2">
+                                    <Terminal className="w-4 h-4 text-blue-400" />
+                                    <span className="text-[11px] font-black text-white uppercase tracking-widest">Compiler Output</span>
+                                </div>
+                                <button
+                                    onClick={() => setShowOutput(false)}
+                                    className="p-2 text-slate-500 hover:text-white transition-all hover:bg-slate-800 rounded-lg"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-auto p-6">
+                                <pre className="text-xs font-mono leading-relaxed text-slate-400 whitespace-pre-wrap selection:bg-blue-500/20" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                                    {output}
+                                </pre>
+                            </div>
+                            {executionTime !== null && (
+                                <div className="px-6 py-4 border-t border-slate-800 bg-slate-950/40 shrink-0">
+                                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest flex items-center gap-2">
+                                        <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                        Processed {lineCount} lines in {executionTime}ms
+                                    </p>
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
-            {/* Status Bar */}
-            <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 bg-gray-50">
-                <div className="flex items-center gap-4">
-                    <span className="text-xs text-gray-500">{language.name} • {lineCount} lines</span>
-                    {executionTime !== null && <span className="text-xs text-gray-500">Executed in {executionTime}ms</span>}
+            {/* Bottom Bar */}
+            <div className="px-8 py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2">
+                        <Command className="w-3.5 h-3.5 text-slate-600" />
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{language.compiler} mode</span>
+                    </div>
+                    <div className="w-1 h-1 rounded-full bg-slate-700" />
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">UTF-8 • LN {lineCount}</span>
                 </div>
-                {output && !showOutput && (
-                    <button
+
+                {!showOutput && output && (
+                    <motion.button
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
                         onClick={() => setShowOutput(true)}
-                        className="text-xs text-blue-500 hover:text-blue-700 transition-colors font-medium uppercase tracking-wider"
+                        className="text-[10px] font-black text-blue-500 hover:text-blue-400 transition-all uppercase tracking-widest flex items-center gap-2"
                     >
-                        View Output
-                    </button>
+                        <Terminal className="w-3.5 h-3.5" />
+                        Re-open Console
+                    </motion.button>
                 )}
             </div>
         </div>

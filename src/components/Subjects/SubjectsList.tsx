@@ -1,7 +1,7 @@
 import React from "react";
 import { useSubjects } from "@/contexts/SubjectsContext";
 import { SubjectCard } from "./SubjectCard";
-import { Search, Filter, BookOpen } from "lucide-react";
+import { Search, Filter, BookOpen, TrendingUp } from "lucide-react";
 
 export const SubjectsList: React.FC = () => {
   const {
@@ -40,53 +40,57 @@ export const SubjectsList: React.FC = () => {
   }
 
   return (
-    <div>
+    <div className="space-y-12">
       {/* Search and Filters Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 mb-8 border border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Search & Filter</h2>
+      <div className="bg-slate-50 dark:bg-slate-900/40 rounded-[2rem] p-8 border border-slate-100 dark:border-slate-800/50 shadow-sm">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+          <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Search & Filters</h2>
         </div>
-        
-        <div className="flex flex-col lg:flex-row gap-4">
+
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Search Input */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search subjects by title or description..."
+              placeholder="Design, Machine Learning, React..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 text-gray-700 dark:text-white bg-white dark:bg-gray-700"
+              className="w-full pl-12 pr-6 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all duration-300 text-slate-900 dark:text-white font-medium text-sm placeholder:text-slate-400"
             />
           </div>
 
-          {/* Category Filter */}
-          <div className="min-w-[200px]">
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 text-gray-700 dark:text-white bg-white dark:bg-gray-700"
-            >
-              <option value="">All Categories</option>
-              <option value="Programming">Programming</option>
-              <option value="Math">Math</option>
-              <option value="Science">Science</option>
-            </select>
-          </div>
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Category Filter */}
+            <div className="min-w-[200px] relative">
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="w-full appearance-none px-6 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all text-sm font-bold text-slate-600 dark:text-slate-400 cursor-pointer"
+              >
+                <option value="">All Categories</option>
+                <option value="Programming">Programming</option>
+                <option value="Math">Math</option>
+                <option value="Science">Science</option>
+              </select>
+              <Filter className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
 
-          {/* Level Filter */}
-          <div className="min-w-[180px]">
-            <select
-              value={levelFilter}
-              onChange={(e) => setLevelFilter(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 text-gray-700 dark:text-white bg-white dark:bg-gray-700"
-            >
-              <option value="">All Levels</option>
-              <option value="Beginner">Beginner</option>
-              <option value="Intermediate">Intermediate</option>
-              <option value="Advanced">Advanced</option>
-            </select>
+            {/* Level Filter */}
+            <div className="min-w-[180px] relative">
+              <select
+                value={levelFilter}
+                onChange={(e) => setLevelFilter(e.target.value)}
+                className="w-full appearance-none px-6 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all text-sm font-bold text-slate-600 dark:text-slate-400 cursor-pointer"
+              >
+                <option value="">All Levels</option>
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+              </select>
+              <TrendingUp className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
           </div>
         </div>
       </div>

@@ -157,16 +157,17 @@ const ResumeDashboard: React.FC = () => {
       }
     }
 
-    // Fallback logic based on plan status
-    if (user?.subscriptionStatus === 'active') {
-      // Check for Enterprise in case subscriptionPlan is a string
-      if (user.subscriptionPlan === 'enterprise_yearly' ||
-        (typeof user.subscriptionPlan === 'object' && user.subscriptionPlan.name === 'enterprise_yearly')) {
-        return 1000;
-      }
-      // Pro is now 10 as per latest guide
-      return 10;
+    // Fallback logic based on specific plan names
+    const planName = (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object')
+      ? (user.subscriptionPlan as any).name
+      : user?.subscriptionPlan;
+
+    if (user?.subscriptionStatus === 'active' || (planName && planName !== 'free_tier_in')) {
+      if (planName?.toString().includes('pro_tier_200')) return 40;
+      if (planName?.toString().includes('pro_tier_100')) return 15;
+      if (planName?.toString().includes('enterprise')) return 1000;
     }
+
     return 5; // Default free tier
   }, [user]);
 
@@ -318,16 +319,15 @@ const ResumeDashboard: React.FC = () => {
                   <ArrowDownTrayIcon className="absolute right-2 top-2.5 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
                 </div>
                 <button
-                  onClick={() => setIsUploadOpen(true)}
-                  disabled={isAtLimit}
+                  onClick={() => isAtLimit ? setShowPricing(true) : setIsUploadOpen(true)}
                   className={`px-6 py-2 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 shadow-sm hover:shadow-md ${isAtLimit
-                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed border border-gray-200 dark:border-gray-700'
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-400'
                     : 'bg-indigo-600 hover:bg-indigo-700 text-white'
                     }`}
                   title={isAtLimit ? "You've reached your plan limit. Upgrade for more storage." : "Upload New Resume"}
                 >
-                  <CloudArrowUpIcon className="w-5 h-5" />
-                  {isAtLimit ? 'Limit Reached' : 'Upload Resume'}
+                  {isAtLimit ? <TrendingUpIcon className="w-5 h-5" /> : <CloudArrowUpIcon className="w-5 h-5" />}
+                  {isAtLimit ? 'Upgrade Plan' : 'Upload Resume'}
                 </button>
               </div>
             </div>

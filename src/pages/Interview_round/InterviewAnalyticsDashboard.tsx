@@ -7,6 +7,11 @@ import {
   Zap,
   Trophy,
   Brain,
+  ChevronRight,
+  Info,
+  Calendar,
+  LayoutDashboard,
+  ShieldCheck
 } from 'lucide-react';
 import {
   RadarChart,
@@ -16,6 +21,7 @@ import {
   PolarRadiusAxis,
   ResponsiveContainer
 } from 'recharts';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { InterviewAnalyticsApi } from '@/api/interviewAnalytics';
 import { InterviewV2Report } from '@/api/interviewV2';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,11 +29,35 @@ import { usePricing } from '@/contexts/PricingContext';
 
 interface ExternalAnalyticsSession extends InterviewV2Report {
   timestamp: string;
+  role: string;
+  round: string;
+  company?: string;
 }
 
 interface InterviewAnalyticsDashboardProps {
   onStartNew?: () => void;
 }
+
+const containerVars: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVars: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4
+    }
+  }
+};
 
 export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAnalyticsDashboardProps) {
   const [loading, setLoading] = useState(true);
@@ -41,10 +71,8 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
 
   const loadData = async () => {
     try {
-      // The old dashboard-stats endpoint now contains externalAnalytics
       const data = await InterviewAnalyticsApi.getDashboardStats();
       if (data && data.externalAnalytics) {
-        // Sort by newest first
         const sorted = [...data.externalAnalytics].sort(
           (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
         );
@@ -70,7 +98,6 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
   const totalInterviews = sessions.length;
   const isAtLimit = totalInterviews >= interviewLimit;
 
-  // Compute Aggregated Stats
   const averageScore = totalInterviews > 0
     ? sessions.reduce((acc, s) => acc + (s.summary?.overall_score || 0), 0) / totalInterviews
     : 0;
@@ -78,257 +105,413 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
     ? Math.max(...sessions.map(s => s.summary?.overall_score || 0))
     : 0;
 
-  // Compute dimension averages for the Radar Chart
   const dimensions = {
-    'Technical Depth': 0,
-    'Problem Solving': 0,
+    'Technical': 0,
     'System Design': 0,
+    'Problem Solving': 0,
     'Communication': 0,
-    'Role Fit': 0
+    'Cultural Fit': 0
   };
 
   sessions.forEach(s => {
-    dimensions['Technical Depth'] += s.dimension_scores?.technical_depth || 0;
+    dimensions['Technical'] += s.dimension_scores?.technical_depth || 0;
     dimensions['Problem Solving'] += s.dimension_scores?.problem_solving || 0;
     dimensions['System Design'] += s.dimension_scores?.system_design || 0;
     dimensions['Communication'] += s.dimension_scores?.communication || 0;
-    dimensions['Role Fit'] += s.dimension_scores?.role_fit || 0;
+    dimensions['Cultural Fit'] += s.dimension_scores?.role_fit || 0;
   });
 
   const radarData = totalInterviews > 0 ? [
-    { subject: 'Technical Depth', score: dimensions['Technical Depth'] / totalInterviews, fullMark: 10 },
+    { subject: 'Technical', score: dimensions['Technical'] / totalInterviews, fullMark: 10 },
     { subject: 'Problem Solving', score: dimensions['Problem Solving'] / totalInterviews, fullMark: 10 },
     { subject: 'System Design', score: dimensions['System Design'] / totalInterviews, fullMark: 10 },
     { subject: 'Communication', score: dimensions['Communication'] / totalInterviews, fullMark: 10 },
-    { subject: 'Role Fit', score: dimensions['Role Fit'] / totalInterviews, fullMark: 10 }
+    { subject: 'Cultural Fit', score: dimensions['Cultural Fit'] / totalInterviews, fullMark: 10 }
   ] : [];
 
-  // Aggregate Top Strengths / Areas for Improvement
   const allStrengths = sessions.flatMap(s => s.verdict?.strengths_to_highlight || []);
   const allImprovements = sessions.flatMap(s => s.verdict?.areas_to_fix_before_next_interview || []);
 
-  // Get top 5 unique for display
   const topStrengths = Array.from(new Set(allStrengths)).slice(0, 5);
   const topImprovements = Array.from(new Set(allImprovements)).slice(0, 5);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
+      <div className="min-h-screen bg-blue-50/30 dark:bg-slate-950 flex flex-col items-center justify-center gap-4">
+        <div className="relative">
+          <div className="w-16 h-16 rounded-full border-4 border-blue-500/20 border-t-blue-600 animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <LayoutDashboard className="w-6 h-6 text-blue-600 animate-pulse" />
+          </div>
+        </div>
+        <p className="text-blue-600/60 font-medium animate-pulse">Analyzing Performance Data...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-[#F8FAFF] dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 overflow-x-hidden">
+      {/* Dynamic Background Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-20 dark:opacity-40">
+        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-200 dark:bg-blue-900/20 blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-200 dark:bg-indigo-900/20 blur-[120px]" />
+      </div>
+
       {/* Header */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-100 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">AI Interview Analytics</h1>
-              <p className="text-gray-600 dark:text-gray-400">Track your performance across all AI-evaluated dimensions</p>
-            </div>
-            <div className="flex items-center gap-6">
-              {/* Usage Indicator */}
-              <div className="flex flex-col items-end">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Interview Capacity</span>
-                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isAtLimit ? 'bg-red-500 text-white' : 'bg-indigo-600 text-white'}`}>
-                    {totalInterviews} / {interviewLimit}
-                  </span>
+      <div className="relative bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border-b border-blue-100 dark:border-slate-800">
+        <div className="max-w-7xl mx-auto px-6 py-10">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+            <motion.div
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-blue-600 rounded-lg shadow-lg shadow-blue-200 dark:shadow-none">
+                  <TrendingUp className="w-5 h-5 text-white" />
                 </div>
-                <div className="w-32 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-500 ${isAtLimit ? 'bg-red-500' : 'bg-indigo-600'}`}
-                    style={{ width: `${Math.min((totalInterviews / interviewLimit) * 100, 100)}%` }}
-                  />
+                <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                  Performance <span className="text-blue-600">Analytics</span>
+                </h1>
+              </div>
+              <p className="text-slate-500 dark:text-slate-400 font-medium max-w-sm">
+                Unlock deeper insights into your interview performance with AI-driven breakdown.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ x: 20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="flex items-stretch gap-3 lg:w-auto"
+            >
+              {/* Compact Session Capacity */}
+              <div className="bg-white/60 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50 rounded-xl px-5 py-2.5 flex items-center gap-6 shadow-sm transition-colors hover:border-blue-400/30">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[9px] font-black text-slate-400 underline decoration-blue-500/30 underline-offset-4 uppercase tracking-[0.1em]">Capacity</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className={`text-xl font-black ${isAtLimit ? 'text-rose-500' : 'text-slate-900 dark:text-white'}`}>{totalInterviews}</span>
+                    <span className="text-[10px] text-slate-400 font-bold">/ {interviewLimit}</span>
+                  </div>
+                </div>
+
+                <div className="w-24 flex flex-col gap-1.5">
+                  <div className="flex justify-between text-[8px] font-bold text-slate-400/60 uppercase">
+                    <span>Usage</span>
+                    <span>{Math.round((totalInterviews / interviewLimit) * 100)}%</span>
+                  </div>
+                  <div className="h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min((totalInterviews / interviewLimit) * 100, 100)}%` }}
+                      className={`h-full ${isAtLimit ? 'bg-rose-500' : 'bg-blue-600'}`}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-xl shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30">
-                  <Trophy className="w-5 h-5" />
-                  <span className="font-semibold text-lg">Avg Score: {averageScore.toFixed(1)}</span>
-                </div>
+              {/* Compact Action Button */}
+              <AnimatePresence mode="wait">
                 {onStartNew && (
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.01, y: -1 }}
+                    whileTap={{ scale: 0.99 }}
                     onClick={() => isAtLimit ? setShowPricing(true) : onStartNew()}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium transition-all duration-300 shadow-sm ${isAtLimit
-                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border border-gray-200 dark:border-gray-700 cursor-not-allowed'
-                        : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                    className={`flex items-center gap-3 px-6 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all duration-300 shadow-lg ${isAtLimit
+                        ? 'bg-rose-600 text-white shadow-rose-500/10'
+                        : 'bg-blue-600 text-white shadow-blue-600/10 hover:bg-blue-700'
                       }`}
                   >
-                    <Zap className="w-5 h-5" />
-                    {isAtLimit ? 'Limit reached' : 'Start New Interview'}
-                  </button>
+                    <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center">
+                      {isAtLimit ? <ShieldCheck className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5 fill-current" />}
+                    </div>
+                    <span>{isAtLimit ? 'Upgrade Now' : 'New Interview'}</span>
+                  </motion.button>
                 )}
-              </div>
-            </div>
+              </AnimatePresence>
+            </motion.div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                <BarChart3 className="w-6 h-6 text-white" />
+      <motion.div
+        variants={containerVars}
+        initial="hidden"
+        animate="visible"
+        className="max-w-7xl mx-auto px-6 py-12 space-y-12"
+      >
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            { label: 'Total Completed', value: totalInterviews, icon: BarChart3, color: 'blue', desc: 'Mock sessions' },
+            { label: 'Average Score', value: averageScore.toFixed(1), icon: Target, color: 'indigo', desc: 'Performance quality' },
+            { label: 'Best Performance', value: bestScore.toFixed(1), icon: Trophy, color: 'emerald', desc: 'Highest achievement' }
+          ].map((stat, i) => (
+            <motion.div
+              key={i}
+              variants={itemVars}
+              className="group relative bg-white dark:bg-slate-900/60 backdrop-blur-md p-8 rounded-[2rem] border border-blue-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-2xl hover:shadow-blue-500/10"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <div className={`p-4 rounded-2xl bg-${stat.color}-50 dark:bg-${stat.color}-500/10 text-${stat.color}-600 dark:text-${stat.color}-400 group-hover:scale-110 transition-transform duration-500`}>
+                  <stat.icon className="w-7 h-7" />
+                </div>
+                <div className="px-3 py-1 bg-slate-50 dark:bg-slate-800 rounded-full text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">
+                  {stat.desc}
+                </div>
               </div>
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total</span>
-            </div>
-            <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-1">{totalInterviews}</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Interviews Completed</p>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                <Target className="w-6 h-6 text-white" />
+              <div className="space-y-1">
+                <h3 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">{stat.value}</h3>
+                <p className="text-slate-500 font-semibold">{stat.label}</p>
               </div>
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Average</span>
-            </div>
-            <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-1">{averageScore.toFixed(1)}</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Overall Score</p>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center">
-                <Award className="w-6 h-6 text-white" />
+              {/* Ornamental element */}
+              <div className={`absolute top-0 right-0 p-4 opacity-5 text-${stat.color}-500 group-hover:opacity-10 transition-opacity`}>
+                <stat.icon className="w-24 h-24 rotate-[-15deg]" />
               </div>
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Best</span>
-            </div>
-            <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-1">{bestScore.toFixed(1)}</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Highest Score</p>
-          </div>
+            </motion.div>
+          ))}
         </div>
 
-        {totalInterviews === 0 && (
-          <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
-            <Zap className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Analytics Yet</h3>
-            <p className="text-gray-500 dark:text-gray-400">Complete an AI interview to see your detailed performance metrics.</p>
-          </div>
-        )}
-
-        {totalInterviews > 0 && (
+        {totalInterviews === 0 ? (
+          <motion.div
+            variants={itemVars}
+            className="text-center py-24 bg-white/50 dark:bg-slate-900/40 rounded-[3rem] border-2 border-dashed border-blue-100 dark:border-slate-800"
+          >
+            <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Zap className="w-10 h-10 text-slate-300" />
+            </div>
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">No Analytics Available</h3>
+            <p className="text-slate-500 max-w-md mx-auto">Complete your first interactive AI interview to unlock detailed performance metrics and career insights.</p>
+          </motion.div>
+        ) : (
           <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Performance Radar Chart */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Dimension Breakdown</h3>
-                <div className="h-[300px]">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Radar Chart Card */}
+              <motion.div
+                variants={itemVars}
+                className="bg-white dark:bg-slate-900/60 backdrop-blur-md p-8 rounded-[2rem] border border-blue-100 dark:border-slate-800 shadow-sm overflow-hidden"
+              >
+                <div className="flex items-center justify-between mb-10">
+                  <div className="space-y-1">
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Skill Matrix</h3>
+                    <p className="text-slate-500 text-sm font-medium">Aggregated performance across dimensions</p>
+                  </div>
+                  <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
+                    <Brain className="w-6 h-6 text-blue-600" />
+                  </div>
+                </div>
+
+                <div className="h-[350px] w-full mt-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <RadarChart data={radarData}>
-                      <PolarGrid stroke="#e5e7eb" className="dark:stroke-gray-700" />
-                      <PolarAngleAxis dataKey="subject" tick={{ fill: '#6b7280', fontSize: 12 }} />
-                      <PolarRadiusAxis angle={90} domain={[0, 10]} tick={{ fill: '#6b7280' }} />
-                      <Radar name="Score" dataKey="score" stroke="#6366f1" fill="#6366f1" fillOpacity={0.5} />
+                      <PolarGrid stroke="#e2e8f0" className="dark:stroke-slate-800" />
+                      <PolarAngleAxis
+                        dataKey="subject"
+                        tick={{ fill: '#64748b', fontSize: 13, fontWeight: 700 }}
+                      />
+                      <PolarRadiusAxis
+                        angle={90}
+                        domain={[0, 10]}
+                        axisLine={false}
+                        tick={false}
+                      />
+                      <Radar
+                        name="Mock Score"
+                        dataKey="score"
+                        stroke="#2563eb"
+                        strokeWidth={3}
+                        fill="#3b82f6"
+                        fillOpacity={0.25}
+                      />
                     </RadarChart>
                   </ResponsiveContainer>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Strengths & Improvements */}
-              <div className="flex flex-col gap-6">
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-emerald-500" />
-                    Top Strengths
-                  </h3>
-                  <ul className="space-y-3">
+              {/* Insights Column */}
+              <div className="flex flex-col gap-8">
+                <motion.div
+                  variants={itemVars}
+                  className="group bg-white dark:bg-slate-900/60 backdrop-blur-md p-8 rounded-[2rem] border border-blue-100 dark:border-slate-800 shadow-sm flex-1 hover:border-emerald-200 dark:hover:border-emerald-800 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                      <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg">
+                        <TrendingUp className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      Top Strengths
+                    </h3>
+                    <Award className="w-5 h-5 text-slate-200" />
+                  </div>
+                  <div className="space-y-4">
                     {topStrengths.map((strength, idx) => (
-                      <li key={idx} className="flex items-start gap-2.5 text-sm">
-                        <span className="text-emerald-500 mt-0.5">•</span>
-                        <span className="text-gray-700 dark:text-gray-300">{strength}</span>
-                      </li>
+                      <motion.div
+                        initial={{ x: -10, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.5 + (idx * 0.1) }}
+                        key={idx}
+                        className="flex items-start gap-4 p-4 bg-emerald-50/50 dark:bg-emerald-500/5 rounded-2xl hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors cursor-default"
+                      >
+                        <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                          <CheckIcon className="w-3.5 h-3.5 text-emerald-600" />
+                        </div>
+                        <span className="text-slate-700 dark:text-slate-300 text-sm font-semibold leading-relaxed">{strength}</span>
+                      </motion.div>
                     ))}
-                  </ul>
-                </div>
+                  </div>
+                </motion.div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <Target className="w-5 h-5 text-rose-500" />
-                    Critical Areas to Improve
-                  </h3>
-                  <ul className="space-y-3">
+                <motion.div
+                  variants={itemVars}
+                  className="group bg-white dark:bg-slate-900/60 backdrop-blur-md p-8 rounded-[2rem] border border-blue-100 dark:border-slate-800 shadow-sm flex-1 hover:border-amber-200 dark:hover:border-amber-800 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                      <div className="p-2 bg-amber-50 dark:bg-amber-500/10 rounded-lg">
+                        <Target className="w-5 h-5 text-amber-600" />
+                      </div>
+                      Focus Areas
+                    </h3>
+                    <Brain className="w-5 h-5 text-slate-200" />
+                  </div>
+                  <div className="space-y-4">
                     {topImprovements.map((area, idx) => (
-                      <li key={idx} className="flex items-start gap-2.5 text-sm">
-                        <span className="text-rose-500 mt-0.5">•</span>
-                        <span className="text-gray-700 dark:text-gray-300">{area}</span>
-                      </li>
+                      <motion.div
+                        initial={{ x: -10, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.7 + (idx * 0.1) }}
+                        key={idx}
+                        className="flex items-start gap-4 p-4 bg-amber-50/50 dark:bg-amber-500/5 rounded-2xl hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors cursor-default"
+                      >
+                        <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                          <Zap className="w-3.5 h-3.5 text-amber-600" />
+                        </div>
+                        <span className="text-slate-700 dark:text-slate-300 text-sm font-semibold leading-relaxed">{area}</span>
+                      </motion.div>
                     ))}
-                  </ul>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+
+            {/* Detailed History */}
+            <motion.div
+              variants={itemVars}
+              className="space-y-8"
+            >
+              <div className="flex items-center justify-between px-2">
+                <div className="space-y-1">
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Interview History</h3>
+                  <p className="text-slate-500 text-sm font-medium">Review your previous sessions and feedback</p>
+                </div>
+                <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-slate-800 rounded-full text-blue-600 dark:text-blue-400 text-sm font-bold">
+                  <Calendar className="w-4 h-4" />
+                  Chronological View
                 </div>
               </div>
-            </div>
 
-            {/* AI External Interviews List */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                <Brain className="w-6 h-6 text-indigo-500" />
-                Interview History
-              </h3>
-              <div className="space-y-4">
-                {sessions.map((aiSession, idx) => {
-                  const score = aiSession.summary?.overall_score ?? 0;
-                  const rec = aiSession.summary?.hire_recommendation ?? 'Unknown';
-
-                  const scoreColor =
-                    score >= 75 ? "text-emerald-600 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-900/30 dark:border-emerald-800" :
-                      score >= 50 ? "text-amber-600 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-900/30 dark:border-amber-800" :
-                        "text-rose-600 bg-rose-50 border-rose-200 dark:text-rose-400 dark:bg-rose-900/30 dark:border-rose-800";
-
-                  return (
-                    <div key={idx} className="p-5 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 transition-all hover:border-indigo-200 dark:hover:border-indigo-800">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-14 h-14 flex flex-col items-center justify-center rounded-xl border font-extrabold ${scoreColor}`}>
-                            <span className="text-xl leading-none">{score}</span>
-                            <span className="text-[10px] uppercase font-semibold mt-1 opacity-70">Score</span>
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-gray-900 dark:text-white capitalize text-lg">{rec}</h4>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
-                              {new Date(aiSession.timestamp).toLocaleString()} • {aiSession.summary?.seniority_assessment?.toUpperCase() || 'GENERAL'} ROLE
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5 border-t border-gray-100 dark:border-gray-700">
-                        <div>
-                          <h5 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-3">Key Strengths</h5>
-                          <ul className="space-y-2">
-                            {aiSession.verdict?.strengths_to_highlight?.slice(0, 3).map((s: string, i: number) => (
-                              <li key={i} className="text-sm text-gray-700 dark:text-gray-300 flex items-start gap-2">
-                                <span className="text-emerald-500 mt-0.5">•</span> <span className="leading-relaxed">{s}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div>
-                          <h5 className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-3">Primary Focus Areas</h5>
-                          <ul className="space-y-2">
-                            {aiSession.verdict?.areas_to_fix_before_next_interview?.slice(0, 3).map((a: string, i: number) => (
-                              <li key={i} className="text-sm text-gray-700 dark:text-gray-300 flex items-start gap-2">
-                                <span className="text-rose-500 mt-0.5">•</span> <span className="leading-relaxed">{a}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="grid grid-cols-1 gap-6">
+                {sessions.map((aiSession, idx) => (
+                  <HistoryItem key={idx} aiSession={aiSession} index={idx} />
+                ))}
               </div>
-            </div>
+            </motion.div>
           </>
         )}
-      </div>
+      </motion.div>
     </div>
+  );
+}
+
+function HistoryItem({ aiSession, index }: { aiSession: ExternalAnalyticsSession, index: number }) {
+  const score = aiSession.summary?.overall_score ?? 0;
+
+  const scoreStyles =
+    score >= 75 ? { bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-100 dark:border-emerald-900/40', ring: 'ring-emerald-50' } :
+      score >= 50 ? { bg: 'bg-blue-50 dark:bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-100 dark:border-blue-900/40', ring: 'ring-blue-50' } :
+        { bg: 'bg-rose-50 dark:bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-100 dark:border-rose-900/40', ring: 'ring-rose-50' };
+
+  return (
+    <motion.div
+      variants={itemVars}
+      whileHover={{ y: -4 }}
+      className="group relative bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-2xl hover:shadow-blue-500/5 transition-all"
+    >
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Left: Score Circle */}
+        <div className="flex flex-row lg:flex-col items-center gap-6 lg:border-r border-slate-100 dark:border-slate-800 lg:pr-8">
+          <div className={`relative w-24 h-24 rounded-full flex flex-col items-center justify-center shrink-0 border-2 ${scoreStyles.border} ${scoreStyles.bg}`}>
+            <span className={`text-3xl font-black ${scoreStyles.text}`}>{score}</span>
+            <span className={`text-[10px] font-black uppercase tracking-widest opacity-60 ${scoreStyles.text}`}>Score</span>
+            {/* Pulsing ring */}
+            <div className={`absolute inset-0 rounded-full animate-ping opacity-20 ${scoreStyles.bg}`} style={{ animationDuration: '3s' }} />
+          </div>
+
+          <div className="flex flex-col items-start lg:items-center text-center">
+            <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider mb-2 ${scoreStyles.bg} ${scoreStyles.text}`}>
+              {aiSession.summary?.hire_recommendation || 'Evaluated'}
+            </div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              {aiSession.timestamp
+                ? new Date(aiSession.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                : 'Date Unknown'}
+            </p>
+          </div>
+        </div>
+
+        {/* Right: Details */}
+        <div className="flex-1 space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h4 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight group-hover:text-blue-600 transition-colors">
+                {(aiSession.role || 'General Role').toUpperCase()}
+              </h4>
+              <p className="flex items-center gap-2 text-slate-400 text-sm font-bold bg-slate-50 dark:bg-slate-800/50 px-3 py-1 rounded-lg w-fit mt-2">
+                <Brain className="w-4 h-4" />
+                {aiSession.company || 'Private Assessment'} • {(aiSession.round || 'Evaluation').toUpperCase()}
+              </p>
+            </div>
+
+            <button className="flex items-center gap-2 text-blue-600 font-bold text-sm bg-blue-50 hover:bg-blue-600 hover:text-white px-5 py-2.5 rounded-xl transition-all self-start">
+              Full Report <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <h5 className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full w-fit uppercase tracking-widest">Performance Peaks</h5>
+              <div className="space-y-3">
+                {aiSession.verdict?.strengths_to_highlight?.slice(0, 2).map((s, i) => (
+                  <div key={i} className="flex gap-3 text-sm text-slate-600 dark:text-slate-400 font-medium bg-slate-50/50 dark:bg-slate-800/30 p-3 rounded-xl border border-transparent hover:border-emerald-100 transition-colors">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
+                    {s}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h5 className="text-[10px] font-black text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-1 rounded-full w-fit uppercase tracking-widest">Growth Areas</h5>
+              <div className="space-y-3">
+                {aiSession.verdict?.areas_to_fix_before_next_interview?.slice(0, 2).map((a, i) => (
+                  <div key={i} className="flex gap-3 text-sm text-slate-600 dark:text-slate-400 font-medium bg-slate-50/50 dark:bg-slate-800/30 p-3 rounded-xl border border-transparent hover:border-amber-100 transition-colors">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
+                    {a}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+    </svg>
   );
 }
