@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Subscription, SubscriptionDocument, SubscriptionStatus, SubscriptionType, FeatureType } from './schemas/subscription.schema';
@@ -9,12 +9,22 @@ import {
 } from './dto';
 
 @Injectable()
-export class SubscriptionService {
+export class SubscriptionService implements OnModuleInit {
   private readonly logger = new Logger(SubscriptionService.name);
 
   constructor(
     @InjectModel(Subscription.name) private subscriptionModel: Model<SubscriptionDocument>,
   ) { }
+
+  async onModuleInit() {
+    this.logger.log('🌱 Seeding subscription plans for India...');
+    try {
+      await this.seedCountryPlans('IN');
+      this.logger.log('✅ Subscription plans for India seeded successfully!');
+    } catch (error) {
+      this.logger.error(`❌ Failed to seed subscription plans: ${error.message}`);
+    }
+  }
 
   async create(createSubscriptionDto: CreateSubscriptionDto): Promise<SubscriptionResponseDto> {
     try {
@@ -128,6 +138,11 @@ export class SubscriptionService {
   }
 
   async seedCountryPlans(countryCode: string) {
+    if (countryCode.toUpperCase() === 'IN') {
+      // Clear existing plans for India as requested
+      await this.subscriptionModel.deleteMany({ country: 'IN' });
+    }
+
     const plans = [
       {
         name: `free_tier_${countryCode.toLowerCase()}`,
@@ -137,10 +152,11 @@ export class SubscriptionService {
         currency: countryCode === 'IN' ? 'INR' : 'USD',
         type: SubscriptionType.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
+        description: 'Perfect for starters to experience the platform.',
         features: [
           {
-            name: 'Resume Upload Limit',
-            description: 'Total resumes you can upload',
+            name: 'Resume Limit',
+            description: '5 Resume analysis reports',
             type: FeatureType.NUMERIC,
             value: 5,
             enabled: true,
@@ -149,68 +165,83 @@ export class SubscriptionService {
           },
           {
             name: 'Interview Limit',
-            description: 'Total interviews you can take',
+            description: '3 Professional AI interviews',
             type: FeatureType.NUMERIC,
-            value: 5,
+            value: 3,
             enabled: true,
-            limit: 5,
+            limit: 3,
             unit: 'interviews'
           },
-          { name: 'Interviews', description: 'Limited interviews', type: FeatureType.BOOLEAN, value: true, enabled: true },
+          { name: 'AI Feedback', description: 'Basic qualitative feedback', type: FeatureType.BOOLEAN, value: true, enabled: true },
         ],
         order: 0
       },
       {
-        name: `pro_monthly_${countryCode.toLowerCase()}`,
-        displayName: 'Pro Monthly',
+        name: `pro_tier_100_${countryCode.toLowerCase()}`,
+        displayName: 'Career Starter',
         country: countryCode.toUpperCase(),
-        price: countryCode === 'IN' ? 99900 : 2900,
+        price: countryCode === 'IN' ? 10000 : 900,
         currency: countryCode === 'IN' ? 'INR' : 'USD',
         type: SubscriptionType.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
+        razorpayPlanId: countryCode === 'IN' ? 'plan_SOAOKbZ1fdkXRN' : undefined,
+        description: 'Accelerate your job search with more resumes and interviews.',
         features: [
           {
-            name: 'Resume Upload Limit',
-            description: 'Total resumes you can upload',
+            name: 'Resume Limit',
+            description: '15 Resume analysis reports',
             type: FeatureType.NUMERIC,
-            value: 10,
+            value: 15,
             enabled: true,
-            limit: 10,
+            limit: 15,
             unit: 'resumes'
           },
           {
             name: 'Interview Limit',
-            description: 'Total interviews you can take',
+            description: '10 Professional AI interviews',
             type: FeatureType.NUMERIC,
             value: 10,
             enabled: true,
             limit: 10,
             unit: 'interviews'
           },
-          { name: 'Interviews', description: 'Unlimited premium interviews', type: FeatureType.BOOLEAN, value: true, enabled: true },
-          { name: 'AI Feedback', description: 'Deep qualitative analysis', type: FeatureType.BOOLEAN, value: true, enabled: true }
+          { name: 'AI Feedback', description: 'Detailed qualitative analysis', type: FeatureType.BOOLEAN, value: true, enabled: true },
+          { name: 'Priority Support', description: '24/7 Priority support access', type: FeatureType.BOOLEAN, value: true, enabled: true }
         ],
-        order: 1
+        order: 1,
+        popularBadge: true
       },
       {
-        name: `enterprise_yearly_${countryCode.toLowerCase()}`,
-        displayName: 'Enterprise Yearly',
+        name: `pro_tier_200_${countryCode.toLowerCase()}`,
+        displayName: 'Professional',
         country: countryCode.toUpperCase(),
-        price: countryCode === 'IN' ? 999900 : 24900,
+        price: countryCode === 'IN' ? 20000 : 1900,
         currency: countryCode === 'IN' ? 'INR' : 'USD',
-        type: SubscriptionType.YEARLY,
+        type: SubscriptionType.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
+        razorpayPlanId: countryCode === 'IN' ? 'plan_SKqg030DvG2aew' : undefined,
+        description: 'For power users who want the maximum edge in their prep.',
         features: [
           {
-            name: 'Resume Upload Limit',
-            description: 'Total resumes you can upload',
+            name: 'Resume Limit',
+            description: '40 Resume analysis reports',
             type: FeatureType.NUMERIC,
-            value: 1000,
+            value: 40,
             enabled: true,
-            limit: 1000,
+            limit: 40,
             unit: 'resumes'
           },
-          { name: 'Team Access', description: 'Up to 10 seats', type: FeatureType.NUMERIC, value: 10, enabled: true, limit: 10 }
+          {
+            name: 'Interview Limit',
+            description: '20 Professional AI interviews',
+            type: FeatureType.NUMERIC,
+            value: 20,
+            enabled: true,
+            limit: 20,
+            unit: 'interviews'
+          },
+          { name: 'AI Feedback', description: 'Full deep-dive qualitative analysis', type: FeatureType.BOOLEAN, value: true, enabled: true },
+          { name: 'Custom Roadmaps', description: 'Personalized career roadmaps', type: FeatureType.BOOLEAN, value: true, enabled: true }
         ],
         order: 2
       }
@@ -220,25 +251,7 @@ export class SubscriptionService {
       await this.subscriptionModel.findOneAndUpdate({ name: planData.name }, planData, { upsert: true });
     }
 
-    // Also update any existing plans that might not have the resume limit feature
-    await this.subscriptionModel.updateMany(
-      { "features.name": { $ne: 'Resume Upload Limit' } },
-      {
-        $push: {
-          features: {
-            name: 'Resume Upload Limit',
-            description: 'Total resumes you can upload',
-            type: FeatureType.NUMERIC,
-            value: 5,
-            enabled: true,
-            limit: 5,
-            unit: 'resumes'
-          }
-        }
-      }
-    );
-
-    return { message: `Subscription plans seeded for ${countryCode} including Free Tier` };
+    return { message: `Subscription plans seeded for ${countryCode}. Previous plans removed.` };
   }
 
   private toSubscriptionResponseDto(subscription: SubscriptionDocument): SubscriptionResponseDto {
