@@ -61,6 +61,34 @@ const HeroSection = ({ onStart, onResume }: { onStart: () => void, onResume: () 
   </section>
 );
 
+const VideoSection = () => (
+  <section className="py-20 bg-white dark:bg-slate-950">
+    <div className="max-w-7xl mx-auto px-6">
+      <div className="text-center mb-16">
+        <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 mb-4 tracking-tight uppercase italic">
+          Experience the <span className="text-blue-600 dark:text-blue-400">Platform</span>
+        </h2>
+        <p className="text-slate-600 dark:text-slate-400 text-lg max-w-2xl mx-auto font-light leading-relaxed">
+          Watch a quick walkthrough of how our AI-driven ecosystem accelerates your career growth.
+        </p>
+      </div>
+      <div className="relative aspect-video rounded-[2.5rem] overflow-hidden shadow-[0_48px_80px_-20px_rgba(59,130,246,0.2)] dark:shadow-[0_48px_80px_-16px_rgba(0,0,0,0.5)] border-[8px] border-white dark:border-slate-800 bg-slate-50 dark:bg-slate-900 group">
+        <video
+          className="w-full h-full object-cover"
+          controls
+          playsInline
+        >
+          <source src="/videos/good.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+
+        {/* Quality overlay shadow for depth */}
+        <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-slate-900/5 dark:ring-white/10 rounded-[2.5rem]" />
+      </div>
+    </div>
+  </section>
+);
+
 const PillarCard = ({
   title,
   content,
@@ -258,6 +286,7 @@ const Home = () => {
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 selection:bg-blue-500/30 transition-colors duration-500">
       <main>
         <HeroSection onStart={handleStartPractice} onResume={handleAnalyzeResume} />
+        <VideoSection />
         <PillarsSection navigate={navigate} />
         <WhySection />
         <TransformationSection />

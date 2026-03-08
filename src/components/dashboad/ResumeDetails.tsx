@@ -221,10 +221,10 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
           />
 
           <ActionCard
-            icon={<Play className="w-5 h-5 text-purple-600" />}
+            icon={<Play className="w-5 h-5 text-blue-600" />}
             title="Start AI Interview"
             subtitle={
-              <span className="text-purple-600 text-sm font-medium">
+              <span className="text-blue-600 text-sm font-medium">
                 Practice Interview →
               </span>
             }
@@ -372,13 +372,13 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
 
           {hasImprovement && (
             <ActionCard
-              icon={<Download className="w-5 h-5 text-indigo-600" />}
+              icon={<Download className="w-5 h-5 text-blue-600" />}
               title="Download Enhanced Resume"
               subtitle={
                 <button
                   onClick={handleDownloadEnhancedResume}
                   disabled={isDownloadingResume}
-                  className="text-indigo-600 hover:text-indigo-700 text-sm font-medium hover:underline text-left disabled:opacity-50"
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium hover:underline text-left disabled:opacity-50"
                 >
                   {isDownloadingResume ? 'Generating...' : 'Get Enhanced Resume →'}
                 </button>
@@ -406,7 +406,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
               {!enhancedResumeData ? (
                 <div className="space-y-4 py-4">
                   <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
@@ -415,7 +415,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <motion.div
-                        className="bg-indigo-600 h-2 rounded-full"
+                        className="bg-blue-600 h-2 rounded-full"
                         initial={{ width: 0 }}
                         animate={{ width: `${progress}%` }}
                         transition={{ duration: 0.3 }}
@@ -442,7 +442,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                         setShowProgressDialog(false);
                         setShowBuilderModal(true);
                       }}
-                      className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
                     >
                       Open Resume Editor
                     </Button>
@@ -852,19 +852,19 @@ const JDMatchTab = ({ resume }: { resume: any }) => {
   return (
     <div className="space-y-6">
       {/* Overall Score Card */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 rounded-[2.5rem] p-10 shadow-2xl shadow-indigo-500/20 group">
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 rounded-[2.5rem] p-10 shadow-2xl shadow-blue-500/20 group">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
         <div className="relative flex items-center justify-between">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
-              <Brain className="w-4 h-4 text-indigo-200" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-100">AI Logic Core</span>
+              <Brain className="w-4 h-4 text-blue-200" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100">AI Logic Core</span>
             </div>
             <div>
               <h3 className="text-4xl font-black text-white tracking-tighter mb-2">
                 Job Match Analytics
               </h3>
-              <p className="text-indigo-100/70 text-xs font-black uppercase tracking-[0.2em] max-w-md">
+              <p className="text-blue-100/70 text-xs font-black uppercase tracking-[0.2em] max-w-md">
                 Synthesized Compatibility Matrix
               </p>
             </div>
@@ -873,24 +873,24 @@ const JDMatchTab = ({ resume }: { resume: any }) => {
             <div className="text-8xl font-black text-white drop-shadow-2xl tabular-nums leading-none">
               {jdMatchData.overall_score}
             </div>
-            <div className="text-[10px] font-black text-indigo-200 uppercase tracking-[0.4em] mt-3 mr-2">Fit Score Index</div>
+            <div className="text-[10px] font-black text-blue-200 uppercase tracking-[0.4em] mt-3 mr-2">Fit Score Index</div>
           </div>
         </div>
       </div>
 
       {/* Match Analysis Table */}
-      <div className="border border-indigo-100 dark:border-indigo-800/50 rounded-[2.5rem] overflow-hidden bg-white dark:bg-[#0D1117] shadow-xl shadow-indigo-500/5">
-        <div className="px-8 py-6 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/20 dark:to-purple-900/20 border-b border-indigo-100 dark:border-indigo-800/50">
-          <h4 className="text-xl font-black text-indigo-900 dark:text-indigo-100 flex items-center gap-3 tracking-tighter uppercase">
-            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl">
-              <Brain className="w-5 h-5 text-indigo-600" />
+      <div className="border border-blue-100 dark:border-blue-800/50 rounded-[2.5rem] overflow-hidden bg-white dark:bg-[#0D1117] shadow-xl shadow-blue-500/5">
+        <div className="px-8 py-6 bg-gradient-to-r from-blue-50/50 to-blue-50/50 dark:from-blue-900/20 dark:to-blue-900/20 border-b border-blue-100 dark:border-blue-800/50">
+          <h4 className="text-xl font-black text-blue-900 dark:text-blue-100 flex items-center gap-3 tracking-tighter uppercase">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-xl">
+              <Brain className="w-5 h-5 text-blue-600" />
             </div>
             Detailed Match Analysis
           </h4>
         </div>
         <div className="">
           <table className="w-full table-fixed">
-            <thead className="bg-gradient-to-r from-indigo-50/30 to-purple-50/30 dark:from-indigo-900/10 dark:to-purple-900/10">
+            <thead className="bg-gradient-to-r from-blue-50/30 to-blue-50/30 dark:from-blue-900/10 dark:to-blue-900/10">
               <tr>
                 <th className="w-[15%] px-6 py-6 text-left text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
                   Match Dimension
@@ -910,10 +910,10 @@ const JDMatchTab = ({ resume }: { resume: any }) => {
               {jdMatchData.subscores.map((sub: any, idx: number) => {
                 const percentage = (sub.score / sub.max_score) * 100;
                 return (
-                  <tr key={idx} className="hover:bg-indigo-50/30 dark:hover:bg-indigo-900/5 transition-colors border-b border-gray-50/50 dark:border-gray-800/50 last:border-none">
+                  <tr key={idx} className="hover:bg-blue-50/30 dark:hover:bg-blue-900/5 transition-colors border-b border-gray-50/50 dark:border-gray-800/50 last:border-none">
                     <td className="px-6 py-10 align-top">
                       <div className="flex items-start gap-4">
-                        <div className={`w-3 h-3 rounded-full shadow-[0_0_12px_rgba(99,102,241,0.5)] mt-2 flex-shrink-0 ${percentage >= 80 ? "bg-indigo-500" :
+                        <div className={`w-3 h-3 rounded-full shadow-[0_0_12px_rgba(99,102,241,0.5)] mt-2 flex-shrink-0 ${percentage >= 80 ? "bg-blue-500" :
                           percentage >= 60 ? "bg-blue-500" :
                             percentage >= 40 ? "bg-yellow-500" : "bg-red-500"
                           }`} />
@@ -923,8 +923,8 @@ const JDMatchTab = ({ resume }: { resume: any }) => {
                       </div>
                     </td>
                     <td className="px-6 py-10 text-center align-top">
-                      <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[1.25rem] bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-100 dark:border-indigo-800/50 shadow-sm">
-                        <span className="text-2xl font-black text-indigo-700 dark:text-indigo-400 tabular-nums leading-none">{sub.score}</span>
+                      <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[1.25rem] bg-gradient-to-br from-blue-50 to-blue-50 dark:from-blue-900/20 dark:to-blue-900/20 border border-blue-100 dark:border-blue-800/50 shadow-sm">
+                        <span className="text-2xl font-black text-blue-700 dark:text-blue-400 tabular-nums leading-none">{sub.score}</span>
                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">/ {sub.max_score}</span>
                       </div>
                     </td>
@@ -937,9 +937,9 @@ const JDMatchTab = ({ resume }: { resume: any }) => {
                               animate={{ width: `${percentage}%` }}
                               transition={{ duration: 0.8, ease: "easeOut" }}
                               className={`h-4 rounded-full ${percentage >= 80
-                                ? "bg-gradient-to-r from-indigo-500 to-purple-500 shadow-[0_0_15px_rgba(99,102,241,0.3)]"
+                                ? "bg-gradient-to-r from-blue-500 to-blue-500 shadow-[0_0_15px_rgba(99,102,241,0.3)]"
                                 : percentage >= 60
-                                  ? "bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]"
+                                  ? "bg-gradient-to-r from-blue-500 to-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]"
                                   : percentage >= 40
                                     ? "bg-gradient-to-r from-yellow-500 to-orange-500 shadow-[0_0_15px_rgba(234,179,8,0.3)]"
                                     : "bg-gradient-to-r from-red-500 to-pink-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]"
@@ -948,7 +948,7 @@ const JDMatchTab = ({ resume }: { resume: any }) => {
                           </div>
                         </div>
                         <div className="flex items-center justify-between px-1">
-                          <span className={`text-[10px] font-black uppercase tracking-[0.1em] ${percentage >= 80 ? "text-indigo-600 dark:text-indigo-400" :
+                          <span className={`text-[10px] font-black uppercase tracking-[0.1em] ${percentage >= 80 ? "text-blue-600 dark:text-blue-400" :
                             percentage >= 60 ? "text-blue-600 dark:text-blue-400" :
                               percentage >= 40 ? "text-yellow-600 dark:text-yellow-400" :
                                 "text-red-600 dark:text-red-400"
@@ -968,8 +968,8 @@ const JDMatchTab = ({ resume }: { resume: any }) => {
                         <ul className="space-y-4">
                           {sub.evidence.map((ev: string, i: number) => (
                             <li key={i} className="flex items-start gap-4 text-sm group/ev">
-                              <div className="mt-1 p-1 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg group-hover/ev:bg-indigo-100 dark:group-hover/ev:bg-indigo-900/40 transition-colors shadow-sm">
-                                <CheckCircle2 className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                              <div className="mt-1 p-1 bg-blue-50 dark:bg-blue-900/20 rounded-lg group-hover/ev:bg-blue-100 dark:group-hover/ev:bg-blue-900/40 transition-colors shadow-sm">
+                                <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
                               </div>
                               <span className="text-gray-700 dark:text-gray-300 leading-relaxed font-semibold break-words whitespace-normal">{ev}</span>
                             </li>
@@ -1025,7 +1025,7 @@ const ImprovementTab = ({ resume }: { resume: any }) => {
       {resume.enhancement?.tailored_resume?.skills && (
         <ImprovementSkills
           title="Key Skills"
-          color="purple"
+          color="blue"
           icon={<Brain className="w-4 h-4" />}
           skills={resume.enhancement.tailored_resume.skills}
         />
@@ -1051,8 +1051,8 @@ const ImprovementTab = ({ resume }: { resume: any }) => {
 
       {resume.enhancement?.top_1_percent_gap && (
         <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
-          <div className="px-4 py-3 border-b bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
-            <h4 className="font-semibold text-purple-900 dark:text-purple-100 flex items-center gap-2">
+          <div className="px-4 py-3 border-b bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <h4 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2">
               <Award className="w-4 h-4" /> Top 1% Gap Analysis
             </h4>
           </div>
@@ -1103,7 +1103,7 @@ const ImprovementTab = ({ resume }: { resume: any }) => {
       {resume.enhancement?.cover_letter && (
         <ImprovementCard
           title="Tailored Cover Letter"
-          color="indigo"
+          color="blue"
           icon={<FileText className="w-4 h-4" />}
           content={
             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg max-h-64 overflow-y-auto">

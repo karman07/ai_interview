@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp,
   Award,
@@ -111,14 +112,14 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
   }, [user, dashboardData]);
 
   // Use monthly usage for capacity display, total historical sessions for everything else
-  const currentMonthlyUsage = dashboardData?.overview?.monthlyInterviews ?? sessions.length;
-  const totalInterviews = dashboardData?.overview?.totalInterviews ?? sessions.length;
+  const currentMonthlyUsage = Math.max(dashboardData?.overview?.monthlyInterviews || 0, sessions.length);
+  const totalInterviews = Math.max(dashboardData?.overview?.totalInterviews || 0, sessions.length);
   const isAtLimit = currentMonthlyUsage >= interviewLimit;
 
   const averageScore = totalInterviews > 0
-    ? sessions.reduce((acc, s) => acc + (s.summary?.overall_score || 0), 0) / totalInterviews
+    ? sessions.reduce((acc, s) => acc + (s.summary?.overall_score || 0), 0) / sessions.length
     : 0;
-  const bestScore = totalInterviews > 0
+  const bestScore = sessions.length > 0
     ? Math.max(...sessions.map(s => s.summary?.overall_score || 0))
     : 0;
 
@@ -138,16 +139,18 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
     dimensions['Cultural Fit'] += s.dimension_scores?.role_fit || 0;
   });
 
-  const radarData = totalInterviews > 0 ? [
-    { subject: 'Technical', score: dimensions['Technical'] / totalInterviews, fullMark: 10 },
-    { subject: 'Problem Solving', score: dimensions['Problem Solving'] / totalInterviews, fullMark: 10 },
-    { subject: 'System Design', score: dimensions['System Design'] / totalInterviews, fullMark: 10 },
-    { subject: 'Communication', score: dimensions['Communication'] / totalInterviews, fullMark: 10 },
-    { subject: 'Cultural Fit', score: dimensions['Cultural Fit'] / totalInterviews, fullMark: 10 }
+  const radarData = sessions.length > 0 ? [
+    { subject: 'Technical', score: dimensions['Technical'] / sessions.length, fullMark: 10 },
+    { subject: 'Problem Solving', score: dimensions['Problem Solving'] / sessions.length, fullMark: 10 },
+    { subject: 'System Design', score: dimensions['System Design'] / sessions.length, fullMark: 10 },
+    { subject: 'Communication', score: dimensions['Communication'] / sessions.length, fullMark: 10 },
+    { subject: 'Cultural Fit', score: dimensions['Cultural Fit'] / sessions.length, fullMark: 10 }
   ] : [];
 
-  const allStrengths = sessions.flatMap(s => s.verdict?.strengths_to_highlight || []);
-  const allImprovements = sessions.flatMap(s => s.verdict?.areas_to_fix_before_next_interview || []);
+  const allStrengths = sessions.flatMap(s => s.summary?.key_strengths || s.verdict?.strengths_to_highlight || [])
+    .filter(s => typeof s === 'string' && !s.toLowerCase().includes('none') && s.length > 5);
+  const allImprovements = sessions.flatMap(s => s.summary?.key_areas_for_improvement || s.verdict?.areas_to_fix_before_next_interview || [])
+    .filter(s => typeof s === 'string' && !s.toLowerCase().includes('none') && s.length > 5);
 
   const topStrengths = Array.from(new Set(allStrengths)).slice(0, 5);
   const topImprovements = Array.from(new Set(allImprovements)).slice(0, 5);
@@ -376,7 +379,7 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
                     <Award className="w-5 h-5 text-slate-200" />
                   </div>
                   <div className="space-y-4">
-                    {topStrengths.map((strength, idx) => (
+                    {topStrengths.length > 0 ? topStrengths.map((strength, idx) => (
                       <motion.div
                         initial={{ x: -10, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
@@ -389,7 +392,12 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
                         </div>
                         <span className="text-slate-700 dark:text-slate-300 text-sm font-semibold leading-relaxed">{strength}</span>
                       </motion.div>
-                    ))}
+                    )) : (
+                      <div className="py-12 flex flex-col items-center justify-center text-center px-4 bg-slate-50/50 dark:bg-slate-800/20 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                        <Award className="w-8 h-8 text-slate-300 mb-3" />
+                        <p className="text-sm font-bold text-slate-400">Complete more sessions to identify your key strengths.</p>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
 
@@ -407,7 +415,7 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
                     <Brain className="w-5 h-5 text-slate-200" />
                   </div>
                   <div className="space-y-4">
-                    {topImprovements.map((area, idx) => (
+                    {topImprovements.length > 0 ? topImprovements.map((area, idx) => (
                       <motion.div
                         initial={{ x: -10, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
@@ -420,7 +428,12 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
                         </div>
                         <span className="text-slate-700 dark:text-slate-300 text-sm font-semibold leading-relaxed">{area}</span>
                       </motion.div>
-                    ))}
+                    )) : (
+                      <div className="py-12 flex flex-col items-center justify-center text-center px-4 bg-slate-50/50 dark:bg-slate-800/20 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                        <Target className="w-8 h-8 text-slate-300 mb-3" />
+                        <p className="text-sm font-bold text-slate-400">Keep practicing to get targeted focus areas for improvement.</p>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               </div>
@@ -455,8 +468,16 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
   );
 }
 
-function HistoryItem({ aiSession, index }: { aiSession: ExternalAnalyticsSession, index: number }) {
+function HistoryItem({ aiSession, index }: { aiSession: any, index: number }) {
+  const navigate = useNavigate();
   const score = aiSession.summary?.overall_score ?? 0;
+  const sessionId = aiSession._id || aiSession.session_id;
+
+  const strengths = (aiSession.verdict?.strengths_to_highlight || [])
+    .filter((s: string) => typeof s === 'string' && !s.toLowerCase().includes('none') && s.length > 5);
+
+  const improvements = (aiSession.verdict?.areas_to_fix_before_next_interview || [])
+    .filter((a: string) => typeof a === 'string' && !a.toLowerCase().includes('none') && a.length > 5);
 
   const scoreStyles =
     score >= 75 ? { bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-100 dark:border-emerald-900/40', ring: 'ring-emerald-50' } :
@@ -480,8 +501,14 @@ function HistoryItem({ aiSession, index }: { aiSession: ExternalAnalyticsSession
           </div>
 
           <div className="flex flex-col items-start lg:items-center text-center">
-            <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider mb-2 ${scoreStyles.bg} ${scoreStyles.text}`}>
-              {aiSession.summary?.hire_recommendation || 'Evaluated'}
+            <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] mb-2 ${scoreStyles.bg} ${scoreStyles.text}`}>
+              {(() => {
+                const rec = aiSession.summary?.hire_recommendation?.toUpperCase();
+                if (rec === 'NO' || rec === 'NOT_RECOMMENDED' || rec === 'REJECT') return 'Not Recommended';
+                if (rec === 'YES' || rec === 'HIRE') return 'Recommended';
+                if (rec === 'MAYBE') return 'Conditional';
+                return rec?.replace(/_/g, ' ') || 'Evaluation';
+              })()}
             </div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               {aiSession.timestamp
@@ -504,7 +531,10 @@ function HistoryItem({ aiSession, index }: { aiSession: ExternalAnalyticsSession
               </p>
             </div>
 
-            <button className="flex items-center gap-2 text-blue-600 font-bold text-sm bg-blue-50 hover:bg-blue-600 hover:text-white px-5 py-2.5 rounded-xl transition-all self-start">
+            <button
+              onClick={() => sessionId && navigate(`/interview/results/${sessionId}`)}
+              className="flex items-center gap-2 text-blue-600 font-bold text-sm bg-blue-50 hover:bg-blue-600 hover:text-white px-5 py-2.5 rounded-xl transition-all self-start"
+            >
               Full Report <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -513,24 +543,28 @@ function HistoryItem({ aiSession, index }: { aiSession: ExternalAnalyticsSession
             <div className="space-y-4">
               <h5 className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full w-fit uppercase tracking-widest">Performance Peaks</h5>
               <div className="space-y-3">
-                {aiSession.verdict?.strengths_to_highlight?.slice(0, 2).map((s, i) => (
+                {strengths.length > 0 ? strengths.slice(0, 2).map((s: string, i: number) => (
                   <div key={i} className="flex gap-3 text-sm text-slate-600 dark:text-slate-400 font-medium bg-slate-50/50 dark:bg-slate-800/30 p-3 rounded-xl border border-transparent hover:border-emerald-100 transition-colors">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
                     {s}
                   </div>
-                ))}
+                )) : (
+                  <p className="text-sm font-bold text-slate-400 px-2 italic">Minimal strengths identified in this session.</p>
+                )}
               </div>
             </div>
 
             <div className="space-y-4">
               <h5 className="text-[10px] font-black text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-1 rounded-full w-fit uppercase tracking-widest">Growth Areas</h5>
               <div className="space-y-3">
-                {aiSession.verdict?.areas_to_fix_before_next_interview?.slice(0, 2).map((a, i) => (
+                {improvements.length > 0 ? improvements.slice(0, 2).map((a: string, i: number) => (
                   <div key={i} className="flex gap-3 text-sm text-slate-600 dark:text-slate-400 font-medium bg-slate-50/50 dark:bg-slate-800/30 p-3 rounded-xl border border-transparent hover:border-amber-100 transition-colors">
                     <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
                     {a}
                   </div>
-                ))}
+                )) : (
+                  <p className="text-sm font-bold text-slate-400 px-2 italic">No specific growth areas detected from this interview.</p>
+                )}
               </div>
             </div>
           </div>

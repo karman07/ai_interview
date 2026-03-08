@@ -112,7 +112,17 @@ const ResumeDashboard: React.FC = () => {
   const jdInputRef = useRef<HTMLInputElement>(null);
 
   // Chart colors
-  const COLORS = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899', '#14B8A6', '#F97316'];
+  // Vibrant & Diverse Palette for Charts
+  const COLORS = [
+    '#3B82F6', // Blue
+    '#F59E0B', // Amber
+    '#10B981', // Emerald
+    '#EF4444', // Rose
+    '#8B5CF6', // Purple
+    '#06B6D4', // Cyan
+    '#F97316', // Orange
+    '#EC4899'  // Pink
+  ];
 
   // Safe wrapper in case context provides undefined
   const safeResumes: Resume[] = Array.isArray(resumes) ? resumes : [];
@@ -126,12 +136,14 @@ const ResumeDashboard: React.FC = () => {
     const cvQualityScore = Math.round(r.analytics?.cv_quality?.overall_score || 0);
     const jdMatchScore = Math.round(r.analytics?.jd_match?.overall_score || 0);
     const greenFlags = r.analytics?.key_takeaways?.green_flags?.length || 0;
+    const redFlags = r.analytics?.key_takeaways?.red_flags?.length || 0;
     return {
       name: `Resume ${index + 1}`,
       date: new Date(r.createdAt).toLocaleDateString(),
       cvQuality: cvQualityScore,
       jdMatch: jdMatchScore,
-      insights: greenFlags
+      greenFlags: greenFlags,
+      redFlags: redFlags
     };
   });
 
@@ -144,9 +156,10 @@ const ResumeDashboard: React.FC = () => {
 
   const pieData = safeResumes.length > 0 ? [
     { name: 'CV Quality', value: safeResumes[0].analytics?.cv_quality?.overall_score || 0, color: COLORS[0] },
-    { name: 'JD Match', value: safeResumes[0].analytics?.jd_match?.overall_score || 0, color: COLORS[1] },
-    { name: 'Green Flags', value: safeResumes[0].analytics?.key_takeaways?.green_flags?.length || 0, color: COLORS[2] }
-  ] : [];
+    { name: 'JD Match', value: safeResumes[0].analytics?.jd_match?.overall_score || 0, color: COLORS[2] },
+    { name: 'Green Flags', value: (safeResumes[0].analytics?.key_takeaways?.green_flags?.length || 0) * 10, color: COLORS[1] },
+    { name: 'Red Flags', value: (safeResumes[0].analytics?.key_takeaways?.red_flags?.length || 0) * 10, color: COLORS[3] }
+  ].filter(d => d.value > 0) : [];
 
   // Calculate resume limit from subscription plan features
   const resumeLimit = useMemo(() => {
@@ -322,7 +335,7 @@ const ResumeDashboard: React.FC = () => {
                   onClick={() => isAtLimit ? setShowPricing(true) : setIsUploadOpen(true)}
                   className={`px-6 py-2 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 shadow-sm hover:shadow-md ${isAtLimit
                     ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-400'
-                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
                     }`}
                   title={isAtLimit ? "You've reached your plan limit. Upgrade for more storage." : "Upload New Resume"}
                 >
@@ -353,8 +366,8 @@ const ResumeDashboard: React.FC = () => {
           <StatCard
             title="CV Quality"
             value={safeResumes[0]?.analytics?.cv_quality?.overall_score || 0}
-            icon={<AcademicCapIcon className="w-5 h-5 text-purple-600" />}
-            color="bg-purple-50"
+            icon={<AcademicCapIcon className="w-5 h-5 text-blue-600" />}
+            color="bg-blue-50"
             subtitle="Content & structure"
           />
           <StatCard
@@ -401,17 +414,21 @@ const ResumeDashboard: React.FC = () => {
                 <ResponsiveContainer width="100%" height={250}>
                   <AreaChart data={performanceData}>
                     <defs>
-                      <linearGradient id="colorFit" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="colorCV" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
                         <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
                       </linearGradient>
-                      <linearGradient id="colorCV" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="colorGreen" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorJD" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
                         <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
                       </linearGradient>
-                      <linearGradient id="colorJD" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
+                      <linearGradient id="colorRed" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="name" stroke="#6B7280" fontSize={12} />
@@ -426,9 +443,10 @@ const ResumeDashboard: React.FC = () => {
                       }}
                     />
                     <Legend />
-                    <Area type="monotone" dataKey="cvQuality" stroke="#10B981" fillOpacity={1} fill="url(#colorCV)" strokeWidth={2} name="CV Quality Score" />
-                    <Area type="monotone" dataKey="jdMatch" stroke="#8B5CF6" fillOpacity={1} fill="url(#colorJD)" strokeWidth={2} name="JD Match Score" />
-                    <Area type="monotone" dataKey="insights" stroke="#3B82F6" fillOpacity={1} fill="url(#colorFit)" strokeWidth={2} name="Green Flags" />
+                    <Area type="monotone" dataKey="cvQuality" stroke="#3B82F6" fillOpacity={1} fill="url(#colorCV)" strokeWidth={3} name="CV Quality Score" />
+                    <Area type="monotone" dataKey="jdMatch" stroke="#10B981" fillOpacity={1} fill="url(#colorJD)" strokeWidth={3} name="JD Match Score" />
+                    <Area type="monotone" dataKey="greenFlags" stroke="#F59E0B" fillOpacity={1} fill="url(#colorGreen)" strokeWidth={3} name="Green Flags" />
+                    <Area type="monotone" dataKey="redFlags" stroke="#EF4444" fillOpacity={1} fill="url(#colorRed)" strokeWidth={3} name="Red Flags" />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
@@ -456,8 +474,8 @@ const ResumeDashboard: React.FC = () => {
                       paddingAngle={5}
                       dataKey="value"
                     >
-                      {pieData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip />
@@ -534,7 +552,7 @@ const ResumeDashboard: React.FC = () => {
                 <p className="text-gray-600 dark:text-gray-400 mb-6">Upload your first resume to get started with analysis</p>
                 <button
                   onClick={() => setIsUploadOpen(true)}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-300"
                 >
                   Upload Resume
                 </button>
@@ -611,8 +629,8 @@ const ResumeDashboard: React.FC = () => {
                     {/* JD File Input */}
                     <div
                       className={`mt-4 border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 ${isDragOver
-                        ? 'border-purple-400 bg-purple-50'
-                        : 'border-gray-300 hover:border-gray-400'
+                        ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                         }`}
                       onClick={() => jdInputRef.current?.click()}
                       onDragOver={(e) => {
@@ -622,7 +640,7 @@ const ResumeDashboard: React.FC = () => {
                       onDragLeave={() => setIsDragOver(false)}
                       onDrop={handleJDDrop}
                     >
-                      <BriefcaseIcon className="w-12 h-12 mx-auto mb-4 text-purple-400" />
+                      <BriefcaseIcon className="w-12 h-12 mx-auto mb-4 text-blue-400 dark:text-blue-500" />
                       {jdFile ? (
                         <div>
                           <p className="text-lg font-medium text-gray-900">{jdFile.name}</p>
@@ -668,7 +686,7 @@ const ResumeDashboard: React.FC = () => {
                   <button
                     onClick={handleUpload}
                     disabled={!resumeFile}
-                    className="inline-flex justify-center w-full px-6 py-3 text-sm sm:text-base font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 border border-transparent rounded-xl hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                    className="inline-flex justify-center w-full px-6 py-3 text-sm sm:text-base font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 border border-transparent rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                   >
                     <CloudArrowUpIcon className="w-5 h-5 mr-2" />
                     Upload & Analyze

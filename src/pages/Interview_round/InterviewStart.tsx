@@ -57,9 +57,9 @@ export default function InterviewStart() {
 
   const types = {
     technical: { icon: <Code className="w-6 h-6" />, color: "from-blue-500 to-indigo-600", title: "Technical Round", accent: "blue" },
-    behavioral: { icon: <Users className="w-6 h-6" />, color: "from-emerald-500 to-teal-600", title: "Behavioral Round", accent: "emerald" },
-    problem: { icon: <Lightbulb className="w-6 h-6" />, color: "from-amber-500 to-orange-500", title: "Problem Solving Round", accent: "amber" },
-    hr: { icon: <MessageCircle className="w-6 h-6" />, color: "from-purple-500 to-fuchsia-600", title: "HR Round", accent: "purple" }
+    behavioral: { icon: <Users className="w-6 h-6" />, color: "from-indigo-500 to-blue-600", title: "Behavioral Round", accent: "indigo" },
+    problem: { icon: <Lightbulb className="w-6 h-6" />, color: "from-blue-400 to-indigo-500", title: "Problem Solving Round", accent: "blue" },
+    hr: { icon: <MessageCircle className="w-6 h-6" />, color: "from-indigo-600 to-blue-700", title: "HR Round", accent: "indigo" }
   };
   const info = types[type as keyof typeof types] || types.technical;
 
@@ -277,7 +277,7 @@ export default function InterviewStart() {
                         />
                       </div>
                       {isAtLimit && (
-                        <p className="mt-2 text-[10px] text-amber-600 font-bold flex items-center gap-1">
+                        <p className="mt-2 text-[10px] text-blue-600 font-bold flex items-center gap-1">
                           <Zap className="w-3 h-3 fill-current" /> Upgrade to unlock unlimited
                         </p>
                       )}

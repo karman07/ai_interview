@@ -287,6 +287,8 @@ export interface InterviewV2Report {
     hire_recommendation: string;
     seniority_assessment: string;
     confidence_assessment: string;
+    key_strengths: string[];
+    key_areas_for_improvement: string[];
   };
   dimension_scores: {
     technical_depth: number;

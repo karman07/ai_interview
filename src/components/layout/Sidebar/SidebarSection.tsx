@@ -11,7 +11,7 @@ export default function SidebarSection({ title, children }: SidebarSectionProps)
       {title && (
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-1 h-4 rounded bg-indigo-600 dark:bg-indigo-400" />
+            <div className="w-[3px] h-3 rounded-full bg-blue-500 dark:bg-blue-400" />
             <h3 className="text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-400">
               {title}
             </h3>

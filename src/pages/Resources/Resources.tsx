@@ -146,16 +146,6 @@ const ResourceCard = ({ resource }: { resource: Resource }) => {
           </div>
 
           <div className="flex gap-2">
-            {resource.downloadUrl && (
-              <a
-                href={resource.downloadUrl}
-                onClick={(e) => e.stopPropagation()}
-                className="text-gray-400 hover:text-blue-600 transition-colors p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg"
-                title="Download PDF"
-              >
-                <Download className="w-4 h-4" />
-              </a>
-            )}
             {resource.externalUrl && (
               <a
                 href={resource.externalUrl}

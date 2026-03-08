@@ -150,7 +150,12 @@ export const InterviewAnalyticsApi = {
   },
 
   async getSessionDetails(sessionId: string) {
-    const { data } = await http.get(`/interviews/session/${sessionId}`);
+    const { data } = await http.get(`/interviews/sessions/${sessionId}`);
+    return data;
+  },
+
+  async getInterviewReport(id: string): Promise<any> {
+    const { data } = await http.get(`/enhanced-interview/${id}`);
     return data;
   }
 };

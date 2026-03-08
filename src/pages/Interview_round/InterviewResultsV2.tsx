@@ -28,6 +28,7 @@ import {
   Users,
 } from "lucide-react";
 import { InterviewV2Report } from "@/api/interviewV2";
+import { InterviewAnalyticsApi } from "@/api/interviewAnalytics";
 
 // ────────────────────────────────────────────────────────────
 // Main Component
@@ -40,22 +41,55 @@ export default function InterviewResultsV2() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedReport = localStorage.getItem("v2_interview_report");
-    if (storedReport) {
+    async function loadReport() {
+      if (!sessionId) {
+        // Fallback for immediate result after interview
+        const storedReport = localStorage.getItem("v2_interview_report");
+        if (storedReport) {
+          try {
+            setReport(JSON.parse(storedReport));
+          } catch {
+            console.error("Failed to parse stored interview report");
+          }
+        }
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
       try {
-        setReport(JSON.parse(storedReport));
-      } catch {
-        console.error("Failed to parse stored interview report");
+        const data = await InterviewAnalyticsApi.getInterviewReport(sessionId);
+        if (data) {
+          setReport(data);
+        } else {
+          // Try fallback if backend return null or error
+          const storedReport = localStorage.getItem("v2_interview_report");
+          if (storedReport) {
+            setReport(JSON.parse(storedReport));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load report from API:", err);
+        // Last resort: check if we have it in localStorage
+        const storedReport = localStorage.getItem("v2_interview_report");
+        if (storedReport) {
+          try {
+            setReport(JSON.parse(storedReport));
+          } catch { }
+        }
+      } finally {
+        setLoading(false);
       }
     }
-    setLoading(false);
+
+    loadReport();
   }, [sessionId]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600 mx-auto mb-4" />
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4" />
           <p className="text-gray-500 dark:text-gray-400 font-medium">Loading interview results…</p>
         </div>
       </div>
@@ -71,7 +105,7 @@ export default function InterviewResultsV2() {
           <p className="text-gray-500 dark:text-gray-400 mb-6">Could not load interview results.</p>
           <button
             onClick={() => navigate("/interview_round")}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium"
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
           >
             Go to Dashboard
           </button>
@@ -97,7 +131,7 @@ export default function InterviewResultsV2() {
             </button>
             <button
               onClick={() => window.print()}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm"
             >
               <Download className="w-4 h-4" />
               Export
@@ -153,14 +187,14 @@ export default function InterviewResultsV2() {
         </section>
 
         {/* ─── CTA ─── */}
-        <div className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-2xl p-8 text-white text-center shadow-xl shadow-indigo-200/30 dark:shadow-indigo-900/20">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white text-center shadow-xl shadow-blue-200/30 dark:shadow-blue-900/20">
           <h3 className="text-2xl font-bold mb-2">Ready for Your Next Interview?</h3>
-          <p className="text-indigo-100 mb-6 max-w-xl mx-auto text-sm">
+          <p className="text-blue-100 mb-6 max-w-xl mx-auto text-sm">
             Practice makes perfect. Use the improvement plan above and start another session.
           </p>
           <button
             onClick={() => navigate("/interview_round")}
-            className="inline-flex items-center gap-2 px-8 py-3 bg-white text-indigo-700 font-semibold rounded-xl hover:bg-indigo-50 transition-all shadow-sm"
+            className="inline-flex items-center gap-2 px-8 py-3 bg-white text-blue-700 font-semibold rounded-xl hover:bg-blue-50 transition-all shadow-sm"
           >
             Start New Interview
             <ArrowRight className="w-4 h-4" />
@@ -177,7 +211,7 @@ export default function InterviewResultsV2() {
 
 const SectionHeading = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
   <div className="flex items-center gap-2.5 mb-5">
-    <div className="text-indigo-600 dark:text-indigo-400">{icon}</div>
+    <div className="text-blue-600 dark:text-blue-400">{icon}</div>
     <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
   </div>
 );
@@ -233,7 +267,7 @@ function HeroCard({ report }: { report: InterviewV2Report }) {
         <div className="flex-1 text-center md:text-left">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{rec}</h2>
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-3">
-            <Badge color="indigo" label={`Seniority: ${seniority}`} />
+            <Badge color="blue" label={`Seniority: ${seniority}`} />
             <Badge color="slate" label={`Confidence: ${confidence}`} />
           </div>
         </div>
@@ -242,9 +276,9 @@ function HeroCard({ report }: { report: InterviewV2Report }) {
   );
 }
 
-const Badge = ({ label, color }: { label: string; color: "indigo" | "slate" | "emerald" | "rose" | "amber" }) => {
+const Badge = ({ label, color }: { label: string; color: "blue" | "slate" | "emerald" | "rose" | "amber" }) => {
   const styles: Record<string, string> = {
-    indigo: "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+    blue: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800",
     slate: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700",
     emerald: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
     rose: "bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300 border-rose-200 dark:border-rose-800",
@@ -260,17 +294,16 @@ const Badge = ({ label, color }: { label: string; color: "indigo" | "slate" | "e
 // ── Dimension Scores Grid ──
 
 const DIMENSION_META: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
-  technical_depth: { icon: <Cpu className="w-5 h-5" />, label: "Technical Depth", color: "indigo" },
+  technical_depth: { icon: <Cpu className="w-5 h-5" />, label: "Technical Depth", color: "blue" },
   problem_solving: { icon: <Zap className="w-5 h-5" />, label: "Problem Solving", color: "amber" },
-  system_design: { icon: <Lightbulb className="w-5 h-5" />, label: "System Design", color: "violet" },
+  system_design: { icon: <Lightbulb className="w-5 h-5" />, label: "System Design", color: "sky" },
   communication: { icon: <MessageSquare className="w-5 h-5" />, label: "Communication", color: "sky" },
   role_fit: { icon: <Users className="w-5 h-5" />, label: "Role Fit", color: "emerald" },
 };
 
 const COLOR_MAP: Record<string, { bar: string; bg: string; text: string; iconBg: string }> = {
-  indigo: { bar: "bg-indigo-500", bg: "bg-indigo-50 dark:bg-indigo-900/20", text: "text-indigo-600 dark:text-indigo-400", iconBg: "bg-indigo-100 dark:bg-indigo-900/40" },
+  blue: { bar: "bg-blue-500", bg: "bg-blue-50 dark:bg-blue-900/20", text: "text-blue-600 dark:text-blue-400", iconBg: "bg-blue-100 dark:bg-blue-900/40" },
   amber: { bar: "bg-amber-500", bg: "bg-amber-50 dark:bg-amber-900/20", text: "text-amber-600 dark:text-amber-400", iconBg: "bg-amber-100 dark:bg-amber-900/40" },
-  violet: { bar: "bg-violet-500", bg: "bg-violet-50 dark:bg-violet-900/20", text: "text-violet-600 dark:text-violet-400", iconBg: "bg-violet-100 dark:bg-violet-900/40" },
   sky: { bar: "bg-sky-500", bg: "bg-sky-50 dark:bg-sky-900/20", text: "text-sky-600 dark:text-sky-400", iconBg: "bg-sky-100 dark:bg-sky-900/40" },
   emerald: { bar: "bg-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20", text: "text-emerald-600 dark:text-emerald-400", iconBg: "bg-emerald-100 dark:bg-emerald-900/40" },
 };
@@ -282,8 +315,8 @@ function DimensionScoresGrid({ scores }: { scores: InterviewV2Report["dimension_
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
       {entries.map(([key, value]) => {
-        const meta = DIMENSION_META[key] ?? { icon: <BarChart3 className="w-5 h-5" />, label: key.replace(/_/g, " "), color: "indigo" };
-        const c = COLOR_MAP[meta.color] ?? COLOR_MAP.indigo;
+        const meta = DIMENSION_META[key] ?? { icon: <BarChart3 className="w-5 h-5" />, label: key.replace(/_/g, " "), color: "blue" };
+        const c = COLOR_MAP[meta.color] ?? COLOR_MAP.blue;
         return (
           <motion.div
             key={key}
@@ -391,13 +424,13 @@ function QuestionCard({ question }: { question: InterviewV2Report["question_wise
                 </div>
 
                 {/* Ideal Answer */}
-                <div className="bg-indigo-50/50 dark:bg-indigo-900/10 rounded-lg p-4 border border-indigo-100 dark:border-indigo-900/30">
-                  <h4 className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-lg p-4 border border-blue-100 dark:border-blue-900/30">
+                  <h4 className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <Lightbulb className="w-3.5 h-3.5" /> Ideal Answer Points
                   </h4>
                   <ul className="space-y-1.5">
                     {question.evaluation?.ideal_answer_outline?.map((pt, i) => (
-                      <li key={i} className="text-xs text-indigo-800 dark:text-indigo-300 flex items-start gap-1.5">
+                      <li key={i} className="text-xs text-blue-800 dark:text-blue-300 flex items-start gap-1.5">
                         <ArrowRight className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                         <span>{pt}</span>
                       </li>
@@ -461,15 +494,15 @@ function BehavioralInsightsGrid({ insights }: { insights: InterviewV2Report["beh
   if (!insights) return null;
 
   const cards = [
-    { label: "Communication Style", value: insights.communication_style, icon: <MessageSquare className="w-5 h-5" />, color: "indigo" },
-    { label: "Thinking Pattern", value: insights.thinking_pattern, icon: <Brain className="w-5 h-5" />, color: "violet" },
+    { label: "Communication Style", value: insights.communication_style, icon: <MessageSquare className="w-5 h-5" />, color: "blue" },
+    { label: "Thinking Pattern", value: insights.thinking_pattern, icon: <Brain className="w-5 h-5" />, color: "sky" },
     { label: "Pressure Handling", value: insights.pressure_handling, icon: <Shield className="w-5 h-5" />, color: "emerald" },
   ];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {cards.map(({ label, value, icon, color }) => {
-        const c = COLOR_MAP[color] ?? COLOR_MAP.indigo;
+        const c = COLOR_MAP[color] ?? COLOR_MAP.blue;
         return (
           <div key={label} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
             <div className={`inline-flex p-2.5 rounded-xl mb-3 ${c.iconBg} ${c.text}`}>{icon}</div>
@@ -488,23 +521,23 @@ function ImprovementTimeline({ plan }: { plan: InterviewV2Report["improvement_pl
   if (!plan) return null;
 
   const phases = [
-    { label: "Immediate Actions", items: plan.immediate_actions, icon: <Zap className="w-4 h-4" />, accent: "indigo" },
-    { label: "1-Week Plan", items: plan.plan_1_week, icon: <Calendar className="w-4 h-4" />, accent: "violet" },
+    { label: "Immediate Actions", items: plan.immediate_actions, icon: <Zap className="w-4 h-4" />, accent: "blue" },
+    { label: "1-Week Plan", items: plan.plan_1_week, icon: <Calendar className="w-4 h-4" />, accent: "sky" },
     { label: "1-Month Plan", items: plan.plan_1_month, icon: <Rocket className="w-4 h-4" />, accent: "emerald" },
   ] as const;
 
   return (
     <div className="relative">
       {/* Connecting line */}
-      <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-indigo-300 via-violet-300 to-emerald-300 dark:from-indigo-700 dark:via-violet-700 dark:to-emerald-700" />
+      <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-blue-300 via-sky-300 to-emerald-300 dark:from-blue-700 dark:via-sky-700 dark:to-emerald-700" />
 
       <div className="space-y-6 md:space-y-0 md:grid md:grid-cols-3 md:gap-6">
         {phases.map(({ label, items, icon, accent }) => {
-          const c = COLOR_MAP[accent] ?? COLOR_MAP.indigo;
+          const c = COLOR_MAP[accent] ?? COLOR_MAP.blue;
           return (
             <div key={label} className="relative">
               {/* Dot on timeline */}
-              <div className="hidden md:flex absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full border-2 border-white dark:border-gray-900 z-10" style={{ backgroundColor: accent === "indigo" ? "#6366f1" : accent === "violet" ? "#8b5cf6" : "#10b981" }} />
+              <div className="hidden md:flex absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full border-2 border-white dark:border-gray-900 z-10" style={{ backgroundColor: accent === "blue" ? "#3b82f6" : accent === "sky" ? "#0ea5e9" : "#10b981" }} />
               <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <div className={`p-1.5 rounded-lg ${c.iconBg} ${c.text}`}>{icon}</div>
@@ -535,7 +568,7 @@ function VerdictCard({ verdict }: { verdict: InterviewV2Report["verdict"] }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
       {/* Final recommendation */}
-      <div className="p-6 bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20 border-b border-gray-200 dark:border-gray-700">
+      <div className="p-6 bg-gradient-to-r from-blue-50 to-sky-50 dark:from-blue-900/20 dark:to-sky-900/20 border-b border-gray-200 dark:border-gray-700">
         <p className="text-gray-800 dark:text-gray-200 leading-relaxed font-medium">
           {verdict.final_recommendation_text}
         </p>

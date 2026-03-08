@@ -67,8 +67,48 @@ export default function InterviewRoomWS() {
     const { videoRef, isActive: webcamActive, startCamera, toggleCamera } = useInterviewWebcam();
     const { isSpeaking, speak, cancel } = useInterviewTTS();
 
-    // ── UI States ──
     const [showCodeEditor, setShowCodeEditor] = useState(false);
+    const [initProgress, setInitProgress] = useState(0);
+    const [initStatus, setInitStatus] = useState('Establishing secure connection...');
+
+    // Simulate progress while waiting for connection and first question
+    useEffect(() => {
+        if (error) return;
+
+        if (!isConnected) {
+            const timer = setInterval(() => {
+                setInitProgress(prev => {
+                    if (prev < 30) {
+                        setInitStatus('Connecting to AI Nexus...');
+                        return prev + 2;
+                    }
+                    if (prev < 60) {
+                        setInitStatus('Analyzing Resume & Context...');
+                        return prev + 1;
+                    }
+                    if (prev < 85) {
+                        setInitStatus('Generating Interview Strategy...');
+                        return prev + 0.5;
+                    }
+                    return prev;
+                });
+            }, 100);
+            return () => clearInterval(timer);
+        } else if (isConnected && messages.length === 0) {
+            // We are connected but waiting for the first AI message
+            setInitStatus('Interviewer is entering the room...');
+            const timer = setInterval(() => {
+                setInitProgress(prev => {
+                    if (prev < 98) return prev + 0.2;
+                    return prev;
+                });
+            }, 200);
+            return () => clearInterval(timer);
+        } else if (messages.length > 0) {
+            setInitProgress(100);
+            setInitStatus('Session Established. Good luck!');
+        }
+    }, [isConnected, error, messages.length]);
 
     // TTS buffering refs
     const bufferRef = useRef('');
@@ -209,7 +249,9 @@ export default function InterviewRoomWS() {
     }, [isListening, stopListening, startListening, cancel]);
 
     // ── Loading/Error states ──
-    if (!setupData) {
+    const isActuallyLoading = (messages.length === 0 || !isConnected) && !interviewEnded;
+
+    if (isActuallyLoading || error) {
         return (
             <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6">
                 <AnimatePresence>
@@ -232,14 +274,32 @@ export default function InterviewRoomWS() {
                             </button>
                         </motion.div>
                     ) : (
-                        <div className="text-center space-y-4">
+                        <div className="text-center space-y-8 w-full max-w-md">
                             <div className="relative">
-                                <div className="w-20 h-20 rounded-full border-4 border-blue-600/20 border-t-blue-600 animate-spin mx-auto" />
+                                <motion.div
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    className="w-24 h-24 rounded-full border-4 border-blue-600/10 border-t-blue-600 animate-spin mx-auto"
+                                />
                                 <div className="absolute inset-0 flex items-center justify-center">
                                     <Zap className="w-8 h-8 text-blue-600 animate-pulse" />
                                 </div>
                             </div>
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight animate-pulse">Initializing AI Coach...</h2>
+
+                            <div className="space-y-4">
+                                <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">
+                                    <span>{initStatus}</span>
+                                    <span>{Math.round(initProgress)}%</span>
+                                </div>
+                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${initProgress}%` }}
+                                        className="h-full bg-gradient-to-r from-blue-600 to-indigo-600"
+                                    />
+                                </div>
+                                <p className="text-sm font-bold text-slate-500 animate-pulse">Please wait while we prepare your personalized interview session.</p>
+                            </div>
                         </div>
                     )}
                 </AnimatePresence>

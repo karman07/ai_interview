@@ -27,17 +27,19 @@ function InterviewCard({ type, description, icon, color, navigate, isAtLimit, on
   // Extract text color from gradient prop (simplification)
   const getTextColor = (gradientClass: string) => {
     if (gradientClass.includes('blue')) return 'text-blue-600 dark:text-blue-400';
-    if (gradientClass.includes('emerald') || gradientClass.includes('green')) return 'text-emerald-600 dark:text-emerald-400';
-    if (gradientClass.includes('amber') || gradientClass.includes('orange')) return 'text-amber-600 dark:text-amber-400';
-    if (gradientClass.includes('purple')) return 'text-purple-600 dark:text-purple-400';
+    if (gradientClass.includes('blue') || gradientClass.includes('green')) return 'text-blue-600 dark:text-blue-400';
+    if (gradientClass.includes('blue') || gradientClass.includes('blue')) return 'text-blue-600 dark:text-blue-400';
+    if (gradientClass.includes('blue')) return 'text-blue-600 dark:text-blue-400';
+    if (gradientClass.includes('indigo')) return 'text-indigo-600 dark:text-indigo-400';
     return 'text-gray-900 dark:text-white';
   };
 
   const getBgColor = (gradientClass: string) => {
     if (gradientClass.includes('blue')) return 'bg-blue-50 dark:bg-blue-900/20';
-    if (gradientClass.includes('emerald') || gradientClass.includes('green')) return 'bg-emerald-50 dark:bg-emerald-900/20';
-    if (gradientClass.includes('amber') || gradientClass.includes('orange')) return 'bg-amber-50 dark:bg-amber-900/20';
-    if (gradientClass.includes('purple')) return 'bg-purple-50 dark:bg-purple-900/20';
+    if (gradientClass.includes('blue') || gradientClass.includes('green')) return 'bg-blue-50 dark:bg-blue-900/20';
+    if (gradientClass.includes('blue') || gradientClass.includes('blue')) return 'bg-blue-50 dark:bg-blue-900/20';
+    if (gradientClass.includes('blue')) return 'bg-blue-50 dark:bg-blue-900/20';
+    if (gradientClass.includes('indigo')) return 'bg-indigo-50 dark:bg-indigo-900/20';
     return 'bg-gray-100 dark:bg-gray-800';
   };
 
@@ -140,7 +142,7 @@ export default function InterviewHome() {
       description:
         "Share your experiences and showcase how you align with our company culture and values.",
       icon: <Users className="w-8 h-8" />,
-      color: "bg-gradient-to-br from-emerald-500 to-emerald-600",
+      color: "bg-gradient-to-br from-indigo-500 to-blue-600",
       key: "behavioral",
     },
     {
@@ -148,7 +150,7 @@ export default function InterviewHome() {
       description:
         "Tackle complex scenarios and demonstrate your analytical thinking and problem-solving approach.",
       icon: <Lightbulb className="w-8 h-8" />,
-      color: "bg-gradient-to-br from-amber-500 to-orange-500",
+      color: "bg-gradient-to-br from-blue-500 to-indigo-600",
       key: "problemSolving",
     },
     {
@@ -156,7 +158,7 @@ export default function InterviewHome() {
       description:
         "Final discussion about role expectations, compensation, and next steps in your journey with us.",
       icon: <MessageCircle className="w-8 h-8" />,
-      color: "bg-gradient-to-br from-purple-500 to-purple-600",
+      color: "bg-gradient-to-br from-indigo-500 to-blue-600",
       key: "hr",
     },
   ];
@@ -176,13 +178,13 @@ export default function InterviewHome() {
             </button>
             <div className="text-center space-y-6">
               <div className="inline-flex items-center px-4 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-full text-sm font-medium mb-4 shadow-lg">
-                <span className="w-2 h-2 bg-emerald-400 rounded-full mr-2 animate-pulse"></span>
+                <span className="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></span>
                 Interview Process
               </div>
               <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white leading-tight">
                 Choose Your
                 <br />
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 dark:from-blue-400 dark:via-blue-300 dark:to-indigo-400 bg-clip-text text-transparent">
                   Interview Round
                 </span>
               </h1>
@@ -214,7 +216,7 @@ export default function InterviewHome() {
           {/* Bottom info */}
           <div className="mt-16 text-center">
             <div className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
-              <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
+              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
               <span>
                 All rounds include detailed feedback and performance analytics
               </span>
