@@ -2,11 +2,13 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Result, ResultDocument } from './schemas/result.schema';
+import { User, UserDocument } from '../users/schemas/user.schema';
 
 @Injectable()
 export class ResultsService {
   constructor(
     @InjectModel(Result.name) private resultModel: Model<ResultDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) { }
 
   // Get all results for logged-in user
@@ -51,6 +53,14 @@ export class ResultsService {
       verdict: data.verdict,
       rawOutput: JSON.stringify(data),
     });
-    return newResult.save();
+
+    const savedResult = await newResult.save();
+
+    // Increment user interview count
+    await this.userModel.findByIdAndUpdate(userId, {
+      $inc: { interviewCount: 1 }
+    });
+
+    return savedResult;
   }
 }

@@ -4,10 +4,17 @@ import { SubjectsService } from './subjects.service';
 import { SubjectsController } from './subjects.controller';
 import { Subject, SubjectSchema } from './schemas/subject.schema';
 
+import { Lesson, LessonSchema } from '../lessons/schemas/lesson.schema';
+
 @Module({
-  imports: [MongooseModule.forFeature([{ name: Subject.name, schema: SubjectSchema }])],
+  imports: [
+    MongooseModule.forFeature([
+      { name: Subject.name, schema: SubjectSchema },
+      { name: Lesson.name, schema: LessonSchema }
+    ])
+  ],
   controllers: [SubjectsController],
   providers: [SubjectsService],
   exports: [SubjectsService],
 })
-export class SubjectsModule {}
+export class SubjectsModule { }

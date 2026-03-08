@@ -5,9 +5,14 @@ import { Subject, SubjectDocument } from './schemas/subject.schema';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 
+import { Lesson, LessonDocument } from '../lessons/schemas/lesson.schema';
+
 @Injectable()
 export class SubjectsService {
-  constructor(@InjectModel(Subject.name) private subjectModel: Model<SubjectDocument>) { }
+  constructor(
+    @InjectModel(Subject.name) private subjectModel: Model<SubjectDocument>,
+    @InjectModel(Lesson.name) private lessonModel: Model<LessonDocument>
+  ) { }
 
   async create(dto: CreateSubjectDto, thumbnailUrl?: string) {
     if (thumbnailUrl) dto.thumbnailUrl = thumbnailUrl;
@@ -32,22 +37,37 @@ export class SubjectsService {
 
   async findAll() {
     const subjects = await this.subjectModel.find().sort({ createdAt: -1 }).exec();
-    return subjects.map(s => {
-      const obj = s.toObject();
+
+    // Manual join to fetch lesson counts/lessons
+    const subjectsWithLessons = await Promise.all(subjects.map(async (s) => {
+      const obj = s.toObject() as any;
       if (!obj.thumbnailUrl) {
         obj.thumbnailUrl = this.getDummyImage(obj);
       }
+
+      // Fetch lessons for this subject
+      const lessons = await this.lessonModel.find({ subjectId: s._id }).sort({ order: 1 }).exec();
+      obj.lessons = lessons;
+
       return obj;
-    });
+    }));
+
+    return subjectsWithLessons;
   }
 
   async findOne(id: string) {
     const sub = await this.subjectModel.findById(id).exec();
     if (!sub) throw new NotFoundException('Subject not found');
-    const obj = sub.toObject();
+
+    const obj = sub.toObject() as any;
     if (!obj.thumbnailUrl) {
       obj.thumbnailUrl = this.getDummyImage(obj);
     }
+
+    // Fetch lessons for this subject
+    const lessons = await this.lessonModel.find({ subjectId: sub._id }).sort({ order: 1 }).exec();
+    obj.lessons = lessons;
+
     return obj;
   }
 
