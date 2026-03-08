@@ -237,11 +237,30 @@ export class PaymentService {
         throw new BadRequestException('No valid subscription plan found in the system');
       }
 
-      if (!subscription.razorpayPlanId) {
-        throw new BadRequestException(`Subscription plan ${subscription.name} does not have a Razorpay Plan ID`);
+      // Verify/Create Plan dynamically before using it
+      let activePlanId = subscription.razorpayPlanId;
+      try {
+        if (!activePlanId) throw new Error('No plan id');
+        await this.razorpay.plans.fetch(activePlanId);
+      } catch (e) {
+        this.logger.warn(`Plan ${activePlanId} not found in Razorpay. Creating it dynamically...`);
+        const newPlan = await this.razorpay.plans.create({
+          period: 'monthly',
+          interval: 1,
+          item: {
+            name: subscription.displayName,
+            amount: subscription.price,
+            currency: 'INR',
+            description: `Automated plan for ${subscription.name}`
+          }
+        });
+        activePlanId = newPlan.id;
+        subscription.razorpayPlanId = activePlanId;
+        await subscription.save();
+        this.logger.log(`Created new Razorpay plan on the fly: ${activePlanId}`);
       }
 
-      this.logger.log(`Using plan: ${subscription.name} (Razorpay: ${subscription.razorpayPlanId})`);
+      this.logger.log(`Using plan: ${subscription.name} (Razorpay: ${activePlanId})`);
 
       // Calculate total_count based on type
       let totalCount = 12; // Default to 1 year of months
@@ -254,7 +273,7 @@ export class PaymentService {
       }
 
       const subscriptionOptions = {
-        plan_id: subscription.razorpayPlanId,
+        plan_id: activePlanId,
         customer_notify: 1,
         total_count: totalCount,
         quantity: 1,
