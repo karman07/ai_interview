@@ -59,27 +59,6 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
 
 
   const handleDownloadEnhancedResume = async () => {
-    // Check local cache first
-    const cacheKey = `enhanced_resume_${resume._id}`;
-    const cachedData = localStorage.getItem(cacheKey);
-
-    if (cachedData) {
-      try {
-        const parsedData = JSON.parse(cachedData);
-        setEnhancedResumeData(parsedData);
-        setShowBuilderModal(true);
-        addNotification({
-          type: 'success',
-          title: 'Loaded from Cache',
-          message: 'Your previously enhanced resume is ready.',
-        });
-        return;
-      } catch (e) {
-        console.error("Failed to parse cached resume data, fetching fresh.");
-        localStorage.removeItem(cacheKey);
-      }
-    }
-
     setIsDownloadingResume(true);
     setShowProgressDialog(true);
     setProgress(0);
@@ -101,7 +80,6 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
       setProgress(100);
 
       setEnhancedResumeData(data);
-      localStorage.setItem(cacheKey, JSON.stringify(data));
 
       addNotification({
         type: 'success',
