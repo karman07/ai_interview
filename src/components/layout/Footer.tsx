@@ -21,20 +21,7 @@ export default function Footer() {
             <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed max-w-md text-sm">
               Empowering professionals worldwide with AI-powered interview preparation. Your comprehensive hub for landing your dream job.
             </p>
-            <div className="flex space-x-4">
-              <a href="#" className="w-10 h-10 bg-gray-100 dark:bg-gray-900 hover:bg-primary dark:hover:bg-primary hover:text-white rounded-full flex items-center justify-center transition-all duration-300 group">
-                <Facebook className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-white" />
-              </a>
-              <a href="#" className="w-10 h-10 bg-gray-100 dark:bg-gray-900 hover:bg-primary dark:hover:bg-primary hover:text-white rounded-full flex items-center justify-center transition-all duration-300 group">
-                <Twitter className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-white" />
-              </a>
-              <a href="#" className="w-10 h-10 bg-gray-100 dark:bg-gray-900 hover:bg-primary dark:hover:bg-primary hover:text-white rounded-full flex items-center justify-center transition-all duration-300 group">
-                <Linkedin className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-white" />
-              </a>
-              <a href="#" className="w-10 h-10 bg-gray-100 dark:bg-gray-900 hover:bg-primary dark:hover:bg-primary hover:text-white rounded-full flex items-center justify-center transition-all duration-300 group">
-                <Instagram className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-white" />
-              </a>
-            </div>
+
           </div>
 
           <div>
@@ -66,8 +53,8 @@ export default function Footer() {
                 <Mail className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">Email us</p>
-                  <a href="mailto:hello@aiforjob.com" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary transition-colors">
-                    hello@aiforjob.com
+                  <a href="mailto:info@aiforjob.ai" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary transition-colors">
+                    info@aiforjob.ai
                   </a>
                 </div>
               </div>
@@ -75,8 +62,8 @@ export default function Footer() {
                 <Phone className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">Call us</p>
-                  <a href="tel:+1234567890" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary transition-colors">
-                    +1 (234) 567-8900
+                  <a href="tel:+918813947793" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary transition-colors">
+                    +91 88139 47793
                   </a>
                 </div>
               </div>

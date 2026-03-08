@@ -638,8 +638,70 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume, sections, strengt
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           CV Quality Assessment
         </h3>
-        <div className="border border-gray-200 dark:border-gray-700 rounded-[2rem] overflow-hidden bg-white dark:bg-gray-900 shadow-sm">
-          <div className="">
+        <div className="bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4">
+            {Array.isArray(sections) ? sections.map((sub: any, idx: number) => {
+              const percentage = (sub.score / sub.max_score) * 100;
+              return (
+                <div key={idx} className="border border-gray-200 dark:border-gray-700 rounded-2xl p-4 bg-white dark:bg-gray-800/50">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-bold text-gray-900 dark:text-white capitalize">
+                      {sub.dimension.replace(/_/g, " ")}
+                    </h4>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                      <span className="text-lg font-black text-gray-900 dark:text-white">{sub.score}</span>
+                      <span className="text-[10px] font-black text-gray-400">/ {sub.max_score}</span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 mb-4">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${percentage}%` }}
+                      className={`h-2 rounded-full ${percentage >= 80 ? "bg-green-500" : percentage >= 60 ? "bg-blue-500" : percentage >= 40 ? "bg-yellow-500" : "bg-red-500"}`}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Evidence / Feedback</p>
+                    <ul className="space-y-2">
+                      {sub.evidence?.map((ev: string, i: number) => (
+                        <li key={i} className="text-sm text-gray-600 dark:text-gray-300 flex items-start gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                          <span className="leading-relaxed">{ev}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              );
+            }) : Object.entries(sections).map(([key, section]: [string, any], idx: number) => {
+              const percentage = (section.score / 10) * 100;
+              return (
+                <div key={idx} className="border border-gray-200 dark:border-gray-700 rounded-2xl p-4 bg-white dark:bg-gray-800/50">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-bold text-gray-900 dark:text-white capitalize">
+                      {key.replace(/_/g, " ")}
+                    </h4>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                      <span className="text-lg font-black text-gray-900 dark:text-white">{section.score.toFixed(1)}</span>
+                      <span className="text-[10px] font-black text-gray-400">/ 10</span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 mb-4">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${percentage}%` }}
+                      className={`h-2 rounded-full ${percentage >= 80 ? "bg-green-500" : percentage >= 60 ? "bg-blue-500" : percentage >= 40 ? "bg-yellow-500" : "bg-red-500"}`}
+                    />
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed font-medium">{section.feedback}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block border border-gray-200 dark:border-gray-700 rounded-[2rem] overflow-hidden">
             <table className="w-full table-fixed">
               <thead className="bg-gray-50/50 dark:bg-gray-800/50">
                 <tr>
@@ -679,12 +741,12 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume, sections, strengt
                               animate={{ width: `${percentage}%` }}
                               transition={{ duration: 0.7 }}
                               className={`h-3 rounded-full ${percentage >= 80
-                                ? "bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.4)]"
+                                ? "bg-green-500"
                                 : percentage >= 60
-                                  ? "bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.4)]"
+                                  ? "bg-blue-500"
                                   : percentage >= 40
-                                    ? "bg-yellow-500 shadow-[0_0_12px_rgba(234,179,8,0.4)]"
-                                    : "bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.4)]"
+                                    ? "bg-yellow-500"
+                                    : "bg-red-500"
                                 }`}
                             />
                           </div>
@@ -728,12 +790,12 @@ const EvaluationTab: React.FC<EvaluationTabProps> = ({ resume, sections, strengt
                               animate={{ width: `${percentage}%` }}
                               transition={{ duration: 0.7 }}
                               className={`h-3 rounded-full ${percentage >= 80
-                                ? "bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.4)]"
+                                ? "bg-green-500"
                                 : percentage >= 60
-                                  ? "bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.4)]"
+                                  ? "bg-blue-500"
                                   : percentage >= 40
-                                    ? "bg-yellow-500 shadow-[0_0_12px_rgba(234,179,8,0.4)]"
-                                    : "bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.4)]"
+                                    ? "bg-yellow-500"
+                                    : "bg-red-500"
                                 }`}
                             />
                           </div>
@@ -879,16 +941,68 @@ const JDMatchTab = ({ resume }: { resume: any }) => {
       </div>
 
       {/* Match Analysis Table */}
-      <div className="border border-blue-100 dark:border-blue-800/50 rounded-[2.5rem] overflow-hidden bg-white dark:bg-[#0D1117] shadow-xl shadow-blue-500/5">
-        <div className="px-8 py-6 bg-gradient-to-r from-blue-50/50 to-blue-50/50 dark:from-blue-900/20 dark:to-blue-900/20 border-b border-blue-100 dark:border-blue-800/50">
-          <h4 className="text-xl font-black text-blue-900 dark:text-blue-100 flex items-center gap-3 tracking-tighter uppercase">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-xl">
-              <Brain className="w-5 h-5 text-blue-600" />
-            </div>
-            Detailed Match Analysis
-          </h4>
+      <div className="bg-white dark:bg-[#0D1117] shadow-xl shadow-blue-500/5 overflow-hidden">
+        {/* Mobile View for JD Match */}
+        <div className="md:hidden space-y-4">
+          {jdMatchData.subscores.map((sub: any, idx: number) => {
+            const percentage = (sub.score / sub.max_score) * 100;
+            return (
+              <div key={idx} className="border border-blue-100 dark:border-blue-800/50 rounded-2xl p-5 bg-white dark:bg-blue-900/10">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full shrink-0 ${percentage >= 80 ? "bg-blue-500" : percentage >= 60 ? "bg-blue-500" : percentage >= 40 ? "bg-yellow-500" : "bg-red-500"}`} />
+                    <h4 className="font-bold text-gray-900 dark:text-white capitalize text-sm">
+                      {sub.dimension.replace(/_/g, " ")}
+                    </h4>
+                  </div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/40 border border-blue-100 dark:border-blue-800/50">
+                    <span className="text-lg font-black text-blue-700 dark:text-blue-400">{sub.score}</span>
+                    <span className="text-[10px] font-black text-gray-400">/ {sub.max_score}</span>
+                  </div>
+                </div>
+                <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 mb-2">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${percentage}%` }}
+                    className={`h-2 rounded-full ${percentage >= 80 ? "bg-blue-500" : percentage >= 60 ? "bg-blue-500" : percentage >= 40 ? "bg-yellow-500" : "bg-red-500"}`}
+                  />
+                </div>
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-wider mb-4">
+                  <span className={percentage >= 80 ? "text-blue-600" : percentage >= 60 ? "text-blue-600" : percentage >= 40 ? "text-yellow-600" : "text-red-600"}>
+                    {percentage >= 80 ? "Excellent Match" : percentage >= 60 ? "Good Match" : percentage >= 40 ? "Moderate Match" : "Needs Improvement"}
+                  </span>
+                  <span className="text-gray-400">{Math.round(percentage)}%</span>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Evidence & Details</p>
+                  {Array.isArray(sub.evidence) ? (
+                    <ul className="space-y-2">
+                      {sub.evidence.map((ev: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                          <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                          <span className="leading-relaxed">{ev}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed italic">{sub.evidence}</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <div className="">
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block border border-blue-100 dark:border-blue-800/50 rounded-[2.5rem] overflow-hidden">
+          <div className="px-8 py-6 bg-gradient-to-r from-blue-50/50 to-blue-50/50 dark:from-blue-900/20 dark:to-blue-900/20 border-b border-blue-100 dark:border-blue-800/50">
+            <h4 className="text-xl font-black text-blue-900 dark:text-blue-100 flex items-center gap-3 tracking-tighter uppercase">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-xl">
+                <Brain className="w-5 h-5 text-blue-600" />
+              </div>
+              Detailed Match Analysis
+            </h4>
+          </div>
           <table className="w-full table-fixed">
             <thead className="bg-gradient-to-r from-blue-50/30 to-blue-50/30 dark:from-blue-900/10 dark:to-blue-900/10">
               <tr>

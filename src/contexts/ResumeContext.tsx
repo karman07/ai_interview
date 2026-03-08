@@ -13,6 +13,7 @@ interface ResumeContextType {
    * @returns The uploaded resume with analytics
    */
   uploadResume: (files: File[], jdText?: string) => Promise<Resume>;
+  isLoading: boolean;
 }
 
 const ResumeContext = createContext<ResumeContextType | undefined>(undefined);
@@ -26,18 +27,31 @@ export const useResume = () => {
 export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [resumes, setResumes] = useState<Resume[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const fetchResumes = async () => {
     if (!user) return;
-    const data = await resumeService.getResumes();
-    setResumes(data);
+    setIsLoading(true);
+    try {
+      const data = await resumeService.getResumes();
+      setResumes(data);
+    } catch (error) {
+      console.error("Failed to fetch resumes:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const uploadResume = async (files: File[], jdText?: string): Promise<Resume> => {
     if (!user) throw new Error('User not authenticated');
-    const newResume = await resumeService.uploadResume(files, jdText);
-    setResumes((prev) => [newResume, ...prev]);
-    return newResume;
+    setIsLoading(true);
+    try {
+      const newResume = await resumeService.uploadResume(files, jdText);
+      setResumes((prev) => [newResume, ...prev]);
+      return newResume;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -46,7 +60,7 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [user]);
 
   return (
-    <ResumeContext.Provider value={{ resumes, fetchResumes, uploadResume }}>
+    <ResumeContext.Provider value={{ resumes, fetchResumes, uploadResume, isLoading }}>
       {children}
     </ResumeContext.Provider>
   );

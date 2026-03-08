@@ -321,13 +321,13 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
                   </div>
                 </div>
 
-                <div className="h-[400px] w-full mt-4 flex items-center justify-center">
+                <div className="h-[300px] sm:h-[400px] w-full mt-4 flex items-center justify-center">
                   <ResponsiveContainer width="100%" height="100%">
                     <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
                       <PolarGrid stroke="#e2e8f0" className="opacity-50 dark:opacity-20" />
                       <PolarAngleAxis
                         dataKey="subject"
-                        tick={{ fill: '#64748b', fontSize: 12, fontWeight: 800 }}
+                        tick={{ fill: '#64748b', fontSize: window.innerWidth < 640 ? 10 : 12, fontWeight: 800 }}
                       />
                       <PolarRadiusAxis
                         angle={90}

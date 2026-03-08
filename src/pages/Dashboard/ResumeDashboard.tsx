@@ -97,11 +97,12 @@ const XMarkIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) 
 );
 
 const ResumeDashboard: React.FC = () => {
-  const { resumes, uploadResume } = useResume();
+  const { resumes, uploadResume, isLoading } = useResume();
   const { user } = useAuth();
   const { addNotification } = useNotification();
   const { setShowPricing } = usePricing();
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
   const [selectedResume, setSelectedResume] = useState<Resume | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [jdFile, setJDFile] = useState<File | null>(null);
@@ -188,6 +189,7 @@ const ResumeDashboard: React.FC = () => {
 
   const handleUpload = async (): Promise<void> => {
     if (!resumeFile) return;
+    setIsUploading(true);
     try {
       const files: File[] = [resumeFile];
       if (jdFile) files.push(jdFile);
@@ -233,6 +235,8 @@ const ResumeDashboard: React.FC = () => {
         title: 'Upload failed',
         message: 'Failed to upload and analyze resume. Please try again.',
       });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -292,6 +296,12 @@ const ResumeDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+      {/* Loading Progress Bar */}
+      {isLoading && (
+        <div className="fixed top-0 left-0 right-0 z-[100] h-1 bg-blue-100 overflow-hidden">
+          <div className="h-full bg-blue-600 animate-progress"></div>
+        </div>
+      )}
       <div className="max-w-7xl mx-auto p-4 sm:p-6">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
@@ -401,8 +411,27 @@ const ResumeDashboard: React.FC = () => {
           ))}
         </div>
 
+        {/* Loader for empty state while fetching */}
+        {isLoading && resumes.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-32 bg-white/50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700">
+            <div className="relative w-20 h-20 mb-8">
+              <div className="absolute inset-0 border-4 border-blue-600/20 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <p className="text-gray-500 font-black uppercase tracking-widest text-xs animate-pulse">Syncing Analytics...</p>
+          </div>
+        )}
+
         {/* Tab Content */}
-        {activeTab === 'overview' && (
+        {!isLoading && resumes.length === 0 && activeTab !== 'details' && (
+          <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
+            <DocumentTextIcon className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 uppercase">No Data Found</h3>
+            <p className="text-gray-500 mb-6">Upload your first resume to see performance insights.</p>
+          </div>
+        )}
+
+        {(resumes.length > 0) && activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8">
             {/* Performance Trends */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
@@ -411,44 +440,47 @@ const ResumeDashboard: React.FC = () => {
                 Performance Trends
               </h3>
               {performanceData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={250}>
-                  <AreaChart data={performanceData}>
-                    <defs>
-                      <linearGradient id="colorCV" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="colorGreen" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="colorJD" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="colorRed" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="name" stroke="#6B7280" fontSize={12} />
-                    <YAxis stroke="#6B7280" fontSize={12} />
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'white',
-                        border: '1px solid #E5E7EB',
-                        borderRadius: '12px',
-                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-                      }}
-                    />
-                    <Legend />
-                    <Area type="monotone" dataKey="cvQuality" stroke="#3B82F6" fillOpacity={1} fill="url(#colorCV)" strokeWidth={3} name="CV Quality Score" />
-                    <Area type="monotone" dataKey="jdMatch" stroke="#10B981" fillOpacity={1} fill="url(#colorJD)" strokeWidth={3} name="JD Match Score" />
-                    <Area type="monotone" dataKey="greenFlags" stroke="#F59E0B" fillOpacity={1} fill="url(#colorGreen)" strokeWidth={3} name="Green Flags" />
-                    <Area type="monotone" dataKey="redFlags" stroke="#EF4444" fillOpacity={1} fill="url(#colorRed)" strokeWidth={3} name="Red Flags" />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <div className="h-[200px] sm:h-[300px] w-full mt-4 sm:mt-6">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={performanceData}>
+                      <defs>
+                        <linearGradient id="colorCV" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="colorGreen" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="colorJD" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="colorRed" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="name" stroke="#6B7280" fontSize={10} hide={window.innerWidth < 640} />
+                      <YAxis stroke="#6B7280" fontSize={10} width={30} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'white',
+                          border: '1px solid #E5E7EB',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                          fontSize: '12px'
+                        }}
+                      />
+                      <Legend iconSize={8} wrapperStyle={{ fontSize: '10px' }} />
+                      <Area type="monotone" dataKey="cvQuality" stroke="#3B82F6" fillOpacity={1} fill="url(#colorCV)" strokeWidth={2} name="CV Quality" />
+                      <Area type="monotone" dataKey="jdMatch" stroke="#10B981" fillOpacity={1} fill="url(#colorJD)" strokeWidth={2} name="JD Match" />
+                      <Area type="monotone" dataKey="greenFlags" stroke="#F59E0B" fillOpacity={1} fill="url(#colorGreen)" strokeWidth={2} name="Green Flags" />
+                      <Area type="monotone" dataKey="redFlags" stroke="#EF4444" fillOpacity={1} fill="url(#colorRed)" strokeWidth={2} name="Red Flags" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
                   <div className="text-center">
@@ -463,25 +495,27 @@ const ResumeDashboard: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">Score Distribution</h3>
               {pieData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {pieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+                <div className="h-[250px] sm:h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={window.innerWidth < 640 ? 40 : 60}
+                        outerRadius={window.innerWidth < 640 ? 70 : 100}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px' }} />
+                      <Legend iconSize={8} wrapperStyle={{ fontSize: '10px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
                   <p>No data available</p>
@@ -496,22 +530,24 @@ const ResumeDashboard: React.FC = () => {
             {/* Skills Radar */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">CV Quality Breakdown</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <RadarChart data={radarData}>
-                  <PolarGrid />
-                  <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 12 }} />
-                  <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
-                  <Radar
-                    name="Score"
-                    dataKey="score"
-                    stroke="#3B82F6"
-                    fill="#3B82F6"
-                    fillOpacity={0.2}
-                    strokeWidth={2}
-                  />
-                  <Tooltip />
-                </RadarChart>
-              </ResponsiveContainer>
+              <div className="h-[300px] sm:h-[400px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={radarData}>
+                    <PolarGrid strokeOpacity={0.5} />
+                    <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 10, fontWeight: 500 }} />
+                    <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 8 }} axisLine={false} />
+                    <Radar
+                      name="Score"
+                      dataKey="score"
+                      stroke="#3B82F6"
+                      fill="#3B82F6"
+                      fillOpacity={0.3}
+                      strokeWidth={2}
+                    />
+                    <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px' }} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
             {/* Detailed Scores */}
@@ -539,7 +575,12 @@ const ResumeDashboard: React.FC = () => {
 
         {activeTab === 'details' && (
           <div className="space-y-6 sm:space-y-8">
-            {resumes.length > 0 ? (
+            {isLoading && resumes.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24">
+                <div className="w-16 h-16 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mb-6"></div>
+                <p className="text-gray-500 font-black uppercase tracking-widest text-xs animate-pulse">Retrieving Your Resumes...</p>
+              </div>
+            ) : resumes.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {safeResumes.map((resume) => (
                   <DetailedResumeCard key={resume.id || resume._id} resume={resume} />
@@ -685,11 +726,23 @@ const ResumeDashboard: React.FC = () => {
                 <div className="mt-6 flex flex-col sm:flex-row-reverse gap-3">
                   <button
                     onClick={handleUpload}
-                    disabled={!resumeFile}
+                    disabled={!resumeFile || isUploading}
                     className="inline-flex justify-center w-full px-6 py-3 text-sm sm:text-base font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 border border-transparent rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                   >
-                    <CloudArrowUpIcon className="w-5 h-5 mr-2" />
-                    Upload & Analyze
+                    {isUploading ? (
+                      <div className="flex items-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Analyzing...
+                      </div>
+                    ) : (
+                      <>
+                        <CloudArrowUpIcon className="w-5 h-5 mr-2" />
+                        Upload & Analyze
+                      </>
+                    )}
                   </button>
                   <button
                     onClick={() => setIsUploadOpen(false)}
