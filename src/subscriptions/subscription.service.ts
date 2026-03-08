@@ -8,6 +8,8 @@ import {
   SubscriptionResponseDto,
 } from './dto';
 
+import Razorpay from 'razorpay';
+
 @Injectable()
 export class SubscriptionService implements OnModuleInit {
   private readonly logger = new Logger(SubscriptionService.name);
@@ -17,7 +19,121 @@ export class SubscriptionService implements OnModuleInit {
   ) { }
 
   async onModuleInit() {
-    this.logger.log('🌱 Application initialized - Auto-seeding of plans is disabled to preserve database integrity.');
+    this.logger.log('🌱 Application initialized - Auto-syncing plans with Razorpay...');
+    try {
+      await this.syncPlansWithRazorpay('IN');
+      this.logger.log('✅ Subscription plans synced successfully!');
+    } catch (error) {
+      this.logger.error(`❌ Failed to sync subscription plans: ${error.message}`);
+    }
+  }
+
+  async syncPlansWithRazorpay(countryCode: string) {
+    const key_id = process.env.RAZORPAY_KEY_ID;
+    const key_secret = process.env.RAZORPAY_KEY_SECRET;
+
+    let razorpay: Razorpay | null = null;
+    if (key_id && key_secret) {
+      razorpay = new Razorpay({ key_id, key_secret });
+    }
+
+    // fetch all razorpay plans to find matches
+    let rzpPlans = [];
+    if (razorpay) {
+      try {
+        const response = await razorpay.plans.all();
+        rzpPlans = response.items || [];
+      } catch (e) {
+        this.logger.error('Failed to fetch Razorpay plans', e);
+      }
+    }
+
+    const getOrCreateRzpPlan = async (name: string, amount: number) => {
+      if (!razorpay) return undefined;
+      const existing = rzpPlans.find(p => p.item.amount === amount && p.item.name.toLowerCase().includes(name.toLowerCase()));
+      if (existing) return existing.id;
+
+      try {
+        const newPlan = await razorpay.plans.create({
+          period: 'monthly',
+          interval: 1,
+          item: {
+            name,
+            amount,
+            currency: 'INR',
+            description: `Automated plan for ${name}`
+          }
+        });
+        this.logger.log(`Created new Razorpay plan: ${newPlan.id} for ${name}`);
+        return newPlan.id;
+      } catch (e) {
+        this.logger.error(`Failed to create Razorpay plan for ${name}`, e);
+        return undefined;
+      }
+    };
+
+    const starterRzpId = await getOrCreateRzpPlan('Career Starter', 10000);
+    const proRzpId = await getOrCreateRzpPlan('Professional', 20000);
+
+    const plans = [
+      {
+        name: `free_tier_${countryCode.toLowerCase()}`,
+        displayName: 'Free Tier',
+        country: countryCode.toUpperCase(),
+        price: 0,
+        currency: countryCode === 'IN' ? 'INR' : 'USD',
+        type: SubscriptionType.MONTHLY,
+        status: SubscriptionStatus.ACTIVE,
+        description: 'Perfect for starters to experience the platform.',
+        features: [
+          { name: 'Resume Limit', description: '5 Resume analysis reports', type: FeatureType.NUMERIC, value: 5, enabled: true, limit: 5, unit: 'resumes' },
+          { name: 'Interview Limit', description: '3 Professional AI interviews', type: FeatureType.NUMERIC, value: 3, enabled: true, limit: 3, unit: 'interviews' },
+          { name: 'AI Feedback', description: 'Basic qualitative feedback', type: FeatureType.BOOLEAN, value: true, enabled: true },
+        ],
+        order: 0
+      },
+      {
+        name: `pro_tier_100_${countryCode.toLowerCase()}`,
+        displayName: 'Career Starter',
+        country: countryCode.toUpperCase(),
+        price: countryCode === 'IN' ? 10000 : 900,
+        currency: countryCode === 'IN' ? 'INR' : 'USD',
+        type: SubscriptionType.MONTHLY,
+        status: SubscriptionStatus.ACTIVE,
+        razorpayPlanId: countryCode === 'IN' ? starterRzpId : undefined,
+        description: 'Accelerate your job search with more resumes and interviews.',
+        features: [
+          { name: 'Resume Limit', description: '15 Resume analysis reports', type: FeatureType.NUMERIC, value: 15, enabled: true, limit: 15, unit: 'resumes' },
+          { name: 'Interview Limit', description: '10 Professional AI interviews', type: FeatureType.NUMERIC, value: 10, enabled: true, limit: 10, unit: 'interviews' },
+          { name: 'AI Feedback', description: 'Detailed qualitative analysis', type: FeatureType.BOOLEAN, value: true, enabled: true },
+          { name: 'Priority Support', description: '24/7 Priority support access', type: FeatureType.BOOLEAN, value: true, enabled: true }
+        ],
+        order: 1,
+        popularBadge: true
+      },
+      {
+        name: `pro_tier_200_${countryCode.toLowerCase()}`,
+        displayName: 'Professional',
+        country: countryCode.toUpperCase(),
+        price: countryCode === 'IN' ? 20000 : 1900,
+        currency: countryCode === 'IN' ? 'INR' : 'USD',
+        type: SubscriptionType.MONTHLY,
+        status: SubscriptionStatus.ACTIVE,
+        razorpayPlanId: countryCode === 'IN' ? proRzpId : undefined,
+        description: 'For power users who want the maximum edge in their prep.',
+        features: [
+          { name: 'Resume Limit', description: '40 Resume analysis reports', type: FeatureType.NUMERIC, value: 40, enabled: true, limit: 40, unit: 'resumes' },
+          { name: 'Interview Limit', description: '20 Professional AI interviews', type: FeatureType.NUMERIC, value: 20, enabled: true, limit: 20, unit: 'interviews' },
+          { name: 'AI Feedback', description: 'Full deep-dive qualitative analysis', type: FeatureType.BOOLEAN, value: true, enabled: true },
+          { name: 'Custom Roadmaps', description: 'Personalized career roadmaps', type: FeatureType.BOOLEAN, value: true, enabled: true }
+        ],
+        order: 2
+      }
+    ];
+
+    for (const planData of plans) {
+      await this.subscriptionModel.findOneAndUpdate({ name: planData.name }, planData, { upsert: true });
+    }
   }
 
   async create(createSubscriptionDto: CreateSubscriptionDto): Promise<SubscriptionResponseDto> {
