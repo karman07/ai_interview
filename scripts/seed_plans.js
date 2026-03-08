@@ -81,7 +81,7 @@ async function seed() {
                 currency: 'INR',
                 type: 'monthly',
                 status: 'active',
-                razorpayPlanId: 'plan_SOAOKbZ1fdkXRN',
+                razorpayPlanId: 'plan_SKqg030DvG2aew',
                 description: 'Accelerate your job search with more resumes and interviews.',
                 features: [
                     {
@@ -116,7 +116,7 @@ async function seed() {
                 currency: 'INR',
                 type: 'monthly',
                 status: 'active',
-                razorpayPlanId: 'plan_SKqg030DvG2aew',
+                razorpayPlanId: 'plan_SOZ3HmKkAFI4Bc',
                 description: 'For power users who want the maximum edge in their prep.',
                 features: [
                     {
