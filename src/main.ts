@@ -17,7 +17,14 @@ async function bootstrap() {
     const app = await NestFactory.create<NestExpressApplication>(AppModule, {
       logger: ['error', 'warn', 'log', 'debug'],
       abortOnError: false, // Don't abort on non-critical errors
+      bodyParser: false, // We will configure it manually below
     });
+
+    // ✅ INCREASE LIMITS: Handle large resume and JD data
+    // We must use 'require' or proper imports for express middlewares
+    const { json, urlencoded } = require('express');
+    app.use(json({ limit: '50mb' }));
+    app.use(urlencoded({ extended: true, limit: '50mb' }));
 
     // Global error handling for unhandled rejections and exceptions
     process.on('unhandledRejection', (reason, promise) => {
