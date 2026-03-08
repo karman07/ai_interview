@@ -238,6 +238,12 @@ export class AiCvApiService {
       } else if (error.response) {
         this.logger.error(`📊 Response status: ${error.response.status}`);
         this.logger.error(`📊 Response data: ${JSON.stringify(error.response.data)}`);
+
+        // Pass through the specific error message from AI service if it exists
+        const detail = error.response.data?.detail || error.response.data?.message;
+        if (detail) {
+          throw new HttpException(detail, HttpStatus.BAD_REQUEST);
+        }
       }
 
       this.logger.error('Full error details:', error.message);
@@ -327,6 +333,12 @@ export class AiCvApiService {
       } else if (error.response) {
         this.logger.error(`📊 Response status: ${error.response.status}`);
         this.logger.error(`📊 Response data: ${JSON.stringify(error.response.data)}`);
+
+        // Pass through the specific error message from AI service if it exists
+        const detail = error.response.data?.detail || error.response.data?.message;
+        if (detail) {
+          throw new HttpException(detail, HttpStatus.BAD_REQUEST);
+        }
       }
 
       this.logger.error('Full error details:', error.message);

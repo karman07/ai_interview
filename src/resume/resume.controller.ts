@@ -53,8 +53,11 @@ export class ResumeController {
   @UseGuards(JwtAuthGuard)
   @Post('upload')
   @UseInterceptors(
-    FilesInterceptor('files', 2, { storage }),
-    new TimeoutInterceptor(180000) // 3 minutes timeout for file upload
+    FilesInterceptor('files', 2, {
+      storage,
+      limits: { fileSize: 15 * 1024 * 1024 } // 15MB limit for 7+ pages and JD
+    }),
+    new TimeoutInterceptor(300000) // 5 minutes timeout for processing
   )
   async upload(
     @UploadedFiles() files: Express.Multer.File[],
@@ -282,8 +285,11 @@ export class ResumeController {
   @UseGuards(JwtAuthGuard)
   @Patch('improve/:id')
   @UseInterceptors(
-    FilesInterceptor('files', 1, { storage }),
-    new TimeoutInterceptor(180000) // 3 minutes timeout for improvement
+    FilesInterceptor('files', 1, {
+      storage,
+      limits: { fileSize: 10 * 1024 * 1024 }
+    }),
+    new TimeoutInterceptor(300000)
   )
   async improveResume(
     @Param('id') id: string,
