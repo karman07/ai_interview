@@ -17,13 +17,7 @@ export class SubscriptionService implements OnModuleInit {
   ) { }
 
   async onModuleInit() {
-    this.logger.log('🌱 Seeding subscription plans for India...');
-    try {
-      await this.seedCountryPlans('IN');
-      this.logger.log('✅ Subscription plans for India seeded successfully!');
-    } catch (error) {
-      this.logger.error(`❌ Failed to seed subscription plans: ${error.message}`);
-    }
+    this.logger.log('🌱 Application initialized - Auto-seeding of plans is disabled to preserve database integrity.');
   }
 
   async create(createSubscriptionDto: CreateSubscriptionDto): Promise<SubscriptionResponseDto> {
