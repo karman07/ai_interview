@@ -46,12 +46,7 @@ export class SubscriptionController {
     return this.subscriptionService.findActive(country);
   }
 
-  @Post('seed/:country')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  async seed(@Param('country') country: string) {
-    return this.subscriptionService.seedCountryPlans(country);
-  }
+
 
   @Get('stats')
   @UseGuards(JwtAuthGuard, RolesGuard)

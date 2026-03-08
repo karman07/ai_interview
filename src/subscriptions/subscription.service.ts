@@ -178,7 +178,7 @@ export class SubscriptionService implements OnModuleInit {
         currency: countryCode === 'IN' ? 'INR' : 'USD',
         type: SubscriptionType.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
-        razorpayPlanId: countryCode === 'IN' ? 'plan_SOAOKbZ1fdkXRN' : undefined,
+        razorpayPlanId: countryCode === 'IN' ? 'plan_SKqg030DvG2aew' : undefined,
         description: 'Accelerate your job search with more resumes and interviews.',
         features: [
           {
@@ -213,7 +213,7 @@ export class SubscriptionService implements OnModuleInit {
         currency: countryCode === 'IN' ? 'INR' : 'USD',
         type: SubscriptionType.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
-        razorpayPlanId: countryCode === 'IN' ? 'plan_SKqg030DvG2aew' : undefined,
+        razorpayPlanId: countryCode === 'IN' ? 'plan_SOZ3HmKkAFI4Bc' : undefined,
         description: 'For power users who want the maximum edge in their prep.',
         features: [
           {
