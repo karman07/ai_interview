@@ -318,14 +318,16 @@ export default function InterviewRoomWS() {
 
                             {/* Identity Overlay: Compact */}
                             <div className="absolute bottom-4 left-4 right-4 p-3 bg-black/20 backdrop-blur-md rounded-xl border border-white/5 flex items-center justify-between">
-                                <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">Nexus Pro Engine</span>
+                                <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">
+                                    {(messages.length > 0 && messages[messages.length - 1].role === 'user' && !isStreamingResponse && !isSpeaking) ? 'Nexus Pro Engine (Thinking...)' : 'Nexus Pro Engine'}
+                                </span>
                                 <div className="flex gap-1 h-3 items-center">
                                     {[1, 2, 3].map(i => (
                                         <motion.div
                                             key={i}
-                                            animate={isSpeaking ? { height: [3, 12, 3] } : { height: 3 }}
+                                            animate={(isSpeaking || (messages.length > 0 && messages[messages.length - 1].role === 'user' && !isStreamingResponse && !isSpeaking)) ? { height: [3, 12, 3] } : { height: 3 }}
                                             transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.1 }}
-                                            className="w-0.5 bg-blue-400 rounded-full"
+                                            className={`w-0.5 rounded-full ${(messages.length > 0 && messages[messages.length - 1].role === 'user' && !isStreamingResponse && !isSpeaking) ? 'bg-orange-400' : 'bg-blue-400'}`}
                                         />
                                     ))}
                                 </div>

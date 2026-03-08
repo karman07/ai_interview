@@ -71,7 +71,7 @@ export interface DashboardAnalytics {
 
 export const DashboardApi = {
   async getDashboard(userId: string): Promise<DashboardAnalytics> {
-    const { data } = await http.get(`/ai-interview/dashboard/${userId}`);
+    const { data } = await http.get(`/analytics/analytics`);
     return data;
   }
 };
