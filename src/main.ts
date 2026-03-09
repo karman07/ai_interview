@@ -68,8 +68,16 @@ async function bootstrap() {
       },
       credentials: true,
       methods: ['GET', 'PUT', 'POST', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: ['*'],
-      exposedHeaders: ['*'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'Accept',
+        'Origin',
+        'X-HTTP-Method-Override',
+        'idToken', // Specific for Google Auth in our app
+      ],
+      exposedHeaders: ['Set-Cookie'],
     });
 
     // Ensure upload directories exist

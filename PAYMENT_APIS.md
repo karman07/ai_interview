@@ -1,7 +1,7 @@
 # Payment API Documentation (Razorpay Integration)
 
 All APIs (except Webhook) require a Bearer Token in the `Authorization` header.
-Base URL: `http://localhost:3000`
+Base URL: `http://api.aiforjob.ai`
 
 ---
 

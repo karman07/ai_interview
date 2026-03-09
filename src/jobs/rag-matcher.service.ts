@@ -192,7 +192,7 @@ export class RagMatcherService {
         });
 
         try {
-            const pythonApiUrl = process.env.AI_INTERVIEW_API_BASE_URL || 'http://localhost:8000';
+            const pythonApiUrl = process.env.AI_INTERVIEW_API_BASE_URL || 'http://ai.aiforjob.ai';
             const response = await axios.post(`${pythonApiUrl}/api/v1/match`, {
                 resume_text: resumeText,
                 jobs: jobDataPayload

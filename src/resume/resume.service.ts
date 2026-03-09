@@ -22,7 +22,7 @@ export class ResumeService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private readonly aiCvApiService: AiCvApiService,
   ) {
-    this.appBaseUrl = process.env.APP_BASE_URL || process.env.APP_URL || 'http://localhost:3000';
+    this.appBaseUrl = process.env.APP_BASE_URL || process.env.APP_URL || 'http://api.aiforjob.ai';
   }
 
   private buildFileUrl(filePath: string): string {

@@ -58,7 +58,7 @@ export class UsersController {
   ) {
     const updateData = { ...dto };
     if (file) {
-      const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
+      const appUrl = process.env.APP_URL ?? 'http://api.aiforjob.ai';
       updateData.profileImageUrl = `${appUrl}/uploads/profile-images/${file.filename}`;
     }
     const updated: UserDocument = await this.usersService.updateProfile(user.sub, updateData);
@@ -96,7 +96,7 @@ export class UsersController {
     limits: { fileSize: 5 * 1024 * 1024 },
   }))
   async uploadProfileImage(@CurrentUser() user: any, @UploadedFile() file?: Express.Multer.File) {
-    const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
+    const appUrl = process.env.APP_URL ?? 'http://api.aiforjob.ai';
     const profileImageUrl = `${appUrl}/uploads/profile-images/${file?.filename}`;
     const updated: UserDocument = await this.usersService.updateProfile(user.sub, { profileImageUrl });
     const { passwordHash, refreshTokenHash, ...safe } = updated.toObject();

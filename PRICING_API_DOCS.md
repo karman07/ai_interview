@@ -2,7 +2,7 @@
 
 This document provides the latest API specification for handling recurring subscriptions (Autopay), one-time payments, and admin analytics using Razorpay and MongoDB.
 
-**Base URL**: `http://localhost:3000`
+**Base URL**: `http://api.aiforjob.ai`
 
 ---
 

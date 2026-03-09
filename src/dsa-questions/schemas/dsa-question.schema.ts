@@ -160,7 +160,6 @@ export class DsaQuestion {
 export const DsaQuestionSchema = SchemaFactory.createForClass(DsaQuestion);
 
 // Create indexes for better query performance
-DsaQuestionSchema.index({ questionId: 1 });
 DsaQuestionSchema.index({ difficulty: 1 });
 DsaQuestionSchema.index({ categories: 1 });
 DsaQuestionSchema.index({ tags: 1 });

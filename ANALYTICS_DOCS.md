@@ -5,9 +5,9 @@ This module provides a robust tracking system for user behavior, session managem
 ## 🚀 Base Configuration
 
 - **Base URLs**: 
-  - `http://localhost:3000/analytics`
-  - `http://localhost:3000/interviews`
-- **WebSocket Namespace**: `http://localhost:3000/analytics`
+  - `http://api.aiforjob.ai/analytics`
+  - `http://api.aiforjob.ai/interviews`
+- **WebSocket Namespace**: `http://api.aiforjob.ai/analytics`
 
 ---
 

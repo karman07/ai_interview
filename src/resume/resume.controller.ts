@@ -208,7 +208,7 @@ export class ResumeController {
   }
 
   private buildFileUrl(filePath: string): string {
-    const appBaseUrl = process.env.APP_BASE_URL || process.env.APP_URL || 'http://localhost:3000';
+    const appBaseUrl = process.env.APP_BASE_URL || process.env.APP_URL || 'http://api.aiforjob.ai';
     const normalized = filePath.replace(/\\/g, '/');
     return `${appBaseUrl}/${normalized}`;
   }

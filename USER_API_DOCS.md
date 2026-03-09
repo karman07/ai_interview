@@ -2,7 +2,7 @@
 
 This document provides a comprehensive guide to all endpoints available for the end-user application. 
 
-**Base URL**: `http://localhost:3000` (or your production URL)  
+**Base URL**: `http://api.aiforjob.ai` (or your production URL)  
 **Authentication**: Use the `Authorization: Bearer <JWT_ACCESS_TOKEN>` header for all protected routes.
 
 ---

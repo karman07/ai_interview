@@ -7,7 +7,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:3000",
+      "value": "http://api.aiforjob.ai",
       "type": "string"
     },
     {
@@ -56,8 +56,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "register"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
             }
           }
         },
@@ -91,8 +96,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             }
           }
         },
@@ -122,8 +132,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/auth/refresh",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "refresh"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
             }
           }
         },
@@ -139,8 +154,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/auth/logout",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "logout"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
             }
           }
         }
@@ -161,8 +181,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/users/profile",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "profile"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "profile"
+              ]
             }
           }
         },
@@ -208,8 +233,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/users/profile",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "profile"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "profile"
+              ]
             }
           }
         }
@@ -298,8 +328,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/jobs",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs"
+              ]
             }
           }
         },
@@ -315,8 +349,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/jobs/my-jobs",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "my-jobs"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "my-jobs"
+              ]
             }
           }
         },
@@ -326,8 +365,12 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/jobs",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs"
+              ]
             }
           }
         }
@@ -348,8 +391,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/jobs/{{jobId}}/applications",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "{{jobId}}", "applications"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "{{jobId}}",
+                "applications"
+              ]
             }
           }
         },
@@ -365,8 +414,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/jobs/{{jobId}}/best-candidates",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "{{jobId}}", "best-candidates"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "{{jobId}}",
+                "best-candidates"
+              ]
             }
           }
         },
@@ -382,8 +437,16 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/jobs/applications/{{applicationId}}/status/accepted",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "applications", "{{applicationId}}", "status", "accepted"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "applications",
+                "{{applicationId}}",
+                "status",
+                "accepted"
+              ]
             }
           }
         },
@@ -399,8 +462,16 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/jobs/applications/{{applicationId}}/status/rejected",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "applications", "{{applicationId}}", "status", "rejected"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "applications",
+                "{{applicationId}}",
+                "status",
+                "rejected"
+              ]
             }
           }
         }
@@ -429,8 +500,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/jobs/request-employee",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "request-employee"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "request-employee"
+              ]
             }
           }
         },
@@ -446,8 +522,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/jobs/my-requests",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "my-requests"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "my-requests"
+              ]
             }
           }
         }
@@ -462,8 +543,14 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/uploads/job-descriptions/filename.pdf",
-              "host": ["{{baseUrl}}"],
-              "path": ["uploads", "job-descriptions", "filename.pdf"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "uploads",
+                "job-descriptions",
+                "filename.pdf"
+              ]
             }
           }
         },
@@ -473,8 +560,14 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/uploads/profile-images/filename.jpg",
-              "host": ["{{baseUrl}}"],
-              "path": ["uploads", "profile-images", "filename.jpg"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "uploads",
+                "profile-images",
+                "filename.jpg"
+              ]
             }
           }
         }

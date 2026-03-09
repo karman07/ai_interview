@@ -7,7 +7,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:3000",
+      "value": "http://api.aiforjob.ai",
       "type": "string"
     },
     {
@@ -46,8 +46,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/email/subscribe",
-              "host": ["{{baseUrl}}"],
-              "path": ["email", "subscribe"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "email",
+                "subscribe"
+              ]
             }
           }
         },
@@ -67,8 +72,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/email/unsubscribe",
-              "host": ["{{baseUrl}}"],
-              "path": ["email", "unsubscribe"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "email",
+                "unsubscribe"
+              ]
             }
           }
         },
@@ -79,8 +89,14 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/email/subscription-status/user@example.com",
-              "host": ["{{baseUrl}}"],
-              "path": ["email", "subscription-status", "user@example.com"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "email",
+                "subscription-status",
+                "user@example.com"
+              ]
             }
           }
         },
@@ -96,8 +112,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/email/my-subscription",
-              "host": ["{{baseUrl}}"],
-              "path": ["email", "my-subscription"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "email",
+                "my-subscription"
+              ]
             }
           }
         },
@@ -108,8 +129,13 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/email/trigger-job-update",
-              "host": ["{{baseUrl}}"],
-              "path": ["email", "trigger-job-update"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "email",
+                "trigger-job-update"
+              ]
             }
           }
         },
@@ -120,8 +146,14 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/email/subscribers/count",
-              "host": ["{{baseUrl}}"],
-              "path": ["email", "subscribers", "count"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "email",
+                "subscribers",
+                "count"
+              ]
             }
           }
         }
@@ -150,8 +182,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/jobs/enhanced",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "enhanced"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "enhanced"
+              ]
             }
           }
         },
@@ -167,8 +204,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/jobs/enhanced/my-jobs?isActive=true",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "enhanced", "my-jobs"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "enhanced",
+                "my-jobs"
+              ],
               "query": [
                 {
                   "key": "isActive",
@@ -190,8 +233,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/jobs/enhanced/dashboard-stats",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "enhanced", "dashboard-stats"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "enhanced",
+                "dashboard-stats"
+              ]
             }
           }
         },
@@ -215,8 +264,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/jobs/enhanced/{{jobId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "enhanced", "{{jobId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "enhanced",
+                "{{jobId}}"
+              ]
             }
           }
         },
@@ -232,8 +287,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/jobs/enhanced/{{jobId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "enhanced", "{{jobId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "enhanced",
+                "{{jobId}}"
+              ]
             }
           }
         },
@@ -249,8 +310,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/jobs/enhanced/{{jobId}}/applications",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "enhanced", "{{jobId}}", "applications"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "enhanced",
+                "{{jobId}}",
+                "applications"
+              ]
             }
           }
         },
@@ -266,8 +334,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/jobs/enhanced/{{jobId}}/top-candidates?limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "enhanced", "{{jobId}}", "top-candidates"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "enhanced",
+                "{{jobId}}",
+                "top-candidates"
+              ],
               "query": [
                 {
                   "key": "limit",
@@ -289,8 +364,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/jobs/enhanced/{{jobId}}/analytics",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "enhanced", "{{jobId}}", "analytics"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "enhanced",
+                "{{jobId}}",
+                "analytics"
+              ]
             }
           }
         },
@@ -314,8 +396,16 @@
             },
             "url": {
               "raw": "{{baseUrl}}/jobs/enhanced/applications/{{applicationId}}/status",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "enhanced", "applications", "{{applicationId}}", "status"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "enhanced",
+                "applications",
+                "{{applicationId}}",
+                "status"
+              ]
             }
           }
         },
@@ -339,8 +429,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/jobs/enhanced/bulk-update-status",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "enhanced", "bulk-update-status"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "enhanced",
+                "bulk-update-status"
+              ]
             }
           }
         },
@@ -356,8 +452,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/jobs/enhanced/{{jobId}}/toggle-status",
-              "host": ["{{baseUrl}}"],
-              "path": ["jobs", "enhanced", "{{jobId}}", "toggle-status"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "jobs",
+                "enhanced",
+                "{{jobId}}",
+                "toggle-status"
+              ]
             }
           }
         }
@@ -395,8 +498,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             }
           }
         },
@@ -412,8 +520,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/auth/logout",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "logout"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
             }
           }
         }

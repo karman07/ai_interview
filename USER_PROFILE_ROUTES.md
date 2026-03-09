@@ -2,7 +2,7 @@
 
 This document details the user profile routes and the simplified role system for the AI Interview Platform.
 
-**Base URL**: `http://localhost:3000`
+**Base URL**: `http://api.aiforjob.ai`
 **Authentication**: Required for protected routes (`Authorization: Bearer <JWT_ACCESS_TOKEN>`).
 
 ---

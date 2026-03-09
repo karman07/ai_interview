@@ -3,6 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MulterModule } from '@nestjs/platform-express';
 import { LoggingMiddleware } from './common/middleware/logging.middleware';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 // Core modules
 import { AuthModule } from './auth/auth.module';
@@ -78,6 +80,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     EmailModule,
     JobsModule,
   ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
