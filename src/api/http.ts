@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 // import { AuthPayload } from '@/types/user';
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://api.aiforjob.ai';
 export const baseURL = import.meta.env.VITE_BASE_URL || API_BASE_URL;
 let accessToken: string | null = null;
 let currentUser: { _id: string; email: string } | null = null;

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { tokenStore } from './http';
 
-const API_URL = import.meta.env.VITE_AI_INTERVIEW_API || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_AI_INTERVIEW_API || 'http://ai.aiforjob.ai';
 
 const aiInterviewClient = axios.create({
   baseURL: API_URL,
