@@ -12,7 +12,6 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   try {
-    logger.log('🚀 Starting application...');
 
     const app = await NestFactory.create<NestExpressApplication>(AppModule, {
       logger: ['error', 'warn', 'log', 'debug'],
@@ -84,15 +83,8 @@ async function bootstrap() {
     const port = process.env.PORT || 3000;
     await app.listen(port);
     logger.log(`🚀 Server running on http://localhost:${port}`);
-    logger.log(`📂 Uploads served at http://localhost:${port}/uploads/`);
-    logger.log(`🔗 AI Interview API: ${process.env.AI_INTERVIEW_API_BASE_URL || 'http://localhost:8001'}`);
-    logger.log('✅ Application started successfully!');
 
-    // Log server health periodically
-    setInterval(() => {
-      const memUsage = process.memoryUsage();
-      logger.debug(`💾 Memory: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB / ${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`);
-    }, 60000); // Every minute
+    // Server started
 
   } catch (error) {
     logger.error('❌ Failed to start application:', error);

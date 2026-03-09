@@ -41,7 +41,7 @@ export class AuthService {
     }
 
     const user = await this.usersService.findByEmail(email);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user) throw new UnauthorizedException('Account not found');
 
     // Check if user has verified their email
     if (!user.isEmailVerified) {

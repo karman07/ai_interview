@@ -6,7 +6,7 @@ import { CreateLessonDto } from './dto/create-lesson.dto';
 
 @Injectable()
 export class LessonsService {
-  constructor(@InjectModel(Lesson.name) private lessonModel: Model<LessonDocument>) {}
+  constructor(@InjectModel(Lesson.name) private lessonModel: Model<LessonDocument>) { }
 
   async create(dto: CreateLessonDto) {
     const lesson = new this.lessonModel({
@@ -16,12 +16,11 @@ export class LessonsService {
     return lesson.save();
   }
 
-async findBySubject(subjectId: string) {
-  // console.log('Finding lessons for subjectId:', subjectId);
-  return this.lessonModel
-    .find({ subjectId: new Types.ObjectId(subjectId) }) // cast to ObjectId
-    .exec();
-}
+  async findBySubject(subjectId: string) {
+    return this.lessonModel
+      .find({ subjectId: new Types.ObjectId(subjectId) }) // cast to ObjectId
+      .exec();
+  }
 
   async findOne(id: string) {
     const l = await this.lessonModel.findById(id).exec();

@@ -13,15 +13,13 @@ export class LoggingMiddleware implements NestMiddleware {
     res.on('finish', () => {
       const { statusCode } = res;
       const responseTime = Date.now() - startTime;
-      
+
       const logMessage = `${method} ${originalUrl} ${statusCode} - ${responseTime}ms - ${ip} ${userAgent}`;
-      
+
       if (responseTime > 1000) {
         this.logger.warn(`SLOW REQUEST: ${logMessage}`);
       } else if (statusCode >= 400) {
         this.logger.error(logMessage);
-      } else {
-        this.logger.log(logMessage);
       }
     });
 

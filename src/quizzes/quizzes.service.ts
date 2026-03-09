@@ -6,7 +6,7 @@ import { CreateQuizDto } from './dto/create-quiz.dto';
 
 @Injectable()
 export class QuizzesService {
-  constructor(@InjectModel(Quiz.name) private quizModel: Model<QuizDocument>) {}
+  constructor(@InjectModel(Quiz.name) private quizModel: Model<QuizDocument>) { }
 
   async create(dto: CreateQuizDto) {
     const q = new this.quizModel({
@@ -17,7 +17,6 @@ export class QuizzesService {
   }
 
   async findByLesson(lessonId: string) {
-    console.log(lessonId)
     return this.quizModel.find({ lessonId: new Types.ObjectId(lessonId) }).exec();
   }
 

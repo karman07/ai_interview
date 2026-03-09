@@ -33,7 +33,6 @@ export class EmailService {
         },
       });
 
-      this.logger.log(`Email sent to ${to}: ${response.data.id}`);
       return true;
     } catch (error) {
       this.logger.error(`Failed to send email to ${to}: ${error.response?.data?.message || error.message}`);
@@ -84,7 +83,6 @@ export class EmailService {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    this.logger.log(`Bulk email sent: ${sent} successful, ${failed} failed`);
     return { sent, failed };
   }
 

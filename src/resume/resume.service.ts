@@ -37,10 +37,7 @@ export class ResumeService {
     userId: string,
     token?: string
   ) {
-    this.logger.log('📁 ResumeService.uploadResume called');
-
     if (!file) {
-      this.logger.error('❌ No resume file provided');
       throw new BadRequestException('No resume file uploaded');
     }
 
@@ -53,7 +50,6 @@ export class ResumeService {
     let limit = 5; // Default free limit
     if (user?.subscriptionPlan) {
       const plan = user.subscriptionPlan as any;
-      // Standardized name: 'Resume Limit'
       const limitFeature = plan.features?.find(f => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit');
       if (limitFeature) {
         limit = limitFeature.value ?? limitFeature.limit ?? 5;
@@ -61,25 +57,18 @@ export class ResumeService {
     }
 
     if (currentUsage >= limit) {
-      this.logger.warn(`🚫 User ${userId} reached monthly resume limit of ${limit} (current: ${currentUsage})`);
       throw new BadRequestException(`You have reached your monthly limit of ${limit} resumes. Your limit will reset on the 1st of next month.`);
     }
-
-    this.logger.log(`📄 Processing file: ${file.originalname} at ${file.path}`);
 
     // Ensure uploads folder exists
     const uploadDir = path.dirname(file.path);
     if (!fs.existsSync(uploadDir)) {
-      this.logger.log(`📂 Creating upload directory: ${uploadDir}`);
       fs.mkdirSync(uploadDir, { recursive: true });
     }
 
     // ✅ Use AI CV API service to evaluate CV (optional)
     let stats: any = null;
     try {
-      this.logger.log('🤖 Calling AI CV evaluation API...');
-      const startTime = Date.now();
-
       stats = await this.aiCvApiService.uploadAndEvaluateCv(
         file.path,
         file.originalname,
@@ -88,16 +77,9 @@ export class ResumeService {
         jdFile?.originalname,
         token
       );
-
-      const duration = Date.now() - startTime;
-      this.logger.log(`✅ CV evaluation completed in ${duration}ms`);
-      this.logger.log('📊 AI CV Evaluation Response:', JSON.stringify(stats, null, 2));
     } catch (err) {
       this.logger.error('💥 Error calling cv_evaluate:', err.message);
-      this.logger.warn('⚠️ CV evaluation failed, continuing without evaluation');
-      this.logger.log('📊 Setting stats to empty object due to AI failure');
       stats = {};
-      // Continue without evaluation instead of throwing error
     }
 
     let improvement_resume: any = null;
@@ -105,9 +87,6 @@ export class ResumeService {
     // ✅ If JD is provided, also call cv_improvement API (optional)
     if (jdFile || jdText) {
       try {
-        this.logger.log('🔄 Calling AI CV improvement API...');
-        const startTime = Date.now();
-
         improvement_resume = await this.aiCvApiService.uploadAndGetImprovements(
           file.path,
           file.originalname,
@@ -116,23 +95,13 @@ export class ResumeService {
           jdFile?.originalname,
           token
         );
-
-        const duration = Date.now() - startTime;
-        this.logger.log(`✅ CV improvement completed in ${duration}ms`);
-        this.logger.log('🔄 AI CV Improvement Response:', JSON.stringify(improvement_resume, null, 2));
       } catch (err) {
         this.logger.error('💥 Error calling cv_improvement:', err.message);
-        this.logger.warn('⚠️ CV improvement failed, continuing without improvement');
-        this.logger.log('🔄 Setting improvement_resume to empty object due to AI failure');
         improvement_resume = {};
-        // Continue without improvement instead of throwing error
       }
     } else {
       // ✅ NEW: Always call cv_improvement API even without JD for enhanced content
       try {
-        this.logger.log('🔄 Calling AI CV improvement API (without JD)...');
-        const startTime = Date.now();
-
         improvement_resume = await this.aiCvApiService.uploadAndGetImprovements(
           file.path,
           file.originalname,
@@ -141,34 +110,18 @@ export class ResumeService {
           undefined,
           token
         );
-
-        const duration = Date.now() - startTime;
-        this.logger.log(`✅ CV improvement completed in ${duration}ms`);
-        this.logger.log('🔄 AI CV Improvement Response (no JD):', JSON.stringify(improvement_resume, null, 2));
       } catch (err) {
         this.logger.error('💥 Error calling cv_improvement:', err.message);
-        this.logger.warn('⚠️ CV improvement failed, continuing without improvement');
-        this.logger.log('🔄 Setting improvement_resume to empty object due to AI failure');
         improvement_resume = {};
-        // Continue without improvement instead of throwing error
       }
     }
 
-    this.logger.log('💾 Saving resume to database...');
     const normalizedPath = file.path.replace(/\\/g, '/');
     const resumeUrl = this.buildFileUrl(normalizedPath);
 
     // Ensure we never pass null values
     const finalStats = stats || {};
     const finalImprovementResume = improvement_resume || {};
-
-    this.logger.log('📋 Final data being saved to database:');
-    this.logger.log('  - filename:', file.originalname);
-    this.logger.log('  - path:', normalizedPath);
-    this.logger.log('  - url:', resumeUrl);
-    this.logger.log('  - stats type:', typeof finalStats, 'value:', JSON.stringify(finalStats));
-    this.logger.log('  - improvement_resume type:', typeof finalImprovementResume, 'value:', JSON.stringify(finalImprovementResume));
-    this.logger.log('  - user:', userId);
 
     const resume = new this.resumeModel({
       filename: file.originalname,
@@ -179,29 +132,14 @@ export class ResumeService {
       user: userId,
     });
 
-    this.logger.log('💾 About to save resume to database...');
     try {
       await resume.save();
       // Increment monthly usage counter
       await this.userModel.findByIdAndUpdate(userId, { $inc: { resumeCount: 1 } });
-      this.logger.log('✅ Resume saved successfully to database');
     } catch (saveError) {
       this.logger.error('💥 Database save error:', saveError.message);
-      this.logger.error('Full error:', JSON.stringify(saveError, null, 2));
       throw saveError;
     }
-
-    this.logger.log('📋 Saved resume object:', JSON.stringify({
-      _id: resume._id,
-      filename: resume.filename,
-      stats: resume.stats,
-      improvement_resume: resume.improvement_resume
-    }, null, 2));
-
-    // Resume is saved in the Resume collection, 
-    // we no longer maintain a redundant resumeUrl in the User profile.
-
-
 
     return resume;
   }
@@ -225,18 +163,12 @@ export class ResumeService {
     jdText?: string,
     token?: string
   ) {
-    this.logger.log(`🔄 Improving resume with ID: ${resumeId}`);
-
     const resume = await this.resumeModel.findById(resumeId);
     if (!resume) {
-      this.logger.error(`❌ Resume not found: ${resumeId}`);
       throw new NotFoundException('Resume not found');
     }
 
     try {
-      this.logger.log('🤖 Calling AI CV improvement API...');
-      const startTime = Date.now();
-
       const improvement_resume = await this.aiCvApiService.uploadAndGetImprovements(
         resume.path,
         resume.filename,
@@ -246,13 +178,8 @@ export class ResumeService {
         token
       );
 
-      const duration = Date.now() - startTime;
-      this.logger.log(`✅ Resume improvement completed in ${duration}ms`);
-
       resume.improvement_resume = improvement_resume;
       await resume.save();
-
-      this.logger.log('✅ Resume improvement saved to database');
 
       return {
         ...resume.toObject(),
@@ -262,7 +189,6 @@ export class ResumeService {
       this.logger.error('💥 Error improving resume:', err.message);
 
       if (err.message.includes('ECONNREFUSED') || err.message.includes('connect')) {
-        this.logger.warn('⚠️ AI service unavailable, returning resume without improvement');
         return {
           ...resume.toObject(),
           url: this.buildFileUrl(resume.path),
@@ -275,17 +201,13 @@ export class ResumeService {
   }
 
   async deleteResume(resumeId: string, userId: string) {
-    this.logger.log(`🗑️ Deleting resume with ID: ${resumeId}`);
-
     const resume = await this.resumeModel.findById(resumeId);
     if (!resume) {
-      this.logger.error(`❌ Resume not found: ${resumeId}`);
       throw new NotFoundException('Resume not found');
     }
 
     // Verify the resume belongs to the user
     if (resume.user.toString() !== userId) {
-      this.logger.error(`❌ Unauthorized delete attempt: User ${userId} trying to delete resume ${resumeId}`);
       throw new BadRequestException('Unauthorized to delete this resume');
     }
 
@@ -293,14 +215,10 @@ export class ResumeService {
       // Delete the file from filesystem
       if (fs.existsSync(resume.path)) {
         fs.unlinkSync(resume.path);
-        this.logger.log(`✅ File deleted from filesystem: ${resume.path}`);
-      } else {
-        this.logger.warn(`⚠️ File not found in filesystem: ${resume.path}`);
       }
 
       // Delete from database
       await this.resumeModel.findByIdAndDelete(resumeId);
-      this.logger.log('✅ Resume deleted from database');
 
       return {
         message: 'Resume deleted successfully',

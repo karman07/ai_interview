@@ -10,7 +10,6 @@ export class ResultsController {
   @Get('mine')
   async getMyResults(@Req() req) {
     const userId = req.user.sub; // user info comes from JwtAuthGuard
-    // console.log('Fetching my results for user:', userId);
     return this.service.getMyResults(userId);
   }
 
@@ -23,7 +22,6 @@ export class ResultsController {
   @Post('external-analytics')
   async storeExternalAnalytics(@Req() req, @Body() data: any) {
     const userId = req.user.sub;
-    // console.log('Storing external analytics for user:', userId);
     return this.service.createEnhancedResult(userId, data);
   }
 }

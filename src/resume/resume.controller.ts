@@ -64,50 +64,14 @@ export class ResumeController {
     @Body('jd_text') jdText: string,
     @Req() req,
   ) {
-    this.logger.log('🚀 Resume upload API called');
-    this.logger.log(`📁 Files received: ${files?.length || 0}`);
-    this.logger.log(`📝 JD text provided: ${!!jdText}`);
-
-    // Log FormData received from frontend
-    this.logger.log('📦 FormData received from frontend:');
-    if (files && files.length > 0) {
-      files.forEach((file, index) => {
-        this.logger.log(`  File ${index + 1}:`);
-        this.logger.log(`    - fieldname: ${file.fieldname}`);
-        this.logger.log(`    - originalname: ${file.originalname}`);
-        this.logger.log(`    - mimetype: ${file.mimetype}`);
-        this.logger.log(`    - size: ${file.size} bytes`);
-        this.logger.log(`    - path: ${file.path}`);
-      });
-    }
-    this.logger.log(`  jd_text: ${jdText ? `${jdText.length} characters` : 'not provided'}`);
-
     try {
       if (!files || files.length === 0) {
-        this.logger.error('❌ No files uploaded');
         throw new Error('At least one file (resume) is required');
       }
 
       const userId = req.user.sub;
-      this.logger.log(`👤 User ID: ${userId}`);
-
       const resumeFile = files[0];
       const jdFile = files.length > 1 ? files[1] : undefined;
-
-      this.logger.log(`📄 Resume file: ${resumeFile.originalname} (${resumeFile.size} bytes)`);
-      if (jdFile) {
-        this.logger.log(`📋 JD file: ${jdFile.originalname} (${jdFile.size} bytes)`);
-      }
-
-      // Note: Job description saving is disabled as JobDescriptionService was removed.
-      if (jdText && jdText.trim() !== '') {
-        this.logger.log('📝 JD text provided but not saved (JobDescriptionService removed)');
-      } else if (jdFile) {
-        this.logger.log('📋 JD file provided but not saved (JobDescriptionService removed)');
-      }
-
-      this.logger.log('⏳ Starting resume processing...');
-      this.logger.log('📊 About to call resumeService.uploadResume');
 
       let resume;
       try {
@@ -120,20 +84,9 @@ export class ResumeController {
           token
         );
       } catch (serviceError) {
-        this.logger.error('💥 ResumeService.uploadResume failed:', serviceError.message);
-        this.logger.error('Service error stack:', serviceError.stack);
         throw new Error(`Resume validation failed: ${serviceError.message}`);
       }
 
-      this.logger.log('✅ Resume uploaded and processed successfully');
-      this.logger.log('📋 Resume object received:', JSON.stringify({
-        id: resume._id,
-        filename: resume.filename,
-        stats: resume.stats,
-        improvement_resume: resume.improvement_resume
-      }, null, 2));
-
-      // Return response with basic resume info and analytics data
       const stats = resume.stats || {};
       const improvement = resume.improvement_resume || {};
 
@@ -143,14 +96,12 @@ export class ResumeController {
           id: resume._id,
           filename: resume.filename,
           url: this.buildFileUrl(resume.path),
-          // Analytics data from cv_evaluate API
           analytics: {
             cv_quality: stats.cv_quality || null,
             jd_match: stats.jd_match || null,
             key_takeaways: stats.key_takeaways || null,
             overall_score: stats.cv_quality?.overall_score || null
           },
-          // Enhancement data from cv_improvement API
           enhancement: {
             tailored_resume: improvement.tailored_resume || null,
             top_1_percent_gap: improvement.top_1_percent_gap || null,
@@ -160,14 +111,12 @@ export class ResumeController {
       };
     } catch (error) {
       this.logger.error('💥 Resume upload failed:', error.message);
-      this.logger.error('Stack trace:', error.stack);
       throw error;
     }
   }
 
   @Get('health')
   async healthCheck() {
-    this.logger.log('💚 Resume service health check called');
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -180,17 +129,13 @@ export class ResumeController {
   async getUserFiles(@Req() req) {
     const userId = req.user.sub;
     const resumes = await this.resumeService.getUserResumes(userId);
-
-    // Job descriptions service was removed, returning empty array
-    const jobDescriptions = [];
-
     return {
       resumes: resumes.map(resume => ({
         id: resume._id,
         name: resume.filename,
         url: resume.url
       })),
-      jobDescriptions
+      jobDescriptions: []
     };
   }
 
@@ -200,8 +145,7 @@ export class ResumeController {
     const userId = req.user.sub;
     const resumes = await this.resumeService.getUserResumes(userId);
 
-    // Transform resumes to include separated analytics and enhancement data
-    const transformedResumes = resumes.map(resume => {
+    return resumes.map(resume => {
       const stats = resume.stats || {};
       const improvement = resume.improvement_resume || {};
 
@@ -209,14 +153,12 @@ export class ResumeController {
         id: resume._id,
         filename: resume.filename,
         url: resume.url,
-        // Analytics data from cv_evaluate API
         analytics: {
           cv_quality: stats.cv_quality || null,
           jd_match: stats.jd_match || null,
           key_takeaways: stats.key_takeaways || null,
           overall_score: stats.cv_quality?.overall_score || null
         },
-        // Enhancement data from cv_improvement API
         enhancement: {
           tailored_resume: improvement.tailored_resume || null,
           top_1_percent_gap: improvement.top_1_percent_gap || null,
@@ -224,11 +166,8 @@ export class ResumeController {
         }
       };
     });
-
-    return transformedResumes;
   }
 
-  // Get resume analytics data
   @UseGuards(JwtAuthGuard)
   @Get('analytics/:id')
   async getResumeAnalytics(@Param('id') id: string, @Req() req) {
@@ -236,12 +175,9 @@ export class ResumeController {
     const resumes = await this.resumeService.getUserResumes(userId);
     const targetResume = resumes.find(r => r._id.toString() === id);
 
-    if (!targetResume) {
-      throw new Error('Resume not found');
-    }
+    if (!targetResume) throw new Error('Resume not found');
 
     const stats = targetResume.stats || {};
-
     return {
       analytics: {
         cv_quality: stats.cv_quality || null,
@@ -252,7 +188,6 @@ export class ResumeController {
     };
   }
 
-  // Get AI enhancement data
   @UseGuards(JwtAuthGuard)
   @Get('enhancement/:id')
   async getResumeEnhancement(@Param('id') id: string, @Req() req) {
@@ -260,12 +195,9 @@ export class ResumeController {
     const resumes = await this.resumeService.getUserResumes(userId);
     const targetResume = resumes.find(r => r._id.toString() === id);
 
-    if (!targetResume) {
-      throw new Error('Resume not found');
-    }
+    if (!targetResume) throw new Error('Resume not found');
 
     const improvement = targetResume.improvement_resume || {};
-
     return {
       enhancement: {
         tailored_resume: improvement.tailored_resume || null,
@@ -281,7 +213,6 @@ export class ResumeController {
     return `${appBaseUrl}/${normalized}`;
   }
 
-  // ✅ PATCH API to improve resume with JD later
   @UseGuards(JwtAuthGuard)
   @Patch('improve/:id')
   @UseInterceptors(
@@ -297,8 +228,6 @@ export class ResumeController {
     @Body('jd_text') jdText: string,
     @Req() req: any,
   ) {
-    this.logger.log(`🔄 Resume improvement API called for ID: ${id}`);
-
     try {
       const jdFile = files?.[0];
       const token = req.headers?.authorization;
@@ -309,8 +238,6 @@ export class ResumeController {
         token
       );
 
-      this.logger.log('✅ Resume improved successfully');
-
       const stats = updatedResume.stats || {};
       const improvement = updatedResume.improvement_resume || {};
 
@@ -320,14 +247,12 @@ export class ResumeController {
           id: updatedResume._id,
           filename: updatedResume.filename,
           url: updatedResume.url,
-          // Analytics data from cv_evaluate API
           analytics: {
             cv_quality: stats.cv_quality || null,
             jd_match: stats.jd_match || null,
             key_takeaways: stats.key_takeaways || null,
             overall_score: stats.cv_quality?.overall_score || null
           },
-          // Enhancement data from cv_improvement API
           enhancement: {
             tailored_resume: improvement.tailored_resume || null,
             top_1_percent_gap: improvement.top_1_percent_gap || null,
@@ -341,37 +266,23 @@ export class ResumeController {
     }
   }
 
-  // \u2705 DELETE API to delete resume and its stats
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async deleteResume(@Param('id') id: string, @Req() req) {
-    this.logger.log(`🗑️ Resume delete API called for ID: ${id}`);
-
     try {
       const userId = req.user.sub;
-      const result = await this.resumeService.deleteResume(id, userId);
-
-      this.logger.log('✅ Resume deleted successfully');
-      return result;
+      return await this.resumeService.deleteResume(id, userId);
     } catch (error) {
       this.logger.error('💥 Resume deletion failed:', error.message);
       throw error;
     }
   }
 
-  // ✅ POST API for final-enhanced resume data
   @Post('final-enhanced')
   async createFinalEnhanced(@Body() body: any) {
-    this.logger.log('🎯 Final-enhanced API called');
-    this.logger.log('📥 Request body:', JSON.stringify(body, null, 2));
-
     try {
-      // Validate required fields
-      if (!body.resume) {
-        throw new BadRequestException('Resume data is required');
-      }
+      if (!body.resume) throw new BadRequestException('Resume data is required');
 
-      // Return the same structure as received
       return {
         message: body.message || 'Resume processed successfully',
         resume: {
