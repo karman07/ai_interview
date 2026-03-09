@@ -522,8 +522,8 @@ function ImprovementTimeline({ plan }: { plan: InterviewV2Report["improvement_pl
 
   const phases = [
     { label: "Immediate Actions", items: plan.immediate_actions, icon: <Zap className="w-4 h-4" />, accent: "blue" },
-    { label: "1-Week Plan", items: plan.plan_1_week, icon: <Calendar className="w-4 h-4" />, accent: "sky" },
-    { label: "1-Month Plan", items: plan.plan_1_month, icon: <Rocket className="w-4 h-4" />, accent: "emerald" },
+    { label: "1-Week Plan", items: plan.plan_1_week || (plan as any)['1_week_plan'], icon: <Calendar className="w-4 h-4" />, accent: "sky" },
+    { label: "1-Month Plan", items: plan.plan_1_month || (plan as any)['1_month_plan'], icon: <Rocket className="w-4 h-4" />, accent: "emerald" },
   ] as const;
 
   return (

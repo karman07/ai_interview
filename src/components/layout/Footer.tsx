@@ -40,9 +40,9 @@ export default function Footer() {
             <ul className="space-y-4">
               <li><Link to="/about" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">About Us</Link></li>
               <li><Link to="/contact" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Contact</Link></li>
-              <li><Link to="#" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Privacy Policy</Link></li>
-              <li><Link to="#" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Terms of Service</Link></li>
-              <li><Link to="#" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Cookie Policy</Link></li>
+              <li><Link to="/privacy" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Privacy Policy</Link></li>
+              <li><Link to="/terms" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Terms of Service</Link></li>
+              <li><Link to="/cookies" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Cookie Policy</Link></li>
             </ul>
           </div>
 
@@ -62,8 +62,8 @@ export default function Footer() {
                 <Phone className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">Call us</p>
-                  <a href="tel:+918813947793" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary transition-colors">
-                    +91 88139 47793
+                  <a href="tel:+918307717793" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary transition-colors">
+                    +91 83077 17793
                   </a>
                 </div>
               </div>
@@ -72,8 +72,8 @@ export default function Footer() {
                 <div>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">Visit us</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    123 Innovation Drive<br />
-                    San Francisco, CA 94105
+                    A-30 Max Heights<br />
+                    Sonepat Haryana
                   </p>
                 </div>
               </div>

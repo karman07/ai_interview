@@ -182,7 +182,7 @@ const ContactPage = () => {
                 </a>
 
                 <a
-                  href="tel:+918813947793"
+                  href="tel:+918307717793"
                   className="flex items-start gap-4 p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-white/10 transition-all duration-300 group cursor-pointer"
                 >
                   <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform text-blue-400">
@@ -190,12 +190,12 @@ const ContactPage = () => {
                   </div>
                   <div>
                     <p className="font-semibold text-lg mb-1 text-white">Phone</p>
-                    <p className="text-slate-300 group-hover:text-white transition-colors">+91 88139 47793</p>
+                    <p className="text-slate-300 group-hover:text-white transition-colors">+91 83077 17793</p>
                   </div>
                 </a>
 
                 <a
-                  href="https://www.google.com/maps/place/Delhi"
+                  href="https://www.google.com/maps/search/A-30+Max+Heights+Sonepat+Haryana"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-start gap-4 p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-white/10 transition-all duration-300 group cursor-pointer"
@@ -205,7 +205,7 @@ const ContactPage = () => {
                   </div>
                   <div>
                     <p className="font-semibold text-lg mb-1 text-white">Location</p>
-                    <p className="text-slate-300 group-hover:text-white transition-colors">Delhi, India</p>
+                    <p className="text-slate-300 group-hover:text-white transition-colors">A-30 Max Heights Sonepat Haryana</p>
                   </div>
                 </a>
               </div>

@@ -22,6 +22,7 @@ jobApiClient.interceptors.request.use((config) => {
 export const fetchJobs = async (params: any = {}): Promise<JobListResponse> => {
   const queryParams = new URLSearchParams();
   if (params.location) queryParams.append('location', params.location);
+  if (params.country) queryParams.append('country', params.country);
   if (params.min_stipend) queryParams.append('min_stipend', params.min_stipend.toString());
   if (params.remote !== undefined) queryParams.append('remote', params.remote.toString());
   if (params.internship !== undefined) queryParams.append('internship', params.internship.toString());
@@ -68,6 +69,22 @@ export const getLocations = async (): Promise<string[]> => {
     return [];
   } catch (error) {
     console.error("getLocations Error:", error);
+    return [];
+  }
+};
+
+export const getCountries = async (): Promise<string[]> => {
+  try {
+    const response = await jobApiClient.get(`/countries`);
+    if (response.data && Array.isArray(response.data.countries)) {
+      return response.data.countries;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
+  } catch (error) {
+    console.error("getCountries Error:", error);
     return [];
   }
 };

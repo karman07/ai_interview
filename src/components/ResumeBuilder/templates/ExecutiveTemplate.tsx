@@ -1,7 +1,17 @@
+import { ResumeBuilderData, ResumeBuilderSettings } from '../../../types/ResumeBuilder';
 import React from 'react';
 
-const ExecutiveTemplate = ({ data, settings }) => {
-    const { resume_content } = data;
+interface Props {
+    data: {
+        resume_content: ResumeBuilderData;
+    };
+    settings: ResumeBuilderSettings;
+}
+
+const ExecutiveTemplate: React.FC<Props> = ({ data, settings }) => {
+    // Standardize data access: handle both wrapped {resume_content: data} and raw data
+    const resume_content = data?.resume_content || (data as any)?.personal_info ? data : null;
+
     if (!resume_content) return null;
 
     const {
@@ -14,24 +24,27 @@ const ExecutiveTemplate = ({ data, settings }) => {
         achievements,
         certifications,
         languages
-    } = resume_content;
+    } = (resume_content as any).resume_content ? (resume_content as any).resume_content : resume_content;
 
-    const fontMap = {
+    // Handle name fallbacks
+    const name = personal_info?.name || (personal_info as any)?.fullName || (personal_info as any)?.full_name || 'Your Name';
+
+    const fontMap: Record<string, string> = {
         'Inter': 'Inter, sans-serif',
         'Roboto': 'Roboto, sans-serif',
         'Serif': 'Georgia, serif'
     };
 
-    const scaleMap = {
+    const scaleMap: Record<string, number> = {
         'Small': 0.8,
         'Medium': 1,
         'Large': 1.2
     };
 
-    const containerStyle = {
-        '--primary-color': settings.primaryColor || '#1e3a8a', // dark blue
-        '--secondary-color': settings.secondaryColor || '#475569',
-        '--font-family': fontMap[settings.fontFamily] || 'Georgia, serif',
+    const containerStyle: React.CSSProperties & Record<string, any> = {
+        '--primary-color': settings.primaryColor || '#1e3a8a', // blue-900 default
+        '--secondary-color': settings.secondaryColor || '#1e40af',
+        '--font-family': fontMap[settings.fontFamily] || 'Serif, Georgia, serif',
         '--heading-scale': scaleMap[settings.headingSize] || 1,
         fontFamily: 'var(--font-family)',
         width: '210mm',
@@ -39,66 +52,102 @@ const ExecutiveTemplate = ({ data, settings }) => {
         margin: '0 auto',
         padding: '3rem',
         backgroundColor: 'white',
-        boxSizing: 'border-box',
-        color: '#333',
-        lineHeight: '1.6'
+        boxSizing: 'border-box' as 'border-box',
+        color: '#111',
+        lineHeight: '1.4'
     };
 
-    const gray50 = '#f9fafb';
-    const gray200 = '#e5e7eb';
-    const gray500 = '#6b7280';
-    const gray700 = '#374151';
+    const gray100 = '#f3f4f6';
+    const gray600 = '#4b5563';
     const gray800 = '#1f2937';
-    const gray900 = '#111827';
+
+    // Skill keys mapping for consistency
+    const skillGroups = [
+        { label: 'Technical Domains', items: skills?.programming_languages || (skills as any)?.frontend },
+        { label: 'Technology Stack', items: skills?.frameworks || (skills as any)?.backend },
+        { label: 'Strategic Tools', items: skills?.tools || (skills as any)?.tools_cloud },
+        { label: 'Additional Skills', items: skills?.other }
+    ].filter(group => {
+        const items = Array.isArray(group.items) ? group.items.filter(i => i && String(i).trim()) : [];
+        return items.length > 0;
+    }).map(group => ({
+        ...group,
+        items: Array.isArray(group.items) ? group.items.filter(i => i && String(i).trim()) : []
+    }));
 
     return (
         <div id="resume-preview" className="resume-container shadow-lg" style={containerStyle}>
-            {/* Header - Centered with lines */}
-            <header className="text-center mb-8">
-                <h1 className="text-4xl font-serif font-bold uppercase tracking-widest mb-3"
+            {/* Elegant Header */}
+            <header className="text-center mb-10 border-b-2 pb-6" style={{ borderColor: 'var(--primary-color)' }}>
+                <h1 className="text-4xl font-bold uppercase tracking-tight mb-2"
                     style={{ fontSize: `calc(2.5rem * var(--heading-scale))`, color: 'var(--primary-color)' }}>
-                    {personal_info.name}
+                    {name}
                 </h1>
-                <div className="flex justify-center flex-wrap gap-4 text-sm font-medium border-t border-b py-2 mb-4" style={{ borderColor: gray200, color: gray800 }}>
-                    {personal_info.email && <span>{personal_info.email}</span>}
-                    {personal_info.phone && <span>{personal_info.phone}</span>}
-                    {personal_info.location && <span>{personal_info.location}</span>}
-                    {personal_info.linkedin && <a href={`https://${personal_info.linkedin}`} className="hover:underline">LinkedIn</a>}
+                <div className="flex justify-center flex-wrap gap-x-6 gap-y-1 text-sm font-medium uppercase tracking-wider" style={{ color: gray600 }}>
+                    {personal_info?.location && <span>{personal_info.location}</span>}
+                    {personal_info?.phone && <span>{personal_info.phone}</span>}
+                    {personal_info?.email && <span>{personal_info.email}</span>}
+                </div>
+                <div className="mt-2 text-xs opacity-75">
+                    {personal_info?.linkedin && <a href={`https://${personal_info.linkedin}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{personal_info.linkedin}</a>}
+                    {personal_info?.website && <span> | <a href={`https://${personal_info.website}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{personal_info.website}</a></span>}
                 </div>
             </header>
 
-            {/* Summary - Strong emphasize */}
+            {/* Powerful Summary */}
             {professional_summary && (
-                <section className="mb-8">
-                    <h2 className="text-sm font-bold uppercase tracking-wider mb-3 border-b-2 inline-block pb-1" style={{ color: 'var(--primary-color)', borderColor: 'var(--primary-color)' }}>
-                        Executive Summary
+                <section className="mb-10">
+                    <h2 className="text-lg font-bold uppercase tracking-widest mb-4 border-l-4 pl-4" style={{ color: 'var(--primary-color)', borderColor: 'var(--primary-color)' }}>
+                        Executive Profile
                     </h2>
-                    <p className="text-base text-justify leading-relaxed" style={{ color: gray700 }}>
+                    <p className="text-sm leading-relaxed text-justify indent-8" style={{ color: gray800 }}>
                         {professional_summary}
                     </p>
                 </section>
             )}
 
-            {/* Experience - Detailed */}
-            {experience && (
-                <section className="mb-8">
-                    <h2 className="text-sm font-bold uppercase tracking-wider mb-6 border-b-2 inline-block pb-1" style={{ color: 'var(--primary-color)', borderColor: 'var(--primary-color)' }}>
+            {/* Core Competencies (Skills) */}
+            {skillGroups.length > 0 && (
+                <section className="mb-10">
+                    <h2 className="text-lg font-bold uppercase tracking-widest mb-4 border-l-4 pl-4" style={{ color: 'var(--primary-color)', borderColor: 'var(--primary-color)' }}>
+                        Core Competencies
+                    </h2>
+                    <div className="grid grid-cols-2 gap-x-12 gap-y-4">
+                        {skillGroups.map((group, index) => (
+                            <div key={index}>
+                                <h3 className="text-xs font-bold uppercase mb-2" style={{ color: 'var(--secondary-color)' }}>{group.label}</h3>
+                                <p className="text-sm border-t pt-2" style={{ color: gray800, borderColor: gray100 }}>{group.items.join(' • ')}</p>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {/* Professional Experience */}
+            {experience && experience.length > 0 && (
+                <section className="mb-10">
+                    <h2 className="text-lg font-bold uppercase tracking-widest mb-6 border-l-4 pl-4" style={{ color: 'var(--primary-color)', borderColor: 'var(--primary-color)' }}>
                         Professional Experience
                     </h2>
-                    <div className="space-y-6">
+                    <div className="space-y-8">
                         {experience.map((job, index) => (
                             <div key={index} className="break-inside-avoid">
                                 <div className="flex justify-between items-baseline mb-1">
-                                    <h3 className="text-lg font-bold" style={{ color: gray800 }}>{job.title}</h3>
-                                    <span className="text-sm font-semibold" style={{ color: 'var(--secondary-color)' }}>{job.duration}</span>
+                                    <h3 className="text-lg font-bold" style={{ color: gray800 }}>{job.company}</h3>
+                                    <span className="text-sm font-bold uppercase" style={{ color: 'var(--primary-color)' }}>{job.duration}</span>
                                 </div>
-                                <div className="text-base font-semibold italic mb-3" style={{ color: 'var(--primary-color)' }}>
-                                    {job.company} — {job.location}
+                                <div className="flex justify-between items-baseline mb-3 italic text-sm" style={{ color: gray600 }}>
+                                    <span>{job.title || job.role}</span>
+                                    <span>{job.location}</span>
                                 </div>
-                                <ul className="list-disc list-outside ml-5 text-sm space-y-2" style={{ color: gray700 }}>
-                                    {job.description && job.description.map((desc, i) => (
-                                        <li key={i}>{desc}</li>
-                                    ))}
+                                <ul className="list-disc list-outside ml-5 space-y-2 text-sm leading-snug">
+                                    {Array.isArray(job.description || (job as any).responsibilities) ? (
+                                        (job.description || (job as any).responsibilities).map((desc: string, i: number) => (
+                                            <li key={i} style={{ color: gray800 }}>{desc}</li>
+                                        ))
+                                    ) : (job.description || (job as any).responsibilities) ? (
+                                        <li style={{ color: gray800 }}>{String(job.description || (job as any).responsibilities)}</li>
+                                    ) : null}
                                 </ul>
                             </div>
                         ))}
@@ -106,76 +155,45 @@ const ExecutiveTemplate = ({ data, settings }) => {
                 </section>
             )}
 
-            {/* Core Competencies (Skills) - Columns */}
-            {skills && (
-                <section className="mb-8 p-4 rounded" style={{ backgroundColor: gray50 }}>
-                    <h2 className="text-sm font-bold uppercase tracking-wider mb-4 border-b-2 inline-block pb-1" style={{ color: 'var(--primary-color)', borderColor: 'var(--primary-color)' }}>
-                        Core Competencies
-                    </h2>
-                    <div className="grid grid-cols-3 gap-6 text-sm">
-                        {skills.tools_cloud && skills.tools_cloud.length > 0 && (
-                            <div>
-                                <h4 className="font-bold mb-2 border-b pb-1" style={{ color: gray900 }}>Technical Leadership</h4>
-                                <ul className="list-none space-y-1" style={{ color: gray700 }}>
-                                    {skills.tools_cloud.slice(0, 5).map((s, i) => <li key={i}>{s}</li>)}
-                                </ul>
-                            </div>
-                        )}
-                        {skills.frontend && skills.frontend.length > 0 && (
-                            <div>
-                                <h4 className="font-bold mb-2 border-b pb-1" style={{ color: gray900 }}>Frontend Development</h4>
-                                <ul className="list-none space-y-1" style={{ color: gray700 }}>
-                                    {skills.frontend.slice(0, 5).map((s, i) => <li key={i}>{s}</li>)}
-                                </ul>
-                            </div>
-                        )}
-                        {skills.backend && skills.backend.length > 0 && (
-                            <div>
-                                <h4 className="font-bold mb-2 border-b pb-1" style={{ color: gray900 }}>Backend Architectures</h4>
-                                <ul className="list-none space-y-1" style={{ color: gray700 }}>
-                                    {skills.backend.slice(0, 5).map((s, i) => <li key={i}>{s}</li>)}
-                                </ul>
-                            </div>
-                        )}
-                    </div>
-                </section>
-            )}
-
-            {/* Education & Certs */}
-            <div className="flex justify-between gap-8 mt-4">
-                {education && education.length > 0 && (
-                    <div className="flex-1">
-                        <h2 className="text-sm font-bold uppercase tracking-wider mb-4 border-b-2 inline-block pb-1" style={{ color: 'var(--primary-color)', borderColor: 'var(--primary-color)' }}>
-                            Education
-                        </h2>
+            {/* Projects & Education Bottom Grid */}
+            <div className="grid grid-cols-2 gap-12 border-t pt-8" style={{ borderColor: gray100 }}>
+                {projects && projects.length > 0 && (
+                    <section>
+                        <h2 className="text-md font-bold uppercase tracking-wide mb-4" style={{ color: 'var(--primary-color)' }}>Selected Engagements</h2>
                         <div className="space-y-4">
-                            {education.map((edu, i) => (
-                                <div key={i}>
-                                    <div className="font-bold" style={{ color: gray900 }}>{edu.institution}</div>
-                                    <div style={{ color: gray700 }}>{edu.degree}</div>
-                                    <div className="text-sm italic" style={{ color: gray500 }}>{edu.duration}</div>
+                            {projects.map((proj, index) => (
+                                <div key={index}>
+                                    <div className="font-bold text-sm" style={{ color: gray800 }}>{proj.name || (proj as any).title}</div>
+                                    <p className="text-xs mt-1" style={{ color: gray600 }}>{proj.description}</p>
+                                    {proj.technologies && proj.technologies.length > 0 && (
+                                        <div className="text-[10px] italic mt-1" style={{ color: 'var(--primary-color)' }}>{proj.technologies.join(', ')}</div>
+                                    )}
+                                    {proj.highlights && proj.highlights.length > 0 && (
+                                        <ul className="list-none text-[10px] mt-1 space-y-0.5">
+                                            {proj.highlights.slice(0, 2).map((h, i) => <li key={i} style={{ color: gray800 }}>• {h}</li>)}
+                                        </ul>
+                                    )}
                                 </div>
                             ))}
                         </div>
-                    </div>
+                    </section>
                 )}
-                {certifications && certifications.length > 0 && (
-                    <div className="flex-1">
-                        <h2 className="text-sm font-bold uppercase tracking-wider mb-4 border-b-2 inline-block pb-1" style={{ color: 'var(--primary-color)', borderColor: 'var(--primary-color)' }}>
-                            Certifications
-                        </h2>
-                        <ul className="list-none space-y-2 text-sm" style={{ color: gray700 }}>
-                            {certifications.map((cert, i) => (
-                                <li key={i} className="flex justify-between border-b border-dotted pb-1">
-                                    <span>{cert.name}</span>
-                                    <span className="italic" style={{ color: gray500 }}>{cert.issuer}</span>
-                                </li>
+
+                {education && education.length > 0 && (
+                    <section>
+                        <h2 className="text-md font-bold uppercase tracking-wide mb-4" style={{ color: 'var(--primary-color)' }}>Educational Credentials</h2>
+                        <div className="space-y-4">
+                            {education.map((edu, index) => (
+                                <div key={index}>
+                                    <div className="font-bold text-sm" style={{ color: gray800 }}>{edu.institution}</div>
+                                    <div className="text-xs">{edu.degree} {edu.field ? `in ${edu.field}` : ''}</div>
+                                    <div className="text-xs italic" style={{ color: gray600 }}>{edu.duration || edu.year}</div>
+                                </div>
                             ))}
-                        </ul>
-                    </div>
+                        </div>
+                    </section>
                 )}
             </div>
-
         </div>
     );
 };

@@ -9,6 +9,9 @@ interface SearchFiltersProps {
     selectedCategory: string;
     setSelectedCategory: (v: string) => void;
     engineeringTypes: string[];
+    country: string;
+    setCountry: (v: string) => void;
+    availableCountries: string[];
     location: string;
     setLocation: (v: string) => void;
     availableLocations: string[];
@@ -27,6 +30,9 @@ const SearchFilters = ({
     selectedCategory,
     setSelectedCategory,
     engineeringTypes,
+    country,
+    setCountry,
+    availableCountries,
     location,
     setLocation,
     availableLocations,
@@ -84,17 +90,24 @@ const SearchFilters = ({
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Location</label>
-                            <select
-                                value={location}
-                                onChange={(e) => setLocation(e.target.value)}
-                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl outline-none text-slate-900 dark:text-white focus:border-blue-500 transition-all font-bold text-xs"
-                            >
-                                <option value="">All Locations</option>
-                                {availableLocations.map((loc) => (
-                                    <option key={loc} value={loc}>{loc}</option>
-                                ))}
-                            </select>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Country</label>
+                            <div className="relative">
+                                <select
+                                    value={country}
+                                    onChange={(e) => setCountry(e.target.value)}
+                                    className="w-full pl-4 pr-10 py-3.5 bg-slate-50 dark:bg-slate-800 border border-blue-500/30 rounded-2xl outline-none text-slate-900 dark:text-white focus:border-blue-500 transition-all font-bold text-sm shadow-sm appearance-none"
+                                >
+                                    <option value="">All Countries</option>
+                                    {availableCountries.map((c) => (
+                                        <option key={c} value={c}>{c}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-900 dark:text-white" />
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="space-y-2">

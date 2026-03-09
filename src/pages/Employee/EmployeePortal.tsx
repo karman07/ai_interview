@@ -6,7 +6,7 @@ import {
   Sparkles,
   ArrowLeft
 } from 'lucide-react';
-import { fetchJobs, Job, parseResume, getEngineeringTypes, getLocations, toggleFavoriteJob, fetchFavoriteJobs, toggleBookmarkJob, fetchBookmarkJobs } from '../../api/jobService';
+import { fetchJobs, Job, parseResume, getEngineeringTypes, getLocations, getCountries, toggleFavoriteJob, fetchFavoriteJobs, toggleBookmarkJob, fetchBookmarkJobs } from '../../api/jobService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useResume } from '@/contexts/ResumeContext';
 import { subscriptionService } from '@/api/subscriptionService';
@@ -40,6 +40,8 @@ const EmployeePortal = () => {
   const [engineeringTypes, setEngineeringTypes] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [availableLocations, setAvailableLocations] = useState<string[]>([]);
+  const [country, setCountry] = useState('');
+  const [availableCountries, setAvailableCountries] = useState<string[]>([]);
 
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
@@ -54,7 +56,7 @@ const EmployeePortal = () => {
 
   const [showFavorites, setShowFavorites] = useState(false);
   const [showBookmarks, setShowBookmarks] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [expandedDesc, setExpandedDesc] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
 
@@ -78,6 +80,15 @@ const EmployeePortal = () => {
       setAvailableLocations(locs);
     } catch (error) {
       console.error('Failed to load locations:', error);
+    }
+  }, []);
+
+  const loadCountries = useCallback(async () => {
+    try {
+      const c = await getCountries();
+      setAvailableCountries(c);
+    } catch (error) {
+      console.error('Failed to load countries:', error);
     }
   }, []);
 
@@ -136,9 +147,10 @@ const EmployeePortal = () => {
     }
     loadEngineeringTypes();
     loadLocations();
+    loadCountries();
     loadFavoriteIds();
     loadBookmarkIds();
-  }, [user, loadEngineeringTypes, loadLocations, loadFavoriteIds, loadBookmarkIds]);
+  }, [user, loadEngineeringTypes, loadLocations, loadCountries, loadFavoriteIds, loadBookmarkIds]);
 
   const checkSubscriptionStatus = useCallback(async () => {
     if (!subscriptionEmail) return;
@@ -305,6 +317,7 @@ const EmployeePortal = () => {
       };
 
       if (location) params.location = location;
+      if (country) params.country = country;
       if (minStipend) params.min_stipend = Number(minStipend);
       if (isRemote) params.remote = true;
       if (isInternship) params.internship = true;
@@ -324,12 +337,12 @@ const EmployeePortal = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, isResumeFiltered, showFavorites, showBookmarks, location, minStipend, isRemote, isInternship, selectedCategory]);
+  }, [user, isResumeFiltered, showFavorites, showBookmarks, location, country, minStipend, isRemote, isInternship, selectedCategory]);
 
   // Reset skip only when filters change
   useEffect(() => {
     setSkip(0);
-  }, [keyword, location, minStipend, isRemote, isInternship, selectedCategory, showFavorites, showBookmarks]);
+  }, [keyword, location, country, minStipend, isRemote, isInternship, selectedCategory, showFavorites, showBookmarks]);
 
   // Load jobs when skip or filters change (debounced)
   useEffect(() => {
@@ -339,7 +352,7 @@ const EmployeePortal = () => {
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [skip, keyword, location, minStipend, isRemote, isInternship, selectedCategory, showFavorites, showBookmarks, loadJobs, isResumeFiltered]);
+  }, [skip, keyword, location, country, minStipend, isRemote, isInternship, selectedCategory, showFavorites, showBookmarks, loadJobs, isResumeFiltered]);
 
   const handleResumeFilterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -521,6 +534,9 @@ const EmployeePortal = () => {
               selectedCategory={selectedCategory}
               setSelectedCategory={setSelectedCategory}
               engineeringTypes={engineeringTypes}
+              country={country}
+              setCountry={setCountry}
+              availableCountries={availableCountries}
               location={location}
               setLocation={setLocation}
               availableLocations={availableLocations}

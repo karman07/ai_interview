@@ -9,7 +9,9 @@ interface Props {
 }
 
 const ModernTemplate: React.FC<Props> = ({ data, settings }) => {
-    const { resume_content } = data;
+    // Standardize data access: handle both wrapped {resume_content: data} and raw data
+    const resume_content = data?.resume_content || (data as any)?.personal_info ? data : null;
+
     if (!resume_content) return null;
 
     const {
@@ -22,7 +24,10 @@ const ModernTemplate: React.FC<Props> = ({ data, settings }) => {
         achievements,
         certifications,
         languages
-    } = resume_content;
+    } = (resume_content as any).resume_content ? (resume_content as any).resume_content : resume_content;
+
+    // Handle name fallbacks
+    const name = personal_info?.name || (personal_info as any)?.fullName || (personal_info as any)?.full_name || 'Your Name';
 
     // Font map
     const fontMap: Record<string, string> = {
@@ -61,6 +66,20 @@ const ModernTemplate: React.FC<Props> = ({ data, settings }) => {
     const gray600 = '#4b5563';
     const gray200 = '#e5e7eb';
 
+    // Skill keys mapping for consistency - added filtering for empty items
+    const skillGroups = [
+        { label: 'Programming Languages', items: skills?.programming_languages || (skills as any)?.frontend },
+        { label: 'Frameworks', items: skills?.frameworks || (skills as any)?.backend },
+        { label: 'Tools & Technologies', items: skills?.tools || (skills as any)?.tools_cloud },
+        { label: 'Other Skills', items: skills?.other }
+    ].filter(group => {
+        const items = Array.isArray(group.items) ? group.items.filter(i => i && String(i).trim()) : [];
+        return items.length > 0;
+    }).map(group => ({
+        ...group,
+        items: Array.isArray(group.items) ? group.items.filter(i => i && String(i).trim()) : []
+    }));
+
     return (
         <div id="resume-preview" className="resume-container shadow-lg" style={containerStyle}>
             {/* Left Sidebar (30%) */}
@@ -69,7 +88,7 @@ const ModernTemplate: React.FC<Props> = ({ data, settings }) => {
 
                 {/* Contact */}
                 <div className="mb-8">
-                    <h1 className="text-2xl font-bold mb-4" style={{ color: white }}>{personal_info.name}</h1>
+                    <h1 className="text-2xl font-bold mb-4" style={{ color: white }}>{name}</h1>
                     <div className="text-sm space-y-2 opacity-90">
                         {personal_info.email && <div className="break-words">{personal_info.email}</div>}
                         {personal_info.phone && <div>{personal_info.phone}</div>}
@@ -81,28 +100,16 @@ const ModernTemplate: React.FC<Props> = ({ data, settings }) => {
                 </div>
 
                 {/* Skills */}
-                {skills && (
+                {skillGroups.length > 0 && (
                     <section className="mb-8">
                         <h2 className="text-lg font-bold mb-3 uppercase tracking-wider border-b pb-1" style={{ borderColor: gray600 }}>Skills</h2>
                         <div className="space-y-4 text-sm">
-                            {skills.frontend && skills.frontend.length > 0 && (
-                                <div>
-                                    <h3 className="font-semibold opacity-80 mb-1">Frontend</h3>
-                                    <p className="opacity-90">{skills.frontend.join(', ')}</p>
+                            {skillGroups.map((group, index) => (
+                                <div key={index}>
+                                    <h3 className="font-semibold opacity-80 mb-1">{group.label}</h3>
+                                    <p className="opacity-90">{group.items.join(', ')}</p>
                                 </div>
-                            )}
-                            {skills.backend && skills.backend.length > 0 && (
-                                <div>
-                                    <h3 className="font-semibold opacity-80 mb-1">Backend</h3>
-                                    <p className="opacity-90">{skills.backend.join(', ')}</p>
-                                </div>
-                            )}
-                            {skills.tools_cloud && skills.tools_cloud.length > 0 && (
-                                <div>
-                                    <h3 className="font-semibold opacity-80 mb-1">Tools</h3>
-                                    <p className="opacity-90">{skills.tools_cloud.join(', ')}</p>
-                                </div>
-                            )}
+                            ))}
                         </div>
                     </section>
                 )}
@@ -115,8 +122,8 @@ const ModernTemplate: React.FC<Props> = ({ data, settings }) => {
                             {education.map((edu, index) => (
                                 <div key={index}>
                                     <div className="font-bold">{edu.institution}</div>
-                                    <div className="text-xs opacity-80">{edu.duration}</div>
-                                    <div>{edu.degree}</div>
+                                    <div className="text-xs opacity-80">{edu.duration || edu.year}</div>
+                                    <div>{edu.degree} {edu.field ? `- ${edu.field}` : ''}</div>
                                 </div>
                             ))}
                         </div>
@@ -160,16 +167,20 @@ const ModernTemplate: React.FC<Props> = ({ data, settings }) => {
                             {experience.map((job, index) => (
                                 <div key={index} className="break-inside-avoid">
                                     <div className="flex justify-between items-baseline mb-1">
-                                        <h3 className="text-lg font-bold" style={{ color: gray800 }}>{job.title}</h3>
+                                        <h3 className="text-lg font-bold" style={{ color: gray800 }}>{job.title || job.role}</h3>
                                         <span className="text-sm font-medium" style={{ color: gray600 }}>{job.duration}</span>
                                     </div>
                                     <div className="text-sm font-semibold mb-2" style={{ color: 'var(--secondary-color)' }}>
                                         {job.company} | {job.location}
                                     </div>
                                     <ul className="list-disc list-outside ml-4 text-sm space-y-1" style={{ color: '#374151' }}>
-                                        {job.description && job.description.map((desc, i) => (
-                                            <li key={i}>{desc}</li>
-                                        ))}
+                                        {Array.isArray(job.description || (job as any).responsibilities) ? (
+                                            (job.description || (job as any).responsibilities).map((desc: string, i: number) => (
+                                                <li key={i}>{desc}</li>
+                                            ))
+                                        ) : (job.description || (job as any).responsibilities) ? (
+                                            <li>{(job.description || (job as any).responsibilities)}</li>
+                                        ) : null}
                                     </ul>
                                 </div>
                             ))}
@@ -188,10 +199,10 @@ const ModernTemplate: React.FC<Props> = ({ data, settings }) => {
                             {projects.map((proj, index) => (
                                 <div key={index} className="break-inside-avoid">
                                     <div className="flex justify-between items-baseline mb-1">
-                                        <h3 className="text-lg font-bold" style={{ color: gray800 }}>{proj.name}</h3>
+                                        <h3 className="text-lg font-bold" style={{ color: gray800 }}>{proj.name || (proj as any).title}</h3>
                                         <div className="flex gap-2 text-xs">
                                             {proj.github && <a href={proj.github} className="hover:underline" style={{ color: 'var(--primary-color)' }}>Code</a>}
-                                            {proj.demo && <a href={proj.demo} className="hover:underline" style={{ color: 'var(--primary-color)' }}>Live</a>}
+                                            {(proj.demo || (proj as any).link) && <a href={proj.demo || (proj as any).link} className="hover:underline" style={{ color: 'var(--primary-color)' }}>Live</a>}
                                         </div>
                                     </div>
                                     <p className="text-sm mb-1">{proj.description}</p>
@@ -212,26 +223,26 @@ const ModernTemplate: React.FC<Props> = ({ data, settings }) => {
                 )}
 
                 {/* Certifications or Achievements */}
-                {(achievements || certifications) && (
+                {((achievements && achievements.length > 0) || (certifications && certifications.length > 0)) && (
                     <section className="mb-6">
                         <h2 className="text-xl font-bold mb-4 uppercase tracking-wide border-b pb-2"
                             style={{ color: 'var(--primary-color)', borderColor: gray200 }}>
                             Additional
                         </h2>
-                        {achievements && (
+                        {achievements && achievements.length > 0 && (
                             <div className="mb-4">
                                 <h3 className="font-bold text-sm mb-2">Achievements</h3>
                                 <ul className="list-disc list-outside ml-4 text-sm space-y-1">
-                                    {achievements.map((ach, i) => <li key={i}>{ach}</li>)}
+                                    {achievements.filter(ach => ach && ach.trim()).map((ach, i) => <li key={i}>{ach}</li>)}
                                 </ul>
                             </div>
                         )}
-                        {certifications && (
+                        {certifications && certifications.length > 0 && (
                             <div>
                                 <h3 className="font-bold text-sm mb-2">Certifications</h3>
                                 <ul className="text-sm space-y-1">
-                                    {certifications.map((cert, i) => (
-                                        <li key={i}>{cert.name} - <span className="text-xs" style={{ color: '#6b7280' }}>{cert.issuer} ({cert.date})</span></li>
+                                    {certifications.filter(cert => cert && cert.name).map((cert, i) => (
+                                        <li key={i}>{cert.name} - <span className="text-xs" style={{ color: '#6b7280' }}>{cert.issuer} {cert.date || cert.year ? `(${cert.date || cert.year})` : ''}</span></li>
                                     ))}
                                 </ul>
                             </div>

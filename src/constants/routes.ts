@@ -25,6 +25,9 @@ const routes = {
   interviewHistory: '/interview/history',
   interviewDetails: (sessionId: string) => `/interview/details/${sessionId}`,
   resumeBuilder: '/resume-builder',
+  privacy: '/privacy',
+  terms: '/terms',
+  cookies: '/cookies',
 };
 
 export default routes;

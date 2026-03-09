@@ -61,7 +61,7 @@ export default function InterviewRoomWS() {
     }, [user]);
 
     // ── Hooks ──
-    const { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding } =
+    const { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding, error: wsError } =
         useInterviewWebSocket(clientId, setupData);
     const { formattedTime } = useInterviewTimer();
     const { videoRef, isActive: webcamActive, startCamera, toggleCamera } = useInterviewWebcam();
@@ -79,7 +79,7 @@ export default function InterviewRoomWS() {
             const timer = setInterval(() => {
                 setInitProgress(prev => {
                     if (prev < 30) {
-                        setInitStatus('Connecting to AI Nexus...');
+                        setInitStatus('Connecting to Ryntra AI...');
                         return prev + 2;
                     }
                     if (prev < 60) {
@@ -194,8 +194,9 @@ export default function InterviewRoomWS() {
     }, [sendMessage]);
 
     // ── End Session ──
-    const handleEndSession = useCallback(() => {
-        if (!window.confirm('Are you sure you want to end this interview session?')) return;
+    const handleEndSession = useCallback((forceConfirm: any = false) => {
+        const isForce = typeof forceConfirm === 'boolean' && forceConfirm;
+        if (!isForce && !window.confirm('Are you sure you want to end this interview session?')) return;
         cancel();
         bufferRef.current = '';
         processedTextLengthRef.current = 0;
@@ -203,10 +204,51 @@ export default function InterviewRoomWS() {
         sendEndSession();
     }, [cancel, sendEndSession]);
 
-    // ── Handle interview ended — save results and navigate ──
+    // ── Idle Timer Logic ──
+    const [showIdlePrompt, setShowIdlePrompt] = useState(false);
+    const idleTimerRef = useRef<any>(null);
+    const endingTimerRef = useRef<any>(null);
+
     useEffect(() => {
-        if (interviewEnded && feedback) {
-            // Save feedback for the results page
+        if (!isConnected || interviewEnded) {
+            clearTimeout(idleTimerRef.current);
+            clearTimeout(endingTimerRef.current);
+            setShowIdlePrompt(false);
+            return;
+        }
+
+        const isUserTurn = messages.length > 0 &&
+            messages[messages.length - 1].role === 'model' &&
+            !isStreamingResponse &&
+            !isSpeaking;
+
+        if (isUserTurn && !isListening) {
+            idleTimerRef.current = setTimeout(() => {
+                setShowIdlePrompt(true);
+                // After 30s + 5s: end interview automatically
+                endingTimerRef.current = setTimeout(() => {
+                    handleEndSession(true);
+                }, 5000);
+            }, 30000); // 30 seconds
+        } else {
+            clearTimeout(idleTimerRef.current);
+            clearTimeout(endingTimerRef.current);
+            setShowIdlePrompt(false);
+        }
+
+        return () => {
+            clearTimeout(idleTimerRef.current);
+            clearTimeout(endingTimerRef.current);
+        };
+    }, [messages, isStreamingResponse, isSpeaking, isListening, isConnected, interviewEnded, handleEndSession]);
+
+
+    // ── Handle interview ended — save results and navigate ──
+    const hasEndedRef = useRef(false);
+    useEffect(() => {
+        if (interviewEnded && feedback && !hasEndedRef.current) {
+            hasEndedRef.current = true;
+            // Save feedback for local fallback
             const report = {
                 ...feedback,
                 session_id: clientId,
@@ -226,15 +268,19 @@ export default function InterviewRoomWS() {
                 round: setupData?.interviewType || 'technical',
                 session_id: clientId
             };
-            http.post('/enhanced-interview/external-analytics', externalPayload).catch(err => {
+
+            http.post('/enhanced-interview/external-analytics', externalPayload).then(res => {
+                // Get the real MongoDB ID
+                const dbId = res.data?._id || res.data?.id || clientId;
+                localStorage.removeItem('ws_interview_setup');
+                localStorage.removeItem('ws_interview_client_id');
+                navigate(`/interview/results/${dbId}`);
+            }).catch(err => {
                 console.error('Failed to save external analytics to backend:', err);
+                localStorage.removeItem('ws_interview_setup');
+                localStorage.removeItem('ws_interview_client_id');
+                navigate(`/interview/results/${clientId}`);
             });
-
-            localStorage.removeItem('ws_interview_setup');
-            localStorage.removeItem('ws_interview_client_id');
-
-            // Navigate to results page
-            navigate(`/interview/results/${clientId}`);
         }
     }, [interviewEnded, feedback, clientId, messages, navigate, setupData]);
 
@@ -248,6 +294,7 @@ export default function InterviewRoomWS() {
         }
     }, [isListening, stopListening, startListening, cancel]);
 
+
     // ── Repeat last AI question ──
     const handleRepeatQuestion = useCallback(() => {
         const lastModelMsg = [...messages].reverse().find(m => m.role === 'model');
@@ -259,12 +306,13 @@ export default function InterviewRoomWS() {
 
     // ── Loading/Error states ──
     const isActuallyLoading = (messages.length === 0 || !isConnected) && !interviewEnded;
+    const displayError = error || wsError;
 
-    if (isActuallyLoading || error) {
+    if (isActuallyLoading || displayError) {
         return (
             <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6">
                 <AnimatePresence>
-                    {error ? (
+                    {displayError ? (
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -273,14 +321,24 @@ export default function InterviewRoomWS() {
                             <div className="w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                                 <ShieldCheck className="w-10 h-10 text-rose-500" />
                             </div>
-                            <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">Access Denied</h2>
-                            <p className="text-slate-500 dark:text-slate-400 mb-8 font-medium leading-relaxed">{error}</p>
-                            <button
-                                onClick={() => navigate('/interview_round')}
-                                className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                Return to Dashboard
-                            </button>
+                            <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">System Notice</h2>
+                            <p className="text-slate-500 dark:text-slate-400 mb-8 font-medium leading-relaxed">{displayError}</p>
+                            <div className="flex flex-col gap-3">
+                                {wsError && (
+                                    <button
+                                        onClick={() => window.location.reload()}
+                                        className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    >
+                                        Reconnect Session
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => navigate('/interview_round')}
+                                    className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] opacity-80"
+                                >
+                                    Return to Dashboard
+                                </button>
+                            </div>
                         </motion.div>
                     ) : (
                         <div className="text-center space-y-8 w-full max-w-md">
@@ -368,19 +426,18 @@ export default function InterviewRoomWS() {
                                 isListening={isListening}
                             />
 
-                            {/* User Webcam PIP: More minimal */}
-                            <div className="absolute top-4 right-4 w-24 h-32 rounded-2xl overflow-hidden border border-white/10 shadow-xl backdrop-blur-md bg-slate-900/40 z-10">
-                                {webcamActive ? (
-                                    <video
-                                        ref={videoRef}
-                                        autoPlay
-                                        muted
-                                        playsInline
-                                        className="w-full h-full object-cover scale-x-[-1]"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-slate-800/40">
-                                        <VideoOff className="w-4 h-4 text-slate-600" />
+                            {/* User Webcam PIP */}
+                            <div className="absolute bottom-16 right-4 w-28 h-40 rounded-2xl overflow-hidden border-2 border-slate-700/50 shadow-2xl backdrop-blur-md bg-slate-950/80 z-20">
+                                <video
+                                    ref={videoRef}
+                                    autoPlay
+                                    muted
+                                    playsInline
+                                    className={`w-full h-full object-cover scale-x-[-1] transition-opacity duration-300 ${webcamActive ? 'opacity-100' : 'opacity-0 absolute inset-0'}`}
+                                />
+                                {!webcamActive && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80">
+                                        <VideoOff className="w-5 h-5 text-slate-500" />
                                     </div>
                                 )}
                             </div>
@@ -388,7 +445,7 @@ export default function InterviewRoomWS() {
                             {/* Identity Overlay: Compact */}
                             <div className="absolute bottom-4 left-4 right-4 p-3 bg-black/20 backdrop-blur-md rounded-xl border border-white/5 flex items-center justify-between">
                                 <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">
-                                    {(messages.length > 0 && messages[messages.length - 1].role === 'user' && !isStreamingResponse && !isSpeaking) ? 'Nexus Pro Engine (Thinking...)' : 'Nexus Pro Engine'}
+                                    {(messages.length > 0 && messages[messages.length - 1].role === 'user' && !isStreamingResponse && !isSpeaking) ? 'Ryntra Bot (Thinking...)' : 'Ryntra Bot'}
                                 </span>
                                 <div className="flex gap-1 h-3 items-center">
                                     {[1, 2, 3].map(i => (
@@ -501,6 +558,31 @@ export default function InterviewRoomWS() {
 
             {/* Narrative State: Transitioning */}
             <AnimatePresence>
+                {showIdlePrompt && !isEnding && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="fixed inset-0 z-[60] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-6"
+                    >
+                        <div className="bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900/30 rounded-3xl p-10 max-w-md text-center shadow-2xl">
+                            <div className="w-20 h-20 bg-amber-50 dark:bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Zap className="w-10 h-10 text-amber-500 animate-pulse" />
+                            </div>
+                            <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-4">Are you still there?</h2>
+                            <p className="text-slate-500 dark:text-slate-400 mb-8 font-medium leading-relaxed">
+                                Please respond or interact to keep the interview active. Session will end automatically in a few seconds.
+                            </p>
+                            <button
+                                onClick={() => handleToggleMic()}
+                                className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-all active:scale-[0.98]"
+                            >
+                                Yes, I'm here
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+
                 {isEnding && (
                     <motion.div
                         initial={{ opacity: 0 }}

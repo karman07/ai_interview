@@ -38,6 +38,10 @@ import ContactPage from "./pages/contact/ContactPage";
 import JobsPublicPage from "./pages/JobsPublic";
 import EmployeePortal from "./pages/Employee/EmployeePortal";
 import ResumeBuilder from "./pages/ResumeBuilder";
+import PrivacyPolicy from "./pages/Legal/PrivacyPolicy";
+import TermsOfService from "./pages/Legal/TermsOfService";
+import CookiePolicy from "./pages/Legal/CookiePolicy";
+import ScrollToTop from "@/components/layout/ScrollToTop";
 
 const RedirectIfLoggedIn = ({ children }: { children: JSX.Element }) => {
   const { user } = useAuth();
@@ -81,6 +85,7 @@ function App() {
         <PricingProvider>
           <InterviewProvider>
             <ResultsProvider>
+              <ScrollToTop />
               <PricingDialog />
               <div className="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
                 {!shouldHideNavbar && <Navbar />}
@@ -94,6 +99,9 @@ function App() {
                     <Route path={routes.about} element={<About />} />
                     <Route path={routes.contact} element={<ContactPage />} />
                     <Route path={routes.jobsPublic} element={<JobsPublicPage />} />
+                    <Route path={routes.privacy} element={<PrivacyPolicy />} />
+                    <Route path={routes.terms} element={<TermsOfService />} />
+                    <Route path={routes.cookies} element={<CookiePolicy />} />
                     <Route
                       path={routes.interview}
                       element={

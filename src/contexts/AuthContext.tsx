@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       googleLogin: async (idToken: string): Promise<AuthPayload> => {
         const res = await http.post<AuthPayload>("/auth/google", { idToken });
-        console.log("Google Login Response:", res.data);
+
 
         if (res.data.accessToken) {
           localStorage.setItem('access_token', res.data.accessToken);

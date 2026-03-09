@@ -9,7 +9,8 @@ interface Props {
 }
 
 const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
-    const { resume_content } = data;
+    // Standardize data access: handle both wrapped {resume_content: data} and raw data
+    const resume_content = data?.resume_content || (data as any)?.personal_info ? data : null;
 
     if (!resume_content) return null;
 
@@ -23,7 +24,10 @@ const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
         achievements,
         certifications,
         languages
-    } = resume_content;
+    } = (resume_content as any).resume_content ? (resume_content as any).resume_content : resume_content;
+
+    // Handle name fallbacks
+    const name = personal_info?.name || (personal_info as any)?.fullName || (personal_info as any)?.full_name || 'Your Name';
 
     // Font map
     const fontMap: Record<string, string> = {
@@ -60,6 +64,20 @@ const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
     const gray600 = '#4b5563';
     const gray200 = '#e5e7eb';
 
+    // Skill keys mapping for consistency
+    const skillGroups = [
+        { label: 'Programming Languages', items: skills?.programming_languages || (skills as any)?.frontend },
+        { label: 'Frameworks', items: skills?.frameworks || (skills as any)?.backend },
+        { label: 'Tools', items: skills?.tools || (skills as any)?.tools_cloud },
+        { label: 'Other', items: skills?.other }
+    ].filter(group => {
+        const items = Array.isArray(group.items) ? group.items.filter(i => i && String(i).trim()) : [];
+        return items.length > 0;
+    }).map(group => ({
+        ...group,
+        items: Array.isArray(group.items) ? group.items.filter(i => i && String(i).trim()) : []
+    }));
+
     return (
         <div id="resume-preview" className="resume-container shadow-lg" style={containerStyle}>
             {/* Header */}
@@ -71,15 +89,15 @@ const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
                         color: 'var(--primary-color)'
                     }}
                 >
-                    {personal_info.name}
+                    {name}
                 </h1>
                 <div
                     className="flex flex-wrap gap-x-4 gap-y-1 text-sm"
                     style={{ color: 'var(--secondary-color)' }}
                 >
-                    {personal_info.email && <span>{personal_info.email}</span>}
-                    {personal_info.phone && <span>• {personal_info.phone}</span>}
-                    {personal_info.location && <span>• {personal_info.location}</span>}
+                    {[personal_info.email, personal_info.phone, personal_info.location].filter(Boolean).map((info, i) => (
+                        <span key={i}>{i > 0 && '• '}{info}</span>
+                    ))}
                     {personal_info.linkedin && <span>• <a href={`https://${personal_info.linkedin}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{personal_info.linkedin}</a></span>}
                     {personal_info.github && <span>• <a href={`https://${personal_info.github}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{personal_info.github}</a></span>}
                     {personal_info.website && <span>• <a href={`https://${personal_info.website}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{personal_info.website}</a></span>}
@@ -102,7 +120,7 @@ const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
             )}
 
             {/* Skills */}
-            {skills && (
+            {skillGroups.length > 0 && (
                 <section className="mb-6 break-inside-avoid">
                     <h2 className="text-xl font-bold mb-3 uppercase tracking-wide border-b pb-1"
                         style={{
@@ -113,30 +131,12 @@ const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
                         Skills
                     </h2>
                     <div className="grid grid-cols-1 gap-2 text-sm">
-                        {skills.programming_languages && skills.programming_languages.length > 0 && (
-                            <div className="flex">
-                                <span className="font-bold w-48 shrink-0">Programming Languages:</span>
-                                <span>{skills.programming_languages.join(', ')}</span>
+                        {skillGroups.map((group, index) => (
+                            <div key={index} className="flex">
+                                <span className="font-bold w-48 shrink-0">{group.label}:</span>
+                                <span>{group.items.join(', ')}</span>
                             </div>
-                        )}
-                        {skills.frameworks && skills.frameworks.length > 0 && (
-                            <div className="flex">
-                                <span className="font-bold w-48 shrink-0">Frameworks:</span>
-                                <span>{skills.frameworks.join(', ')}</span>
-                            </div>
-                        )}
-                        {skills.tools && skills.tools.length > 0 && (
-                            <div className="flex">
-                                <span className="font-bold w-48 shrink-0">Tools:</span>
-                                <span>{skills.tools.join(', ')}</span>
-                            </div>
-                        )}
-                        {skills.other && skills.other.length > 0 && (
-                            <div className="flex">
-                                <span className="font-bold w-48 shrink-0">Other:</span>
-                                <span>{skills.other.join(', ')}</span>
-                            </div>
-                        )}
+                        ))}
                     </div>
                 </section>
             )}
@@ -161,7 +161,7 @@ const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
                                             fontSize: `calc(1.125rem * var(--heading-scale))`,
                                             color: gray800
                                         }}>
-                                        {job.role || job.title}
+                                        {job.title || job.role}
                                     </h3>
                                     <span className="text-sm font-medium" style={{ color: gray600 }}>{job.duration}</span>
                                 </div>
@@ -170,9 +170,13 @@ const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
                                     <span>{job.location}</span>
                                 </div>
                                 <ul className="list-disc list-outside ml-4 text-sm space-y-1">
-                                    {(job.responsibilities || job.description)?.map((desc, i) => (
-                                        <li key={i}>{desc}</li>
-                                    ))}
+                                    {Array.isArray(job.description || (job as any).responsibilities) ? (
+                                        (job.description || (job as any).responsibilities).map((desc: string, i: number) => (
+                                            <li key={i}>{desc}</li>
+                                        ))
+                                    ) : (job.description || (job as any).responsibilities) ? (
+                                        <li>{String(job.description || (job as any).responsibilities)}</li>
+                                    ) : null}
                                 </ul>
                             </div>
                         ))}
@@ -200,11 +204,11 @@ const ResumeTemplate: React.FC<Props> = ({ data, settings }) => {
                                             fontSize: `calc(1.125rem * var(--heading-scale))`,
                                             color: gray800
                                         }}>
-                                        {proj.title || proj.name}
+                                        {proj.name || (proj as any).title}
                                     </h3>
                                     <div className="flex gap-2 text-xs">
                                         {proj.github && <a href={proj.github} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--primary-color)' }}>GitHub</a>}
-                                        {(proj.link || proj.demo) && <a href={proj.link || proj.demo} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--primary-color)' }}>Link</a>}
+                                        {(proj.demo || (proj as any).link) && <a href={proj.demo || (proj as any).link} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--primary-color)' }}>Link</a>}
                                     </div>
                                 </div>
                                 <p className="text-sm mb-2">{proj.description}</p>

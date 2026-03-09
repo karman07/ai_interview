@@ -368,7 +368,7 @@ const ResumeDashboard: React.FC = () => {
                 <button
                   onClick={() => isAtLimit ? setShowPricing(true) : setIsUploadOpen(true)}
                   className={`px-6 py-2 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 shadow-sm hover:shadow-md ${isAtLimit
-                    ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-400'
+                    ? 'bg-red-500 hover:bg-red-600 text-white border-red-400'
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
                     }`}
                   title={isAtLimit ? "You've reached your plan limit. Upgrade for more storage." : "Upload New Resume"}
