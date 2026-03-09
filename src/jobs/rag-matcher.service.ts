@@ -1,7 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import axios from 'axios';
 
 @Injectable()
 export class RagMatcherService {
+    private readonly logger = new Logger(RagMatcherService.name);
     private readonly TECH_SKILLS = new Set([
         'python', 'java', 'javascript', 'typescript', 'react', 'angular', 'vue',
         'node', 'nodejs', 'django', 'flask', 'fastapi', 'spring', 'sql', 'nosql',
@@ -94,17 +96,18 @@ export class RagMatcherService {
         for (const [keyword, weight] of resumeKeywords) {
             totalWeight += weight;
 
-            if (jobTextClean.includes(keyword)) {
+            const escapedKeyword = keyword.replace(/[\\^$*+?.()|[\]{}]/g, '\\$&');
+            const regex = new RegExp(`(?:^|\\s)${escapedKeyword}(?:\\s|$)`, 'g');
+            const matches = jobTextClean.match(regex);
+
+            if (matches && matches.length > 0) {
                 let positionBonus = 1.0;
                 const keywordPos = jobTextClean.indexOf(keyword);
 
-                if (keywordPos < 200) positionBonus = 1.5;
-                else if (keywordPos < 500) positionBonus = 1.2;
+                if (keywordPos > -1 && keywordPos < 200) positionBonus = 1.5;
+                else if (keywordPos > -1 && keywordPos < 500) positionBonus = 1.2;
 
-                const regex = new RegExp(keyword, 'g');
-                const matches = jobTextClean.match(regex);
-                const occurrences = Math.min(matches ? matches.length : 0, 3);
-
+                const occurrences = Math.min(matches.length, 4);
                 matchedWeight += weight * positionBonus * Math.sqrt(occurrences);
             }
         }
@@ -177,5 +180,39 @@ export class RagMatcherService {
         );
 
         return Math.min(finalScore, 1.0);
+    }
+
+    public async matchResumeToJobsBatch(resumeText: string, jobs: any[]): Promise<any[]> {
+        const jobDataPayload = jobs.map(job => {
+            const jobTitle = job.title || '';
+            const jobDescription = job.description || '';
+            const jobCompany = job.company_display_name || '';
+            const text = `${jobTitle} ${jobTitle} ${jobDescription} ${jobCompany}`;
+            return { id: job._id ? job._id.toString() : job.adzuna_id, text };
+        });
+
+        try {
+            const pythonApiUrl = process.env.AI_INTERVIEW_API_BASE_URL || 'http://localhost:8000';
+            const response = await axios.post(`${pythonApiUrl}/api/v1/match`, {
+                resume_text: resumeText,
+                jobs: jobDataPayload
+            });
+
+            const matchMap = new Map<string, number>();
+            if (response.data && response.data.matches) {
+                response.data.matches.forEach(m => matchMap.set(m.id, m.score));
+            }
+
+            return jobs.map(job => {
+                const jId = job._id ? job._id.toString() : job.adzuna_id;
+                return { job, score: matchMap.get(jId) || 0.0 };
+            });
+        } catch (error) {
+            this.logger.error('Python semantic matching failed, falling back to local matcher.', error.message);
+            // Fallback to old matcher
+            return jobs.map(job => {
+                return { job, score: this.matchResumeToJob(resumeText, job) };
+            });
+        }
     }
 }

@@ -21,6 +21,9 @@ export class ResultsService {
 
   // Get single result (only if belongs to user)
   async getResultById(userId: string, id: string) {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException('Result not found');
+    }
     const result = await this.resultModel.findById(id).exec();
     if (!result) throw new NotFoundException('Result not found');
     if (result.owner.toString() !== userId.toString()) {

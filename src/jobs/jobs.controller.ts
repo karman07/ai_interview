@@ -3,8 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { JobService } from './job.service';
 import { RagMatcherService } from './rag-matcher.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-// In this project structure, it is often in common/guards. Wait, the exact path was identified by grep earlier.
-// Wait, I will use pdf-parse or just a placeholder since resume parser wasn't written yet.
+const pdfParse = require('pdf-parse');
 
 @Controller('jobs')
 export class JobsController {
@@ -20,6 +19,21 @@ export class JobsController {
         return { message: 'Sync started in background.' };
     }
 
+    @Get('sync-country/:country')
+    async forceSyncCountry(@Param('country') country: string) {
+        // Run sync for a specific country in background to avoid long waiting times
+        (async () => {
+            const ENGINEERING_CONFIG = {
+                'Software Engineer': 5,
+                'Data Engineer': 5,
+            };
+            for (const [query, pages] of Object.entries(ENGINEERING_CONFIG)) {
+                await this.jobService.syncJobsFromAdzuna('manual_subtask', pages, query, country).catch(console.error);
+            }
+        })();
+        return { message: `Sync started for country ${country} in background.` };
+    }
+
     @Get()
     async getJobs(
         @Query('min_stipend') minStipend: number,
@@ -27,11 +41,12 @@ export class JobsController {
         @Query('remote') remote: string,
         @Query('internship') internship: string,
         @Query('location') location: string,
+        @Query('country') country: string,
         @Query('branch_type') branchType: string,
         @Query('skip') skip: number = 0,
         @Query('limit') limit: number = 50,
     ) {
-        const filters: any = { remote, internship, location, category: branchType };
+        const filters: any = { remote, internship, location, country, category: branchType };
         if (!isNaN(minStipend) && minStipend !== undefined) filters.min_stipend = minStipend;
         if (!isNaN(maxStipend) && maxStipend !== undefined) filters.max_stipend = maxStipend;
         const [jobs, total] = await this.jobService.getJobsWithFilters(filters, skip, limit);
@@ -51,14 +66,16 @@ export class JobsController {
     ) {
         if (!file) throw new HttpException('File is required', HttpStatus.BAD_REQUEST);
 
-        // Very basic resume text parsing stub.
-        // A complete parsed content would require pdf-parse.
-        let resumeText = file.buffer.toString('utf-8');
+        let resumeText = '';
         if (file.mimetype === 'application/pdf') {
-            // Let's pretend it parsed to text, but normally you'd use a library.
-            // We can just pass the raw buffer string for now as a makeshift mock 
-            // or assume it's txt.
-            resumeText = resumeText.replace(/[^a-zA-Z\s]/g, "");
+            try {
+                const pdfData = await pdfParse(file.buffer);
+                resumeText = pdfData.text;
+            } catch (e) {
+                resumeText = file.buffer.toString('utf-8').replace(/[^a-zA-Z\s]/g, "");
+            }
+        } else {
+            resumeText = file.buffer.toString('utf-8');
         }
 
         const [candidateJobs] = await this.jobService.getJobsWithFilters({}, 0, 5000);
@@ -69,9 +86,8 @@ export class JobsController {
         if (stipendMin) filteredCandidates = filteredCandidates.filter(j => (j.salary_min && j.salary_min >= stipendMin) || (j.salary_max && j.salary_max >= stipendMin));
         if (location) filteredCandidates = filteredCandidates.filter(j => j.location && j.location.toLowerCase().includes(location.toLowerCase()));
 
-        const scoredJobs = filteredCandidates.map(job => {
-            return { job, score: this.ragMatcherService.matchResumeToJob(resumeText, job) };
-        }).filter(item => item.score > 0.05).sort((a, b) => b.score - a.score).slice(0, 50);
+        const scoredJobsResult = await this.ragMatcherService.matchResumeToJobsBatch(resumeText, filteredCandidates);
+        const scoredJobs = scoredJobsResult.filter(item => item.score > 0.05).sort((a, b) => b.score - a.score).slice(0, 50);
 
         return {
             total_matches: scoredJobs.length,
@@ -92,9 +108,8 @@ export class JobsController {
         if (stipend_min) filteredCandidates = filteredCandidates.filter(j => (j.salary_min && j.salary_min >= stipend_min) || (j.salary_max && j.salary_max >= stipend_min));
         if (location) filteredCandidates = filteredCandidates.filter(j => j.location && j.location.toLowerCase().includes(location.toLowerCase()));
 
-        const scoredJobs = filteredCandidates.map(job => {
-            return { job, score: this.ragMatcherService.matchResumeToJob(resume_text, job) };
-        }).filter(item => item.score > 0.05).sort((a, b) => b.score - a.score).slice(0, 50);
+        const scoredJobsResult = await this.ragMatcherService.matchResumeToJobsBatch(resume_text, filteredCandidates);
+        const scoredJobs = scoredJobsResult.filter(item => item.score > 0.05).sort((a, b) => b.score - a.score).slice(0, 50);
 
         return {
             total_matches: scoredJobs.length,
@@ -114,10 +129,8 @@ export class JobsController {
         if (location) filteredCandidates = filteredCandidates.filter(j => j.location && j.location.toLowerCase().includes(location.toLowerCase()));
         if (job_type) filteredCandidates = filteredCandidates.filter(j => j.employment_type === job_type);
 
-        const scoredJobs = filteredCandidates.map(job => {
-            // Reusing matchResumeToJob because it's just raw text semantic matching internally!
-            return { job, score: this.ragMatcherService.matchResumeToJob(job_description, job) };
-        }).filter(item => item.score > 0.05).sort((a, b) => b.score - a.score).slice(0, 50);
+        const scoredJobsResult = await this.ragMatcherService.matchResumeToJobsBatch(job_description, filteredCandidates);
+        const scoredJobs = scoredJobsResult.filter(item => item.score > 0.05).sort((a, b) => b.score - a.score).slice(0, 50);
 
         return {
             total_matches: scoredJobs.length,
@@ -220,6 +233,12 @@ export class JobsController {
     async getLocations() {
         const locs = await this.jobService.jobModel.distinct('location', { status: 'active' });
         return { locations: locs.filter(l => !!l).sort() };
+    }
+
+    @Get('countries')
+    async getCountries() {
+        const countries = await this.jobService.jobModel.distinct('location_structured.country', { status: 'active' });
+        return { countries: countries.filter(c => !!c).sort() };
     }
 
     @Get(':jobId')

@@ -26,12 +26,12 @@ export class AdzunaService {
         });
     }
 
-    private buildUrl(endpoint: string): string {
-        return `${this.BASE_URL}/jobs/${this.country}/${endpoint}`;
+    private buildUrl(endpoint: string, countryCode: string = this.country): string {
+        return `${this.BASE_URL}/jobs/${countryCode}/${endpoint}`;
     }
 
-    private async makeRequestWithRetry(endpoint: string, params: any = {}, retries = 2): Promise<any> {
-        const url = this.buildUrl(endpoint);
+    private async makeRequestWithRetry(endpoint: string, countryCode: string = this.country, params: any = {}, retries = 2): Promise<any> {
+        const url = this.buildUrl(endpoint, countryCode);
         const requestParams = {
             app_id: this.appId,
             app_key: this.appKey,
@@ -56,24 +56,24 @@ export class AdzunaService {
         }
     }
 
-    async searchJobs(what?: string, page: number = 1): Promise<any> {
+    async searchJobs(what?: string, page: number = 1, countryCode: string = this.country): Promise<any> {
         const endpoint = `search/${page}`;
         const params: any = {};
         if (what) params.what = what;
 
-        this.logger.log(`Searching Adzuna: page=${page}, what=${what}`);
-        return await this.makeRequestWithRetry(endpoint, params);
+        this.logger.log(`Searching Adzuna: page=${page}, what=${what}, country=${countryCode}`);
+        return await this.makeRequestWithRetry(endpoint, countryCode, params);
     }
 
-    async fetchAllJobs(maxPages: number = 5, what?: string): Promise<any[]> {
+    async fetchAllJobs(maxPages: number = 5, what?: string, countryCode: string = this.country): Promise<any[]> {
         const allJobs: any[] = [];
         let page = 1;
 
-        this.logger.log(`Starting job fetch (max ${maxPages} pages, ${this.resultsPerPage} per page, what='${what}')`);
+        this.logger.log(`Starting job fetch (max ${maxPages} pages, ${this.resultsPerPage} per page, what='${what}', country='${countryCode}')`);
 
         while (page <= maxPages) {
             try {
-                const result = await this.searchJobs(what, page);
+                const result = await this.searchJobs(what, page, countryCode);
                 const jobs = result.results || [];
 
                 if (jobs.length === 0) {
@@ -105,8 +105,8 @@ export class AdzunaService {
         return allJobs;
     }
 
-    async getJobCategories(): Promise<any[]> {
-        const result = await this.makeRequestWithRetry('categories');
+    async getJobCategories(countryCode: string = this.country): Promise<any[]> {
+        const result = await this.makeRequestWithRetry('categories', countryCode);
         return result.results || [];
     }
 

@@ -32,6 +32,7 @@ export class JobService {
         syncType: string = 'manual',
         maxPages: number = 20,
         searchQuery: string = null,
+        countryCode?: string
     ): Promise<any> {
         const syncLog = await this.syncLogModel.create({
             sync_type: syncType,
@@ -40,7 +41,7 @@ export class JobService {
 
         try {
             this.logger.log(`Starting job sync: type=${syncType}`);
-            const jobsData = await this.adzunaService.fetchAllJobs(maxPages, searchQuery);
+            const jobsData = await this.adzunaService.fetchAllJobs(maxPages, searchQuery, countryCode);
 
             await this.syncLogModel.updateOne(
                 { _id: syncLog._id },
@@ -221,19 +222,23 @@ export class JobService {
             status: 'in_progress',
         });
 
+        const COUNTRIES = ['us', 'gb', 'in', 'ca', 'au', 'nz', 'za', 'sg'];
+
         try {
-            for (const [query, pages] of Object.entries(ENGINEERING_CONFIG)) {
-                try {
-                    this.logger.log(`Mass Sync: Processing ${query} (maxPages=${pages})`);
-                    const singleLog = await this.syncJobsFromAdzuna('manual_subtask', pages, query);
-                    totalCreated += singleLog.jobs_created || 0;
-                    totalUpdated += singleLog.jobs_updated || 0;
-                    totalFailed += singleLog.jobs_failed || 0;
-                } catch (e) {
-                    this.logger.error(`Failed sub-sync for ${query}: ${e.message}`);
-                    totalFailed++;
+            for (const country of COUNTRIES) {
+                for (const [query, pages] of Object.entries(ENGINEERING_CONFIG)) {
+                    try {
+                        this.logger.log(`Mass Sync: Processing ${query} for country ${country} (maxPages=${pages})`);
+                        const singleLog = await this.syncJobsFromAdzuna('manual_subtask', pages, query, country);
+                        totalCreated += singleLog.jobs_created || 0;
+                        totalUpdated += singleLog.jobs_updated || 0;
+                        totalFailed += singleLog.jobs_failed || 0;
+                    } catch (e) {
+                        this.logger.error(`Failed sub-sync for ${query} in ${country}: ${e.message}`);
+                        totalFailed++;
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, 2000));
                 }
-                await new Promise((resolve) => setTimeout(resolve, 2000));
             }
 
             await this.jobModel.deleteMany({ updated_at: { $lt: startTime } });
@@ -291,6 +296,9 @@ export class JobService {
         }
         if (filters.location) {
             query.location = { $regex: filters.location, $options: 'i' };
+        }
+        if (filters.country) {
+            query['location_structured.country'] = { $regex: filters.country, $options: 'i' };
         }
         if (filters.category) {
             query.$or = query.$or || [];

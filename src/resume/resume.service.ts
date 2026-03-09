@@ -121,7 +121,32 @@ export class ResumeService {
 
     // Ensure we never pass null values
     const finalStats = stats || {};
-    const finalImprovementResume = improvement_resume || {};
+    let finalImprovementResume = improvement_resume || {};
+
+    // ✅ ENHANCEMENT: If the AI failed to extract the name, inject the name from the User's DB record
+    if (finalImprovementResume.tailored_resume) {
+      if (!finalImprovementResume.tailored_resume.personal_info) {
+        finalImprovementResume.tailored_resume.personal_info = {};
+      }
+
+      const pInfo = finalImprovementResume.tailored_resume.personal_info;
+      const namePlaceholder = (pInfo.name || '').toLowerCase();
+      const isPlaceholder = !pInfo.name ||
+        namePlaceholder.includes('your name') ||
+        namePlaceholder.includes('full name') ||
+        namePlaceholder.includes('placeholder') ||
+        pInfo.name.includes('[') || // Detects [Your Name]
+        pInfo.name.includes(']');
+
+      if (isPlaceholder) {
+        pInfo.name = user?.name || 'Your Name';
+      }
+
+      // Also sync user email if missing
+      if (!pInfo.email && user?.email) {
+        pInfo.email = user.email;
+      }
+    }
 
     const resume = new this.resumeModel({
       filename: file.originalname,
@@ -178,7 +203,34 @@ export class ResumeService {
         token
       );
 
-      resume.improvement_resume = improvement_resume;
+      const finalImprovementResume = improvement_resume || {};
+
+      // ✅ ENHANCEMENT: Inject the name from the User's DB record
+      const user = await this.userModel.findById(resume.user).exec();
+      if (finalImprovementResume.tailored_resume) {
+        if (!finalImprovementResume.tailored_resume.personal_info) {
+          finalImprovementResume.tailored_resume.personal_info = {};
+        }
+
+        const pInfo = finalImprovementResume.tailored_resume.personal_info;
+        const namePlaceholder = (pInfo.name || '').toLowerCase();
+        const isPlaceholder = !pInfo.name ||
+          namePlaceholder.includes('your name') ||
+          namePlaceholder.includes('full name') ||
+          namePlaceholder.includes('placeholder') ||
+          pInfo.name.includes('[') || // Detects [Your Name]
+          pInfo.name.includes(']');
+
+        if (isPlaceholder) {
+          pInfo.name = user?.name || 'Your Name';
+        }
+
+        if (!pInfo.email && user?.email) {
+          pInfo.email = user.email;
+        }
+      }
+
+      resume.improvement_resume = finalImprovementResume;
       await resume.save();
 
       return {
