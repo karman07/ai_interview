@@ -37,7 +37,6 @@ interface ResumeDetailsProps {
 const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
   const { setShowPricing } = usePricing();
   const { addNotification } = useNotification();
-  console.log('Resume object in Details:', resume);
   const [openJDDialog, setOpenJDDialog] = useState(false);
   const [jdFile, setJdFile] = useState<File | null>(null);
   const [jdText, setJdText] = useState<string>('');
@@ -88,16 +87,6 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
       });
     } catch (error: any) {
       clearInterval(progressInterval);
-      console.error('Full Error Object:', error);
-
-      if (error?.response) {
-        console.error('Error Response Data:', error.response.data);
-        console.error('Error Response Status:', error.response.status);
-      }
-
-      if (error?.response?.status === 422) {
-        console.error('Pydantic Validation Error Details:', error.response.data);
-      }
 
       const errorMsgRaw = error?.response?.data?.detail || error?.message || 'Failed to generate enhanced resume.';
       const errorMsg = typeof errorMsgRaw === 'object' ? JSON.stringify(errorMsgRaw) : errorMsgRaw;
@@ -335,13 +324,11 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                             jdFile || undefined
                           );
 
-                          console.log('Upload successful:', result);
                           setOpenJDDialog(false);
                           setJdFile(null);
                           setJdText('');
                           window.location.reload();
                         } catch (error: any) {
-                          console.error('Failed to improve resume:', error);
                           const errorMsg = error?.response?.data?.message || error?.message || '';
 
                           if ((error?.response?.status === 400 || error?.status === 400) && (errorMsg.toLowerCase().includes('limit') || errorMsg.toLowerCase().includes('plan'))) {
@@ -527,7 +514,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

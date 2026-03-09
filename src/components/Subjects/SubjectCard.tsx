@@ -78,8 +78,6 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) =>
     const status = completedCount === subject.lessons.length ? 'completed' :
       (completedCount > 0 || inProgressCount > 0) ? 'in-progress' : 'not-started';
 
-    console.log(`Subject ${subject.title}: ${completedCount}/${subject.lessons.length} completed = ${percent}%`);
-
     return { percent, status };
   }, [apiProgress, subject]);
 

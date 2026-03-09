@@ -248,6 +248,15 @@ export default function InterviewRoomWS() {
         }
     }, [isListening, stopListening, startListening, cancel]);
 
+    // ── Repeat last AI question ──
+    const handleRepeatQuestion = useCallback(() => {
+        const lastModelMsg = [...messages].reverse().find(m => m.role === 'model');
+        if (lastModelMsg) {
+            cancel();
+            speak(lastModelMsg.content);
+        }
+    }, [messages, cancel, speak]);
+
     // ── Loading/Error states ──
     const isActuallyLoading = (messages.length === 0 || !isConnected) && !interviewEnded;
 
@@ -395,7 +404,24 @@ export default function InterviewRoomWS() {
                         </div>
 
                         {/* Dialogue / Transcript Panel */}
-                        <div className="flex-1 min-h-0">
+                        <div className="flex-1 min-h-0 flex flex-col gap-4">
+                            {/* Subtitle Overlay (New) */}
+                            {messages.length > 0 && messages[messages.length - 1].role === 'model' && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="bg-blue-600/10 dark:bg-blue-900/20 border border-blue-500/20 rounded-2xl p-4 backdrop-blur-sm"
+                                >
+                                    <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1 flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                                        Subtitles
+                                    </p>
+                                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200 leading-relaxed italic">
+                                        "{messages[messages.length - 1].content}"
+                                    </p>
+                                </motion.div>
+                            )}
+
                             <WSTranscriptPanel
                                 messages={messages}
                                 transcript={transcript}
@@ -453,6 +479,16 @@ export default function InterviewRoomWS() {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={handleRepeatQuestion}
+                            className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border transition-all ${isSpeaking ? 'bg-slate-50 dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-slate-700' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800'}`}
+                            disabled={isSpeaking || messages.length === 0}
+                        >
+                            <Zap className="w-3.5 h-3.5" />
+                            Repeat Question
+                        </motion.button>
                         <button
                             onClick={handleEndSession}
                             className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-900 dark:bg-rose-900/20 text-white dark:text-rose-400 transition-all hover:bg-slate-800"

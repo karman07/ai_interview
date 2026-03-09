@@ -96,6 +96,30 @@ const XMarkIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) 
   </svg>
 );
 
+const AlertCircle: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const XCircle: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const CheckCircle2: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const ArrowRight: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+  </svg>
+);
+
 const ResumeDashboard: React.FC = () => {
   const { resumes, uploadResume, isLoading } = useResume();
   const { user } = useAuth();
@@ -432,97 +456,178 @@ const ResumeDashboard: React.FC = () => {
         )}
 
         {(resumes.length > 0) && activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8">
-            {/* Performance Trends */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center gap-3">
-                <TrendingUpIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
-                Performance Trends
-              </h3>
-              {performanceData.length > 0 ? (
-                <div className="h-[200px] sm:h-[300px] w-full mt-4 sm:mt-6">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={performanceData}>
-                      <defs>
-                        <linearGradient id="colorCV" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="colorGreen" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="colorJD" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="colorRed" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <XAxis dataKey="name" stroke="#6B7280" fontSize={10} hide={window.innerWidth < 640} />
-                      <YAxis stroke="#6B7280" fontSize={10} width={30} />
-                      <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'white',
-                          border: '1px solid #E5E7EB',
-                          borderRadius: '12px',
-                          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                          fontSize: '12px'
-                        }}
-                      />
-                      <Legend iconSize={8} wrapperStyle={{ fontSize: '10px' }} />
-                      <Area type="monotone" dataKey="cvQuality" stroke="#3B82F6" fillOpacity={1} fill="url(#colorCV)" strokeWidth={2} name="CV Quality" />
-                      <Area type="monotone" dataKey="jdMatch" stroke="#10B981" fillOpacity={1} fill="url(#colorJD)" strokeWidth={2} name="JD Match" />
-                      <Area type="monotone" dataKey="greenFlags" stroke="#F59E0B" fillOpacity={1} fill="url(#colorGreen)" strokeWidth={2} name="Green Flags" />
-                      <Area type="monotone" dataKey="redFlags" stroke="#EF4444" fillOpacity={1} fill="url(#colorRed)" strokeWidth={2} name="Red Flags" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
-                  <div className="text-center">
-                    <ChartBarIcon className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-                    <p>No performance data available</p>
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8">
+              {/* Performance Trends */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center gap-3">
+                  <TrendingUpIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+                  Performance Trends
+                </h3>
+                {performanceData.length > 0 ? (
+                  <div className="h-[200px] sm:h-[300px] w-full mt-4 sm:mt-6">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={performanceData}>
+                        <defs>
+                          <linearGradient id="colorCV" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="colorGreen" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="colorJD" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="colorRed" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <XAxis dataKey="name" stroke="#6B7280" fontSize={10} hide={window.innerWidth < 640} />
+                        <YAxis stroke="#6B7280" fontSize={10} width={30} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'white',
+                            border: '1px solid #E5E7EB',
+                            borderRadius: '12px',
+                            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                            fontSize: '12px'
+                          }}
+                        />
+                        <Legend iconSize={8} wrapperStyle={{ fontSize: '10px' }} />
+                        <Area type="monotone" dataKey="cvQuality" stroke="#3B82F6" fillOpacity={1} fill="url(#colorCV)" strokeWidth={2} name="CV Quality" />
+                        <Area type="monotone" dataKey="jdMatch" stroke="#10B981" fillOpacity={1} fill="url(#colorJD)" strokeWidth={2} name="JD Match" />
+                        <Area type="monotone" dataKey="greenFlags" stroke="#F59E0B" fillOpacity={1} fill="url(#colorGreen)" strokeWidth={2} name="Green Flags" />
+                        <Area type="monotone" dataKey="redFlags" stroke="#EF4444" fillOpacity={1} fill="url(#colorRed)" strokeWidth={2} name="Red Flags" />
+                      </AreaChart>
+                    </ResponsiveContainer>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+                    <div className="text-center">
+                      <ChartBarIcon className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+                      <p>No performance data available</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Score Distribution */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">Score Distribution</h3>
+                {pieData.length > 0 ? (
+                  <div className="h-[250px] sm:h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={window.innerWidth < 640 ? 40 : 60}
+                          outerRadius={window.innerWidth < 640 ? 70 : 100}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {pieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px' }} />
+                        <Legend iconSize={8} wrapperStyle={{ fontSize: '10px' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+                    <p>No data available</p>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Score Distribution */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">Score Distribution</h3>
-              {pieData.length > 0 ? (
-                <div className="h-[250px] sm:h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={window.innerWidth < 640 ? 40 : 60}
-                        outerRadius={window.innerWidth < 640 ? 70 : 100}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px' }} />
-                      <Legend iconSize={8} wrapperStyle={{ fontSize: '10px' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
+            {/* Red Flags & Insights Section (New) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mt-8">
+              {/* Red Flags Card */}
+              <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8 shadow-sm border border-rose-100 dark:border-rose-900/20">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                    <div className="p-2 bg-rose-50 dark:bg-rose-900/20 rounded-xl">
+                      <AlertCircle className="w-6 h-6 text-rose-600" />
+                    </div>
+                    Critical Insights (Red Flags)
+                  </h3>
+                  <span className="px-3 py-1 bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-400 text-xs font-black rounded-full uppercase tracking-widest">
+                    {safeResumes[0].analytics?.key_takeaways?.red_flags?.length || 0} Issues
+                  </span>
                 </div>
-              ) : (
-                <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
-                  <p>No data available</p>
+
+                {safeResumes[0].analytics?.key_takeaways?.red_flags?.length > 0 ? (
+                  <div className="space-y-4">
+                    {safeResumes[0].analytics.key_takeaways.red_flags.map((flag: string, idx: number) => (
+                      <div key={idx} className="group p-4 bg-rose-50/30 dark:bg-rose-900/5 rounded-2xl border border-rose-50 dark:border-rose-900/10 hover:border-rose-200 dark:hover:border-rose-900/30 transition-all">
+                        <div className="flex gap-3">
+                          <XCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-relaxed">
+                              {flag}
+                            </p>
+                            <p className="text-[10px] text-rose-600 dark:text-rose-400 font-bold uppercase tracking-widest mt-2 flex items-center gap-1 group-hover:gap-2 transition-all cursor-pointer" onClick={() => setSelectedResume(safeResumes[0])}>
+                              View Detailed Guidance <ArrowRight className="w-3 h-3" />
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="w-16 h-16 bg-green-50 dark:bg-green-900/10 rounded-full flex items-center justify-center mb-4">
+                      <CheckCircle2 className="w-8 h-8 text-green-500" />
+                    </div>
+                    <p className="text-gray-500 font-medium italic">No critical issues detected.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Green Flags Card */}
+              <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8 shadow-sm border border-emerald-100 dark:border-emerald-900/20">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                    <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
+                      <StarIcon className="w-6 h-6 text-emerald-600" />
+                    </div>
+                    Competitive Advantages
+                  </h3>
+                  <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-xs font-black rounded-full uppercase tracking-widest">
+                    {safeResumes[0].analytics?.key_takeaways?.green_flags?.length || 0} Strengths
+                  </span>
                 </div>
-              )}
+
+                {safeResumes[0].analytics?.key_takeaways?.green_flags?.length > 0 ? (
+                  <div className="space-y-4">
+                    {safeResumes[0].analytics.key_takeaways.green_flags.map((flag: string, idx: number) => (
+                      <div key={idx} className="p-4 bg-emerald-50/30 dark:bg-emerald-900/5 rounded-2xl border border-emerald-50 dark:border-emerald-900/10 hover:border-emerald-200 dark:hover:border-emerald-900/30 transition-all">
+                        <div className="flex gap-3">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-relaxed">
+                            {flag}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <p className="text-gray-500 font-medium italic">Syncing analysis data...</p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          </>
         )}
 
         {activeTab === 'performance' && radarData.length > 0 && (
@@ -771,7 +876,7 @@ const ResumeDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </div >
   );
 };
 

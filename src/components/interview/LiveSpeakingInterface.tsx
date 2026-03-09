@@ -15,7 +15,7 @@ const LiveSpeakingInterface: React.FC<LiveSpeakingInterfaceProps> = ({ onSubmit,
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [silenceTimer, setSilenceTimer] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -108,7 +108,6 @@ const LiveSpeakingInterface: React.FC<LiveSpeakingInterfaceProps> = ({ onSubmit,
         try {
           recognitionRef.current.start();
         } catch (e: any) {
-          console.log('Speech recognition already started or error:', e.message);
           // If already started, stop and restart
           if (e.message.includes('already started')) {
             recognitionRef.current.stop();
@@ -188,14 +187,8 @@ const LiveSpeakingInterface: React.FC<LiveSpeakingInterfaceProps> = ({ onSubmit,
 
       // Auto-submit after 3 seconds of silence if we have any text
       const hasContent = transcriptRef.current.trim() || currentSpeechRef.current.trim();
-      
+
       if (silenceDuration >= 3 && hasContent && !isSubmittingRef.current) {
-        console.log('🚀 AUTO-SUBMIT TRIGGERED:', {
-          silenceDuration,
-          transcript: transcriptRef.current,
-          currentSpeech: currentSpeechRef.current,
-          isSubmitting: isSubmittingRef.current
-        });
         handleAutoSubmit();
         return;
       }
@@ -209,11 +202,9 @@ const LiveSpeakingInterface: React.FC<LiveSpeakingInterfaceProps> = ({ onSubmit,
   const handleAutoSubmit = async () => {
     const fullTranscript = (transcriptRef.current + ' ' + currentSpeechRef.current).trim();
     if (isSubmittingRef.current || !fullTranscript) {
-      console.log('Auto-submit blocked:', { isSubmitting: isSubmittingRef.current, hasContent: !!fullTranscript });
       return;
     }
 
-    console.log('✅ Auto-submitting answer:', fullTranscript);
     setIsSubmitting(true);
     isSubmittingRef.current = true;
     setIsListening(false);
@@ -232,7 +223,6 @@ const LiveSpeakingInterface: React.FC<LiveSpeakingInterfaceProps> = ({ onSubmit,
       }
 
       const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-      console.log('📤 Submitting audio blob:', audioBlob.size, 'bytes');
       await onSubmit(audioBlob, fullTranscript);
 
       // Reset for next answer
@@ -246,10 +236,8 @@ const LiveSpeakingInterface: React.FC<LiveSpeakingInterfaceProps> = ({ onSubmit,
       lastSpeechTimeRef.current = Date.now();
 
       // Restart microphone if still enabled
-      console.log('🔄 Restarting microphone for next question...');
       if (isMicEnabled) {
         setTimeout(() => {
-          console.log('🎤 Starting microphone...');
           startMicrophone();
         }, 800);
       }
@@ -274,11 +262,10 @@ const LiveSpeakingInterface: React.FC<LiveSpeakingInterfaceProps> = ({ onSubmit,
         <button
           onClick={toggleMicrophone}
           disabled={disabled || isSubmitting}
-          className={`p-3 rounded-full transition-all ${
-            isMicEnabled
+          className={`p-3 rounded-full transition-all ${isMicEnabled
               ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
               : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400'
-          } disabled:opacity-50 disabled:cursor-not-allowed`}
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           {isMicEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
         </button>

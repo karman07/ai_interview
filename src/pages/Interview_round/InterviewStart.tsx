@@ -330,7 +330,7 @@ export default function InterviewStart() {
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
-                      <Briefcase className="w-3.5 h-3.5 text-blue-500" /> Target Role
+                      <Briefcase className="w-3.5 h-3.5 text-blue-500" /> Target Role <span className="text-rose-500">*</span>
                     </label>
                     <Input
                       placeholder="e.g., Senior Fullstack Developer"
@@ -341,7 +341,7 @@ export default function InterviewStart() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
-                      <Building2 className="w-3.5 h-3.5 text-blue-500" /> Target Company
+                      <Building2 className="w-3.5 h-3.5 text-blue-500" /> Target Company <span className="text-rose-500">*</span>
                     </label>
                     <Input
                       placeholder="e.g., Google / Startup / Meta"
@@ -356,7 +356,7 @@ export default function InterviewStart() {
                   {/* Resume Section */}
                   <div className="space-y-4">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
-                      <FileText className="w-3.5 h-3.5 text-blue-500" /> Resume / CV
+                      <FileText className="w-3.5 h-3.5 text-blue-500" /> Resume / CV <span className="text-rose-500">*</span>
                     </label>
                     <div className="group relative">
                       {details.resumeFile ? (
@@ -412,7 +412,7 @@ export default function InterviewStart() {
                   {/* JD Section */}
                   <div className="space-y-4">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
-                      <Layers className="w-3.5 h-3.5 text-blue-500" /> Job Description
+                      <Layers className="w-3.5 h-3.5 text-blue-500" /> Job Description <span className="text-rose-500">*</span>
                     </label>
                     <div className="group relative">
                       {details.jdFile ? (

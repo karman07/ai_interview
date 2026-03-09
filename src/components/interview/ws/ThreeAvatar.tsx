@@ -30,7 +30,7 @@ class SceneErrorBoundary extends Component<{ children: ReactNode, fallback: Reac
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("ThreeJS Error:", error, errorInfo);
+    // Error caught by boundary
   }
 
   render() {
@@ -55,7 +55,6 @@ const AvatarModel = ({ isSpeaking, isListening }: AvatarProps) => {
   // Memoized mesh identification
   const speakingMeshes = useMemo(() => {
     const meshes: any[] = [];
-    console.log("[AvatarModel] Initializing Scene Components...");
 
     scene.traverse((obj: any) => {
       // 1. Identify Bones
@@ -71,7 +70,6 @@ const AvatarModel = ({ isSpeaking, isListening }: AvatarProps) => {
           const hasARKit = keys.includes('jawOpen') || keys.includes('mouthSmile');
 
           if (hasVisemes || hasARKit) {
-            console.log(`[AvatarModel] SUCCESS: Identified speaking mesh: ${obj.name} (${keys.length} targets)`);
             meshes.push(obj);
           }
         }
@@ -88,7 +86,7 @@ const AvatarModel = ({ isSpeaking, isListening }: AvatarProps) => {
     });
 
     if (meshes.length === 0) {
-      console.warn("[AvatarModel] CRITICAL: No speaking meshes found. Lip-sync disabled.");
+      // No speaking meshes found. Lip-sync disabled.
     }
     return meshes;
   }, [scene]);

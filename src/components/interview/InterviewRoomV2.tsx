@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import LiveSpeakingInterface from "./LiveSpeakingInterface";
-import { 
+import {
   Loader2,
   Clock,
   Volume2,
@@ -39,14 +39,14 @@ export default function InterviewRoomV2({ round }: Props) {
   const [isComplete] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  
+
   // New state for streaming and evaluation
   const [isStreaming, setIsStreaming] = useState(false);
   const [lastEvaluation, setLastEvaluation] = useState<SubmitAnswerV2Response['evaluation'] | null>(null);
   const [lastVoiceAnalysis, setLastVoiceAnalysis] = useState<SubmitAnswerV2Response['voice_analysis'] | null>(null);
   const [showEvaluation, setShowEvaluation] = useState(false);
   const [_performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetricsResponse | null>(null);
-  
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const isSpeakingRef = useRef<boolean>(false);
   const hasInitializedRef = useRef<boolean>(false);
@@ -60,19 +60,16 @@ export default function InterviewRoomV2({ round }: Props) {
   // Google Cloud TTS function with duplicate prevention
   const speakTextRobust = async (text: string): Promise<void> => {
     if (isMuted) {
-      console.log('⚠️ TTS skipped - muted');
       return;
     }
 
     // Prevent duplicate calls for the same text
     if (currentQuestionRef.current === text && isSpeakingRef.current) {
-      console.log('⚠️ TTS already in progress for this text, skipping duplicate call');
       return;
     }
 
     // If speaking different text, stop it first
     if (isSpeakingRef.current) {
-      console.log('🛑 Stopping existing speech...');
       stopGoogleTTS();
       isSpeakingRef.current = false;
       setIsSpeaking(false);
@@ -85,13 +82,13 @@ export default function InterviewRoomV2({ round }: Props) {
     try {
       isSpeakingRef.current = true;
       setIsSpeaking(true);
-      
+
       await speakTextWithControl(text, {
         languageCode: 'en-IN',
         voiceName: 'en-IN-Wavenet-D',
         speakingRate: 0.95
       });
-      
+
       isSpeakingRef.current = false;
       setIsSpeaking(false);
       currentQuestionRef.current = "";
@@ -107,7 +104,6 @@ export default function InterviewRoomV2({ round }: Props) {
 
 
   const stopSpeaking = () => {
-    console.log('🛑 Manually stopping speech');
     stopGoogleTTS();
     isSpeakingRef.current = false;
     setIsSpeaking(false);
@@ -123,14 +119,13 @@ export default function InterviewRoomV2({ round }: Props) {
   useEffect(() => {
     // Prevent double initialization (React 18 strict mode in dev)
     if (hasInitializedRef.current) {
-      console.log('⚠️ Interview already initialized, skipping');
       return;
     }
     hasInitializedRef.current = true;
 
     const initInterview = async () => {
       const sessionData = localStorage.getItem('v2_interview_session');
-      
+
       if (!sessionData) {
         setError('No interview session found. Please start from the setup page.');
         setInitializing(false);
@@ -142,16 +137,15 @@ export default function InterviewRoomV2({ round }: Props) {
         setSessionId(parsedData.sessionId);
         setQuestion(parsedData.firstQuestion);
         setQuestionNumber(parsedData.questionNumber);
-        
+
         // Start camera
         await startCamera();
-        
+
         setInitializing(false);
-        
+
         // Speak first question using Google TTS (no retry to avoid duplicates)
         setTimeout(() => {
           if (parsedData.firstQuestion && !isSpeakingRef.current) {
-            console.log('🎬 Starting first question TTS');
             speakTextRobust(parsedData.firstQuestion).catch(err => {
               console.error('❌ Failed to speak first question:', err);
             });
@@ -189,9 +183,9 @@ export default function InterviewRoomV2({ round }: Props) {
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: 1280, height: 720 }, 
-        audio: false 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720 },
+        audio: false
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -221,20 +215,17 @@ export default function InterviewRoomV2({ round }: Props) {
       }
 
       const audioFile = createAudioFile(audioBlob, sessionId);
-      
-      console.log('📤 Submitting answer to API...');
+
       const response: SubmitAnswerV2Response = await submitAnswerV2(sessionId, {
         session_id: sessionId,
         answer_audio: audioFile
       });
 
-      console.log('📥 Response received:', response);
-
       // Store evaluation and voice analysis
       if (response.evaluation) {
         setLastEvaluation(response.evaluation);
         setShowEvaluation(true);
-        
+
         // Auto-hide evaluation after 10 seconds
         setTimeout(() => setShowEvaluation(false), 10000);
       }
@@ -245,16 +236,14 @@ export default function InterviewRoomV2({ round }: Props) {
 
       // Check if interview is complete
       if (response.status === 'completed') {
-        console.log('🏁 Interview completed - calling handleComplete');
         await handleComplete();
       } else if (response.status === 'active' && response.question) {
-        console.log('▶️ Interview continues - next question');
         setQuestionNumber(response.question_number || questionNumber + 1);
-        
+
         // Use streaming for better UX
         setIsStreaming(true);
         setQuestion(''); // Clear current question
-        
+
         // Stream the new question with progressive display
         streamCancelRef.current = streamQuestion(
           sessionId,
@@ -266,7 +255,7 @@ export default function InterviewRoomV2({ round }: Props) {
           (fullQuestion) => {
             setIsStreaming(false);
             setQuestion(fullQuestion);
-            
+
             // Speak the complete question
             setTimeout(() => {
               if (!isSpeakingRef.current && !isMuted) {
@@ -281,7 +270,7 @@ export default function InterviewRoomV2({ round }: Props) {
             console.error('❌ Streaming error:', error);
             setIsStreaming(false);
             setQuestion(response.question || '');
-            
+
             // Speak fallback question
             if (response.question && !isMuted) {
               setTimeout(() => {
@@ -296,10 +285,9 @@ export default function InterviewRoomV2({ round }: Props) {
     } catch (error: any) {
       console.error('❌ Error submitting answer:', error);
       const errorMessage = handleAPIError(error);
-      
+
       // Check if error indicates completion
       if (errorMessage.toLowerCase().includes('complete')) {
-        console.log('🏁 Error indicates completion - calling handleComplete');
         await handleComplete();
       } else {
         setError(errorMessage);
@@ -309,8 +297,7 @@ export default function InterviewRoomV2({ round }: Props) {
 
   const handleComplete = async () => {
     try {
-      console.log('🏁 Completing interview...');
-      
+
       // Cancel any active streaming
       if (streamCancelRef.current) {
         streamCancelRef.current();
@@ -320,23 +307,20 @@ export default function InterviewRoomV2({ round }: Props) {
       // Get performance metrics before completing
       try {
         const metrics = await getPerformanceMetrics(sessionId);
-        console.log('📊 Performance metrics:', metrics);
         setPerformanceMetrics(metrics);
       } catch (metricsError) {
-        console.warn('⚠️ Could not fetch performance metrics:', metricsError);
+        // Could not fetch performance metrics
       }
 
       const report: CompleteInterviewV2Response = await completeInterviewV2(sessionId, {
         final_notes: `${round} interview completed successfully`
       });
 
-      console.log('✅ Interview completed successfully:', report);
-      
+
       // Store report in localStorage for results page
       localStorage.setItem('v2_interview_report', JSON.stringify(report));
       localStorage.removeItem('v2_interview_session');
-      
-      console.log('📊 Navigating to results page:', `/interview/results/${sessionId}`);
+
       // Navigate to results page
       navigate(`/interview/results/${sessionId}`);
     } catch (error: any) {
@@ -350,9 +334,8 @@ export default function InterviewRoomV2({ round }: Props) {
   const loadSessionState = async (sessionIdToLoad: string) => {
     try {
       const state: SessionStateResponse = await getSessionState(sessionIdToLoad);
-      
+
       if (state.completed) {
-        console.log('⚠️ Session already completed');
         navigate(`/interview/results/${sessionIdToLoad}`);
         return;
       }
@@ -366,7 +349,7 @@ export default function InterviewRoomV2({ round }: Props) {
       if (lastQuestion) {
         setQuestion(lastQuestion.content);
         setQuestionNumber(state.question_count);
-        
+
         // Speak the question
         setTimeout(() => {
           if (!isMuted) {
@@ -376,8 +359,6 @@ export default function InterviewRoomV2({ round }: Props) {
           }
         }, 1000);
       }
-
-      console.log(`✅ Resumed session at question ${state.question_count}`);
     } catch (error) {
       console.error('❌ Failed to load session state:', error);
       setError(handleAPIError(error));
@@ -507,7 +488,7 @@ export default function InterviewRoomV2({ round }: Props) {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-6 border-l-4 border-slate-600">
                   <p className="text-lg text-gray-900 dark:text-white leading-relaxed">
                     {question}
@@ -542,7 +523,7 @@ export default function InterviewRoomV2({ round }: Props) {
                       ×
                     </button>
                   </div>
-                  
+
                   <div className="grid grid-cols-3 gap-3 mb-3">
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center">
                       <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
@@ -563,7 +544,7 @@ export default function InterviewRoomV2({ round }: Props) {
                       <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Depth</div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
                     <p className="text-sm text-gray-700 dark:text-gray-300">
                       <span className="font-semibold">Feedback:</span> {lastEvaluation.feedback}

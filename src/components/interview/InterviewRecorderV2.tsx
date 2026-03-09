@@ -48,7 +48,7 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       streamRef.current = stream;
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
@@ -99,49 +99,47 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
 
   const startRecording = async () => {
     if (!streamRef.current) return;
-    
+
     try {
       setError('');
       videoChunksRef.current = [];
       audioChunksRef.current = [];
-      
+
       const videoRecorder = new MediaRecorder(streamRef.current, { mimeType: 'video/webm' });
       const audioRecorder = new MediaRecorder(new MediaStream(streamRef.current.getAudioTracks()), { mimeType: 'audio/webm' });
-      
+
       mediaRecorderRef.current = videoRecorder;
       audioRecorderRef.current = audioRecorder;
-      
+
       videoRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) videoChunksRef.current.push(event.data);
       };
-      
+
       audioRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
-      
+
       videoRecorder.onstop = () => {
         const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        console.log('Video blob size:', videoBlob.size);
-        console.log('Audio blob size:', audioBlob.size);
         if (audioBlob.size === 0) {
           console.error('Audio blob is empty!');
         }
         uploadResponse(videoBlob, audioBlob);
       };
-      
+
       videoRecorder.start();
       audioRecorder.start();
       setIsRecording(true);
       setDuration(0);
       setSilenceTimer(0);
-      
+
       timerRef.current = setInterval(() => {
         setDuration(prev => prev + 1);
       }, 1000);
 
       detectSilence();
-      
+
     } catch (error) {
       console.error('Error starting recording:', error);
       setError('Failed to start recording.');
@@ -162,23 +160,23 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
     }
   };
 
-const uploadResponse = async (videoBlob: Blob, audioBlob: Blob) => {
+  const uploadResponse = async (videoBlob: Blob, audioBlob: Blob) => {
     if (!videoBlob || !user) return;
-    
+
     setIsUploading(true);
     setError('');
-    
+
     try {
       const formData = new FormData();
       formData.append('session_id', sessionId);
       formData.append('video_file', new File([videoBlob], `answer_${Date.now()}.mp4`, { type: 'video/mp4' }));
       formData.append('audio_file', new File([audioBlob], `answer_${Date.now()}.mp3`, { type: 'audio/mp3' }));
-      
+
       const { data } = await http.post('/enhanced-interview/answer', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 300000
       });
-      
+
       if (data) onSubmit(data);
     } catch (error: any) {
       console.error('Upload error:', error);
@@ -209,7 +207,7 @@ const uploadResponse = async (videoBlob: Blob, audioBlob: Blob) => {
           muted
           className="w-full h-[500px] object-cover"
         />
-        
+
         {isRecording && (
           <div className="absolute top-6 left-6 flex items-center gap-3 bg-red-500 text-white px-4 py-2 rounded-full shadow-lg">
             <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
@@ -237,11 +235,10 @@ const uploadResponse = async (videoBlob: Blob, audioBlob: Blob) => {
         <button
           onClick={isRecording ? stopRecordingAndSubmit : startRecording}
           disabled={isUploading || !canRecord}
-          className={`flex items-center gap-3 px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-lg ${
-            isRecording
+          className={`flex items-center gap-3 px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-lg ${isRecording
               ? 'bg-red-500 hover:bg-red-600 text-white'
               : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
-          } disabled:opacity-50`}
+            } disabled:opacity-50`}
         >
           {isRecording ? (
             <>

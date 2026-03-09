@@ -137,12 +137,9 @@ export const speakText = async (
     speakingRate?: number;
   }
 ): Promise<void> => {
-  console.log(`🗣️ Starting Google TTS:`, text.substring(0, 50) + '...');
-
   try {
     const audioContent = await synthesizeSpeech(text, options);
     await playAudioFromBase64(audioContent);
-    console.log('✅ Google TTS completed successfully');
   } catch (error) {
     console.error('❌ Google TTS failed:', error);
     throw error;
@@ -162,7 +159,7 @@ export const stopSpeaking = () => {
     currentAudio.currentTime = 0;
     currentAudio = null;
     isPlaybackInProgress = false;
-    console.log('🛑 Stopped Google TTS playback');
+    isPlaybackInProgress = false;
   }
 };
 
@@ -185,12 +182,9 @@ export const speakTextWithControl = (
   return new Promise(async (resolve, reject) => {
     // Prevent multiple simultaneous calls
     if (isPlaybackInProgress) {
-      console.log('⚠️ TTS playback already in progress, rejecting duplicate call');
       reject(new Error('TTS playback already in progress'));
       return;
     }
-
-    console.log(`🗣️ Starting Google TTS with control:`, text.substring(0, 50) + '...');
 
     try {
       isPlaybackInProgress = true;
@@ -216,7 +210,7 @@ export const speakTextWithControl = (
         URL.revokeObjectURL(audioUrl);
         currentAudio = null;
         isPlaybackInProgress = false;
-        console.log('✅ Google TTS completed successfully');
+        isPlaybackInProgress = false;
         resolve();
       };
 

@@ -30,7 +30,6 @@ export const fetchJobs = async (params: any = {}): Promise<JobListResponse> => {
   if (params.engineering_type) queryParams.append('branch_type', params.engineering_type);
 
   try {
-    console.log(`[jobService] Fetching jobs from ${API_URL}/jobs with params:`, params);
     const response = await jobApiClient.get(`?${queryParams.toString()}`);
     return response.data;
   } catch (error) {
@@ -114,9 +113,7 @@ export interface UserJobInteractionResponse {
 
 export const toggleFavoriteJob = async (jobId: string, userId: string): Promise<UserJobInteractionResponse> => {
   try {
-    console.log(`[jobService] Toggling favorite for jobId: ${jobId}, userId: ${userId}`);
     const response = await jobApiClient.post(`/${jobId}/favorite`, { user_id: userId });
-    console.log(`[jobService] Toggle response:`, response.data);
     return response.data;
   } catch (error) {
     console.error("toggleFavoriteJob Error:", error);
@@ -126,9 +123,7 @@ export const toggleFavoriteJob = async (jobId: string, userId: string): Promise<
 
 export const fetchFavoriteJobs = async (userId: string): Promise<JobListResponse> => {
   try {
-    console.log(`[jobService] Fetching favorites for userId: ${userId}`);
     const response = await jobApiClient.get(`/favorites?user_id=${userId}`);
-    console.log(`[jobService] Fetch response:`, response.data);
     return response.data;
   } catch (error) {
     console.error("fetchFavoriteJobs Error:", error);
@@ -140,9 +135,7 @@ export const fetchFavoriteJobs = async (userId: string): Promise<JobListResponse
 
 export const toggleBookmarkJob = async (jobId: string, userId: string): Promise<UserJobInteractionResponse> => {
   try {
-    console.log(`[jobService] Toggling bookmark for jobId: ${jobId}, userId: ${userId}`);
     const response = await jobApiClient.post(`/${jobId}/bookmark`, { user_id: userId });
-    console.log(`[jobService] Toggle response:`, response.data);
     return response.data;
   } catch (error) {
     console.error("toggleBookmarkJob Error:", error);
@@ -152,9 +145,7 @@ export const toggleBookmarkJob = async (jobId: string, userId: string): Promise<
 
 export const fetchBookmarkJobs = async (userId: string): Promise<JobListResponse> => {
   try {
-    console.log(`[jobService] Fetching bookmarks for userId: ${userId}`);
     const response = await jobApiClient.get(`/bookmarks?user_id=${userId}`);
-    console.log(`[jobService] Fetch response:`, response.data);
     return response.data;
   } catch (error) {
     console.error("fetchBookmarkJobs Error:", error);
