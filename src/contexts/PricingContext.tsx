@@ -55,23 +55,42 @@ export const PricingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }));
   };
 
-  const fetchPlans = useCallback(async () => {
+  const fetchPlans = useCallback(async (country: string = 'IN') => {
     try {
       setLoading(true);
       setError(null);
-      const data = await SubscriptionApi.getActivePlans('IN');
+      const data = await SubscriptionApi.getActivePlans(country);
       const transformed = transformPlans(data);
       setPricingPlans(transformed);
     } catch (err: any) {
       console.error("Failed to fetch pricing plans:", err);
-      setError("Failed to load subscription plans. Please try again later.");
+      // Fallback to IN if specific country fails
+      if (country !== 'IN') {
+        fetchPlans('IN');
+      } else {
+        setError("Failed to load subscription plans. Please try again later.");
+      }
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchPlans();
+    const detectCountryAndFetch = async () => {
+      let country = 'IN';
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+        if (data.country_code) {
+          country = data.country_code;
+        }
+      } catch (e) {
+        console.warn("Country detection failed, defaulting to IN", e);
+      }
+      fetchPlans(country);
+    };
+
+    detectCountryAndFetch();
   }, [fetchPlans]);
 
   return (

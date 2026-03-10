@@ -11,8 +11,9 @@ import { WSTranscriptPanel } from './ws/TranscriptPanel';
 import { WSCodeEditor } from './ws/CodeEditor';
 import { WSInterviewTimer } from './ws/InterviewTimer';
 import { ThreeAvatar } from './ws/ThreeAvatar';
-import { Loader2, Mic, MicOff, Video, VideoOff, LogOut, ShieldCheck, Zap, Code } from 'lucide-react';
+import { Loader2, Mic, MicOff, Video, VideoOff, LogOut, ShieldCheck, Zap, Code, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Dialog } from '@/components/ui/Dialog';
 
 /**
  * InterviewRoomWS — Replaces InterviewRoomV2 at the route level.
@@ -70,6 +71,7 @@ export default function InterviewRoomWS() {
     const [showCodeEditor, setShowCodeEditor] = useState(false);
     const [initProgress, setInitProgress] = useState(0);
     const [initStatus, setInitStatus] = useState('Establishing secure connection...');
+    const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
 
     // Simulate progress while waiting for connection and first question
     useEffect(() => {
@@ -194,15 +196,34 @@ export default function InterviewRoomWS() {
     }, [sendMessage]);
 
     // ── End Session ──
+    const userMessageCount = useMemo(() => messages.filter(m => m.role === 'user').length, [messages]);
+
     const handleEndSession = useCallback((forceConfirm: any = false) => {
         const isForce = typeof forceConfirm === 'boolean' && forceConfirm;
-        if (!isForce && !window.confirm('Are you sure you want to end this interview session?')) return;
-        cancel();
-        bufferRef.current = '';
-        processedTextLengthRef.current = 0;
-        lastModelMsgIdRef.current = null;
-        sendEndSession();
+        if (isForce) {
+            cancel();
+            bufferRef.current = '';
+            processedTextLengthRef.current = 0;
+            lastModelMsgIdRef.current = null;
+            sendEndSession();
+            return;
+        }
+        setIsEndDialogOpen(true);
     }, [cancel, sendEndSession]);
+
+    const confirmEndSession = () => {
+        setIsEndDialogOpen(false);
+        if (userMessageCount > 0) {
+            cancel();
+            bufferRef.current = '';
+            processedTextLengthRef.current = 0;
+            lastModelMsgIdRef.current = null;
+            sendEndSession();
+        } else {
+            // Early exit - just go back
+            navigate('/interview_round');
+        }
+    };
 
     // ── Idle Timer Logic ──
     const [showIdlePrompt, setShowIdlePrompt] = useState(false);
@@ -558,30 +579,19 @@ export default function InterviewRoomWS() {
 
             {/* Narrative State: Transitioning */}
             <AnimatePresence>
-                {showIdlePrompt && !isEnding && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="fixed inset-0 z-[60] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-6"
-                    >
-                        <div className="bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900/30 rounded-3xl p-10 max-w-md text-center shadow-2xl">
-                            <div className="w-20 h-20 bg-amber-50 dark:bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <Zap className="w-10 h-10 text-amber-500 animate-pulse" />
-                            </div>
-                            <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-4">Are you still there?</h2>
-                            <p className="text-slate-500 dark:text-slate-400 mb-8 font-medium leading-relaxed">
-                                Please respond or interact to keep the interview active. Session will end automatically in a few seconds.
-                            </p>
-                            <button
-                                onClick={() => handleToggleMic()}
-                                className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-all active:scale-[0.98]"
-                            >
-                                Yes, I'm here
-                            </button>
-                        </div>
-                    </motion.div>
-                )}
+                <Dialog
+                    isOpen={showIdlePrompt}
+                    onClose={() => setShowIdlePrompt(false)}
+                    onConfirm={() => {
+                        setShowIdlePrompt(false);
+                        handleToggleMic();
+                    }}
+                    variant="warning"
+                    title="Are you still there?"
+                    description="Please respond or interact to keep the interview active. Session will end automatically in a few seconds."
+                    confirmLabel="Yes, I'm here"
+                    cancelLabel="Dismiss"
+                />
 
                 {isEnding && (
                     <motion.div
@@ -632,6 +642,22 @@ export default function InterviewRoomWS() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* End Interview Dialog */}
+            <Dialog
+                isOpen={isEndDialogOpen}
+                onClose={() => setIsEndDialogOpen(false)}
+                onConfirm={confirmEndSession}
+                variant={userMessageCount > 0 ? 'warning' : 'danger'}
+                title={userMessageCount > 0 ? "End Interview Session?" : "End Session Early?"}
+                description={
+                    userMessageCount > 0
+                        ? "Are you sure you want to conclude this interview? Our AI will analyze your performance and generate a detailed report."
+                        : "You haven't answered any questions yet. Ending now will NOT generate an interview report. Do you want to exit anyway?"
+                }
+                confirmLabel={userMessageCount > 0 ? "Yes, End Interview" : "Yes, Exit Anyway"}
+                cancelLabel="Keep Practicing"
+            />
         </div>
     );
 }
