@@ -22,7 +22,8 @@ export class SubscriptionService implements OnModuleInit {
     this.logger.log('🌱 Application initialized - Auto-syncing plans with Razorpay...');
     try {
       await this.syncPlansWithRazorpay('IN');
-      this.logger.log('✅ Subscription plans synced successfully!');
+      await this.syncPlansWithRazorpay('US');
+      this.logger.log('✅ Subscription plans synced successfully for IN and US!');
     } catch (error) {
       this.logger.error(`❌ Failed to sync subscription plans: ${error.message}`);
     }
@@ -48,9 +49,9 @@ export class SubscriptionService implements OnModuleInit {
       }
     }
 
-    const getOrCreateRzpPlan = async (name: string, amount: number) => {
+    const getOrCreateRzpPlan = async (name: string, amount: number, currency: string = 'INR') => {
       if (!razorpay) return undefined;
-      const existing = rzpPlans.find(p => p.item.amount === amount && p.item.name.toLowerCase().includes(name.toLowerCase()));
+      const existing = rzpPlans.find(p => p.item.amount === amount && p.item.currency === currency && p.item.name.toLowerCase().includes(name.toLowerCase()));
       if (existing) return existing.id;
 
       try {
@@ -60,20 +61,27 @@ export class SubscriptionService implements OnModuleInit {
           item: {
             name,
             amount,
-            currency: 'INR',
+            currency,
             description: `Automated plan for ${name}`
           }
         });
-        this.logger.log(`Created new Razorpay plan: ${newPlan.id} for ${name}`);
+        this.logger.log(`Created new Razorpay plan: ${newPlan.id} for ${name} (${currency})`);
         return newPlan.id;
       } catch (e) {
-        this.logger.error(`Failed to create Razorpay plan for ${name}`, e);
+        this.logger.error(`Failed to create Razorpay plan for ${name} (${currency})`, e);
         return undefined;
       }
     };
 
-    const starterRzpId = await getOrCreateRzpPlan('Career Starter', 10000);
-    const proRzpId = await getOrCreateRzpPlan('Professional', 20000);
+    const isIndia = countryCode === 'IN';
+    const currency = isIndia ? 'INR' : 'USD';
+
+    // Updated prices: India 99/199, Outside 5/9
+    const starterPrice = isIndia ? 9900 : 500;
+    const proPrice = isIndia ? 19900 : 900;
+
+    const starterRzpId = await getOrCreateRzpPlan('Career Starter', starterPrice, currency);
+    const proRzpId = await getOrCreateRzpPlan('Professional', proPrice, currency);
 
     const plans = [
       {
@@ -81,7 +89,7 @@ export class SubscriptionService implements OnModuleInit {
         displayName: 'Free Tier',
         country: countryCode.toUpperCase(),
         price: 0,
-        currency: countryCode === 'IN' ? 'INR' : 'USD',
+        currency: currency,
         type: SubscriptionType.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
         description: 'Perfect for starters to experience the platform.',
@@ -96,11 +104,11 @@ export class SubscriptionService implements OnModuleInit {
         name: `pro_tier_100_${countryCode.toLowerCase()}`,
         displayName: 'Career Starter',
         country: countryCode.toUpperCase(),
-        price: countryCode === 'IN' ? 10000 : 900,
-        currency: countryCode === 'IN' ? 'INR' : 'USD',
+        price: starterPrice,
+        currency: currency,
         type: SubscriptionType.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
-        razorpayPlanId: countryCode === 'IN' ? starterRzpId : undefined,
+        razorpayPlanId: starterRzpId,
         description: 'Accelerate your job search with more resumes and interviews.',
         features: [
           { name: 'Resume Limit', description: '15 Resume analysis reports', type: FeatureType.NUMERIC, value: 15, enabled: true, limit: 15, unit: 'resumes' },
@@ -115,11 +123,11 @@ export class SubscriptionService implements OnModuleInit {
         name: `pro_tier_200_${countryCode.toLowerCase()}`,
         displayName: 'Professional',
         country: countryCode.toUpperCase(),
-        price: countryCode === 'IN' ? 20000 : 1900,
-        currency: countryCode === 'IN' ? 'INR' : 'USD',
+        price: proPrice,
+        currency: currency,
         type: SubscriptionType.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
-        razorpayPlanId: countryCode === 'IN' ? proRzpId : undefined,
+        razorpayPlanId: proRzpId,
         description: 'For power users who want the maximum edge in their prep.',
         features: [
           { name: 'Resume Limit', description: '40 Resume analysis reports', type: FeatureType.NUMERIC, value: 40, enabled: true, limit: 40, unit: 'resumes' },
@@ -290,7 +298,7 @@ export class SubscriptionService implements OnModuleInit {
         name: `pro_tier_100_${countryCode.toLowerCase()}`,
         displayName: 'Career Starter',
         country: countryCode.toUpperCase(),
-        price: countryCode === 'IN' ? 10000 : 900,
+        price: countryCode === 'IN' ? 9900 : 500,
         currency: countryCode === 'IN' ? 'INR' : 'USD',
         type: SubscriptionType.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
@@ -325,7 +333,7 @@ export class SubscriptionService implements OnModuleInit {
         name: `pro_tier_200_${countryCode.toLowerCase()}`,
         displayName: 'Professional',
         country: countryCode.toUpperCase(),
-        price: countryCode === 'IN' ? 20000 : 1900,
+        price: countryCode === 'IN' ? 19900 : 900,
         currency: countryCode === 'IN' ? 'INR' : 'USD',
         type: SubscriptionType.MONTHLY,
         status: SubscriptionStatus.ACTIVE,

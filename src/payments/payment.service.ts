@@ -250,7 +250,7 @@ export class PaymentService {
           item: {
             name: subscription.displayName,
             amount: subscription.price,
-            currency: 'INR',
+            currency: subscription.currency || 'INR',
             description: `Automated plan for ${subscription.name}`
           }
         });
