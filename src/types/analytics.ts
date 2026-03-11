@@ -12,13 +12,18 @@ export interface TrackVisitorDto {
 export interface StartSessionDto {
   sessionId: string;
   visitorId: string;
+  userId?: string;
   landingPage: string;
   referrer?: string;
+  userAgent?: string;
+  country?: string;
+  device?: string;
 }
 
 export interface TrackPageViewDto {
   sessionId: string;
   visitorId: string;
+  userId?: string;
   path: string;
   title: string;
   timeOnPage?: number;

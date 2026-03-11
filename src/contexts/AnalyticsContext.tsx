@@ -49,6 +49,26 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
     return "desktop";
   };
 
+  const getUserCountry = async (): Promise<string> => {
+    try {
+      const cached = localStorage.getItem('analytics_user_country');
+      if (cached) return cached;
+
+      // We use ipapi.co to cheaply resolve the client IP to a country name
+      const res = await fetch('https://ipapi.co/json/');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.country_name) {
+          localStorage.setItem('analytics_user_country', data.country_name);
+          return data.country_name;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch country from IP:", e);
+    }
+    return "Unknown";
+  };
+
   const initializeAnalytics = useCallback(async () => {
     if (isInitialized.current) return;
     isInitialized.current = true;
@@ -68,12 +88,14 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
       }
       setSessionId(sId);
 
+      const country = await getUserCountry();
+
       // 1. Track Visitor
       const visitorDto: TrackVisitorDto = {
         visitorId: vId,
         userId,
         userAgent: navigator.userAgent,
-        country: "Unknown",
+        country,
         device: getDeviceType(),
         isAdmin
       };
@@ -83,8 +105,12 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
       const sessionDto: StartSessionDto = {
         sessionId: sId,
         visitorId: vId,
+        userId,
         landingPage: window.location.pathname,
-        referrer: document.referrer || undefined
+        referrer: document.referrer || undefined,
+        userAgent: navigator.userAgent,
+        country,
+        device: getDeviceType(),
       };
       await AnalyticsApi.startSession(sessionDto);
 
@@ -94,7 +120,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
         sessionId: sId,
         userId,
         userAgent: navigator.userAgent,
-        country: "Unknown",
+        country,
         device: getDeviceType(),
         isAdmin
       });
@@ -108,12 +134,42 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
     initializeAnalytics();
   }, [initializeAnalytics]);
 
+  // Ensures user data is reliably attached to active analytics session, covering HMR and Mid-session authentications
+  useEffect(() => {
+    if (visitorId && sessionId && userId) {
+      getUserCountry().then((country) => {
+        const visitorDto = {
+          visitorId,
+          userId,
+          userAgent: navigator.userAgent,
+          country,
+          device: getDeviceType(),
+          isAdmin
+        };
+        AnalyticsApi.trackVisitor(visitorDto).catch(console.error);
+
+        // Attach user to the current session dynamically
+        const sessionDto = {
+          sessionId,
+          visitorId,
+          userId,
+          landingPage: window.location.pathname,
+          userAgent: navigator.userAgent,
+          country,
+          device: getDeviceType(),
+        };
+        AnalyticsApi.startSession(sessionDto).catch(console.error);
+      });
+    }
+  }, [userId, isAdmin, visitorId, sessionId]);
+
   const trackPageView = useCallback(async (path: string, title?: string) => {
     if (!visitorId || !sessionId) return;
 
     const pageViewDto: TrackPageViewDto = {
       sessionId,
       visitorId,
+      userId,
       path,
       title: title || document.title,
     };
@@ -126,7 +182,7 @@ export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
     } catch (error) {
       console.error("📊 Analytics: Page view tracking failed", error);
     }
-  }, [visitorId, sessionId]);
+  }, [visitorId, sessionId, userId]);
 
   const trackEvent = useCallback(async (eventName: string, properties?: Record<string, any>) => {
     if (!visitorId || !sessionId) return;

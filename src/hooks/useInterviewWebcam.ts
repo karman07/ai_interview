@@ -41,10 +41,10 @@ export const useInterviewWebcam = () => {
     }, [isActive, startCamera, stopCamera]);
 
     useEffect(() => {
-        if (isActive && videoRef.current && streamRef.current && !videoRef.current.srcObject) {
+        if (isActive && videoRef.current && streamRef.current && videoRef.current.srcObject !== streamRef.current) {
             videoRef.current.srcObject = streamRef.current;
         }
-    }, [isActive]);
+    });
 
     useEffect(() => {
         return () => {

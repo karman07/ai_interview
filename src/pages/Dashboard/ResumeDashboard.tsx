@@ -340,7 +340,7 @@ const ResumeDashboard: React.FC = () => {
               {/* Usage Indicator */}
               <div className="flex flex-col items-end">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Interview Capacity</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Resume Limit</span>
                   <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isAtLimit ? 'bg-red-500 text-white' : 'bg-blue-600 text-white'}`}>
                     {totalResumes} / {resumeLimit}
                   </span>
@@ -759,7 +759,7 @@ const ResumeDashboard: React.FC = () => {
                             Drop your resume here
                           </p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            or click to browse • PDF, DOC, DOCX up to 10MB
+                            or click to browse • PDF, DOC, DOCX up to 50MB
                           </p>
                         </div>
                       )}

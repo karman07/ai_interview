@@ -29,6 +29,10 @@ export default function InterviewRoomWS() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        // ── Clear any stale report from a prior session immediately ──
+        localStorage.removeItem('v2_interview_report');
+        console.log('[InterviewRoomWS] Cleared stale v2_interview_report from localStorage');
+
         const raw = localStorage.getItem('ws_interview_setup');
         if (!raw) {
             setError('No interview setup data found. Please start from the setup page.');
@@ -37,13 +41,17 @@ export default function InterviewRoomWS() {
 
         try {
             const parsed = JSON.parse(raw);
+            console.log('[InterviewRoomWS] Loaded setup data. resumeText length:', parsed.resumeText?.length || 0, '| resumeUrl:', parsed.resumeUrl || 'none', '| resumePath:', parsed.resumePath || 'none');
             setSetupData({
                 resumeText: parsed.resumeText || '',
+                resumeUrl: parsed.resumeUrl || '',
+                resumePath: parsed.resumePath || '',
                 jdText: parsed.jdText || '',
                 interviewType: parsed.roundType || type || 'technical',
                 role: parsed.role || '',
                 company: parsed.company || '',
                 duration: parsed.duration || 0,
+                candidateName: parsed.candidateName || '',
             });
         } catch {
             setError('Failed to parse interview setup data.');
@@ -69,6 +77,9 @@ export default function InterviewRoomWS() {
     const { isSpeaking, speak, cancel } = useInterviewTTS();
 
     const [showCodeEditor, setShowCodeEditor] = useState(false);
+    const [isQuestionBoxOpen, setIsQuestionBoxOpen] = useState(false);
+    const [isTypingInEditor, setIsTypingInEditor] = useState(false);
+    const editorTypingTimerRef = useRef<any>(null);
     const [initProgress, setInitProgress] = useState(0);
     const [initStatus, setInitStatus] = useState('Establishing secure connection...');
     const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
@@ -122,13 +133,16 @@ export default function InterviewRoomWS() {
         startCamera();
     }, [startCamera]);
 
-    // ── Auto-detect if AI requires code ──
+    // ── Auto-detect if AI requires code + auto-open/close question box ──
     useEffect(() => {
         if (messages.length === 0) return;
         const lastMsg = messages[messages.length - 1];
         if (lastMsg.role === 'model') {
+            // Auto-open question box when AI sends a new message
+            setIsQuestionBoxOpen(true);
+
             // Check if AI sent a code block or explicitly mentioned coding
-            const codingKeywords = ['code', 'implement', 'function', 'algorithm', 'editor', 'programming', 'write a', 'snippet'];
+            const codingKeywords = ['code', 'implement', 'function', 'algorithm', 'editor', 'programming', 'write a', 'snippet', 'leetcode', 'write the'];
             const content = lastMsg.content.toLowerCase();
             const hasCodeBlock = lastMsg.content.includes('```');
             const mentionsCoding = codingKeywords.some(keyword => content.includes(keyword));
@@ -136,6 +150,9 @@ export default function InterviewRoomWS() {
             if (hasCodeBlock || mentionsCoding) {
                 setShowCodeEditor(true);
             }
+        } else if (lastMsg.role === 'user') {
+            // User is responding — auto-close the question box
+            setIsQuestionBoxOpen(false);
         }
     }, [messages]);
 
@@ -187,13 +204,32 @@ export default function InterviewRoomWS() {
     const { isListening, transcript, startListening, stopListening, isTranscribing } =
         useInterviewSTT(clientId, handleFinalTranscript);
 
+    // Close question box when user starts speaking/transcribing
+    useEffect(() => {
+        if (isListening || isTranscribing) {
+            setIsQuestionBoxOpen(false);
+        }
+    }, [isListening, isTranscribing, setIsQuestionBoxOpen]);
+
     // ── Code submission ──
     const handleSubmitCode = useCallback((code: string, language: { id: string; name: string }) => {
         if (sendMessage && code.trim()) {
             const codeMessage = `Here is my ${language.name} solution:\n\n\`\`\`${language.id}\n${code}\n\`\`\`\n\nI'd like you to review this code.`;
             sendMessage(codeMessage);
+            setShowCodeEditor(false);   // auto-close editor after submit
+            setIsTypingInEditor(false);
         }
     }, [sendMessage]);
+
+    // ── Track typing in code editor to suppress idle dialog ──
+    const handleEditorTyping = useCallback(() => {
+        setIsTypingInEditor(true);
+        clearTimeout(editorTypingTimerRef.current);
+        // Reset "typing" state after 10s of no key presses
+        editorTypingTimerRef.current = setTimeout(() => {
+            setIsTypingInEditor(false);
+        }, 10000);
+    }, []);
 
     // ── End Session ──
     const userMessageCount = useMemo(() => messages.filter(m => m.role === 'user').length, [messages]);
@@ -238,19 +274,35 @@ export default function InterviewRoomWS() {
             return;
         }
 
+        // ── Suppress idle timer when code editor is open and user is typing ──
+        if (showCodeEditor && isTypingInEditor) {
+            clearTimeout(idleTimerRef.current);
+            clearTimeout(endingTimerRef.current);
+            setShowIdlePrompt(false);
+            return;
+        }
+
         const isUserTurn = messages.length > 0 &&
             messages[messages.length - 1].role === 'model' &&
             !isStreamingResponse &&
             !isSpeaking;
 
+        // When code editor is open (but user is NOT typing), use a longer timeout (5 min)
+        const idleTimeout = showCodeEditor ? 300000 : 30000;
+
         if (isUserTurn && !isListening) {
             idleTimerRef.current = setTimeout(() => {
+                // Still don't show dialog if code editor is open
+                if (showCodeEditor) {
+                    // Just silently extend — don't interrupt
+                    return;
+                }
                 setShowIdlePrompt(true);
-                // After 30s + 5s: end interview automatically
+                // After idle timeout + 5s: end interview automatically
                 endingTimerRef.current = setTimeout(() => {
                     handleEndSession(true);
                 }, 5000);
-            }, 30000); // 30 seconds
+            }, idleTimeout);
         } else {
             clearTimeout(idleTimerRef.current);
             clearTimeout(endingTimerRef.current);
@@ -261,7 +313,7 @@ export default function InterviewRoomWS() {
             clearTimeout(idleTimerRef.current);
             clearTimeout(endingTimerRef.current);
         };
-    }, [messages, isStreamingResponse, isSpeaking, isListening, isConnected, interviewEnded, handleEndSession]);
+    }, [messages, isStreamingResponse, isSpeaking, isListening, isConnected, interviewEnded, showCodeEditor, isTypingInEditor, handleEndSession]);
 
 
     // ── Handle interview ended — save results and navigate ──
@@ -328,6 +380,41 @@ export default function InterviewRoomWS() {
     // ── Loading/Error states ──
     const isActuallyLoading = (messages.length === 0 || !isConnected) && !interviewEnded;
     const displayError = error || wsError;
+    const isNoAnswersError = displayError?.includes('No answers were recorded');
+
+    // ── Special screen: no answers given ──
+    if (isNoAnswersError) {
+        return (
+            <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-12 max-w-md text-center shadow-2xl"
+                >
+                    <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <AlertCircle className="w-10 h-10 text-amber-400" />
+                    </div>
+                    <h2 className="text-3xl font-black text-white mb-3 tracking-tight">Session Ended</h2>
+                    <p className="text-slate-400 font-medium leading-relaxed mb-2">
+                        No responses were recorded during this interview session.
+                    </p>
+                    <p className="text-slate-500 text-sm mb-8">
+                        A report can only be generated after you answer at least one question. Please start a new interview and participate to receive a score.
+                    </p>
+                    <button
+                        onClick={() => {
+                            localStorage.removeItem('ws_interview_setup');
+                            localStorage.removeItem('ws_interview_client_id');
+                            navigate('/interview_round');
+                        }}
+                        className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                        Back to Interview Setup
+                    </button>
+                </motion.div>
+            </div>
+        );
+    }
 
     if (isActuallyLoading || displayError) {
         return (
@@ -394,6 +481,7 @@ export default function InterviewRoomWS() {
             </div>
         );
     }
+
 
     return (
         <div className="h-screen bg-[#F8FAFF] dark:bg-slate-950 flex flex-col overflow-hidden text-slate-900 dark:text-slate-100 font-sans selection:bg-blue-100 selection:text-blue-900">
@@ -481,33 +569,45 @@ export default function InterviewRoomWS() {
                             </div>
                         </div>
 
-                        {/* Dialogue / Transcript Panel */}
-                        <div className="flex-1 min-h-0 flex flex-col gap-4">
-                            {/* Subtitle Overlay (New) */}
-                            {messages.length > 0 && messages[messages.length - 1].role === 'model' && (
+                        {/* Auto Question Box: opens when AI speaks, closes when user responds */}
+                        <AnimatePresence>
+                            {isQuestionBoxOpen && messages.length > 0 && messages[messages.length - 1].role === 'model' && (
                                 <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="bg-blue-600/10 dark:bg-blue-900/20 border border-blue-500/20 rounded-2xl p-4 backdrop-blur-sm"
+                                    key="question-box"
+                                    initial={{ opacity: 0, height: 0, y: -8 }}
+                                    animate={{ opacity: 1, height: 'auto', y: 0 }}
+                                    exit={{ opacity: 0, height: 0, y: -8 }}
+                                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                    className="overflow-hidden"
                                 >
-                                    <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1 flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                                        Subtitles
-                                    </p>
-                                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200 leading-relaxed italic">
-                                        "{messages[messages.length - 1].content}"
-                                    </p>
+                                    <div className="bg-blue-600/10 dark:bg-blue-900/20 border border-blue-500/20 rounded-2xl p-4 backdrop-blur-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                                                Question
+                                            </p>
+                                            <button
+                                                onClick={() => setIsQuestionBoxOpen(false)}
+                                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                        <p className="text-sm font-medium text-slate-700 dark:text-slate-200 leading-relaxed">
+                                            {messages[messages.length - 1].content}
+                                        </p>
+                                    </div>
                                 </motion.div>
                             )}
+                        </AnimatePresence>
 
-                            <WSTranscriptPanel
-                                messages={messages}
-                                transcript={transcript}
-                                isListening={isListening}
-                                isSpeaking={isSpeaking}
-                                isTranscribing={isTranscribing}
-                            />
-                        </div>
+                        <WSTranscriptPanel
+                            messages={messages}
+                            transcript={transcript}
+                            isListening={isListening}
+                            isSpeaking={isSpeaking}
+                            isTranscribing={isTranscribing}
+                        />
                     </motion.div>
 
                     {/* Perspective: Center/Right UI (Code/Task) */}
@@ -519,7 +619,10 @@ export default function InterviewRoomWS() {
                                 exit={{ x: 40, opacity: 0 }}
                                 className="flex-1 min-w-0 bg-white dark:bg-slate-900 rounded-[2rem] border border-blue-50 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col"
                             >
-                                <WSCodeEditor onSubmitCode={handleSubmitCode} />
+                                <WSCodeEditor
+                                    onSubmitCode={handleSubmitCode}
+                                    onKeyPress={handleEditorTyping}
+                                />
                             </motion.div>
                         )}
                     </AnimatePresence>

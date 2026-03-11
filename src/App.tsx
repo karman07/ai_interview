@@ -51,6 +51,7 @@ const RedirectIfLoggedIn = ({ children }: { children: JSX.Element }) => {
 
 function App() {
   const location = useLocation();
+  const { user } = useAuth();
 
   // Pages where Navbar shouldn't show
   const hideNavbarRoutes = [
@@ -81,7 +82,7 @@ function App() {
 
   return (
     <NotificationProvider>
-      <AnalyticsProvider>
+      <AnalyticsProvider userId={user?._id} isAdmin={user?.role === 'admin'}>
         <PricingProvider>
           <InterviewProvider>
             <ResultsProvider>

@@ -342,13 +342,13 @@ const LessonDetailsPage: React.FC = () => {
                       className={cn(
                         "w-full flex items-center gap-2 p-1.5 mt-1.5 rounded-lg border-2 border-dashed transition-all duration-300",
                         quizMode && currentLesson._id === lesson._id
-                          ? "bg-emerald-500 border-emerald-500 text-white"
-                          : "border-emerald-500/10 dark:border-emerald-500/5 text-emerald-500 hover:bg-emerald-500/10"
+                          ? "bg-blue-600 border-blue-600 text-white"
+                          : "border-blue-500/20 dark:border-blue-500/10 text-blue-600 hover:bg-blue-500/10"
                       )}
                     >
                       <div className={cn(
                         "w-4 h-4 rounded-md flex items-center justify-center transition-all",
-                        quizMode && currentLesson._id === lesson._id ? "bg-white/20" : "bg-emerald-500/10"
+                        quizMode && currentLesson._id === lesson._id ? "bg-white/20" : "bg-blue-500/10"
                       )}>
                         <HelpCircle className="h-2 w-2" />
                       </div>
@@ -384,13 +384,13 @@ const LessonDetailsPage: React.FC = () => {
 
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[8px] font-black text-emerald-600 uppercase tracking-widest">
+                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[8px] font-black text-blue-600 uppercase tracking-widest">
                   <Award className="h-2.5 w-2.5" />
                   {overallProgress}% Complete
                 </div>
                 <div className="w-24 bg-slate-100 dark:bg-slate-800 rounded-full h-0.5 overflow-hidden">
                   <div
-                    className="bg-emerald-500 h-full rounded-full transition-all duration-1000"
+                    className="bg-blue-600 h-full rounded-full transition-all duration-1000"
                     style={{ width: `${overallProgress}%` }}
                   ></div>
                 </div>
@@ -538,7 +538,7 @@ const LessonDetailsPage: React.FC = () => {
 
                   <button
                     onClick={handleNext}
-                    className="group flex items-center gap-3 px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-bold shadow-xl hover:shadow-2xl hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300"
+                    className="group flex items-center gap-3 px-8 py-4 rounded-xl bg-blue-600 text-white font-bold shadow-xl hover:shadow-2xl hover:bg-blue-700 transform hover:scale-105 transition-all duration-300"
                   >
                     Continue Learning
                     <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-200" />
@@ -550,10 +550,10 @@ const LessonDetailsPage: React.FC = () => {
                 {!quizResults ? (
                   <>
                     <div className="text-center mb-8">
-                      <div className="p-4 rounded-xl bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900 dark:to-emerald-900 inline-block mb-4">
-                        <HelpCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                      <div className="p-4 rounded-xl bg-blue-500/10 dark:bg-blue-900/30 inline-block mb-4">
+                        <HelpCircle className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                       </div>
-                      <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+                      <h2 className="text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-600 dark:from-blue-400 dark:to-blue-400">
                         Quiz Time: {currentLesson.title}
                       </h2>
                       <p className="text-slate-600 dark:text-gray-400">Test your knowledge and earn points!</p>
@@ -608,7 +608,7 @@ const LessonDetailsPage: React.FC = () => {
                         <div className="text-center mt-8">
                           <button
                             onClick={handleQuizSubmit}
-                            className="group px-8 py-4 rounded-xl bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 text-white font-bold text-lg shadow-xl hover:shadow-2xl hover:from-emerald-700 hover:via-green-700 hover:to-teal-700 transform hover:scale-105 transition-all duration-300"
+                            className="group px-8 py-4 rounded-xl bg-blue-600 text-white font-bold text-lg shadow-xl hover:shadow-2xl hover:bg-blue-700 transform hover:scale-105 transition-all duration-300"
                           >
                             <div className="flex items-center gap-3">
                               <Award className="h-6 w-6" />

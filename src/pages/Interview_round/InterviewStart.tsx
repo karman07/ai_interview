@@ -14,6 +14,7 @@ import { resumeService } from "@/api/resumeService";
 import { type Resume } from "@/types/Resume";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePricing } from "@/contexts/PricingContext";
+import { useResume } from "@/contexts/ResumeContext";
 import { motion, AnimatePresence } from "framer-motion";
 
 import {
@@ -25,6 +26,8 @@ interface InterviewDetails {
   company: string;
   jobDescription: string;
   resumeText: string;
+  resumeUrl?: string;
+  resumePath?: string;
   resumeFile?: File;
   jdFile?: File;
 }
@@ -49,25 +52,18 @@ export default function InterviewStart() {
     resumeText: "",
   });
   const [loading, setLoading] = useState(false);
-  const [fetchingResumes, setFetchingResumes] = useState(false);
-  const [resumes, setResumes] = useState<Resume[]>([]);
+  const { resumes, uploadResume, isLoading: fetchingResumes } = useResume();
   const [selectedResumeId, setSelectedResumeId] = useState<string>("");
-  const [showResumeList, setShowResumeList] = useState(false);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [error, setError] = useState<string>("");
   const [duration, setDuration] = useState<number>(30);
 
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+
   useEffect(() => {
     InterviewAnalyticsApi.getAnalytics().then(setAnalytics).catch(console.error);
-
-    setFetchingResumes(true);
-    resumeService.getResumes()
-      .then(res => {
-        // Filter only resumes that have extracted text
-        setResumes(res.filter(r => !!r.text));
-      })
-      .catch(console.error)
-      .finally(() => setFetchingResumes(false));
   }, []);
 
   const types = {
@@ -107,8 +103,40 @@ export default function InterviewStart() {
     return 3; // Default free tier
   }, [user]);
 
+  const resumeLimit = useMemo(() => {
+    if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
+      const limitFeature = user.subscriptionPlan.features?.find?.((f: any) => f.name.toLowerCase().includes('resume upload limit'));
+      if (limitFeature && typeof limitFeature.value === 'number') {
+        return limitFeature.value;
+      }
+    }
+    const planName = (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object')
+      ? (user.subscriptionPlan as any).name
+      : user?.subscriptionPlan;
+
+    if (user?.subscriptionStatus === 'active' || (planName && planName !== 'free_tier_in')) {
+      if (planName?.toString().includes('pro_tier_200')) return 40;
+      if (planName?.toString().includes('pro_tier_100')) return 15;
+      if (planName?.toString().includes('enterprise')) return 1000;
+    }
+    return 5;
+  }, [user]);
+
   const totalInterviewsTaken = analytics?.overall?.totalInterviews || 0;
   const isAtLimit = totalInterviewsTaken >= interviewLimit;
+  const totalResumes = resumes.length;
+  const isAtResumeLimit = totalResumes >= resumeLimit;
+
+  const bestResumeId = useMemo(() => {
+    if (!resumes.length) return null;
+    const scoredResumes = resumes.filter(r => (r.analytics?.cv_quality?.overall_score || 0) > 0);
+    if (!scoredResumes.length) return null;
+    return scoredResumes.reduce((best, current) => {
+      const bestScore = best.analytics?.cv_quality?.overall_score || 0;
+      const currentScore = current.analytics?.cv_quality?.overall_score || 0;
+      return currentScore > bestScore ? current : best;
+    }, scoredResumes[0])?.id || scoredResumes[0]?._id;
+  }, [resumes]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'resume' | 'jd') => {
     const file = e.target.files?.[0];
@@ -153,18 +181,40 @@ export default function InterviewStart() {
 
   const handleSelectResume = (resume: Resume) => {
     setSelectedResumeId(resume.id || resume._id);
+    const text = resume.text || "";
+    const url = resume.url || "";
+    const path = resume.path || "";
+    console.log('[InterviewStart] Selected resume text length:', text.length, '| URL:', url, '| path:', path);
     setDetails(prev => ({
       ...prev,
-      resumeText: resume.text || "",
+      resumeText: text,
+      resumeUrl: url,
+      resumePath: path,
       resumeFile: undefined
     }));
-    setShowResumeList(false);
+    setShowUploadModal(false);
     setError("");
   };
 
   const clearSelectedResume = () => {
     setSelectedResumeId("");
     setDetails(prev => ({ ...prev, resumeText: "" }));
+  };
+
+  const handleUploadNewResume = async () => {
+    if (!uploadFile) return;
+    setUploadingResume(true);
+    setError("");
+    try {
+      const newResume = await uploadResume([uploadFile]);
+      handleSelectResume(newResume);
+      setShowUploadModal(false);
+      setUploadFile(null);
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || "Failed to upload resume");
+    } finally {
+      setUploadingResume(false);
+    }
   };
 
   const handleStart = async () => {
@@ -178,8 +228,8 @@ export default function InterviewStart() {
       return;
     }
 
-    if (!details.resumeFile && !details.resumeText) {
-      setError("Please provide your resume (upload file or enter text)");
+    if (!details.resumeFile && !details.resumeText && !selectedResumeId) {
+      setError("Please provide your resume (upload file or choose from history or enter text)");
       return;
     }
 
@@ -199,24 +249,48 @@ export default function InterviewStart() {
     try {
       let resumeText = details.resumeText;
       let jdText = details.jobDescription;
+      let resumeUrl = details.resumeUrl || "";
 
       if (details.resumeFile && !resumeText) {
-        resumeText = await readFileAsText(details.resumeFile);
+        // FileReader.readAsText only works properly for .txt files.
+        // For PDF/DOCX, we pass the file name and rely on the backend to extract text.
+        const ext = details.resumeFile.name.split('.').pop()?.toLowerCase();
+        if (ext === 'txt') {
+          resumeText = await readFileAsText(details.resumeFile);
+        } else {
+          // Cannot read PDF/DOCX on the frontend — we'll send the file name as a hint
+          // and rely on the Python backend extracting text from the stored file path.
+          console.warn('[InterviewStart] Cannot read PDF/DOCX as text in browser. resumeText will be empty; backend must extract from file.');
+          resumeText = '';
+        }
       }
       if (details.jdFile && !jdText) {
-        jdText = await readFileAsText(details.jdFile);
+        const ext = details.jdFile.name.split('.').pop()?.toLowerCase();
+        if (ext === 'txt') {
+          jdText = await readFileAsText(details.jdFile);
+        } else {
+          jdText = '';
+        }
       }
 
       const setupData = {
         resumeText,
+        resumeUrl,
+        resumePath: details.resumePath || "",
         jdText,
         role: details.role,
         company: details.company,
         roundType: type || 'technical',
         userId: user._id,
+        candidateName: user.name || 'Candidate',
         duration,
       };
 
+      console.log('[InterviewStart] Setup data:', JSON.stringify({
+        ...setupData,
+        resumeText: setupData.resumeText ? `[${setupData.resumeText.length} chars]` : '[EMPTY]',
+        resumeUrl: setupData.resumeUrl || '[NO URL]',
+      }));
       localStorage.setItem('ws_interview_setup', JSON.stringify(setupData));
       navigate(`/interview/room/${type}`);
     } catch (err: any) {
@@ -424,64 +498,16 @@ export default function InterviewStart() {
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          {resumes.length > 0 && (
-                            <div className="relative">
-                              <button
-                                onClick={() => setShowResumeList(!showResumeList)}
-                                className="w-full p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl flex items-center justify-between group hover:border-blue-400 transition-all shadow-sm"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
-                                    <FileText className="w-4 h-4 text-blue-500" />
-                                  </div>
-                                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Choose from history ({resumes.length})</span>
-                                </div>
-                                <ArrowRight className={`w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-all ${showResumeList ? 'rotate-90' : ''}`} />
-                              </button>
-
-                              <AnimatePresence>
-                                {showResumeList && (
-                                  <motion.div
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    className="absolute top-full left-0 right-0 z-20 mt-2 p-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl max-h-[200px] overflow-y-auto"
-                                  >
-                                    {resumes.map((resume) => (
-                                      <button
-                                        key={resume.id || resume._id}
-                                        onClick={() => handleSelectResume(resume)}
-                                        className="w-full p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl text-left transition-colors flex items-center gap-3"
-                                      >
-                                        <FileText className="w-4 h-4 text-slate-400" />
-                                        <div className="flex-1 min-w-0">
-                                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{resume.filename}</p>
-                                          <p className="text-[10px] text-slate-500">
-                                            {resume.createdAt ? new Date(resume.createdAt).toLocaleDateString() : 'N/A'}
-                                          </p>
-                                        </div>
-                                      </button>
-                                    ))}
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
-                            </div>
-                          )}
-
-                          <div className="relative">
-                            <input
-                              type="file"
-                              className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                              onChange={(e) => handleFileChange(e, 'resume')}
-                              accept=".pdf,.docx,.txt"
-                            />
-                            <div className="p-8 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-3xl bg-slate-50/50 dark:bg-slate-800/20 flex flex-col items-center justify-center gap-3 group-hover:border-blue-400 group-hover:bg-blue-50/30 transition-all duration-300">
-                              <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
-                                <Upload className="w-6 h-6 text-blue-500" />
+                          <div className="relative h-[224px]">
+                            <div onClick={() => setShowUploadModal(true)} className="cursor-pointer w-full h-full p-8 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-3xl bg-slate-50/50 dark:bg-slate-800/20 flex flex-col items-center justify-center gap-4 hover:border-blue-400 hover:bg-blue-50/30 transition-all duration-300 group">
+                              <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
+                                <FileText className="w-8 h-8 text-blue-500" />
                               </div>
                               <div className="text-center">
-                                <p className="text-sm font-black text-slate-900 dark:text-white">Upload New Resume</p>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">PDF, DOCX, TXT • MAX 10MB</p>
+                                <p className="text-sm font-black text-slate-900 dark:text-white mb-1">Select or Upload Resume</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
+                                  {resumes.length > 0 ? `Choose from ${resumes.length} saved resumes or upload new` : 'PDF, DOCX, DOC • MAX 10MB'}
+                                </p>
                               </div>
                             </div>
                           </div>
@@ -524,14 +550,14 @@ export default function InterviewStart() {
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          <div className="relative">
+                          <div className="relative h-[224px]">
                             <input
                               type="file"
                               className="absolute inset-0 opacity-0 cursor-pointer z-10"
                               onChange={(e) => handleFileChange(e, 'jd')}
                               accept=".pdf,.docx,.txt"
                             />
-                            <div className="p-8 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-3xl bg-slate-50/50 dark:bg-slate-800/20 flex flex-col items-center justify-center gap-3 group-hover:border-blue-400 group-hover:bg-blue-50/30 transition-all duration-300">
+                            <div className="w-full h-full p-8 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-3xl bg-slate-50/50 dark:bg-slate-800/20 flex flex-col items-center justify-center gap-4 group-hover:border-blue-400 group-hover:bg-blue-50/30 transition-all duration-300">
                               <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
                                 <Upload className="w-6 h-6 text-blue-500" />
                               </div>
@@ -612,6 +638,168 @@ export default function InterviewStart() {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showUploadModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !uploadingResume && setShowUploadModal(false)}
+              className="absolute inset-0 bg-slate-950/40 dark:bg-slate-950/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]"
+            >
+              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Select or Upload Resume</h3>
+                  <p className="text-xs font-medium text-slate-500 mt-1">Choose a saved resume from your vault or upload a new one.</p>
+                </div>
+                <button disabled={uploadingResume} onClick={() => setShowUploadModal(false)} className="p-2 text-slate-400 hover:text-rose-500 rounded-xl transition-all">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-8 overflow-y-auto custom-scrollbar bg-slate-50/50 dark:bg-slate-950/50">
+                <div className="grid md:grid-cols-2 gap-8">
+                  {/* Left Column: Upload New */}
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2 mb-4">
+                        <Upload className="w-4 h-4 text-blue-500" /> Upload New
+                      </h4>
+
+                      {/* Resume Limits Indicator */}
+                      <div className="mb-6 p-4 rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Vault Limit</span>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isAtResumeLimit ? 'bg-rose-500 text-white' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'}`}>
+                            {totalResumes} / {resumeLimit}
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.min((totalResumes / resumeLimit) * 100, 100)}%` }}
+                            className={`h-full transition-all duration-500 ${isAtResumeLimit ? 'bg-rose-500' : 'bg-blue-600'}`}
+                          />
+                        </div>
+                      </div>
+
+                      {isAtResumeLimit ? (
+                        <div className="space-y-4">
+                          <div className="text-center p-4">
+                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">You've reached the maximum number of resumes you can securely store.</p>
+                          </div>
+                          <Button
+                            onClick={() => {
+                              setShowUploadModal(false);
+                              setShowPricing(true);
+                            }}
+                            className="w-full h-12 rounded-xl font-bold gap-2 text-white bg-blue-600 hover:bg-blue-700 shadow-lg"
+                          >
+                            <TrendingUp className="w-5 h-5" />
+                            Upgrade Plan
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="relative">
+                            <input
+                              type="file"
+                              accept=".pdf,.docx,.doc"
+                              onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                              className="w-full text-sm text-slate-500 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-400"
+                            />
+                          </div>
+                          <Button
+                            disabled={!uploadFile || uploadingResume}
+                            onClick={handleUploadNewResume}
+                            className="w-full h-12 rounded-xl font-bold gap-2 shadow-lg"
+                          >
+                            {uploadingResume ? (
+                              <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-5 h-5" />
+                                Upload & Select
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Column: History */}
+                  <div className="space-y-6">
+                    <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2 mb-4">
+                      <FileText className="w-4 h-4 text-indigo-500" /> Saved Resumes ({resumes.length})
+                    </h4>
+
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                      {resumes.length === 0 ? (
+                        <div className="text-center py-8">
+                          <p className="text-sm font-bold text-slate-400">No resumes saved yet.</p>
+                        </div>
+                      ) : (
+                        resumes.map((resume) => {
+                          const resumeId = resume.id || resume._id;
+                          const isBest = resumeId === bestResumeId;
+                          const score = resume.analytics?.cv_quality?.overall_score || 0;
+
+                          return (
+                            <button
+                              key={resumeId}
+                              disabled={uploadingResume}
+                              onClick={() => handleSelectResume(resume)}
+                              className="w-full flex items-center p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-blue-400 hover:bg-blue-50/30 dark:hover:bg-blue-900/10 rounded-2xl transition-all group shadow-sm text-left relative overflow-hidden"
+                            >
+                              {isBest && (
+                                <div className="absolute top-0 right-0 w-16 h-16 overflow-hidden">
+                                  <div className="absolute transform rotate-45 bg-[#ffc107] text-[8px] font-black uppercase tracking-widest text-amber-900 py-0.5 right-[-20px] top-[14px] w-[80px] text-center shadow-sm">
+                                    Best
+                                  </div>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-4 flex-1 pr-8">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${isBest ? 'bg-amber-100 dark:bg-amber-900/40' : 'bg-slate-50 dark:bg-slate-800'}`}>
+                                  <FileText className={`w-5 h-5 ${isBest ? 'text-amber-500' : 'text-slate-400'}`} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-black text-slate-900 dark:text-white truncate mb-0.5">{resume.filename}</p>
+                                  <div className="flex items-center gap-2">
+                                    {score > 0 && (
+                                      <span className={`text-[9px] font-black uppercase flex items-center gap-1 ${isBest ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`}>
+                                        <Award className="w-3 h-3" /> {score}/100
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="w-6 h-6 rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-500 flex items-center justify-center translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all shrink-0">
+                                <ArrowRight className="w-3 h-3" />
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

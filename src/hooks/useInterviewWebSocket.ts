@@ -9,11 +9,14 @@ export interface ChatMessage {
 
 export interface WSInitData {
     resumeText: string;
+    resumeUrl?: string;
+    resumePath?: string;
     jdText: string;
     interviewType?: string;
     role?: string;
     company?: string;
     duration?: number;
+    candidateName?: string;
 }
 
 export const useInterviewWebSocket = (clientId: string, initData: WSInitData | null) => {
@@ -55,6 +58,7 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
         const ws = new WebSocket(wsUrl);
 
         let heartbeatInterval: any;
+        let initTimer: any;
 
         ws.onopen = () => {
             console.log('[WS] Connected');
@@ -62,6 +66,26 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
             setError(null);
             reconnectAttempts.current = 0;
             initSentRef.current = false;
+
+            // Send init after 1 second to allow for 'restored' signal
+            initTimer = setTimeout(() => {
+                if (!initSentRef.current && ws.readyState === WebSocket.OPEN && initDataRef.current) {
+                    initSentRef.current = true;
+                    ws.send(JSON.stringify({
+                        type: "init",
+                        resume_text: initDataRef.current.resumeText,
+                        resume_url: initDataRef.current.resumeUrl || "",
+                        resume_path: initDataRef.current.resumePath || "",
+                        jd_text: initDataRef.current.jdText,
+                        interview_type: initDataRef.current.interviewType || "technical",
+                        role: initDataRef.current.role || "",
+                        company: initDataRef.current.company || "",
+                        duration: initDataRef.current.duration || 0,
+                        candidate_name: initDataRef.current.candidateName || "",
+                    }));
+                    console.log('[WS] Sent init payload');
+                }
+            }, 1000);
 
             // Start heartbeat
             heartbeatInterval = setInterval(() => {
@@ -131,7 +155,17 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
                         initSentRef.current = true;
                     }
                 } else if (data.type === 'end_interview') {
-                    console.log("[WS] Interview Ended");
+                    console.log("[WS] Interview Ended. feedback:", data.feedback ? "present" : "null", "error:", data.error);
+                    if (!data.feedback || data.error === 'no_answers') {
+                        // No answers given — do NOT navigate to results, show an error instead
+                        const msg = data.error === 'no_answers'
+                            ? 'No answers were recorded. The interview session has ended without generating a report.'
+                            : (data.error || 'The interview ended without generating a report.');
+                        console.error('[WS] No feedback generated:', msg);
+                        setError(msg);
+                        setInterviewEnded(false); // DO NOT treat as a successful completion
+                        return;
+                    }
                     feedbackRef.current = data.feedback;
                     setFeedback(data.feedback);
                     setInterviewEnded(true);
@@ -145,22 +179,6 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
                 console.error('[WS] Failed to parse message:', e);
             }
         };
-
-        const initTimer = setTimeout(() => {
-            if (!initSentRef.current && ws.readyState === WebSocket.OPEN && initDataRef.current) {
-                initSentRef.current = true;
-                ws.send(JSON.stringify({
-                    type: "init",
-                    resume_text: initDataRef.current.resumeText,
-                    jd_text: initDataRef.current.jdText,
-                    interview_type: initDataRef.current.interviewType || "technical",
-                    role: initDataRef.current.role || "",
-                    company: initDataRef.current.company || "",
-                    duration: initDataRef.current.duration || 0,
-                }));
-                console.log('[WS] Sent init payload');
-            }
-        }, 1000); // 1s buffer for "restored" signal
 
         setSocket(ws);
 

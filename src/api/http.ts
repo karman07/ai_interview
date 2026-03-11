@@ -27,8 +27,7 @@ const http: AxiosInstance = axios.create({
 
 http.interceptors.request.use((config) => {
   const token = tokenStore.get();
-  if (token) {
-    config.headers = config.headers ?? {};
+  if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -61,8 +60,9 @@ http.interceptors.response.use(
 
       if (isRefreshing) {
         await new Promise<void>((resolve) => queue.push(resolve));
-        original.headers = original.headers ?? {};
-        original.headers.Authorization = `Bearer ${tokenStore.get()}`;
+        if (original.headers) {
+          original.headers.Authorization = `Bearer ${tokenStore.get()}`;
+        }
         original._retry = true;
         return http(original);
       }
@@ -72,8 +72,9 @@ http.interceptors.response.use(
         const newToken = await refreshAccessToken();
         queue.forEach((fn) => fn());
         queue = [];
-        original.headers = original.headers ?? {};
-        original.headers.Authorization = `Bearer ${newToken}`;
+        if (original.headers) {
+          original.headers.Authorization = `Bearer ${newToken}`;
+        }
         original._retry = true;
         return http(original);
       } catch (e) {

@@ -35,9 +35,10 @@ const LANGUAGES: LanguageConfig[] = [
 
 interface WSCodeEditorProps {
     onSubmitCode?: (code: string, language: LanguageConfig) => void;
+    onKeyPress?: () => void;
 }
 
-export const WSCodeEditor: React.FC<WSCodeEditorProps> = ({ onSubmitCode }) => {
+export const WSCodeEditor: React.FC<WSCodeEditorProps> = ({ onSubmitCode, onKeyPress }) => {
     const [language, setLanguage] = useState<LanguageConfig>(LANGUAGES[0]);
     const [code, setCode] = useState(LANGUAGES[0].template);
     const [output, setOutput] = useState('');
@@ -69,6 +70,7 @@ export const WSCodeEditor: React.FC<WSCodeEditorProps> = ({ onSubmitCode }) => {
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (onKeyPress) onKeyPress();
         if (e.key === 'Tab') {
             e.preventDefault();
             const target = e.target as HTMLTextAreaElement;
@@ -203,8 +205,8 @@ export const WSCodeEditor: React.FC<WSCodeEditorProps> = ({ onSubmitCode }) => {
                         onClick={handleRun}
                         disabled={isRunning}
                         className={`flex items-center gap-2 px-6 py-2.5 rounded-[1.25rem] text-xs font-black uppercase tracking-widest transition-all ${isRunning
-                                ? 'bg-slate-800 text-slate-500'
-                                : 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-400'
+                            ? 'bg-slate-800 text-slate-500'
+                            : 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-400'
                             }`}
                     >
                         {isRunning ? <Cpu className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
@@ -223,8 +225,8 @@ export const WSCodeEditor: React.FC<WSCodeEditorProps> = ({ onSubmitCode }) => {
                         }}
                         disabled={submitted || !code.trim()}
                         className={`flex items-center gap-2 px-6 py-2.5 rounded-[1.25rem] text-xs font-black uppercase tracking-widest transition-all ${submitted
-                                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
-                                : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500'
+                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
+                            : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500'
                             }`}
                     >
                         {submitted ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}

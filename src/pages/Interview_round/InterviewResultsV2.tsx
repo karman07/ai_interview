@@ -43,11 +43,17 @@ export default function InterviewResultsV2() {
   useEffect(() => {
     async function loadReport() {
       if (!sessionId) {
-        // Fallback for immediate result after interview
+        // No sessionId in URL — only then try localStorage (immediate post-interview fallback)
         const storedReport = localStorage.getItem("v2_interview_report");
         if (storedReport) {
           try {
-            setReport(JSON.parse(storedReport));
+            const parsed = JSON.parse(storedReport);
+            // Safety check: refuse to show report if it has no real data
+            if (parsed && parsed.summary && parsed.question_wise_analysis?.length > 0) {
+              setReport(parsed);
+            } else {
+              console.warn('[Results] Stored report has no question analysis — ignoring stale data.');
+            }
           } catch {
             console.error("Failed to parse stored interview report");
           }
@@ -59,24 +65,17 @@ export default function InterviewResultsV2() {
       setLoading(true);
       try {
         const data = await InterviewAnalyticsApi.getInterviewReport(sessionId);
-        if (data) {
+        if (data && data.summary) {
           setReport(data);
         } else {
-          // Try fallback if backend return null or error
-          const storedReport = localStorage.getItem("v2_interview_report");
-          if (storedReport) {
-            setReport(JSON.parse(storedReport));
-          }
+          // API returned null/empty — DO NOT fall back to stale localStorage
+          console.warn('[Results] API returned no data for session:', sessionId);
+          setReport(null);
         }
       } catch (err) {
         console.error("Failed to load report from API:", err);
-        // Last resort: check if we have it in localStorage
-        const storedReport = localStorage.getItem("v2_interview_report");
-        if (storedReport) {
-          try {
-            setReport(JSON.parse(storedReport));
-          } catch { }
-        }
+        // DO NOT load from localStorage when sessionId is present — that would show wrong data
+        setReport(null);
       } finally {
         setLoading(false);
       }
