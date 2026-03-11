@@ -154,6 +154,7 @@ export class ResumeService {
       url: resumeUrl,
       stats: finalStats,
       improvement_resume: finalImprovementResume,
+      text: stats?.cv_text || improvement_resume?.cv_text || "",
       user: userId,
     });
 
@@ -175,10 +176,13 @@ export class ResumeService {
     });
 
     // Attach URL to each
-    return resumes.map((r) => ({
-      ...r.toObject(),
-      url: this.buildFileUrl(r.path),
-    }));
+    return resumes.map((r) => {
+      const obj = r.toObject();
+      return {
+        ...obj,
+        url: this.buildFileUrl(obj.path),
+      };
+    });
   }
 
   // ✅ PATCH API: improve resume later

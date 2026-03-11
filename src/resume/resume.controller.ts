@@ -96,6 +96,8 @@ export class ResumeController {
           id: resume._id,
           filename: resume.filename,
           url: this.buildFileUrl(resume.path),
+          text: resume.text || "",
+          createdAt: resume.createdAt,
           analytics: {
             cv_quality: stats.cv_quality || null,
             jd_match: stats.jd_match || null,
@@ -133,7 +135,9 @@ export class ResumeController {
       resumes: resumes.map(resume => ({
         id: resume._id,
         name: resume.filename,
-        url: resume.url
+        url: resume.url,
+        text: resume.text || "",
+        createdAt: resume.createdAt
       })),
       jobDescriptions: []
     };
@@ -153,6 +157,8 @@ export class ResumeController {
         id: resume._id,
         filename: resume.filename,
         url: resume.url,
+        text: resume.text || "",
+        createdAt: resume.createdAt,
         analytics: {
           cv_quality: stats.cv_quality || null,
           jd_match: stats.jd_match || null,
