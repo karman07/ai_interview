@@ -70,3 +70,4 @@ youtube-data-api-v3-468414-e37ad1959b34.json
 # uploads directory
 /uploads/*
 !/uploads/subjects/
+!/uploads/resources/
