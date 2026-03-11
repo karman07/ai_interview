@@ -69,27 +69,6 @@ export class PaymentController {
     return this.paymentService.getPaymentByOrderId(orderId);
   }
 
-  @Get(':paymentId')
-  async getPaymentById(
-    @Param('paymentId') paymentId: string,
-  ): Promise<PaymentResponseDto> {
-    return this.paymentService.getPaymentById(paymentId);
-  }
-
-  @Get()
-  async getUserPayments(
-    @CurrentUser() user: any,
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
-  ): Promise<PaymentResponseDto[]> {
-    const userId = user.sub;
-    return this.paymentService.getUserPayments(
-      userId,
-      limit ? Number(limit) : undefined,
-      offset ? Number(offset) : undefined,
-    );
-  }
-
   @Get('stats/summary')
   async getPaymentStats(@CurrentUser() user: any) {
     const userId = user.sub;
@@ -114,5 +93,26 @@ export class PaymentController {
   @Roles(UserRole.ADMIN)
   async getAdminAnalytics() {
     return this.paymentService.getAdminAnalytics();
+  }
+
+  @Get()
+  async getUserPayments(
+    @CurrentUser() user: any,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ): Promise<PaymentResponseDto[]> {
+    const userId = user.sub;
+    return this.paymentService.getUserPayments(
+      userId,
+      limit ? Number(limit) : undefined,
+      offset ? Number(offset) : undefined,
+    );
+  }
+
+  @Get(':paymentId')
+  async getPaymentById(
+    @Param('paymentId') paymentId: string,
+  ): Promise<PaymentResponseDto> {
+    return this.paymentService.getPaymentById(paymentId);
   }
 }

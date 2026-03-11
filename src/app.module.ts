@@ -68,6 +68,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     LessonsModule,
     ProgressModule,
     SubjectsModule,
+    QuizzesModule,
 
     DsaQuestionsModule,
     PaymentModule,

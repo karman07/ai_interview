@@ -4,16 +4,25 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { UserDocument } from './schemas/user.schema';
+import { UserDocument, UserRole } from './schemas/user.schema';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/all')
+  async getAllUsers() {
+    return this.usersService.findAll();
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')

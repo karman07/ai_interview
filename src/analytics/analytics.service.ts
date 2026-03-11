@@ -24,6 +24,15 @@ export class AnalyticsService {
     @InjectModel(Resume.name) private resumeModel: Model<ResumeDocument>,
   ) { }
 
+  // Mark sessions that haven't been active in 30 minutes as inactive
+  private async cleanupStaleSessions() {
+    const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
+    await this.sessionModel.updateMany(
+      { isActive: true, startTime: { $lt: thirtyMinAgo }, endTime: null },
+      { $set: { isActive: false, endTime: thirtyMinAgo } }
+    );
+  }
+
   // Track visitor
   async trackVisitor(dto: TrackVisitorDto) {
     const now = new Date();
@@ -180,12 +189,81 @@ export class AnalyticsService {
 
   // Get all visitors
   async getAllVisitors() {
-    return this.visitorModel.find().sort({ lastVisit: -1 });
+    return this.visitorModel.aggregate([
+      { $sort: { lastVisit: -1 } },
+      {
+        $addFields: {
+          userObjectId: {
+            $convert: {
+              input: '$userId',
+              to: 'objectId',
+              onError: null,
+              onNull: null,
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userObjectId',
+          foreignField: '_id',
+          as: 'userDetails',
+        },
+      },
+      {
+        $addFields: {
+          user: { $arrayElemAt: ['$userDetails', 0] },
+        },
+      },
+      {
+        $project: {
+          userDetails: 0,
+          userObjectId: 0,
+          'user.password': 0,
+        },
+      },
+    ]);
   }
 
   // Get all sessions
   async getAllSessions(limit = 100) {
-    return this.sessionModel.find().sort({ startTime: -1 }).limit(limit);
+    return this.sessionModel.aggregate([
+      { $sort: { startTime: -1 } },
+      { $limit: limit },
+      {
+        $addFields: {
+          userObjectId: {
+            $convert: {
+              input: '$userId',
+              to: 'objectId',
+              onError: null,
+              onNull: null,
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userObjectId',
+          foreignField: '_id',
+          as: 'userDetails',
+        },
+      },
+      {
+        $addFields: {
+          user: { $arrayElemAt: ['$userDetails', 0] },
+        },
+      },
+      {
+        $project: {
+          userDetails: 0,
+          userObjectId: 0,
+          'user.password': 0,
+        },
+      },
+    ]);
   }
 
   // Get all page views
@@ -408,9 +486,13 @@ export class AnalyticsService {
 
   // Professional Admin Dashboard Stats
   async getAdminDashboardStats(userId?: string) {
+    // Cleanup stale sessions before computing stats
+    await this.cleanupStaleSessions();
+
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
 
     // 1. Core Summary Metrics
     const [
@@ -420,6 +502,7 @@ export class AnalyticsService {
       totalRevenueData,
       activeSessions,
       newUsersLast7Days,
+      paidUsersCount,
       currentUser
     ] = await Promise.all([
       this.userModel.countDocuments(),
@@ -429,12 +512,24 @@ export class AnalyticsService {
         { $match: { status: PaymentStatus.PAID } },
         { $group: { _id: null, total: { $sum: '$amount' } } }
       ]),
-      this.sessionModel.countDocuments({ isActive: true }),
+      // Only count sessions active in the last 5 minutes (real-time active)
+      this.sessionModel.countDocuments({
+        isActive: true,
+        $or: [
+          { startTime: { $gte: fiveMinutesAgo } },
+          { endTime: null, startTime: { $gte: new Date(now.getTime() - 30 * 60 * 1000) } }
+        ]
+      }),
       this.userModel.countDocuments({ createdAt: { $gte: sevenDaysAgo } }),
+      // Count users with active paid subscriptions
+      this.userModel.countDocuments({ subscriptionStatus: 'active' }),
       userId ? this.userModel.findById(userId).populate('subscriptionPlan').exec() : Promise.resolve(null)
     ]);
 
     const totalRevenue = totalRevenueData[0]?.total ? totalRevenueData[0].total / 100 : 0;
+
+    // Conversion rate = paid users / total users * 100 (percentage)
+    const conversionRate = totalUsers > 0 ? ((paidUsersCount / totalUsers) * 100).toFixed(2) : '0.00';
 
     const overview: any = {
       totalUsers,
@@ -442,9 +537,10 @@ export class AnalyticsService {
       totalResumes,
       totalRevenue,
       activeSessions,
+      paidUsers: paidUsersCount,
       growth: {
         newUsersLast7Days,
-        conversionRate: totalUsers > 0 ? (totalRevenueData[0]?.total ? (totalRevenueData[0].total / 100) / totalUsers : 0).toFixed(2) : 0
+        conversionRate
       }
     };
 
@@ -461,17 +557,17 @@ export class AnalyticsService {
       };
     }
 
-    // 2. Recent Activity (Last 7 Days)
+    // 2. Recent Activity (Last 7 Days) — filter out null userIds for accurate unique user count
     const recentActivity = await this.sessionModel.aggregate([
       { $match: { startTime: { $gte: sevenDaysAgo } } },
       {
         $group: {
           _id: { $dateToString: { format: "%Y-%m-%d", date: "$startTime" } },
           sessions: { $sum: 1 },
-          users: { $addToSet: "$userId" }
+          visitors: { $addToSet: "$visitorId" }
         }
       },
-      { $project: { date: "$_id", sessions: 1, userCount: { $size: "$users" }, _id: 0 } },
+      { $project: { date: "$_id", sessions: 1, userCount: { $size: "$visitors" }, _id: 0 } },
       { $sort: { date: 1 } }
     ]);
 

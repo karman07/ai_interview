@@ -54,6 +54,15 @@ export class UsersService {
     return this.userModel.findOne({ razorpaySubscriptionId: id }).exec();
   }
 
+  async findAll(): Promise<UserDocument[]> {
+    return this.userModel
+      .find()
+      .populate('subscriptionPlan')
+      .select('-passwordHash -refreshTokenHash')
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
   async findById(id: string): Promise<UserDocument> {
     const user = await this.userModel.findById(id).populate('subscriptionPlan').exec();
     if (!user) throw new NotFoundException('User not found');
