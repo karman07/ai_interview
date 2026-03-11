@@ -11,6 +11,10 @@ import { User, UserDocument } from '../users/schemas/user.schema';
 import { AiCvApiService } from './ai-cv-api.service';
 import * as fs from 'fs';
 import * as path from 'path';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const _pdfParseModule = require('pdf-parse');
+const pdfParse: (buffer: Buffer) => Promise<{ text: string }> = _pdfParseModule.default || _pdfParseModule;
+import * as mammoth from 'mammoth';
 
 @Injectable()
 export class ResumeService {
@@ -28,6 +32,34 @@ export class ResumeService {
   private buildFileUrl(filePath: string): string {
     const normalized = filePath.replace(/\\/g, '/'); // Windows fix
     return `${this.appBaseUrl}/${normalized}`;
+  }
+
+  /**
+   * Extract plain text from a PDF, DOCX, or TXT file.
+   */
+  private async extractTextFromFile(filePath: string): Promise<string> {
+    try {
+      const ext = path.extname(filePath).toLowerCase();
+      if (ext === '.pdf') {
+        const buffer = fs.readFileSync(filePath);
+        const data = await pdfParse(buffer);
+        const text = data.text?.trim() || '';
+        this.logger.log(`📄 Extracted ${text.length} chars from PDF: ${path.basename(filePath)}`);
+        return text;
+      } else if (ext === '.docx' || ext === '.doc') {
+        const result = await mammoth.extractRawText({ path: filePath });
+        const text = result.value?.trim() || '';
+        this.logger.log(`📄 Extracted ${text.length} chars from DOCX: ${path.basename(filePath)}`);
+        return text;
+      } else if (ext === '.txt') {
+        const text = fs.readFileSync(filePath, 'utf8');
+        this.logger.log(`📄 Extracted ${text.length} chars from TXT: ${path.basename(filePath)}`);
+        return text;
+      }
+    } catch (err) {
+      this.logger.error(`💥 Failed to extract text from ${filePath}: ${err.message}`);
+    }
+    return '';
   }
 
   async uploadResume(
@@ -119,6 +151,17 @@ export class ResumeService {
     const normalizedPath = file.path.replace(/\\/g, '/');
     const resumeUrl = this.buildFileUrl(normalizedPath);
 
+    // ✅ Extract text from file for future use in AI interview
+    let extractedText = stats?.cv_text || improvement_resume?.cv_text || '';
+    if (!extractedText || extractedText.length < 50) {
+      this.logger.log('📄 cv_text from AI service missing or short. Extracting text from file...');
+      extractedText = await this.extractTextFromFile(file.path);
+    }
+    this.logger.log(`✅ Resume text ready: ${extractedText.length} chars`);
+    if (extractedText) {
+      this.logger.log(`📃 RESUME PREVIEW: ${extractedText.substring(0, 300)}`);
+    }
+
     // Ensure we never pass null values
     const finalStats = stats || {};
     let finalImprovementResume = improvement_resume || {};
@@ -154,7 +197,7 @@ export class ResumeService {
       url: resumeUrl,
       stats: finalStats,
       improvement_resume: finalImprovementResume,
-      text: stats?.cv_text || improvement_resume?.cv_text || "",
+      text: extractedText,
       user: userId,
     });
 
