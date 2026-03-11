@@ -17,6 +17,7 @@ import { LessonsModule } from './lessons/lessons.module';
 import { ProgressModule } from './progress/progress.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { QuizzesModule } from './quizzes/quizzes.module';
+import { ResourcesModule } from './resources/resources.module';
 
 // V2 Interview Module
 
@@ -69,6 +70,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ProgressModule,
     SubjectsModule,
     QuizzesModule,
+    ResourcesModule,
 
     DsaQuestionsModule,
     PaymentModule,
