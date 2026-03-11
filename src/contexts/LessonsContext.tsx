@@ -129,19 +129,10 @@ export const LessonsProvider: React.FC<{ children: ReactNode }> = ({ children })
       setQuizzesLoadingState(prev => ({ ...prev, [lessonId]: LoadingState.LOADING }));
       setQuizzesError(prev => ({ ...prev, [lessonId]: null }));
 
-      // Show static data after delay if loading takes too long
-      const staticTimeout = setTimeout(() => {
-        if (quizzesLoadingState[lessonId] === LoadingState.LOADING) {
-          setQuizzesLoadingState(prev => ({ ...prev, [lessonId]: LoadingState.SHOWING_STATIC }));
-          setQuizzes(prev => ({ ...prev, [lessonId]: mockQuizzes[lessonId] || [] }));
-        }
-      }, 1000);
-
       const res = await axios.get<Quiz[]>(`${API_BASE_URL}/quizzes/lesson/${lessonId}`, {
-        withCredentials: true, // 🔹 ensures cookie (refresh_token) is sent
+        withCredentials: true,
       });
 
-      clearTimeout(staticTimeout);
       setQuizzes(prev => ({ ...prev, [lessonId]: res.data || [] }));
       setQuizzesLoadingState(prev => ({ ...prev, [lessonId]: LoadingState.SUCCESS }));
     } catch (err: any) {
@@ -152,11 +143,10 @@ export const LessonsProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
       console.error("❌ Failed to fetch quizzes", err);
 
-      // Set error state and fallback to static data
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch quizzes";
       setQuizzesError(prev => ({ ...prev, [lessonId]: errorMessage }));
       setQuizzesLoadingState(prev => ({ ...prev, [lessonId]: LoadingState.ERROR }));
-      setQuizzes(prev => ({ ...prev, [lessonId]: mockQuizzes[lessonId] || [] }));
+      setQuizzes(prev => ({ ...prev, [lessonId]: [] })); // Set to empty array instead of mock data
     }
   }, [quizzes, quizzesLoadingState]);
 
