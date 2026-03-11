@@ -29,6 +29,9 @@ export class Resume {
 
   @Prop({ type: Types.ObjectId, ref: User.name, required: true })
   user: User;
+
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export const ResumeSchema = SchemaFactory.createForClass(Resume);
