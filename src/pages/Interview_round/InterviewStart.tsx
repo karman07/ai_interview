@@ -10,6 +10,8 @@ import {
   Award, BarChart3, Eye, Upload, X, CheckCircle, Clock, TrendingUp, Zap
 } from "lucide-react";
 import { InterviewAnalyticsApi, type Analytics, type RoundStats } from "@/api/interviewAnalytics";
+import { resumeService } from "@/api/resumeService";
+import { type Resume } from "@/types/Resume";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePricing } from "@/contexts/PricingContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -47,12 +49,25 @@ export default function InterviewStart() {
     resumeText: "",
   });
   const [loading, setLoading] = useState(false);
+  const [fetchingResumes, setFetchingResumes] = useState(false);
+  const [resumes, setResumes] = useState<Resume[]>([]);
+  const [selectedResumeId, setSelectedResumeId] = useState<string>("");
+  const [showResumeList, setShowResumeList] = useState(false);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [error, setError] = useState<string>("");
   const [duration, setDuration] = useState<number>(30);
 
   useEffect(() => {
     InterviewAnalyticsApi.getAnalytics().then(setAnalytics).catch(console.error);
+
+    setFetchingResumes(true);
+    resumeService.getResumes()
+      .then(res => {
+        // Filter only resumes that have extracted text
+        setResumes(res.filter(r => !!r.text));
+      })
+      .catch(console.error)
+      .finally(() => setFetchingResumes(false));
   }, []);
 
   const types = {
@@ -134,6 +149,22 @@ export default function InterviewStart() {
       reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsText(file);
     });
+  };
+
+  const handleSelectResume = (resume: Resume) => {
+    setSelectedResumeId(resume.id || resume._id);
+    setDetails(prev => ({
+      ...prev,
+      resumeText: resume.text || "",
+      resumeFile: undefined
+    }));
+    setShowResumeList(false);
+    setError("");
+  };
+
+  const clearSelectedResume = () => {
+    setSelectedResumeId("");
+    setDetails(prev => ({ ...prev, resumeText: "" }));
   };
 
   const handleStart = async () => {
@@ -374,8 +405,69 @@ export default function InterviewStart() {
                             <X className="w-5 h-5" />
                           </button>
                         </div>
+                      ) : selectedResumeId ? (
+                        <div className="p-6 bg-indigo-50/50 dark:bg-indigo-900/20 border-2 border-dashed border-indigo-200 dark:border-indigo-800 rounded-3xl flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                              <CheckCircle className="w-6 h-6 text-white" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-black text-slate-900 dark:text-white truncate max-w-[150px]">
+                                {resumes.find(r => (r.id || r._id) === selectedResumeId)?.filename || 'Selected Resume'}
+                              </p>
+                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Pre-uploaded • Ready</p>
+                            </div>
+                          </div>
+                          <button onClick={clearSelectedResume} className="p-2 hover:bg-rose-50 dark:hover:bg-rose-900/30 text-slate-400 hover:text-rose-500 rounded-xl transition-all">
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
                       ) : (
                         <div className="space-y-4">
+                          {resumes.length > 0 && (
+                            <div className="relative">
+                              <button
+                                onClick={() => setShowResumeList(!showResumeList)}
+                                className="w-full p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl flex items-center justify-between group hover:border-blue-400 transition-all shadow-sm"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                                    <FileText className="w-4 h-4 text-blue-500" />
+                                  </div>
+                                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Choose from history ({resumes.length})</span>
+                                </div>
+                                <ArrowRight className={`w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-all ${showResumeList ? 'rotate-90' : ''}`} />
+                              </button>
+
+                              <AnimatePresence>
+                                {showResumeList && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="absolute top-full left-0 right-0 z-20 mt-2 p-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl max-h-[200px] overflow-y-auto"
+                                  >
+                                    {resumes.map((resume) => (
+                                      <button
+                                        key={resume.id || resume._id}
+                                        onClick={() => handleSelectResume(resume)}
+                                        className="w-full p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl text-left transition-colors flex items-center gap-3"
+                                      >
+                                        <FileText className="w-4 h-4 text-slate-400" />
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{resume.filename}</p>
+                                          <p className="text-[10px] text-slate-500">
+                                            {resume.createdAt ? new Date(resume.createdAt).toLocaleDateString() : 'N/A'}
+                                          </p>
+                                        </div>
+                                      </button>
+                                    ))}
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          )}
+
                           <div className="relative">
                             <input
                               type="file"
@@ -388,7 +480,7 @@ export default function InterviewStart() {
                                 <Upload className="w-6 h-6 text-blue-500" />
                               </div>
                               <div className="text-center">
-                                <p className="text-sm font-black text-slate-900 dark:text-white">Upload Resume</p>
+                                <p className="text-sm font-black text-slate-900 dark:text-white">Upload New Resume</p>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">PDF, DOCX, TXT • MAX 10MB</p>
                               </div>
                             </div>

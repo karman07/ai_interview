@@ -44,5 +44,6 @@ export interface Resume {
     };
     cover_letter: string;
   };
+  text?: string;
   createdAt: string;
 }
