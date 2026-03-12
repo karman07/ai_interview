@@ -28,6 +28,7 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
     const [interviewEnded, setInterviewEnded] = useState(false);
     const [isEnding, setIsEnding] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isCodingQuestion, setIsCodingQuestion] = useState(false);
     const feedbackRef = useRef<any>(null);
 
     const isStreamingResponseRef = useRef(false);
@@ -138,6 +139,10 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
                     setStreamingInfo(true);
                 } else if (data.type === 'stream_end') {
                     setStreamingInfo(false);
+                } else if (data.type === 'metadata') {
+                    if (data.is_coding !== undefined) {
+                        setIsCodingQuestion(!!data.is_coding);
+                    }
                 } else if (data.type === 'text') {
                     const isStreaming = isStreamingResponseRef.current;
                     setMessages(prev => {
@@ -214,5 +219,5 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
         }
     }, [clientId, initData, connect, interviewEnded]);
 
-    return { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding, error };
+    return { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding, error, isCodingQuestion };
 };

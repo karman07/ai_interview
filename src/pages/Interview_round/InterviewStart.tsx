@@ -511,17 +511,6 @@ export default function InterviewStart() {
                               </div>
                             </div>
                           </div>
-                          <div className="relative">
-                            <div className="absolute inset-x-4 top-0 -translate-y-1/2 flex justify-center">
-                              <span className="px-2 bg-white dark:bg-slate-900 text-[10px] font-black text-slate-300 uppercase tracking-widest translate-y-[-12px]">OR PASTE TEXT</span>
-                            </div>
-                            <Textarea
-                              placeholder="Paste your resume content here..."
-                              className="min-h-[120px] bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800 rounded-2xl px-6 py-4 font-medium transition-all focus:ring-2 focus:ring-blue-500/20"
-                              value={details.resumeText}
-                              onChange={(e) => setDetails({ ...details, resumeText: e.target.value })}
-                            />
-                          </div>
                         </div>
                       )}
                     </div>

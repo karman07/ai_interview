@@ -70,7 +70,7 @@ export default function InterviewRoomWS() {
     }, [user]);
 
     // ── Hooks ──
-    const { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding, error: wsError } =
+    const { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding, error: wsError, isCodingQuestion } =
         useInterviewWebSocket(clientId, setupData);
     const { formattedTime } = useInterviewTimer();
     const { videoRef, isActive: webcamActive, startCamera, toggleCamera } = useInterviewWebcam();
@@ -133,25 +133,18 @@ export default function InterviewRoomWS() {
         startCamera();
     }, [startCamera]);
 
-    // ── Auto-detect if AI requires code + auto-open/close question box ──
+    // ── Update showCodeEditor based on AI signal ──
+    useEffect(() => {
+        setShowCodeEditor(isCodingQuestion);
+    }, [isCodingQuestion]);
+
+    // ── Auto-open/close question box ──
     useEffect(() => {
         if (messages.length === 0) return;
         const lastMsg = messages[messages.length - 1];
         if (lastMsg.role === 'model') {
-            // Auto-open question box when AI sends a new message
             setIsQuestionBoxOpen(true);
-
-            // Check if AI sent a code block or explicitly mentioned coding
-            const codingKeywords = ['code', 'implement', 'function', 'algorithm', 'editor', 'programming', 'write a', 'snippet', 'leetcode', 'write the'];
-            const content = lastMsg.content.toLowerCase();
-            const hasCodeBlock = lastMsg.content.includes('```');
-            const mentionsCoding = codingKeywords.some(keyword => content.includes(keyword));
-
-            if (hasCodeBlock || mentionsCoding) {
-                setShowCodeEditor(true);
-            }
         } else if (lastMsg.role === 'user') {
-            // User is responding — auto-close the question box
             setIsQuestionBoxOpen(false);
         }
     }, [messages]);
