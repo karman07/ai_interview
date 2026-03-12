@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { Zap, Star, Users2, Rocket, Crown } from 'lucide-react';
 import { SubscriptionPlan } from "@/types/subscription";
 import { SubscriptionApi } from "@/api/subscription";
 
@@ -44,7 +45,15 @@ export const PricingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       id: (plan as any)._id || plan.id,
       name: plan.displayName,
       description: plan.description || "Unlock premium features to accelerate your growth.",
-      icon: plan.icon || (plan.displayName.toLowerCase().includes('starter') ? "✨" : plan.displayName.toLowerCase().includes('pro') ? "⚡" : "👥"),
+      icon: (() => {
+        if (plan.icon && typeof plan.icon !== 'string') return plan.icon;
+        const n = plan.displayName.toLowerCase();
+        if (n.includes('free'))    return <Star size={22} />;
+        if (n.includes('starter')) return <Zap size={22} />;
+        if (n.includes('pro'))     return <Rocket size={22} />;
+        if (n.includes('team') || n.includes('enterprise')) return <Users2 size={22} />;
+        return <Crown size={22} />;
+      })(),
       price: plan.formattedPrice || `${plan.currency} ${plan.price / 100}`,
       numericPrice: plan.price,
       razorpayPlanId: plan.razorpayPlanId,

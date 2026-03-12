@@ -4,6 +4,7 @@ import routes from "@/constants/routes";
 import Button from "../ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Moon, Sun } from "lucide-react";
+import { usePricing } from "@/contexts/PricingContext";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -40,6 +41,7 @@ export default function Navbar() {
   const navLinks = [
     { to: routes.home, label: "Home" },
     { to: routes.jobsPublic, label: "Jobs" },
+    { to: "/pricing", label: "Pricing" },
     { to: routes.about, label: "About" },
     { to: routes.contact, label: "Contact" }
   ];
@@ -48,6 +50,18 @@ export default function Navbar() {
     localStorage.removeItem('access_token');
     await logout();
     setActiveLink(routes.home);
+  };
+
+  const { setShowPricing } = usePricing();
+
+  const handleNavLinkClick = (to: string, e: React.MouseEvent) => {
+    if (to === "/pricing") {
+      e.preventDefault();
+      setShowPricing(true);
+      return;
+    }
+    setActiveLink(to);
+    setIsMenuOpen(false);
   };
 
   return (
@@ -86,7 +100,7 @@ export default function Navbar() {
               <Link
                 key={link.to}
                 to={link.to}
-                onClick={() => setActiveLink(link.to)}
+                onClick={(e) => handleNavLinkClick(link.to, e)}
                 className={`relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${activeLink === link.to
                   ? 'text-primary dark:text-primary bg-primary/10 dark:bg-primary/20'
                   : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
@@ -186,10 +200,7 @@ export default function Navbar() {
               <Link
                 key={link.to}
                 to={link.to}
-                onClick={() => {
-                  setActiveLink(link.to);
-                  setIsMenuOpen(false);
-                }}
+                onClick={(e) => handleNavLinkClick(link.to, e)}
                 className={`block px-4 py-2.5 rounded-lg font-medium text-sm transition-colors ${activeLink === link.to
                   ? 'text-primary dark:text-primary bg-primary/10 dark:bg-primary/20'
                   : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
