@@ -11,9 +11,7 @@ import { User, UserDocument } from '../users/schemas/user.schema';
 import { AiCvApiService } from './ai-cv-api.service';
 import * as fs from 'fs';
 import * as path from 'path';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const _pdfParseModule = require('pdf-parse');
-const pdfParse: (buffer: Buffer) => Promise<{ text: string }> = _pdfParseModule.default || _pdfParseModule;
+import { PDFParse } from 'pdf-parse';
 import * as mammoth from 'mammoth';
 
 @Injectable()
@@ -42,7 +40,8 @@ export class ResumeService {
       const ext = path.extname(filePath).toLowerCase();
       if (ext === '.pdf') {
         const buffer = fs.readFileSync(filePath);
-        const data = await pdfParse(buffer);
+        const pdf = new PDFParse({ data: buffer });
+        const data = await pdf.getText();
         const text = data.text?.trim() || '';
         this.logger.log(`📄 Extracted ${text.length} chars from PDF: ${path.basename(filePath)}`);
         return text;

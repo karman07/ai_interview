@@ -3,7 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { JobService } from './job.service';
 import { RagMatcherService } from './rag-matcher.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 
 @Controller('jobs')
 export class JobsController {
@@ -69,7 +69,8 @@ export class JobsController {
         let resumeText = '';
         if (file.mimetype === 'application/pdf') {
             try {
-                const pdfData = await pdfParse(file.buffer);
+                const pdf = new PDFParse({ data: file.buffer });
+                const pdfData = await pdf.getText();
                 resumeText = pdfData.text;
             } catch (e) {
                 resumeText = file.buffer.toString('utf-8').replace(/[^a-zA-Z\s]/g, "");
