@@ -11,9 +11,13 @@ import { Resume, ResumeDocument } from '../resume/resume.schema';
 import { TrackVisitorDto } from './dto/track-visitor.dto';
 import { StartSessionDto } from './dto/start-session.dto';
 import { TrackPageViewDto } from './dto/track-pageview.dto';
+import { Subject } from 'rxjs';
+import { AIUsage, AIUsageDocument } from './schemas/ai-usage.schema';
 
 @Injectable()
 export class AnalyticsService {
+  public readonly aiUsageSubject = new Subject<any>();
+
   constructor(
     @InjectModel(Visitor.name) private visitorModel: Model<VisitorDocument>,
     @InjectModel(Session.name) private sessionModel: Model<SessionDocument>,
@@ -22,6 +26,7 @@ export class AnalyticsService {
     @InjectModel(Result.name) private resultModel: Model<ResultDocument>,
     @InjectModel(Payment.name) private paymentModel: Model<PaymentDocument>,
     @InjectModel(Resume.name) private resumeModel: Model<ResumeDocument>,
+    @InjectModel(AIUsage.name) private aiUsageModel: Model<AIUsageDocument>,
   ) { }
 
   // Mark sessions that haven't been active in 30 minutes as inactive
@@ -626,5 +631,94 @@ export class AnalyticsService {
       externalAnalytics,
       updatedAt: now
     };
+  }
+
+  // AI Usage Statistics for Admin Dashboard
+  async getAIUsageStats() {
+    const tokensByPlan = await this.aiUsageModel.aggregate([
+      {
+        $group: {
+          _id: '$subscriptionStatus',
+          totalTokens: { $sum: '$totalTokens' },
+          totalCost: { $sum: '$costUsd' },
+          sessions: { $addToSet: '$sessionId' },
+        },
+      },
+      {
+        $project: {
+          plan: '$_id',
+          totalTokens: 1,
+          totalCost: 1,
+          sessionCount: { $size: '$sessions' },
+          _id: 0,
+        },
+      },
+    ]);
+
+    const usageOverTime = await this.aiUsageModel.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$timestamp' } },
+          tokens: { $sum: '$totalTokens' },
+          cost: { $sum: '$costUsd' },
+        },
+      },
+      { $sort: { _id: 1 } },
+      { $limit: 30 },
+      { $project: { date: '$_id', tokens: 1, cost: 1, _id: 0 } },
+    ]);
+
+    const totalRevenueData = await this.paymentModel.aggregate([
+      { $match: { status: PaymentStatus.PAID } },
+      { $group: { _id: null, total: { $sum: '$amount' } } },
+    ]);
+
+    const totalCostData = await this.aiUsageModel.aggregate([
+      { $group: { _id: null, total: { $sum: '$costUsd' } } },
+    ]);
+
+    return {
+      tokensByPlan,
+      usageOverTime,
+      totalRevenue: (totalRevenueData[0]?.total || 0) / 100, // in INR/USD base unit
+      totalAICost: totalCostData[0]?.total || 0,
+      timestamp: new Date(),
+    };
+  }
+
+  async saveAIUsage(data: Partial<AIUsage>) {
+    // If status is not provided or likely generic, try to lookup from user profile
+    if (data.userId) {
+      const user = await this.userModel.findById(data.userId).select('subscriptionStatus');
+      if (user) {
+        data.subscriptionStatus = user.subscriptionStatus || 'free';
+      }
+    }
+
+    // Use $inc to accumulate tokens instead of replacing them
+    const usage = await this.aiUsageModel.findOneAndUpdate(
+      { sessionId: data.sessionId },
+      {
+        $set: {
+          userId: data.userId,
+          model: data.model || 'gemini-2.0-flash',
+          subscriptionStatus: data.subscriptionStatus || 'free',
+          timestamp: data.timestamp || new Date()
+        },
+        $inc: {
+          inputTokens: data.inputTokens || 0,
+          outputTokens: data.outputTokens || 0,
+          totalTokens: data.totalTokens || 0,
+          costUsd: data.costUsd || 0
+        }
+      },
+      { upsert: true, new: true }
+    );
+
+    // Get fresh stats and broadcast
+    const stats = await this.getAIUsageStats();
+    this.aiUsageSubject.next(stats);
+
+    return usage;
   }
 }

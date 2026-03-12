@@ -17,6 +17,7 @@ import { UsersService } from '../users/users.service';
 import { SubscriptionService } from '../subscriptions/subscription.service';
 import { SubscriptionType } from '../subscriptions/schemas/subscription.schema';
 import { EmailService } from '../email/email.service';
+import { DiscountsService } from '../discounts/discounts.service';
 
 @Injectable()
 export class PaymentService {
@@ -29,6 +30,7 @@ export class PaymentService {
     private usersService: UsersService,
     private subscriptionService: SubscriptionService,
     private emailService: EmailService,
+    private discountsService: DiscountsService,
   ) {
     this.razorpay = new Razorpay({
       key_id: this.configService.get<string>('RAZORPAY_KEY_ID'),
@@ -38,16 +40,40 @@ export class PaymentService {
 
   async createOrder(userId: string, createOrderDto: CreateOrderDto): Promise<OrderResponseDto> {
     try {
-      const { amount, description, receipt, notes } = createOrderDto;
+      const { amount, description, receipt, notes, couponCode } = createOrderDto;
 
       // Convert amount to paisa (smallest currency unit)
-      const amountInPaisa = Math.round(amount * 100);
+      const originalAmountInPaisa = Math.round(amount * 100);
+      let finalAmountInPaisa = originalAmountInPaisa;
+      let discountAmount = 0;
+      let appliedCoupon: any = null;
+
+      // Apply coupon discount if provided
+      if (couponCode) {
+        const couponResult = await this.discountsService.validateCoupon(userId, {
+          code: couponCode,
+          orderAmount: originalAmountInPaisa,
+          subscriptionId: createOrderDto.subscriptionId,
+        });
+
+        if (couponResult.valid && couponResult.coupon) {
+          discountAmount = couponResult.discountAmount;
+          finalAmountInPaisa = couponResult.finalAmount;
+          appliedCoupon = couponResult.coupon;
+          this.logger.log(`Coupon ${couponCode} applied for user ${userId}: discount=${discountAmount} paisa`);
+        } else {
+          throw new BadRequestException(couponResult.message);
+        }
+      }
 
       const orderOptions = {
-        amount: amountInPaisa,
+        amount: finalAmountInPaisa,
         currency: 'INR',
         receipt: receipt || `receipt_${Date.now()}`,
-        notes: notes || {},
+        notes: {
+          ...(notes || {}),
+          ...(appliedCoupon ? { couponCode, discountAmount, originalAmount: originalAmountInPaisa } : {}),
+        },
       };
 
       // Create order in Razorpay
@@ -57,7 +83,7 @@ export class PaymentService {
       const payment = new this.paymentModel({
         userId: new Types.ObjectId(userId),
         subscriptionId: createOrderDto.subscriptionId ? new Types.ObjectId(createOrderDto.subscriptionId) : undefined,
-        amount: amountInPaisa,
+        amount: finalAmountInPaisa,
         currency: razorpayOrder.currency,
         status: PaymentStatus.CREATED,
         razorpayOrderId: razorpayOrder.id,
@@ -67,6 +93,18 @@ export class PaymentService {
       });
 
       await payment.save();
+
+      // Record coupon usage immediately (order created = intent to pay)
+      if (appliedCoupon) {
+        await this.discountsService.recordCouponUsage(
+          appliedCoupon._id.toString(),
+          userId,
+          payment._id.toString(),
+          discountAmount,
+          originalAmountInPaisa,
+          finalAmountInPaisa,
+        );
+      }
 
       this.logger.log(`Order created: ${razorpayOrder.id} for user: ${userId}`);
 
@@ -78,7 +116,13 @@ export class PaymentService {
         status: razorpayOrder.status,
         created_at: razorpayOrder.created_at,
         notes: razorpayOrder.notes,
-      };
+        ...(appliedCoupon ? {
+          discountApplied: true,
+          discountAmount,
+          originalAmount: originalAmountInPaisa,
+          couponCode,
+        } : {}),
+      } as any;
     } catch (error) {
       this.logger.error(`Failed to create order: ${error.message}`, error.stack);
       throw new BadRequestException(`Failed to create order: ${error.message}`);

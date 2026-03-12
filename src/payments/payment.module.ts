@@ -9,6 +9,7 @@ import { Payment, PaymentSchema } from './schemas/payment.schema';
 import { UsersModule } from '../users/users.module';
 import { SubscriptionModule } from '../subscriptions/subscription.module';
 import { EmailModule } from '../email/email.module';
+import { DiscountsModule } from '../discounts/discounts.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { EmailModule } from '../email/email.module';
     UsersModule,
     SubscriptionModule,
     EmailModule,
+    DiscountsModule,
   ],
   controllers: [PaymentController, PaymentWebhookController, RazorpaySubscriptionController],
   providers: [PaymentService],

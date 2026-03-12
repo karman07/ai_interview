@@ -7,4 +7,8 @@ export class CreateSubscriptionRequestDto {
 
     @IsOptional()
     notes?: Record<string, any>;
+
+    @IsOptional()
+    @IsString()
+    couponCode?: string; // Discount or referral code
 }

@@ -76,6 +76,11 @@ export class AnalyticsController {
     return this.analyticsService.getAdminDashboardStats();
   }
 
+  @Get('admin/ai-usage')
+  async getAIUsageStats() {
+    return this.analyticsService.getAIUsageStats();
+  }
+
   @Get('admin/recent-sessions')
   async getRecentSessions(@Query('limit') limit?: number) {
     return this.analyticsService.getAllSessions(limit);
@@ -98,6 +103,11 @@ export class AnalyticsController {
   async getUserAnalytics(@Req() req) {
     const userId = req.user?.sub;
     return this.analyticsService.getAnalytics(userId);
+  }
+
+  @Post('ai-usage')
+  async recordAIUsage(@Body() data: any) {
+    return this.analyticsService.saveAIUsage(data);
   }
 
   @Post('heartbeat')

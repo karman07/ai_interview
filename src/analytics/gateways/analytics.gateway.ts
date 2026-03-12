@@ -5,7 +5,7 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Logger, OnModuleInit } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { AnalyticsService } from '../analytics.service';
 
@@ -16,13 +16,19 @@ import { AnalyticsService } from '../analytics.service';
     credentials: true,
   },
 })
-export class AnalyticsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class AnalyticsGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
   @WebSocketServer()
   server: Server;
 
   private readonly logger = new Logger(AnalyticsGateway.name);
 
   constructor(private readonly analyticsService: AnalyticsService) { }
+
+  onModuleInit() {
+    this.analyticsService.aiUsageSubject.subscribe((stats) => {
+      this.broadcastAnalyticsUpdate('aiUsageUpdated', stats);
+    });
+  }
 
   async handleConnection(client: Socket) {
     const { visitorId, sessionId, userId } = client.handshake.query;

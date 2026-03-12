@@ -31,6 +31,7 @@ import { PaymentModule } from './payments/payment.module';
 import { SubscriptionModule } from './subscriptions/subscription.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { PlaceholderModule } from './common/placeholder';
+import { DiscountsModule } from './discounts/discounts.module';
 
 import { CvModule } from './cv/cv.module';
 import { SessionsModule } from './sessions/sessions.module';
@@ -77,6 +78,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     SubscriptionModule,
     AnalyticsModule,
     PlaceholderModule,
+    DiscountsModule,
     CvModule,
     SessionsModule,
     AudioModule,
