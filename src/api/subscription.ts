@@ -102,5 +102,32 @@ export const SubscriptionApi = {
     getPaymentByOrderId: async (orderId: string) => {
         const res = await http.get(`/payments/order/${orderId}`);
         return res.data;
-    }
+    },
+
+    /**
+     * Validate a coupon / referral code
+     */
+    validateCoupon: async (data: { code: string; orderAmount: number; subscriptionId?: string }) => {
+        const res = await http.post('/discounts/validate', data);
+        return res.data as {
+            valid: boolean;
+            discountAmount: number;
+            finalAmount: number;
+            message: string;
+            coupon?: { _id: string; code: string; discountType: string; discountValue: number };
+        };
+    },
+
+    /**
+     * Create order with optional coupon applied
+     */
+    createOrderWithCoupon: async (data: {
+        amount: number,
+        description?: string,
+        subscriptionId?: string,
+        couponCode?: string,
+    }) => {
+        const res = await http.post('/payments/create-order', data);
+        return res.data;
+    },
 };

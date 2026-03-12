@@ -314,6 +314,10 @@ export default function InterviewRoomWS() {
     useEffect(() => {
         if (interviewEnded && feedback && !hasEndedRef.current) {
             hasEndedRef.current = true;
+            
+            // Count user messages (actual answers)
+            const userMessageCount = messages.filter(m => m.role === 'user').length;
+
             // Save feedback for local fallback
             const report = {
                 ...feedback,
@@ -326,27 +330,36 @@ export default function InterviewRoomWS() {
 
             localStorage.setItem('v2_interview_report', JSON.stringify(report));
 
-            // Post external analytics to backend, including context metadata
-            const externalPayload = {
-                ...feedback,
-                role: setupData?.role || 'Software Engineer',
-                company: setupData?.company || '',
-                round: setupData?.interviewType || 'technical',
-                session_id: clientId
-            };
+            // Only save to backend and increment counter if user actually answered questions
+            if (userMessageCount > 0) {
+                // Post external analytics to backend, including context metadata
+                const externalPayload = {
+                    ...feedback,
+                    role: setupData?.role || 'Software Engineer',
+                    company: setupData?.company || '',
+                    round: setupData?.interviewType || 'technical',
+                    session_id: clientId
+                };
 
-            http.post('/enhanced-interview/external-analytics', externalPayload).then(res => {
-                // Get the real MongoDB ID
-                const dbId = res.data?._id || res.data?.id || clientId;
+                http.post('/enhanced-interview/external-analytics', externalPayload).then(res => {
+                    // Get the real MongoDB ID
+                    const dbId = res.data?._id || res.data?.id || clientId;
+                    localStorage.removeItem('ws_interview_setup');
+                    localStorage.removeItem('ws_interview_client_id');
+                    navigate(`/interview/results/${dbId}`);
+                }).catch(err => {
+                    console.error('Failed to save external analytics to backend:', err);
+                    localStorage.removeItem('ws_interview_setup');
+                    localStorage.removeItem('ws_interview_client_id');
+                    navigate(`/interview/results/${clientId}`);
+                });
+            } else {
+                // No answers given - just navigate back without saving or incrementing count
+                console.log('[InterviewRoomWS] No answers given - skipping analytics save and counter increment');
                 localStorage.removeItem('ws_interview_setup');
                 localStorage.removeItem('ws_interview_client_id');
-                navigate(`/interview/results/${dbId}`);
-            }).catch(err => {
-                console.error('Failed to save external analytics to backend:', err);
-                localStorage.removeItem('ws_interview_setup');
-                localStorage.removeItem('ws_interview_client_id');
-                navigate(`/interview/results/${clientId}`);
-            });
+                navigate('/interview_round');
+            }
         }
     }, [interviewEnded, feedback, clientId, messages, navigate, setupData]);
 

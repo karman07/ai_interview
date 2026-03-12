@@ -282,7 +282,7 @@ export default function InterviewStart() {
         company: details.company,
         roundType: type || 'technical',
         userId: user._id,
-        candidateName: user.name || 'Candidate',
+        candidateName: "", // Leave empty so AI extracts name from resume itself
         duration,
       };
 

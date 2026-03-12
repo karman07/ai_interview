@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, X, Sparkles, ArrowRight, HelpCircle } from 'lucide-react';
+import { Check, X, Sparkles, ArrowRight, HelpCircle, Tag, CheckCircle2, AlertCircle } from 'lucide-react';
 import Button from '@/components/ui/button';
 import { usePricing } from '@/contexts/PricingContext';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +14,15 @@ const PricingDialog = () => {
   const navigate = useNavigate();
   const [processingId, setProcessingId] = useState<string | null>(null);
 
+  // Coupon state
+  const [couponInput, setCouponInput] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponResult, setCouponResult] = useState<{
+    valid: boolean; discountAmount: number; finalAmount: number;
+    originalAmount: number; message: string; coupon?: any;
+  } | null>(null);
+  const [selectedPlanForCoupon, setSelectedPlanForCoupon] = useState<any>(null);
+
   // Prevent scrolling when dialog is open
   useEffect(() => {
     if (showPricing) {
@@ -23,6 +32,39 @@ const PricingDialog = () => {
     }
     return () => { document.body.style.overflow = 'unset' };
   }, [showPricing]);
+
+  const handleApplyCoupon = async (plan?: any) => {
+    const targetPlan = plan || selectedPlanForCoupon;
+    if (!couponInput.trim() || !targetPlan) return;
+    setCouponLoading(true);
+    setCouponResult(null);
+    try {
+      const orderAmountPaisa = Math.round(targetPlan.numericPrice * 100);
+      const res = await SubscriptionApi.validateCoupon({
+        code: couponInput.trim().toUpperCase(),
+        orderAmount: orderAmountPaisa,
+        subscriptionId: targetPlan.id,
+      });
+      setCouponResult({
+        valid: res.valid,
+        discountAmount: res.discountAmount,
+        finalAmount: res.finalAmount,
+        originalAmount: orderAmountPaisa,
+        message: res.message,
+        coupon: res.coupon,
+      });
+    } catch (e: any) {
+      setCouponResult({ valid: false, discountAmount: 0, finalAmount: 0, originalAmount: 0, message: 'Failed to validate coupon. Try again.' });
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const clearCoupon = () => {
+    setCouponInput('');
+    setCouponResult(null);
+    setSelectedPlanForCoupon(null);
+  };
 
   const handleCheckout = async (plan: any) => {
     if (!user) {
@@ -47,44 +89,77 @@ const PricingDialog = () => {
         throw new Error("Razorpay Key is not configured.");
       }
 
-      const subData = await SubscriptionApi.createSubscription({
-        subscriptionId: planId
-      });
+      // If coupon is applied for this plan, use one-time order with discount
+      const isCouponForThisPlan = couponResult?.valid && selectedPlanForCoupon?.id === planId;
 
-      const options = {
-        key: razorpayKey,
-        subscription_id: subData.id,
-        name: "Career AI",
-        description: `Unlock ${plan.name} (Recurring)`,
-        handler: async (response: any) => {
-          try {
-            await SubscriptionApi.verifySubscription({
-              razorpaySubscriptionId: response.razorpay_subscription_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
-            });
+      if (isCouponForThisPlan) {
+        // Use create-order endpoint which applies the discount
+        const orderData = await SubscriptionApi.createOrderWithCoupon({
+          amount,
+          description: `${plan.name} Plan`,
+          subscriptionId: planId,
+          couponCode: couponInput.trim().toUpperCase(),
+        });
 
-            setShowPricing(false);
-            window.location.reload(); // Refresh to show new subscription
-          } catch (err) {
-            console.error("Subscription verification failed:", err);
-            alert("Subscription verification failed. Please contact support.");
-          }
-        },
-        prefill: {
-          name: user.name,
-          email: user.email,
-        },
-        theme: {
-          color: "#2563EB",
-        }
-      };
+        const options = {
+          key: razorpayKey,
+          order_id: orderData.id,
+          amount: orderData.amount,
+          currency: orderData.currency || 'INR',
+          name: "Career AI",
+          description: `${plan.name} - ${couponInput.trim().toUpperCase()} applied`,
+          handler: async (response: any) => {
+            try {
+              await SubscriptionApi.verifyPayment({
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              });
+              clearCoupon();
+              setShowPricing(false);
+              window.location.reload();
+            } catch (err) {
+              console.error("Payment verification failed:", err);
+              alert("Payment verification failed. Please contact support.");
+            }
+          },
+          prefill: { name: user.name, email: user.email },
+          theme: { color: "#2563EB" },
+        };
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      } else {
+        // Regular subscription flow (no coupon)
+        const subData = await SubscriptionApi.createSubscription({ subscriptionId: planId });
 
-      const rzp = new (window as any).Razorpay(options);
-      rzp.open();
+        const options = {
+          key: razorpayKey,
+          subscription_id: subData.id,
+          name: "Career AI",
+          description: `Unlock ${plan.name} (Recurring)`,
+          handler: async (response: any) => {
+            try {
+              await SubscriptionApi.verifySubscription({
+                razorpaySubscriptionId: response.razorpay_subscription_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              });
+              setShowPricing(false);
+              window.location.reload();
+            } catch (err) {
+              console.error("Subscription verification failed:", err);
+              alert("Subscription verification failed. Please contact support.");
+            }
+          },
+          prefill: { name: user.name, email: user.email },
+          theme: { color: "#2563EB" },
+        };
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      }
     } catch (err) {
-      console.error("Subscription creation failed:", err);
-      alert("Failed to initiate subscription. Please try again.");
+      console.error("Checkout failed:", err);
+      alert("Failed to initiate payment. Please try again.");
     } finally {
       setProcessingId(null);
     }
@@ -197,10 +272,26 @@ const PricingDialog = () => {
                         </div>
 
                         <div className="mb-8 h-16 flex flex-col justify-center">
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-4xl font-black text-gray-900 dark:text-white tabular-nums tracking-tighter">{plan.price}</span>
-                            <span className="text-gray-400 font-bold uppercase text-[10px] tracking-widest mt-2">/month</span>
-                          </div>
+                          {/* Show discounted price if coupon is valid for this plan */}
+                          {couponResult?.valid && selectedPlanForCoupon?.id === plan.id ? (
+                            <div>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-2xl font-bold text-gray-400 line-through tabular-nums">{plan.price}</span>
+                                <span className="text-4xl font-black text-green-600 dark:text-green-400 tabular-nums tracking-tighter ml-2">
+                                  ₹{(couponResult.finalAmount / 100).toFixed(0)}
+                                </span>
+                                <span className="text-gray-400 font-bold uppercase text-[10px] tracking-widest mt-2">/mo</span>
+                              </div>
+                              <p className="text-xs text-green-600 dark:text-green-400 font-semibold mt-1">
+                                You save ₹{(couponResult.discountAmount / 100).toFixed(0)}!
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-4xl font-black text-gray-900 dark:text-white tabular-nums tracking-tighter">{plan.price}</span>
+                              <span className="text-gray-400 font-bold uppercase text-[10px] tracking-widest mt-2">/month</span>
+                            </div>
+                          )}
                         </div>
 
                         <div className="space-y-4 mb-10 flex-grow">
@@ -232,8 +323,72 @@ const PricingDialog = () => {
                 </motion.div>
               )}
 
+              {/* Coupon / Referral Code Section */}
+              {!loading && !error && pricingPlans.length > 0 && (
+                <div className="mt-12 max-w-lg mx-auto bg-white dark:bg-gray-900 rounded-3xl border-2 border-dashed border-blue-200 dark:border-blue-800/40 p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Tag className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">Have a Promo or Referral Code?</span>
+                  </div>
+
+                  {/* Plan selector */}
+                  <div className="mb-3">
+                    <select
+                      className="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-700 dark:text-gray-300 font-medium"
+                      value={selectedPlanForCoupon?.id || ''}
+                      onChange={e => {
+                        const p = pricingPlans.find(pl => pl.id === e.target.value);
+                        setSelectedPlanForCoupon(p || null);
+                        setCouponResult(null);
+                      }}
+                    >
+                      <option value="">Select a plan to apply code to</option>
+                      {pricingPlans.filter((p: any) => p.numericPrice > 0).map((p: any) => (
+                        <option key={p.id} value={p.id}>{p.name} – {p.price}/mo</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      className="flex-1 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-gray-900 dark:text-white font-mono uppercase placeholder:normal-case placeholder:font-sans"
+                      placeholder="Enter code e.g. SAVE20 / REF5XY"
+                      value={couponInput}
+                      onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponResult(null); }}
+                      onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()}
+                    />
+                    {couponResult?.valid ? (
+                      <button
+                        onClick={clearCoupon}
+                        className="px-4 py-2.5 rounded-xl text-sm font-bold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleApplyCoupon()}
+                        disabled={couponLoading || !couponInput.trim() || !selectedPlanForCoupon}
+                        className="px-4 py-2.5 rounded-xl text-sm font-black text-white disabled:opacity-40 transition-colors"
+                        style={{ background: '#2563EB' }}
+                      >
+                        {couponLoading ? '...' : 'Apply'}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Result feedback */}
+                  {couponResult && (
+                    <div className={`mt-3 flex items-start gap-2 text-sm rounded-xl px-4 py-3 ${couponResult.valid ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'}`}>
+                      {couponResult.valid ? <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" /> : <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />}
+                      <span className="font-medium">{couponResult.message}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Footer */}
-              <div className="mt-16 text-center">
+              <div className="mt-10 text-center">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center justify-center gap-2">
                   <HelpCircle className="w-4 h-4" />
                   Secure transactions powered by Razorpay Autopay

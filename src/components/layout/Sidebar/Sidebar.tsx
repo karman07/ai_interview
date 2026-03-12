@@ -12,12 +12,14 @@ import {
   Sun,
   Briefcase,
   User,
+  LogOut,
 } from "lucide-react";
 
 import { cn } from "@/utils/cn";
 import SidebarItem from "./SidebarItem";
 import SidebarSection from "./SidebarSection";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const sidebarRoutes = [
   {
@@ -68,6 +70,7 @@ export default function Sidebar() {
   const [_, setActiveItem] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -75,6 +78,15 @@ export default function Sidebar() {
     setActiveItem(path);
     setIsMobileMenuOpen(false);
     navigate(path);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -150,6 +162,26 @@ export default function Sidebar() {
               </div>
             </button>
           </div>
+
+          {/* Logout Button */}
+          <div className="mt-2 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 border border-transparent transition-all duration-200"
+            >
+              <div className="flex-shrink-0 p-1.5 rounded-md text-gray-600 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400">
+                <LogOut size={18} />
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <span className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400">
+                  Logout
+                </span>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Sign out of your account
+                </p>
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -201,6 +233,26 @@ export default function Sidebar() {
                   </span>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
                     Toggle system theme
+                  </p>
+                </div>
+              </button>
+            </div>
+
+            {/* Logout Button */}
+            <div className="mt-2 border-t border-slate-100 dark:border-slate-800/50">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/10 transition-all duration-300 group"
+              >
+                <div className="flex-shrink-0 p-1 rounded-lg text-slate-500 dark:text-slate-400 group-hover:text-red-500 transition-transform duration-300">
+                  <LogOut size={20} />
+                </div>
+                <div className="flex-1 min-w-0 text-left">
+                  <span className="text-[13px] font-bold text-slate-700 dark:text-slate-200 group-hover:text-red-500 transition-colors duration-300">
+                    Logout
+                  </span>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                    Exit current session
                   </p>
                 </div>
               </button>
