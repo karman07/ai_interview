@@ -11,6 +11,15 @@ export class Result {
   createdAt?: Date;
   updatedAt?: Date;
 
+  @Prop({ index: true })
+  sessionId: string;
+
+  @Prop()
+  role: string;
+
+  @Prop()
+  roundType: string;
+
   @Prop({ required: true })
   jobDescription: string;
 
@@ -61,6 +70,21 @@ export class Result {
 
   @Prop({ type: Object })
   dimension_scores: Record<string, number>;
+
+  @Prop({
+    type: {
+      inputTokens: Number,
+      outputTokens: Number,
+      totalTokens: Number,
+      costUsd: Number,
+    },
+  })
+  tokenUsage: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    costUsd: number;
+  };
 
   @Prop({ type: Array })
   question_wise_analysis: any[];

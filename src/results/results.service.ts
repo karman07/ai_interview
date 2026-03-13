@@ -3,12 +3,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Result, ResultDocument } from './schemas/result.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
+import { AIUsage, AIUsageDocument } from '../analytics/schemas/ai-usage.schema';
 
 @Injectable()
 export class ResultsService {
   constructor(
     @InjectModel(Result.name) private resultModel: Model<ResultDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(AIUsage.name) private aiUsageModel: Model<AIUsageDocument>,
   ) { }
 
   // Get all results for logged-in user
@@ -34,8 +36,25 @@ export class ResultsService {
 
   // Create enhanced result from external data
   async createEnhancedResult(userId: string, data: any) {
+    let tokenUsage = undefined;
+
+    if (data.session_id) {
+      const usageDoc = await this.aiUsageModel.findOne({ sessionId: data.session_id }).exec();
+      if (usageDoc) {
+        tokenUsage = {
+          inputTokens: usageDoc.inputTokens,
+          outputTokens: usageDoc.outputTokens,
+          totalTokens: usageDoc.totalTokens,
+          costUsd: usageDoc.costUsd,
+        };
+      }
+    }
+
     const newResult = new this.resultModel({
       owner: new Types.ObjectId(userId),
+      sessionId: data.session_id,
+      role: data.role,
+      roundType: data.round,
       jobDescription: data.company || 'N/A', // Using company as placeholder if JD text not sent
       questions: data.question_wise_analysis?.map((q: any) => q.question) || [],
       difficulty: data.summary?.seniority_assessment || 'intermediate',
@@ -53,6 +72,7 @@ export class ResultsService {
       behavioral_insights: data.behavioral_insights,
       improvement_plan: data.improvement_plan,
       verdict: data.verdict,
+      tokenUsage,
       rawOutput: JSON.stringify(data),
     });
 

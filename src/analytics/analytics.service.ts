@@ -686,6 +686,41 @@ export class AnalyticsService {
     };
   }
 
+  // Enhanced AI Usage Statistics for Dedicated Admin Page
+  async getAdminAIUsageStats() {
+    const baseStats = await this.getAIUsageStats();
+
+    // Get recent session breakdown with user details
+    const recentSessions = await this.aiUsageModel.aggregate([
+      { $sort: { timestamp: -1 } },
+      { $limit: 50 },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'userDetails',
+        },
+      },
+      {
+        $addFields: {
+          user: { $arrayElemAt: ['$userDetails', 0] },
+        },
+      },
+      {
+        $project: {
+          userDetails: 0,
+          'user.password': 0,
+        },
+      },
+    ]);
+
+    return {
+      ...baseStats,
+      recentSessions,
+    };
+  }
+
   async saveAIUsage(data: Partial<AIUsage>) {
     // If status is not provided or likely generic, try to lookup from user profile
     if (data.userId) {

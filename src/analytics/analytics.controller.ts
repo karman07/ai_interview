@@ -1,9 +1,13 @@
-import { Controller, Post, Get, Body, Param, Query, Logger, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Req, UseGuards, Post, Body, Query, HttpCode, Param } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { UserRole } from '../users/schemas/user.schema';
 import { TrackVisitorDto } from './dto/track-visitor.dto';
 import { StartSessionDto } from './dto/start-session.dto';
 import { TrackPageViewDto } from './dto/track-pageview.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { Logger } from '@nestjs/common'; // Keep Logger as it's used in the constructor
 
 @Controller(['analytics', 'interviews'])
 export class AnalyticsController {
@@ -76,19 +80,9 @@ export class AnalyticsController {
     return this.analyticsService.getAdminDashboardStats();
   }
 
-  @Get('admin/ai-usage')
-  async getAIUsageStats() {
-    return this.analyticsService.getAIUsageStats();
-  }
-
   @Get('admin/recent-sessions')
   async getRecentSessions(@Query('limit') limit?: number) {
     return this.analyticsService.getAllSessions(limit);
-  }
-
-  @Get('admin/popular-pages')
-  async getPopularPages(@Query('limit') limit?: number) {
-    return this.analyticsService.getPopularPages(limit);
   }
 
   @Get('dashboard-stats')
@@ -98,6 +92,13 @@ export class AnalyticsController {
     return this.analyticsService.getAdminDashboardStats(userId);
   }
 
+  @Get('admin/popular-pages')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getPopularPages(@Query('limit') limit = 10) {
+    return this.analyticsService.getPopularPages(+limit);
+  }
+
   @Get('analytics')
   @UseGuards(JwtAuthGuard)
   async getUserAnalytics(@Req() req) {
@@ -105,13 +106,23 @@ export class AnalyticsController {
     return this.analyticsService.getAnalytics(userId);
   }
 
+  // --- AI USAGE endpoints ---
+
   @Post('ai-usage')
-  async recordAIUsage(@Body() data: any) {
-    return this.analyticsService.saveAIUsage(data);
+  @HttpCode(200)
+  async recordAIUsage(@Body() usageData: any) {
+    return this.analyticsService.saveAIUsage(usageData);
+  }
+
+  @Get('admin/ai-usage')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getAdminAIUsageStats() {
+    return this.analyticsService.getAdminAIUsageStats();
   }
 
   @Post('heartbeat')
-  async heartbeat(@Body() data: { sessionId: string; visitorId: string; path?: string }) {
+  async heartbeat(@Body() data: { sessionId: string; visitorId: string; url?: string; userId?: string }) {
     return this.analyticsService.heartbeat(data);
   }
 }
