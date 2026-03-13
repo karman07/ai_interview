@@ -21,7 +21,7 @@ const SAMPLE_JOBS = [
     employment_type: "Full-time",
     salary: "₹25 – 35 LPA",
     tags: ["Node.js", "Golang", "Kafka", "PostgreSQL"],
-    description: "Work on the core order fulfillment and inventory systems powering 10-minute grocery delivery at scale. You'll own micro-services end-to-end, from design to production.",
+    description: "Own the systems behind 10-minute grocery delivery — from order placement to the moment it's at someone's door. You'll design and ship micro-services end-to-end, at real scale.",
     badge: "Hiring now",
     badgeColor: "emerald",
   },
@@ -33,7 +33,7 @@ const SAMPLE_JOBS = [
     employment_type: "Full-time",
     salary: "₹18 – 28 LPA",
     tags: ["React", "TypeScript", "GraphQL", "Design Systems"],
-    description: "Join the Payments UX tribe to build the checkout and dashboard experiences used by 8M+ businesses. Strong focus on performance, accessibility, and component architecture.",
+    description: "Build the checkout and dashboard that 8M+ businesses rely on every day. You'll care deeply about performance, accessibility, and writing components that last.",
     badge: "Remote-friendly",
     badgeColor: "blue",
   },
@@ -45,7 +45,7 @@ const SAMPLE_JOBS = [
     employment_type: "Full-time",
     salary: "₹20 – 28 LPA",
     tags: ["Spark", "dbt", "Airflow", "BigQuery"],
-    description: "Build and maintain the real-time and batch data pipelines that power PhonePe's analytics and ML infrastructure. Own data quality, latency SLAs, and pipeline observability.",
+    description: "Keep the data flowing — reliably, on time, and in shape. You'll own pipelines that feed analytics and ML systems used by hundreds of millions of people.",
     badge: "High growth",
     badgeColor: "purple",
   },
@@ -57,7 +57,7 @@ const SAMPLE_JOBS = [
     employment_type: "Full-time",
     salary: "₹22 – 32 LPA",
     tags: ["Java", "Spring Boot", "Redis", "AWS"],
-    description: "Own services within the restaurant and logistics platform that handles millions of orders daily. Focus on reliability, latency, and designing for 10× traffic spikes.",
+    description: "Work on the platform that handles millions of orders a day — and stays standing during 10× traffic spikes. Reliability and low latency are your north stars.",
     badge: "Series I",
     badgeColor: "orange",
   },
@@ -65,9 +65,9 @@ const SAMPLE_JOBS = [
 
 const badgeStyle: Record<string, string> = {
   emerald: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50",
-  blue:    "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50",
-  purple:  "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50",
-  orange:  "bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50",
+  blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50",
+  purple: "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50",
+  orange: "bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50",
 };
 
 /* ─── Component ───────────────────────────────────────────────────────── */
@@ -127,7 +127,7 @@ const JobsPublicPage = () => {
             className="inline-flex items-center px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 mb-8 backdrop-blur-sm"
           >
             <Sparkles className="w-4 h-4 mr-2 text-blue-500" />
-            <span className="text-sm font-semibold tracking-wide">SMART JOB DISCOVERY</span>
+            <span className="text-sm font-semibold tracking-wide">FIND ROLES WORTH YOUR TIME</span>
           </motion.div>
 
           <motion.h1
@@ -136,9 +136,9 @@ const JobsPublicPage = () => {
             transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
             className="text-4xl md:text-6xl font-extrabold text-slate-900 dark:text-white leading-tight tracking-tight mb-5"
           >
-            Don't just apply.{" "}
+            Know your fit before{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500 dark:from-blue-400 dark:to-indigo-300">
-              Apply smart.
+              you apply.
             </span>
           </motion.h1>
 
@@ -148,8 +148,8 @@ const JobsPublicPage = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            Browse curated roles from top companies. See your realistic match percentage before
-            you apply — and prep for the exact interview questions that role requires.
+            Browse hand-picked roles from companies that are actually hiring. See how well
+            you match — and walk into the interview already knowing what they'll ask.
           </motion.p>
 
           <motion.div
@@ -159,12 +159,12 @@ const JobsPublicPage = () => {
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Button variant="primary" className="px-8 py-4 text-base font-semibold w-full sm:w-auto shadow-lg shadow-blue-500/25" onClick={handleViewMore}>
-              Browse All Jobs
+              See All Open Roles
               <ChevronRight className="w-5 h-5 ml-2" />
             </Button>
             <Button variant="outline" className="px-8 py-4 text-base font-semibold w-full sm:w-auto" onClick={() => navigate('/interview_round')}>
               <Target className="w-5 h-5 mr-2" />
-              Practice for a Role
+              Practice for a Specific Role
             </Button>
           </motion.div>
         </div>
@@ -174,13 +174,13 @@ const JobsPublicPage = () => {
       <section className="py-20 bg-slate-50 dark:bg-slate-900/50 border-y border-slate-200 dark:border-slate-800">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
-            <p className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">What We Offer</p>
+            <p className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">More Than a Job Board</p>
             <h2 className="text-2xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-4">
-              Your Job Search, Upgraded
+              We help you show up prepared
             </h2>
             <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-              We don't just show you jobs. We help you understand your fit, prepare for the exact questions,
-              and track your readiness — before you ever hit Apply.
+              Anyone can send you a list of jobs. We help you understand where you stand,
+              what's missing, and how to fix it — before the interview.
             </p>
           </div>
 
@@ -188,23 +188,23 @@ const JobsPublicPage = () => {
             {[
               {
                 icon: <Search className="w-6 h-6" />,
-                title: "Role-Matched Listings",
-                desc: "Every job is tagged with the skills, seniority, and tech stack it requires. Filter by what you know — not just by title.",
-                bullets: ["Real JD skill mapping", "Seniority-level filters", "Remote / hybrid / on-site tags"],
+                title: "Jobs that actually match you",
+                desc: "Every listing is tagged by the skills, seniority, and tech stack it needs. Filter by what you know — not just by job title.",
+                bullets: ["Skill-mapped job descriptions", "Seniority-level filters", "Remote / hybrid / on-site tags"],
                 color: "blue",
               },
               {
                 icon: <Target className="w-6 h-6" />,
-                title: "Know Your Fit Before Applying",
-                desc: "Run your resume against any JD instantly. Get a match percentage and a gap report that tells you exactly what to strengthen.",
-                bullets: ["ATS keyword gap analysis", "Realistic match % score", "Know before you apply"],
+                title: "See your fit before applying",
+                desc: "Drop your resume against any JD. Get a match score and a plain-English gap report — so you know what to work on before you hit send.",
+                bullets: ["ATS keyword gap analysis", "Realistic match % score", "No more guessing"],
                 color: "indigo",
               },
               {
                 icon: <Zap className="w-6 h-6" />,
-                title: "Prep for That Specific Role",
-                desc: "See the interview questions most commonly asked for each role. Practice them in a live mock session with instant AI feedback.",
-                bullets: ["Company-specific question sets", "Instant answer scoring", "Written model answers"],
+                title: "Prep for the exact questions",
+                desc: "See what interviewers at each company actually ask. Practice in a live mock session and get instant feedback on your answers.",
+                bullets: ["Company-specific question sets", "Instant answer scoring", "Written model answers included"],
                 color: "emerald",
               },
             ].map((card, i) => (
@@ -216,11 +216,10 @@ const JobsPublicPage = () => {
                 transition={{ duration: 0.5, delay: i * 0.1 }}
                 className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-7 hover:border-blue-400/50 dark:hover:border-blue-500/40 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300"
               >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-5 ${
-                  card.color === 'blue'    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
-                  card.color === 'indigo'  ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' :
-                                             'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
-                }`}>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-5 ${card.color === 'blue' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
+                  card.color === 'indigo' ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' :
+                    'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+                  }`}>
                   {card.icon}
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{card.title}</h3>
@@ -240,10 +239,10 @@ const JobsPublicPage = () => {
           {/* Social proof strip */}
           <div className="flex flex-wrap items-center justify-center gap-6 mt-12 pt-10 border-t border-slate-200 dark:border-slate-800">
             {[
-              { icon: <TrendingUp className="w-4 h-4" />, label: "100+ interviews taken" },
+              { icon: <TrendingUp className="w-4 h-4" />, label: "100+ mock interviews completed" },
               { icon: <Briefcase className="w-4 h-4" />, label: "300+ resumes analyzed" },
-              { icon: <Star className="w-4 h-4" />, label: "4.9 / 5 candidate rating" },
-              { icon: <Building2 className="w-4 h-4" />, label: "Jobs from top Indian & global tech cos" },
+              { icon: <Star className="w-4 h-4" />, label: "4.9 / 5 from candidates" },
+              { icon: <Building2 className="w-4 h-4" />, label: "Roles from top Indian & global tech cos" },
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
                 <span className="text-blue-500 dark:text-blue-400">{item.icon}</span>
@@ -258,13 +257,13 @@ const JobsPublicPage = () => {
       <section className="py-20 bg-white dark:bg-slate-950">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-10">
-            <p className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">Featured Roles</p>
+            <p className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">A Few Examples</p>
             <h2 className="text-2xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-3">
-              Roles You Could Be Preparing For
+              Roles people are landing right now
             </h2>
             <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto text-sm">
-              These are the kinds of opportunities our candidates regularly land.
-              Sign up to access the full live listings and one-click prep paths.
+              These are the kinds of opportunities our users regularly walk into — prepared.
+              Sign up to see live listings and start prepping in one click.
             </p>
           </div>
 
@@ -328,7 +327,7 @@ const JobsPublicPage = () => {
                       Apply Now
                     </Button>
                     <Button variant="outline" className="w-full justify-center text-sm" onClick={() => navigate('/interview_round')}>
-                      Prep for This
+                      Prepare
                       <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                     </Button>
                   </div>
@@ -343,19 +342,19 @@ const JobsPublicPage = () => {
       <section className="py-16 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-800">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-10">
-            <p className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">Live Listings</p>
+            <p className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">Fresh Listings</p>
             <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white mb-3">
-              Currently Open Roles
+              What's open right now
             </h2>
             <p className="text-slate-500 dark:text-slate-400 text-sm max-w-lg mx-auto">
-              Updated daily from our partner job boards and direct company postings.
+              Pulled daily from our partner boards and direct company postings. No stale listings.
             </p>
           </div>
 
           {loading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto" />
-              <p className="mt-4 text-slate-500 dark:text-slate-400 text-sm font-medium">Fetching live listings…</p>
+              <p className="mt-4 text-slate-500 dark:text-slate-400 text-sm font-medium">Grabbing the latest roles…</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -406,7 +405,7 @@ const JobsPublicPage = () => {
                         </Button>
                         {job.redirect_url && (
                           <Button variant="outline" className="w-full justify-center text-sm" onClick={() => handleGate(job.redirect_url)}>
-                            Details
+                            See Details
                             <ExternalLink className="w-3.5 h-3.5 ml-1.5" />
                           </Button>
                         )}
@@ -417,8 +416,8 @@ const JobsPublicPage = () => {
               ) : (
                 <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
                   <Briefcase className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-                  <h3 className="text-base font-semibold text-slate-700 dark:text-white mb-1">No live listings right now</h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm">Check back soon — new roles are added daily.</p>
+                  <h3 className="text-base font-semibold text-slate-700 dark:text-white mb-1">Nothing live at the moment</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">New roles get added every day — worth checking back soon.</p>
                 </div>
               )}
             </div>
@@ -430,13 +429,13 @@ const JobsPublicPage = () => {
               <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-5 text-blue-600 dark:text-blue-400">
                 <Lock className="w-7 h-7" />
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Unlock Full Access</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Want to see everything?</h2>
               <p className="text-slate-600 dark:text-slate-400 mb-7 max-w-lg mx-auto text-sm">
-                Sign up for free to see hundreds of live listings, run resume-to-JD match checks,
-                and prep for the exact questions those roles will throw at you.
+                Create a free account to browse hundreds of live listings, check your resume match,
+                and start prepping for the exact questions those roles ask.
               </p>
               <Button variant="primary" onClick={handleViewMore} className="px-8 py-3 h-auto text-base">
-                Sign Up Free — No Card Needed
+                Get started — it's free
                 <ChevronRight className="w-5 h-5 ml-2" />
               </Button>
             </div>

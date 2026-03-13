@@ -161,7 +161,7 @@ const HeroSection = ({ onStart, onResume }: { onStart: () => void; onResume: () 
           </div>
           <div className="flex items-center gap-1">
             {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
-            <span className="ml-2 text-sm text-slate-600 dark:text-slate-400 font-medium">4.9 · Used by 12,000+ candidates</span>
+            <span className="ml-2 text-sm text-slate-600 dark:text-slate-400 font-medium">4.6 · Used by 100+ candidates</span>
           </div>
         </motion.div>
 
