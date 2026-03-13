@@ -134,7 +134,7 @@ const TermsOfService = () => {
                                 </div>
                                 <div className="mt-6 flex items-center space-x-3 bg-white/5 p-4 rounded-xl border border-white/10">
                                     <MapPin className="w-5 h-5 text-blue-400" />
-                                    <span className="text-sm font-medium uppercase tracking-tight">A-30 Max Heights, Sonepat Haryana</span>
+                                    <span className="text-sm font-medium uppercase tracking-tight">A-30 Max Heights, Sonepat, Haryana, India</span>
                                 </div>
                             </div>
                         </div>

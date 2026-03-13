@@ -8,6 +8,7 @@ import { ResultsProvider } from "@/contexts/ResultsContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import NotificationToast from "@/components/common/NotificationToast";
 import PricingDialog from "@/pages/Pricing/PricingDialog";
+import PricingPage from "@/pages/Pricing/PricingPage";
 import routes from "@/constants/routes";
 import AuthPage from "./pages/Auth/AuthPage";
 import VerifyEmail from "./pages/Auth/VerifyEmail";
@@ -98,6 +99,7 @@ function App() {
                     {/* Public Routes */}
                     <Route path={routes.home} element={<Home />} />
                     <Route path={routes.about} element={<About />} />
+                    <Route path={routes.pricing} element={<PricingPage />} />
                     <Route path={routes.contact} element={<ContactPage />} />
                     <Route path={routes.jobsPublic} element={<JobsPublicPage />} />
                     <Route path={routes.privacy} element={<PrivacyPolicy />} />

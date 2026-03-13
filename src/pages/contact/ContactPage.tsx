@@ -169,7 +169,7 @@ const ContactPage = () => {
 
               <div className="space-y-6">
                 <a
-                  href="mailto:karmansingharora01@gmail.com"
+                  href="mailto:info@aiforjob.ai"
                   className="flex items-start gap-4 p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-white/10 transition-all duration-300 group cursor-pointer"
                 >
                   <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform text-blue-400">
@@ -177,7 +177,7 @@ const ContactPage = () => {
                   </div>
                   <div>
                     <p className="font-semibold text-lg mb-1 text-white">Email</p>
-                    <p className="text-slate-300 group-hover:text-white transition-colors">karmansingharora01@gmail.com</p>
+                    <p className="text-slate-300 group-hover:text-white transition-colors">info@aiforjob.ai</p>
                   </div>
                 </a>
 
@@ -205,7 +205,7 @@ const ContactPage = () => {
                   </div>
                   <div>
                     <p className="font-semibold text-lg mb-1 text-white">Location</p>
-                    <p className="text-slate-300 group-hover:text-white transition-colors">A-30 Max Heights Sonepat Haryana</p>
+                    <p className="text-slate-300 group-hover:text-white transition-colors">A-30 Max Heights Sonepat, Haryana, India</p>
                   </div>
                 </a>
               </div>

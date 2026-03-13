@@ -32,6 +32,7 @@ export default function Footer() {
               <li><Link to="/subjects" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Preparation Hub</Link></li>
               <li><Link to="/resources" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Resources</Link></li>
               <li><Link to="/employee" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Job Portal</Link></li>
+              <li><Link to="/pricing" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Pricing</Link></li>
             </ul>
           </div>
 
@@ -73,7 +74,7 @@ export default function Footer() {
                   <p className="text-sm font-medium text-gray-900 dark:text-white">Visit us</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     A-30 Max Heights<br />
-                    Sonepat Haryana
+                    Sonepat, Haryana, India 
                   </p>
                 </div>
               </div>

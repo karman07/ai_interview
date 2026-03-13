@@ -4,7 +4,6 @@ import routes from "@/constants/routes";
 import Button from "../ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Moon, Sun } from "lucide-react";
-import { usePricing } from "@/contexts/PricingContext";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -52,14 +51,7 @@ export default function Navbar() {
     setActiveLink(routes.home);
   };
 
-  const { setShowPricing } = usePricing();
-
-  const handleNavLinkClick = (to: string, e: React.MouseEvent) => {
-    if (to === "/pricing") {
-      e.preventDefault();
-      setShowPricing(true);
-      return;
-    }
+  const handleNavLinkClick = (to: string, _e: React.MouseEvent) => {
     setActiveLink(to);
     setIsMenuOpen(false);
   };

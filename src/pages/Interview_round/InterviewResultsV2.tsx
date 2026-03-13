@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { InterviewV2Report } from "@/api/interviewV2";
 import { InterviewAnalyticsApi } from "@/api/interviewAnalytics";
+import FeedbackDialog from "@/components/interview/FeedbackDialog";
 
 // ────────────────────────────────────────────────────────────
 // Main Component
@@ -39,6 +40,14 @@ export default function InterviewResultsV2() {
   const navigate = useNavigate();
   const [report, setReport] = useState<InterviewV2Report | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showFeedback, setShowFeedback] = useState(false);
+
+  useEffect(() => {
+    if (!loading && report) {
+      const t = setTimeout(() => setShowFeedback(true), 1500);
+      return () => clearTimeout(t);
+    }
+  }, [loading, report]);
 
   useEffect(() => {
     async function loadReport() {
@@ -129,6 +138,13 @@ export default function InterviewResultsV2() {
               Dashboard
             </button>
             <button
+              onClick={() => setShowFeedback(true)}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Rate Session
+            </button>
+            <button
               onClick={() => window.print()}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm"
             >
@@ -200,6 +216,12 @@ export default function InterviewResultsV2() {
           </button>
         </div>
       </div>
+
+      <FeedbackDialog
+        sessionId={sessionId ?? ""}
+        open={showFeedback}
+        onClose={() => setShowFeedback(false)}
+      />
     </div>
   );
 }

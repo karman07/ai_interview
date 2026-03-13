@@ -1,372 +1,630 @@
-import { ComponentType } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, useInView, useAnimation } from "framer-motion";
 import {
-  ChevronRight,
-  Brain,
-  Target,
-  Zap,
-  Mic,
-  FileText,
-  Briefcase,
-  Cpu,
-  CheckCircle2,
-  Sparkles,
-  ArrowRight
+  ChevronRight, Brain, Target, Zap, Mic, FileText, Briefcase,
+  CheckCircle2, Sparkles, ArrowRight, MessageSquare, Star,
+  BarChart3, Clock, Shield, TrendingUp, Users, Award, Play,
+  Code2, Layers, BookOpen, Bot, ChevronDown
 } from "lucide-react";
-
 import Button from "../components/ui/button";
 
+/* ── Typewriter hook ───────────────────────────────────────────────── */
+function useTypewriter(words: string[], speed = 80, pause = 1800) {
+  const [display, setDisplay] = useState("");
+  const [wordIdx, setWordIdx] = useState(0);
+  const [charIdx, setCharIdx] = useState(0);
+  const [deleting, setDeleting] = useState(false);
 
-// ================== HERO =====================
+  useEffect(() => {
+    const current = words[wordIdx];
+    const delay = deleting
+      ? Math.max(30, speed / 2.5)
+      : charIdx === current.length ? pause : speed;
 
-const HeroSection = ({ onStart, onResume }: { onStart: () => void, onResume: () => void }) => (
-  <section className="relative pt-32 pb-24 overflow-hidden bg-white dark:bg-slate-950">
+    const t = setTimeout(() => {
+      if (!deleting && charIdx < current.length) {
+        setDisplay(current.slice(0, charIdx + 1));
+        setCharIdx(c => c + 1);
+      } else if (!deleting && charIdx === current.length) {
+        setDeleting(true);
+      } else if (deleting && charIdx > 0) {
+        setDisplay(current.slice(0, charIdx - 1));
+        setCharIdx(c => c - 1);
+      } else {
+        setDeleting(false);
+        setWordIdx(w => (w + 1) % words.length);
+      }
+    }, delay);
+    return () => clearTimeout(t);
+  }, [charIdx, deleting, wordIdx, words, speed, pause]);
 
-    <div className="absolute inset-0 -z-10 overflow-hidden">
-      <div className="absolute left-1/2 top-[-100px] h-[600px] w-[1000px] -translate-x-1/2 rounded-full bg-blue-500/20 blur-[140px]" />
-      <div className="absolute right-[-200px] top-[200px] h-[400px] w-[400px] rounded-full bg-indigo-500/20 blur-[120px]" />
-    </div>
+  return display;
+}
 
-    <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
+/* ── Counter animation ─────────────────────────────────────────────── */
+function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: true });
+  const [count, setCount] = useState(0);
 
-      <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 mb-8 backdrop-blur-sm">
-        <Sparkles className="w-4 h-4 mr-2 text-blue-400" />
-        <span className="text-sm font-medium tracking-wide">
-          INTERVIEW PREPARATION PLATFORM
-        </span>
-      </div>
+  useEffect(() => {
+    if (!isInView) return;
+    let start = 0;
+    const step = target / 60;
+    const t = setInterval(() => {
+      start += step;
+      if (start >= target) { setCount(target); clearInterval(t); }
+      else setCount(Math.floor(start));
+    }, 16);
+    return () => clearInterval(t);
+  }, [isInView, target]);
 
-      <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-slate-900 dark:text-slate-50 leading-[1.05] tracking-tight mb-6">
-        Prepare for Real Interviews.
-        <br />
-        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-500 dark:from-blue-400 dark:to-blue-300">
-          Get Real Feedback.
-        </span>
-      </h1>
+  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
+}
 
-      <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto mb-10 leading-relaxed">
-        Practice interviews, improve your resume, and track your preparation —
-        all in one platform designed to help you perform better in real hiring processes.
-      </p>
-
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-
-        <Button
-          variant="primary"
-          className="px-8 py-4 text-lg w-full sm:w-auto"
-          onClick={onStart}
-        >
-          Start Interview Practice
-          <ChevronRight className="w-5 h-5 ml-2" />
-        </Button>
-
-        <Button
-          variant="outline"
-          className="px-8 py-4 text-lg w-full sm:w-auto"
-          onClick={onResume}
-        >
-          <FileText className="w-5 h-5 mr-2" />
-          Analyze My Resume
-        </Button>
-
-      </div>
-
-      <p className="text-sm text-slate-500 dark:text-slate-500 mt-6">
-        Used by candidates preparing for top tech companies and startups
-      </p>
-
-    </div>
-  </section>
-);
-
-
-// ================== VIDEO =====================
-
-const VideoSection = () => (
-  <section className="py-20 bg-white dark:bg-slate-950">
-
-    <div className="max-w-7xl mx-auto px-6">
-
-      <div className="text-center mb-16">
-
-        <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 mb-4 tracking-tight">
-          See How the Platform Works
-        </h2>
-
-        <p className="text-slate-600 dark:text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
-          A quick walkthrough of how AI for Job helps you practice interviews,
-          improve your resume, and prepare more effectively.
-        </p>
-
-      </div>
-
-      <div className="relative aspect-video rounded-[2.5rem] overflow-hidden shadow-[0_48px_80px_-20px_rgba(59,130,246,0.2)] dark:shadow-[0_48px_80px_-16px_rgba(0,0,0,0.5)] border-[8px] border-white dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-
-        <video
-          className="w-full h-full object-cover"
-          controls
-          playsInline
-        >
-          <source src="/videos/good.mp4" type="video/mp4" />
-        </video>
-
-        <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-slate-900/5 dark:ring-white/10 rounded-[2.5rem]" />
-
-      </div>
-    </div>
-  </section>
-);
-
-
-// ================== PILLARS =====================
-
-const PillarCard = ({
-  title,
-  content,
-  cta,
-  icon: Icon,
-  onClick
-}: {
-  title: string,
-  content: string,
-  cta: string,
-  icon: ComponentType<any>,
-  onClick: () => void
-}) => (
-  <div className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/20 flex flex-col items-start">
-
-    <div className="w-14 h-14 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-      <Icon className="w-7 h-7 text-blue-600 dark:text-blue-400" />
-    </div>
-
-    <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">
-      {title}
-    </h3>
-
-    <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-8 flex-grow">
-      {content}
-    </p>
-
-    <button
-      onClick={onClick}
-      className="flex items-center text-sm font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider"
+/* ── Reveal wrapper ────────────────────────────────────────────────── */
+function Reveal({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 36 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay }}
+      className={className}
     >
-      {cta}
-      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-    </button>
+      {children}
+    </motion.div>
+  );
+}
 
-  </div>
-);
+/* ══════════════════════ HERO ══════════════════════════════════════════ */
+const ROLES = ["Frontend Developer", "Backend Engineer", "Product Manager", "Data Scientist", "DevOps Engineer", "Full Stack Developer"];
 
-
-const PillarsSection = ({ navigate }: { navigate: (path: string) => void }) => (
-  <section className="py-24 bg-slate-50 dark:bg-slate-900/50">
-
-    <div className="max-w-7xl mx-auto px-6">
-
-      <div className="text-center mb-16">
-
-        <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-          Everything You Need to Prepare for Interviews
-        </h2>
-
-        <p className="text-slate-600 dark:text-slate-400 text-lg">
-          Tools designed to help you practice, improve, and get hired.
-        </p>
-
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-6">
-
-        <PillarCard
-          icon={Mic}
-          title="AI Interview Coach"
-          content="Practice behavioral, coding, and system design interviews with AI. Receive feedback on clarity, structure, communication, and technical depth."
-          cta="Start Mock Interview"
-          onClick={() => navigate('/interview/start/behavioral')}
-        />
-
-        <PillarCard
-          icon={FileText}
-          title="Resume Analyzer"
-          content="Upload your resume to receive an ATS score, keyword analysis, and suggestions to improve clarity, impact, and readability."
-          cta="Analyze Resume"
-          onClick={() => navigate('/dashboard')}
-        />
-
-        <PillarCard
-          icon={Brain}
-          title="Preparation Hub"
-          content="Structured preparation tracks for DSA, system design, core CS, and behavioral interviews with progress tracking."
-          cta="Explore Preparation"
-          onClick={() => navigate('/subjects')}
-        />
-
-        <PillarCard
-          icon={Briefcase}
-          title="Job Discovery"
-          content="Discover relevant roles, track applications, and understand how your profile matches different job opportunities."
-          cta="Explore Jobs"
-          onClick={() => navigate('/jobs')}
-        />
-
-      </div>
-
-    </div>
-  </section>
-);
-
-
-// ================== WHY =====================
-
-const WhySection = () => (
-  <section className="py-24 bg-white dark:bg-slate-950">
-
-    <div className="max-w-7xl mx-auto px-6">
-
-      <div className="grid md:grid-cols-2 gap-16 items-center">
-
-        <div>
-
-          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 mb-8">
-            Why Candidates Use AI for Job
-          </h2>
-
-          <div className="space-y-6">
-
-            {[
-              "Practice interviews in a realistic environment",
-              "Receive actionable feedback you can improve from",
-              "Optimize resumes for ATS and recruiters",
-              "Track preparation across multiple interview areas"
-            ].map((item, idx) => (
-
-              <div key={idx} className="flex items-start">
-
-                <div className="mt-1 mr-4">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                </div>
-
-                <p className="text-lg text-slate-700 dark:text-slate-300">
-                  {item}
-                </p>
-
-              </div>
-
-            ))}
-
-          </div>
-
-        </div>
-
-
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-8 shadow-lg">
-
-          <div className="space-y-6">
-
-            <div className="flex justify-between">
-              <span>Interview Readiness</span>
-              <span className="font-bold text-emerald-500">92%</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span>Resume Score</span>
-              <span className="font-bold text-blue-500">90 / 100</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span>Answer Clarity</span>
-              <span className="font-bold text-blue-500">Above Average</span>
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-    </div>
-  </section>
-);
-
-
-// ================== TRANSFORMATION =====================
-
-const TransformationSection = () => (
-  <section className="py-24 bg-slate-50 dark:bg-slate-900 border-y border-slate-200 dark:border-slate-800">
-
-    <div className="max-w-4xl mx-auto px-6 text-center">
-
-      <Cpu className="w-16 h-16 text-blue-600 mx-auto mb-8" />
-
-      <h2 className="text-4xl md:text-5xl font-bold mb-8">
-        Preparation Should Be Structured — Not Random
-      </h2>
-
-      <p className="text-xl text-slate-600 dark:text-slate-400 leading-relaxed">
-        Most candidates prepare without feedback or direction.
-        AI for Job provides structured practice, measurable progress,
-        and insights that help you improve every interview round.
-      </p>
-
-    </div>
-  </section>
-);
-
-
-// ================== CTA =====================
-
-const FinalCTA = ({ onStart, onResume }: { onStart: () => void, onResume: () => void }) => (
-  <section className="py-24 bg-white dark:bg-slate-950">
-
-    <div className="max-w-5xl mx-auto px-6 text-center">
-
-      <h2 className="text-4xl md:text-6xl font-bold mb-12">
-        Start Preparing for Your Next Interview
-      </h2>
-
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-
-        <Button
-          variant="primary"
-          className="px-10 py-5 text-xl"
-          onClick={onStart}
-        >
-          <Zap className="w-5 h-5 mr-3" />
-          Start Interview Practice
-        </Button>
-
-        <Button
-          variant="success"
-          className="px-10 py-5 text-xl"
-          onClick={onResume}
-        >
-          <Target className="w-5 h-5 mr-3" />
-          Improve My Resume
-        </Button>
-
-      </div>
-
-    </div>
-  </section>
-);
-
-// ================== MAIN COMPONENT =====================
-
-const Home = () => {
-  const navigate = useNavigate();
-
-  const handleStartPractice = () => navigate("/dashboard");
-  const handleAnalyzeResume = () => navigate("/dashboard");
+const HeroSection = ({ onStart, onResume }: { onStart: () => void; onResume: () => void }) => {
+  const typed = useTypewriter(ROLES, 75, 2000);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 selection:bg-blue-500/30 transition-colors duration-500">
+    <section className="relative pt-28 pb-20 overflow-hidden bg-white dark:bg-slate-950">
+      {/* glow blobs */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute left-1/2 top-[-80px] h-[700px] w-[1100px] -translate-x-1/2 rounded-full bg-blue-500/15 blur-[160px]" />
+        <div className="absolute right-[-120px] top-[200px] h-[380px] w-[380px] rounded-full bg-indigo-500/20 blur-[120px]" />
+        <div className="absolute left-[-80px] bottom-[80px] h-[280px] w-[280px] rounded-full bg-cyan-500/10 blur-[100px]" />
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="inline-flex items-center px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 mb-8 backdrop-blur-sm"
+        >
+          <Sparkles className="w-4 h-4 mr-2 text-blue-400" />
+          <span className="text-sm font-semibold tracking-wide">AI-POWERED INTERVIEW PREPARATION</span>
+        </motion.div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.65, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          className="text-5xl md:text-7xl lg:text-8xl font-extrabold text-slate-900 dark:text-slate-50 leading-[1.05] tracking-tight mb-4"
+        >
+          Land your role as a
+          <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 dark:from-blue-400 dark:via-blue-300 dark:to-indigo-300">
+            {typed}<span className="inline-block w-[3px] h-[0.85em] bg-blue-600 dark:bg-blue-400 align-middle ml-0.5 animate-caret-blink" />
+          </span>
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.25 }}
+          className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto mb-10 leading-relaxed"
+        >
+          Stop guessing what interviewers want. Practice with real-world questions,
+          get instant AI feedback on your answers, fix your resume's ATS score,
+          and walk into interviews with actual confidence — not just hope.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.35 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-4"
+        >
+          <Button variant="primary" className="px-8 py-4 text-base font-semibold w-full sm:w-auto shadow-lg shadow-blue-500/25" onClick={onStart}>
+            Start Practicing Free
+            <ChevronRight className="w-5 h-5 ml-2" />
+          </Button>
+          <Button variant="outline" className="px-8 py-4 text-base font-semibold w-full sm:w-auto" onClick={onResume}>
+            <FileText className="w-5 h-5 mr-2" />
+            Check My Resume Score
+          </Button>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="flex items-center justify-center gap-6 mt-10 flex-wrap"
+        >
+          <div className="flex -space-x-2">
+            {[
+              { url: "https://media.licdn.com/dms/image/v2/D5603AQExDIe-7STGWA/profile-displayphoto-scale_400_400/B56ZyFUCf2KgAg-/0/1771763150880?e=1775088000&v=beta&t=yymUWoQVpxkID74wX9x6Exxm0zdoBKWECrThJjaDG80", name: "Karman" },
+              { url: "https://media.licdn.com/dms/image/v2/D5635AQFDzXGekpeRgQ/profile-framedphoto-shrink_400_400/B56ZfMjNCUG0Ak-/0/1751483470343?e=1773997200&v=beta&t=Avfj6RzGFoO0xhJbyy_4RVocRAMaGJh9JYkO7HBQnCg", name: "Rahat" },
+              { url: "https://media.licdn.com/dms/image/v2/D5603AQHCK_ANQCya4Q/profile-displayphoto-scale_400_400/B56ZyjXnt1HQAg-/0/1772267407833?e=1775088000&v=beta&t=5ZI6FkyIGfMJIKFEPBLdqtfFb9j2odZsQpMOXQQQr_o", name: "Advitya" },
+            ].map((p, i) => (
+              <img key={i} src={p.url} alt={p.name} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-950 object-cover" />
+            ))}
+          </div>
+          <div className="flex items-center gap-1">
+            {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
+            <span className="ml-2 text-sm text-slate-600 dark:text-slate-400 font-medium">4.9 · Used by 12,000+ candidates</span>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.7 }}
+          className="mt-10 flex justify-center"
+        >
+          <a href="#how-it-works" className="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-600 hover:text-blue-500 transition-colors">
+            <span className="text-xs font-medium">See how it works</span>
+            <motion.div animate={{ y: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+              <ChevronDown className="w-5 h-5" />
+            </motion.div>
+          </a>
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
+/* ══════════════════════ STATS ═════════════════════════════════════════ */
+const StatsSection = () => (
+  <section className="py-16 bg-slate-50 dark:bg-slate-900/60 border-y border-slate-200 dark:border-slate-800">
+    <div className="max-w-6xl mx-auto px-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        {[
+          { label: "Mock Interviews Done",  target: 100,  suffix: "+",  icon: <Mic className="w-5 h-5" /> },
+          { label: "Resumes Analyzed",      target: 300,  suffix: "+",  icon: <FileText className="w-5 h-5" /> },
+          { label: "Offer Rate Improvement", target: 68,  suffix: "%",  icon: <TrendingUp className="w-5 h-5" /> },
+          { label: "Countries Reached",     target: 12,   suffix: "+",  icon: <Users className="w-5 h-5" /> },
+        ].map((s, i) => (
+          <Reveal key={i} delay={i * 0.08} className="text-center">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 mx-auto mb-3">
+              {s.icon}
+            </div>
+            <div className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-1">
+              <CountUp target={s.target} suffix={s.suffix} />
+            </div>
+            <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">{s.label}</div>
+          </Reveal>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+/* ══════════════════════ HOW IT WORKS ══════════════════════════════════ */
+const HowItWorksSection = () => (
+  <section id="how-it-works" className="py-24 bg-white dark:bg-slate-950">
+    <div className="max-w-7xl mx-auto px-6">
+      <Reveal className="text-center mb-16">
+        <p className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">How It Works</p>
+        <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white mb-4">
+          From Zero to Interview-Ready in 3 Steps
+        </h2>
+        <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto">
+          No fluff. Just a clear path from "I don't know where to start" to walking into interviews with confidence.
+        </p>
+      </Reveal>
+
+      <div className="grid md:grid-cols-3 gap-8 relative">
+        <div className="hidden md:block absolute top-16 left-[calc(16.66%+2rem)] right-[calc(16.66%+2rem)] h-px bg-gradient-to-r from-transparent via-blue-300 dark:via-blue-700 to-transparent" />
+        {[
+          {
+            step: "01", icon: <Brain className="w-7 h-7" />, title: "Diagnose your weak spots",
+            desc: "Take a short diagnostic interview. Our AI instantly pinpoints whether you struggle with technical depth, communication structure, or behavioral framing — so you don't waste time on what you already know.",
+            badge: "~10 min",
+          },
+          {
+            step: "02", icon: <Mic className="w-7 h-7" />, title: "Practice with targeted feedback",
+            desc: "Answer real interview questions, voice or text. After each answer you get a score, a breakdown of what landed and what missed, plus a rewritten example of a stronger response.",
+            badge: "Daily reps",
+          },
+          {
+            step: "03", icon: <Award className="w-7 h-7" />, title: "Walk in confident",
+            desc: "Track your progress week-over-week. See your communication score rise, your resume ATS rating climb, and your mock interviews get progressively harder as you improve.",
+            badge: "Measurable",
+          },
+        ].map((item, i) => (
+          <Reveal key={i} delay={i * 0.12}>
+            <div className="relative bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 hover:border-blue-400/50 dark:hover:border-blue-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/10 h-full">
+              <div className="absolute -top-4 left-8 bg-blue-600 text-white text-xs font-black px-3 py-1 rounded-full tracking-widest">
+                {item.step}
+              </div>
+              <div className="w-14 h-14 rounded-2xl bg-blue-600/10 dark:bg-blue-400/10 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-5 mt-2">
+                {item.icon}
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{item.title}</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm mb-5">{item.desc}</p>
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full">
+                <Clock className="w-3 h-3" /> {item.badge}
+              </span>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+/* ══════════════════════ VIDEO ═════════════════════════════════════════ */
+const VideoSection = () => (
+  <section className="py-20 bg-slate-50 dark:bg-slate-900/40">
+    <div className="max-w-5xl mx-auto px-6">
+      <Reveal className="text-center mb-12">
+        <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-slate-100 mb-4">
+          See It In Action
+        </h2>
+        <p className="text-slate-500 dark:text-slate-400 text-lg max-w-xl mx-auto">
+          A 2-minute walkthrough of a live mock interview session and the feedback you'd get.
+        </p>
+      </Reveal>
+      <Reveal delay={0.1}>
+        <div className="relative aspect-video rounded-3xl overflow-hidden shadow-2xl shadow-blue-500/10 dark:shadow-black/60 border-4 border-white dark:border-slate-800 bg-slate-100 dark:bg-slate-900">
+          <video className="w-full h-full object-cover" controls playsInline>
+            <source src="/videos/good.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-slate-900/5 dark:ring-white/5 rounded-3xl" />
+        </div>
+      </Reveal>
+    </div>
+  </section>
+);
+
+/* ══════════════════════ FEATURES ══════════════════════════════════════ */
+const FeaturesSection = ({ navigate }: { navigate: (p: string) => void }) => {
+  const features = [
+    {
+      icon: <Mic className="w-6 h-6" />, badge: "Core",
+      title: "AI Interview Coach",
+      desc: "Practice behavioral (STAR format), technical, DSA, and system design rounds. Our model listens to your answer, rates communication clarity, technical depth, and structure — then shows you exactly what a strong answer looks like.",
+      cta: "Try a mock interview", link: "/interview_round",
+      bullets: ["Voice + text responses", "Real-time scoring", "Rewritten model answers"],
+    },
+    {
+      icon: <FileText className="w-6 h-6" />, badge: "Résumé",
+      title: "ATS Resume Scanner",
+      desc: "Upload your resume and see it the way recruiters' software does. Get a keyword match score against real job descriptions, readability analysis, and specific line-by-line edit suggestions — not just vague tips.",
+      cta: "Scan my resume", link: "/dashboard",
+      bullets: ["ATS keyword gap analysis", "Bullet impact scoring", "JD match percentage"],
+    },
+    {
+      icon: <BookOpen className="w-6 h-6" />, badge: "Learning",
+      title: "Structured Prep Tracks",
+      desc: "Bite-sized lessons across DSA, System Design, OS, DBMS, and behavioral prep — curated for the roles you're targeting. Progress is tracked so you always know what to study next, not what you studied last month.",
+      cta: "Explore tracks", link: "/subjects",
+      bullets: ["Role-specific tracks", "Progress milestones", "Spaced repetition"],
+    },
+    {
+      icon: <Briefcase className="w-6 h-6" />, badge: "Jobs",
+      title: "Smart Job Discovery",
+      desc: "Browse roles filtered by your skill level and prep score. See your realistic match percentage before you apply. No more spray-and-pray applications — target jobs you can actually get.",
+      cta: "Browse open roles", link: "/jobs",
+      bullets: ["Match % scoring", "Skills gap view", "Direct apply links"],
+    },
+    {
+      icon: <Bot className="w-6 h-6" />, badge: "AI",
+      title: "Question Bank with Context",
+      desc: "800+ interview questions across companies like Google, Amazon, Flipkart, and startups. Each question comes with the intent behind it (what the interviewer is actually testing), red flags to avoid, and 2–3 strong sample answers.",
+      cta: "Explore questions", link: "/interview_round",
+      bullets: ["Company-specific sets", "Interviewer intent notes", "Common red flags"],
+    },
+    {
+      icon: <BarChart3 className="w-6 h-6" />, badge: "Analytics",
+      title: "Prep Analytics Dashboard",
+      desc: "Track your improvement for real. See your mock interview score trend over the past 30 days, time spent per topic, and a predicted readiness date based on your current pace — so you can plan your job search timeline.",
+      cta: "View dashboard", link: "/dashboard",
+      bullets: ["Score trend graphs", "Time-per-topic logs", "Readiness forecast"],
+    },
+  ];
+
+  return (
+    <section className="py-24 bg-white dark:bg-slate-950">
+      <div className="max-w-7xl mx-auto px-6">
+        <Reveal className="text-center mb-16">
+          <p className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">What You Get</p>
+          <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white mb-4">
+            Every Tool You Actually Need
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto">
+            Built specifically for software engineers and tech professionals in Indian and global job markets.
+          </p>
+        </Reveal>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((f, i) => (
+            <Reveal key={i} delay={i * 0.07}>
+              <div className="group bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-7 flex flex-col h-full hover:border-blue-400/50 dark:hover:border-blue-500/40 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300">
+                <div className="flex items-start justify-between mb-5">
+                  <div className="w-12 h-12 rounded-xl bg-blue-600/10 dark:bg-blue-400/10 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform duration-300">
+                    {f.icon}
+                  </div>
+                  <span className="text-xs font-bold text-slate-500 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">{f.badge}</span>
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{f.title}</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-4 flex-grow">{f.desc}</p>
+                <ul className="space-y-1.5 mb-5">
+                  {f.bullets.map((b, j) => (
+                    <li key={j} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+                <button onClick={() => navigate(f.link)} className="flex items-center text-sm font-semibold text-blue-600 dark:text-blue-400">
+                  {f.cta}
+                  <ArrowRight className="w-4 h-4 ml-1.5 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ══════════════════════ TESTIMONIALS ══════════════════════════════════ */
+const testimonials = [
+  {
+    name: "Karman Singh", role: "Software Engineer at Intellinum", avatar: "K",
+    img: "https://media.licdn.com/dms/image/v2/D5603AQExDIe-7STGWA/profile-displayphoto-scale_400_400/B56ZyFUCf2KgAg-/0/1771763150880?e=1775088000&v=beta&t=yymUWoQVpxkID74wX9x6Exxm0zdoBKWECrThJjaDG80",
+    text: "The mock sessions felt uncomfortably real — in a good way. You can't hide behind vague answers. The feedback on my system design highlighted exactly where I was hand-waving, which is precisely what you need before the real thing. Cleared the design round on my next attempt.",
+    stars: 5,
+  },
+  {
+    name: "Rahat Bhatia", role: "Student at UCSD", avatar: "R",
+    img: "https://media.licdn.com/dms/image/v2/D5635AQFDzXGekpeRgQ/profile-framedphoto-shrink_400_400/B56ZfMjNCUG0Ak-/0/1751483470343?e=1773997200&v=beta&t=Avfj6RzGFoO0xhJbyy_4RVocRAMaGJh9JYkO7HBQnCg",
+    text: "My resume was getting zero callbacks until I ran it through the ATS analyzer. The keyword gap report showed 38% match for the roles I cared about. After applying the suggestions, interviews started coming within two weeks. Mock prep alongside that sealed it.",
+    stars: 5,
+  },
+  {
+    name: "Advitya", role: "Software Developer at Ryntra Tech", avatar: "A",
+    img: "https://media.licdn.com/dms/image/v2/D5603AQHCK_ANQCya4Q/profile-displayphoto-scale_400_400/B56ZyjXnt1HQAg-/0/1772267407833?e=1775088000&v=beta&t=5ZI6FkyIGfMJIKFEPBLdqtfFb9j2odZsQpMOXQQQr_o",
+    text: "The question bank is genuinely comprehensive. ML system design, stats-based questions, take-home walkthrough prep — it covers parts other platforms miss completely. The intent context behind each question helps you understand what the interviewer is actually evaluating.",
+    stars: 5,
+  },
+];
+
+const TestimonialsSection = () => {
+  const [start, setStart] = useState(0);
+  const visible = 3;
+
+  return (
+    <section className="py-24 bg-slate-50 dark:bg-slate-900/50">
+      <div className="max-w-7xl mx-auto px-6">
+        <Reveal className="text-center mb-14">
+          <p className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">Real People, Real Results</p>
+          <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white mb-4">
+            What Candidates Actually Say
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 text-lg max-w-xl mx-auto">
+            Not cherry-picked quotes. The kind of feedback you'd send a friend who asked if it's worth it.
+          </p>
+        </Reveal>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {testimonials.slice(start, start + visible).map((t, i) => (
+            <Reveal key={start + i} delay={i * 0.08}>
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-7 flex flex-col h-full">
+                <div className="flex items-center gap-1 mb-4">
+                  {Array.from({ length: t.stars }).map((_, j) => (
+                    <Star key={j} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+                <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed flex-grow mb-6">
+                  "{t.text}"
+                </p>
+                <div className="flex items-center gap-3 border-t border-slate-100 dark:border-slate-800 pt-5">
+                  {(t as any).img ? (
+                    <img src={(t as any).img} alt={t.name} className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-slate-200 dark:border-slate-700" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                      {t.avatar}
+                    </div>
+                  )}
+                  <div>
+                    <div className="font-semibold text-sm text-slate-900 dark:text-white">{t.name}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">{t.role}</div>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+
+        <div className="flex justify-center gap-3 mt-8">
+          {Array.from({ length: testimonials.length - visible + 1 }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setStart(i)}
+              className={`h-2 rounded-full transition-all duration-300 ${i === start ? "w-8 bg-blue-600" : "w-2 bg-slate-300 dark:bg-slate-700"}`}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ══════════════════════ COMPARISON ════════════════════════════════════ */
+const ComparisonSection = () => (
+  <section className="py-24 bg-white dark:bg-slate-950">
+    <div className="max-w-5xl mx-auto px-6">
+      <Reveal className="text-center mb-14">
+        <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white mb-4">
+          The Old Way vs. The Right Way
+        </h2>
+        <p className="text-slate-500 dark:text-slate-400 text-lg max-w-xl mx-auto">
+          Most candidates prep on vibes. The ones who get offers prep with data.
+        </p>
+      </Reveal>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <Reveal delay={0}>
+          <div className="border border-red-200 dark:border-red-800/40 rounded-2xl p-8 bg-red-50/50 dark:bg-red-900/5">
+            <h3 className="font-bold text-lg text-red-700 dark:text-red-400 mb-5 flex items-center gap-2">
+              <span className="text-2xl">😰</span> Without AI for Job
+            </h3>
+            <ul className="space-y-4">
+              {[
+                "Mock interviews with a friend who's too polite to tell you you're rambling",
+                "Reading Leetcode solutions without actually practicing the communication part",
+                "Sending your resume to 40 companies and wondering why you get 2 replies",
+                "No idea if your answer was good until a rejection email a week later",
+                "Starting prep 3 days before the interview every single time",
+              ].map((item, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
+                  <span className="text-red-400 mt-0.5 flex-shrink-0">✕</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Reveal>
+
+        <Reveal delay={0.1}>
+          <div className="border border-emerald-200 dark:border-emerald-800/40 rounded-2xl p-8 bg-emerald-50/50 dark:bg-emerald-900/5">
+            <h3 className="font-bold text-lg text-emerald-700 dark:text-emerald-400 mb-5 flex items-center gap-2">
+              <span className="text-2xl">🎯</span> With AI for Job
+            </h3>
+            <ul className="space-y-4">
+              {[
+                "Brutally honest feedback after every answer — what worked, what didn't, what to say instead",
+                "ATS score for your resume in 30 seconds with specific gap analysis by job role",
+                "Know your realistic match % before applying — stop wasting applications",
+                "See your score improving week over week so you know when you're actually ready",
+                "Structured daily prep that takes 30–45 minutes and compounds over time",
+              ].map((item, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Reveal>
+      </div>
+    </div>
+  </section>
+);
+
+/* ══════════════════════ FAQ ═══════════════════════════════════════════ */
+const faqs = [
+  { q: "Is this only for software engineers?", a: "No — we started with SWE but the platform now covers Product Management, Data Science, DevOps, and general tech roles. The interview question bank, prep tracks, and resume analyzer all adapt to the role you're targeting." },
+  { q: "How is the feedback different from just watching YouTube?", a: "YouTube gives you the same generic tips regardless of what your specific answers look like. Our AI reads your actual response, scores it on 5 dimensions, and tells you specifically what's weak in what you said. It's the difference between watching someone work out vs. a trainer watching you." },
+  { q: "My English isn't great — will this help or just judge me?", a: "It helps. The platform scores communication clarity and structure separately from language polish. We work with a lot of candidates for whom English is a second language, and the feedback is designed to improve the structure and impact of your answers, not just grammar." },
+  { q: "Can I use this on my phone?", a: "Yes. The platform is fully responsive. The mock interview feature works with your phone's microphone. A lot of people practice during commutes." },
+  { q: "What if I'm a fresher with no industry experience?", a: "Freshers are our most common users. The platform has specific tracks for campus placements, internship interviews, and off-campus fresher roles. You don't need work experience to practice — you need practice to get work experience." },
+];
+
+const FAQSection = () => {
+  const [open, setOpen] = useState<number | null>(0);
+  return (
+    <section className="py-24 bg-slate-50 dark:bg-slate-900/40">
+      <div className="max-w-3xl mx-auto px-6">
+        <Reveal className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-4">Common Questions</h2>
+          <p className="text-slate-500 dark:text-slate-400">The things people actually want to know before signing up.</p>
+        </Reveal>
+        <div className="space-y-3">
+          {faqs.map((faq, i) => (
+            <Reveal key={i} delay={i * 0.05}>
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+                <button
+                  onClick={() => setOpen(open === i ? null : i)}
+                  className="w-full flex items-center justify-between p-6 text-left"
+                >
+                  <span className="font-semibold text-slate-900 dark:text-white text-sm">{faq.q}</span>
+                  <motion.span animate={{ rotate: open === i ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                    <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0 ml-4" />
+                  </motion.span>
+                </button>
+                <motion.div
+                  initial={false}
+                  animate={{ height: open === i ? "auto" : 0, opacity: open === i ? 1 : 0 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  style={{ overflow: "hidden" }}
+                >
+                  <p className="px-6 pb-6 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{faq.a}</p>
+                </motion.div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ══════════════════════ FINAL CTA ════════════════════════════════════ */
+const FinalCTA = ({ onStart }: { onStart: () => void }) => (
+  <section className="py-24 bg-white dark:bg-slate-950">
+    <div className="max-w-4xl mx-auto px-6 text-center">
+      <Reveal>
+        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-12 md:p-16 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 30% 20%, white 1px, transparent 1px), radial-gradient(circle at 70% 80%, white 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+          <div className="relative z-10">
+            <Sparkles className="w-10 h-10 text-white/80 mx-auto mb-5" />
+            <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-4 leading-tight">
+              Your next interview is already decided.<br />
+              <span className="text-blue-200">Change the outcome.</span>
+            </h2>
+            <p className="text-blue-100 text-lg mb-8 max-w-2xl mx-auto">
+              Free to start. Takes 10 minutes to see exactly where you stand.
+              Most people who do one mock interview do ten.
+            </p>
+            <button
+              onClick={onStart}
+              className="inline-flex items-center gap-3 bg-white text-blue-700 font-bold px-10 py-4 rounded-2xl hover:bg-blue-50 transition-colors text-lg shadow-xl"
+            >
+              <Zap className="w-5 h-5" />
+              Start for Free — No Card Needed
+              <ChevronRight className="w-5 h-5" />
+            </button>
+            <p className="text-blue-200/70 text-sm mt-4 flex items-center justify-center gap-2">
+              <Shield className="w-4 h-4" /> No spam. No credit card. Takes 2 minutes to sign up.
+            </p>
+          </div>
+        </div>
+      </Reveal>
+    </div>
+  </section>
+);
+
+/* ══════════════════════ MAIN ══════════════════════════════════════════ */
+const Home = () => {
+  const navigate = useNavigate();
+  return (
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 transition-colors duration-500">
       <main>
-        <HeroSection onStart={handleStartPractice} onResume={handleAnalyzeResume} />
+        <HeroSection onStart={() => navigate("/signup")} onResume={() => navigate("/dashboard")} />
+        <StatsSection />
+        <HowItWorksSection />
         <VideoSection />
-        <PillarsSection navigate={navigate} />
-        <WhySection />
-        <TransformationSection />
-        <FinalCTA onStart={handleStartPractice} onResume={handleAnalyzeResume} />
+        <FeaturesSection navigate={navigate} />
+        <TestimonialsSection />
+        <ComparisonSection />
+        <FAQSection />
+        <FinalCTA onStart={() => navigate("/signup")} />
       </main>
     </div>
   );
