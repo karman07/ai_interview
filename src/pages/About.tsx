@@ -46,9 +46,9 @@ const AboutUs = () => {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { label: "Mock interviews completed", value: "100K+", icon: Users },
-              { label: "Users who landed the role", value: "94%", icon: TrendingUp },
-              { label: "Countries represented", value: "150+", icon: Globe },
+              { label: "Mock interviews completed", value: "100+", icon: Users },
+              { label: "Users who landed the role", value: "90%", icon: TrendingUp },
+              { label: "Countries represented", value: "10+", icon: Globe },
             ].map((stat, idx) => (
               <div key={idx} className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 text-center hover:border-blue-500/50 transition-colors">
                 <div className="w-12 h-12 mx-auto bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center mb-4">

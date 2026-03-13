@@ -398,8 +398,8 @@ const JobsPublicPage = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-2 md:w-36 flex-shrink-0">
-                        <Button variant="primary" onClick={() => handleGate(job.redirect_url)} className="w-full justify-center text-sm">
+                      <div className="flex flex-col gap-2 md:w-40 flex-shrink-0">
+                        <Button variant="primary" onClick={() => handleGate(null)} className="w-full justify-center text-sm">
                           {!isAuthenticated && <Lock className="w-3.5 h-3.5 mr-1.5" />}
                           Apply Now
                         </Button>
