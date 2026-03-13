@@ -84,12 +84,12 @@ export default function Footer() {
         <div className="border-t border-gray-200 dark:border-gray-800 mt-16 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center text-sm">
             <p className="text-gray-600 dark:text-gray-400 mb-4 md:mb-0">
-              © {new Date().getFullYear()} ai for job. All rights reserved.
+              © {new Date().getFullYear()} AI for Job. All rights reserved.
             </p>
             <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
               <span>Crafted with</span>
               <span className="text-red-500 animate-pulse">❤</span>
-              <span>by the ai for job Team</span>
+              <span>by the AI for Job Team</span>
             </div>
           </div>
         </div>
