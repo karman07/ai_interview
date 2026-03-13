@@ -90,7 +90,7 @@ const HeroSection = ({ onStart, onResume }: { onStart: () => void; onResume: () 
     <section className="relative pt-28 pb-20 overflow-hidden bg-white dark:bg-slate-950">
       {/* glow blobs */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute left-1/2 top-[-80px] h-[700px] w-[1100px] -translate-x-1/2 rounded-full bg-blue-500/15 blur-[160px]" />
+        <div className="absolute left-1/2 top-[-80px] h-[700px] w-[1100px] -translate-x-1/2 rounded-full bg-blu  blur-[160px]" />
         <div className="absolute right-[-120px] top-[200px] h-[380px] w-[380px] rounded-full bg-indigo-500/20 blur-[120px]" />
         <div className="absolute left-[-80px] bottom-[80px] h-[280px] w-[280px] rounded-full bg-cyan-500/10 blur-[100px]" />
       </div>
@@ -125,9 +125,7 @@ const HeroSection = ({ onStart, onResume }: { onStart: () => void; onResume: () 
           transition={{ duration: 0.6, delay: 0.25 }}
           className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto mb-10 leading-relaxed"
         >
-          Stop guessing what interviewers want. Practice with real-world questions,
-          get instant AI feedback on your answers, fix your resume's ATS score,
-          and walk into interviews with actual confidence — not just hope.
+          Stop trying to guess what interviewers want. You can practice with real-life questions, get fast AI feedback on your answers, improve your resume's ATS score, and go into interviews with true confidence, not just hope.
         </motion.p>
 
         <motion.div
@@ -137,7 +135,7 @@ const HeroSection = ({ onStart, onResume }: { onStart: () => void; onResume: () 
           className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <Button variant="primary" className="px-8 py-4 text-base font-semibold w-full sm:w-auto shadow-lg shadow-blue-500/25" onClick={onStart}>
-            Start Practicing Free
+            Practice Now
             <ChevronRight className="w-5 h-5 ml-2" />
           </Button>
           <Button variant="outline" className="px-8 py-4 text-base font-semibold w-full sm:w-auto" onClick={onResume}>
@@ -162,7 +160,7 @@ const HeroSection = ({ onStart, onResume }: { onStart: () => void; onResume: () 
             ))}
           </div>
           <div className="flex items-center gap-1">
-            {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
+            {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
             <span className="ml-2 text-sm text-slate-600 dark:text-slate-400 font-medium">4.9 · Used by 12,000+ candidates</span>
           </div>
         </motion.div>
@@ -191,10 +189,10 @@ const StatsSection = () => (
     <div className="max-w-6xl mx-auto px-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
         {[
-          { label: "Mock Interviews Done",  target: 100,  suffix: "+",  icon: <Mic className="w-5 h-5" /> },
-          { label: "Resumes Analyzed",      target: 300,  suffix: "+",  icon: <FileText className="w-5 h-5" /> },
-          { label: "Offer Rate Improvement", target: 68,  suffix: "%",  icon: <TrendingUp className="w-5 h-5" /> },
-          { label: "Countries Reached",     target: 12,   suffix: "+",  icon: <Users className="w-5 h-5" /> },
+          { label: "Resumes Analyzed", target: 300, suffix: "+", icon: <FileText className="w-5 h-5" /> },
+          { label: "Mock Interviews Done", target: 100, suffix: "+", icon: <Mic className="w-5 h-5" /> },
+          { label: "Offer Rate Improvement", target: 68, suffix: "%", icon: <TrendingUp className="w-5 h-5" /> },
+          { label: "Countries Reached", target: 12, suffix: "+", icon: <Users className="w-5 h-5" /> },
         ].map((s, i) => (
           <Reveal key={i} delay={i * 0.08} className="text-center">
             <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 mx-auto mb-3">
@@ -218,10 +216,10 @@ const HowItWorksSection = () => (
       <Reveal className="text-center mb-16">
         <p className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">How It Works</p>
         <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white mb-4">
-          From Zero to Interview-Ready in 3 Steps
+          From Average to Market-Ready in Just 3 Steps
         </h2>
         <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto">
-          No fluff. Just a clear path from "I don't know where to start" to walking into interviews with confidence.
+          A clear path from "I don't know where to start" to feeling confident when you go to interviews.
         </p>
       </Reveal>
 
@@ -230,17 +228,17 @@ const HowItWorksSection = () => (
         {[
           {
             step: "01", icon: <Brain className="w-7 h-7" />, title: "Diagnose your weak spots",
-            desc: "Take a short diagnostic interview. Our AI instantly pinpoints whether you struggle with technical depth, communication structure, or behavioral framing — so you don't waste time on what you already know.",
+            desc: "Do a quick diagnostic interview. Our AI quickly finds out if you have trouble with technical depth, communication structure, or behavioral framing, so you don't spend time on things you already know.",
             badge: "~10 min",
           },
           {
             step: "02", icon: <Mic className="w-7 h-7" />, title: "Practice with targeted feedback",
-            desc: "Answer real interview questions, voice or text. After each answer you get a score, a breakdown of what landed and what missed, plus a rewritten example of a stronger response.",
+            desc: "Answer actual interview questions, either by voice or text. You get a score, a discussion of what worked and what didn't, and a new example of a better answer after each one.",
             badge: "Daily reps",
           },
           {
             step: "03", icon: <Award className="w-7 h-7" />, title: "Walk in confident",
-            desc: "Track your progress week-over-week. See your communication score rise, your resume ATS rating climb, and your mock interviews get progressively harder as you improve.",
+            desc: "Keep an eye on your progress from week to week. As you grow better, your communication score, ATS rating, and mock interviews will all get harder.",
             badge: "Measurable",
           },
         ].map((item, i) => (
@@ -253,7 +251,7 @@ const HowItWorksSection = () => (
                 {item.icon}
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{item.title}</h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm mb-5">{item.desc}</p>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm mb-5 text-justify">{item.desc}</p>
               <span className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full">
                 <Clock className="w-3 h-3" /> {item.badge}
               </span>
@@ -295,42 +293,42 @@ const FeaturesSection = ({ navigate }: { navigate: (p: string) => void }) => {
     {
       icon: <Mic className="w-6 h-6" />, badge: "Core",
       title: "AI Interview Coach",
-      desc: "Practice behavioral (STAR format), technical, DSA, and system design rounds. Our model listens to your answer, rates communication clarity, technical depth, and structure — then shows you exactly what a strong answer looks like.",
-      cta: "Try a mock interview", link: "/interview_round",
+      desc: "Practice rounds for behavioral (STAR format), technical, DSA, and system design. Our algorithm listens to your answer and gives it a score based on how clear, deep, and well-structured it is. Then it shows you exactly what a strong answer looks like.",
+      cta: "Start Practicing", link: "/interview_round",
       bullets: ["Voice + text responses", "Real-time scoring", "Rewritten model answers"],
     },
     {
       icon: <FileText className="w-6 h-6" />, badge: "Résumé",
       title: "ATS Resume Scanner",
-      desc: "Upload your resume and see it the way recruiters' software does. Get a keyword match score against real job descriptions, readability analysis, and specific line-by-line edit suggestions — not just vague tips.",
+      desc: "Upload your resume and see it the way that recruiters' software does. Get a keyword match score against real job descriptions, a readability score, and exact line-by-line edit suggestions instead of simply generic tips.",
       cta: "Scan my resume", link: "/dashboard",
       bullets: ["ATS keyword gap analysis", "Bullet impact scoring", "JD match percentage"],
     },
     {
       icon: <BookOpen className="w-6 h-6" />, badge: "Learning",
       title: "Structured Prep Tracks",
-      desc: "Bite-sized lessons across DSA, System Design, OS, DBMS, and behavioral prep — curated for the roles you're targeting. Progress is tracked so you always know what to study next, not what you studied last month.",
-      cta: "Explore tracks", link: "/subjects",
+      desc: "Lessons in DSA, System Design, OS, DBMS, and behavioral prep that are small enough to fit in your pocket and are tailored to the jobs you're going for. You can always see what you've studied recently and what you need to study next.",
+      cta: "Start Learning", link: "/subjects",
       bullets: ["Role-specific tracks", "Progress milestones", "Spaced repetition"],
     },
     {
       icon: <Briefcase className="w-6 h-6" />, badge: "Jobs",
       title: "Smart Job Discovery",
-      desc: "Browse roles filtered by your skill level and prep score. See your realistic match percentage before you apply. No more spray-and-pray applications — target jobs you can actually get.",
-      cta: "Browse open roles", link: "/jobs",
+      desc: "Look through roles that are filtered by your skill level and prep score. Before you apply, find out what your genuine match percentage is. No more applying for jobs you can't obtain. Instead, focus on jobs you can get.",
+      cta: "Browse Jobs", link: "/jobs",
       bullets: ["Match % scoring", "Skills gap view", "Direct apply links"],
     },
     {
       icon: <Bot className="w-6 h-6" />, badge: "AI",
       title: "Question Bank with Context",
-      desc: "800+ interview questions across companies like Google, Amazon, Flipkart, and startups. Each question comes with the intent behind it (what the interviewer is actually testing), red flags to avoid, and 2–3 strong sample answers.",
+      desc: "There are more than 800 interview questions from corporations like Google, Amazon, Flipkart, and new businesses. Each question has a purpose (what the interviewer is really looking for), things to watch out for, and two or three good sample answers.",
       cta: "Explore questions", link: "/interview_round",
       bullets: ["Company-specific sets", "Interviewer intent notes", "Common red flags"],
     },
     {
       icon: <BarChart3 className="w-6 h-6" />, badge: "Analytics",
       title: "Prep Analytics Dashboard",
-      desc: "Track your improvement for real. See your mock interview score trend over the past 30 days, time spent per topic, and a predicted readiness date based on your current pace — so you can plan your job search timeline.",
+      desc: "Keep track of how much better you're getting. You can see how your mock interview score has changed over the previous 30 days, how much time you've spent on each topic, and when you could be ready to start looking for a job based on your current pace.",
       cta: "View dashboard", link: "/dashboard",
       bullets: ["Score trend graphs", "Time-per-topic logs", "Readiness forecast"],
     },
@@ -387,19 +385,19 @@ const testimonials = [
   {
     name: "Karman Singh", role: "Software Engineer at Intellinum", avatar: "K",
     img: "https://media.licdn.com/dms/image/v2/D5603AQExDIe-7STGWA/profile-displayphoto-scale_400_400/B56ZyFUCf2KgAg-/0/1771763150880?e=1775088000&v=beta&t=yymUWoQVpxkID74wX9x6Exxm0zdoBKWECrThJjaDG80",
-    text: "The mock sessions felt uncomfortably real — in a good way. You can't hide behind vague answers. The feedback on my system design highlighted exactly where I was hand-waving, which is precisely what you need before the real thing. Cleared the design round on my next attempt.",
+    text: "The practice sessions felt too real, but in a good way. You can't get away with unclear responses. The input on my system design showed me exactly where I was being vague, which is exactly what you need before the actual thing. I passed the design round on my next try.",
     stars: 5,
   },
   {
     name: "Rahat Bhatia", role: "Student at UCSD", avatar: "R",
     img: "https://media.licdn.com/dms/image/v2/D5635AQFDzXGekpeRgQ/profile-framedphoto-shrink_400_400/B56ZfMjNCUG0Ak-/0/1751483470343?e=1773997200&v=beta&t=Avfj6RzGFoO0xhJbyy_4RVocRAMaGJh9JYkO7HBQnCg",
-    text: "My resume was getting zero callbacks until I ran it through the ATS analyzer. The keyword gap report showed 38% match for the roles I cared about. After applying the suggestions, interviews started coming within two weeks. Mock prep alongside that sealed it.",
+    text: "I wasn't receiving any calls back on my resume until I ran it through the ATS analyzer. The keyword gap report said that 38% of the roles I was interested in matched. Interviews started rolling in within two weeks of following the advice. That and mock prep cemented the deal.",
     stars: 5,
   },
   {
     name: "Advitya", role: "Software Developer at Ryntra Tech", avatar: "A",
     img: "https://media.licdn.com/dms/image/v2/D5603AQHCK_ANQCya4Q/profile-displayphoto-scale_400_400/B56ZyjXnt1HQAg-/0/1772267407833?e=1775088000&v=beta&t=5ZI6FkyIGfMJIKFEPBLdqtfFb9j2odZsQpMOXQQQr_o",
-    text: "The question bank is genuinely comprehensive. ML system design, stats-based questions, take-home walkthrough prep — it covers parts other platforms miss completely. The intent context behind each question helps you understand what the interviewer is actually evaluating.",
+    text: "The question bank really does have a lot of questions. It covers things that other platforms don't, like designing ML systems, asking stats-based questions, and preparing for take-home walkthroughs. The intent context for each question helps you figure out what the interviewer is really looking for.",
     stars: 5,
   },
 ];
@@ -417,7 +415,7 @@ const TestimonialsSection = () => {
             What Candidates Actually Say
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-lg max-w-xl mx-auto">
-            Not cherry-picked quotes. The kind of feedback you'd send a friend who asked if it's worth it.
+            The kind of feedback you would give a friend who inquired if it was worth it.
           </p>
         </Reveal>
 
@@ -486,10 +484,10 @@ const ComparisonSection = () => (
             </h3>
             <ul className="space-y-4">
               {[
-                "Mock interviews with a friend who's too polite to tell you you're rambling",
+                "Mock interviews with a friend who is too nice to tell you you're rambling",
                 "Reading Leetcode solutions without actually practicing the communication part",
-                "Sending your resume to 40 companies and wondering why you get 2 replies",
-                "No idea if your answer was good until a rejection email a week later",
+                "Sending your resume to 40 companies and wondering why you only get 2 replies",
+                "Not knowing if your answer was good until you get a rejection email a week later",
                 "Starting prep 3 days before the interview every single time",
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
@@ -508,11 +506,11 @@ const ComparisonSection = () => (
             </h3>
             <ul className="space-y-4">
               {[
-                "Brutally honest feedback after every answer — what worked, what didn't, what to say instead",
+                "Brutally honest feedback after every answer—what worked, what didn't, and what to say instead",
                 "ATS score for your resume in 30 seconds with specific gap analysis by job role",
-                "Know your realistic match % before applying — stop wasting applications",
-                "See your score improving week over week so you know when you're actually ready",
-                "Structured daily prep that takes 30–45 minutes and compounds over time",
+                "Know your realistic match % before applying—stop wasting applications.",
+                "See your score go up every week so you know when you're really ready",
+                "Structured daily prep that takes 30–45 minutes and builds up over time"
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
@@ -529,11 +527,11 @@ const ComparisonSection = () => (
 
 /* ══════════════════════ FAQ ═══════════════════════════════════════════ */
 const faqs = [
-  { q: "Is this only for software engineers?", a: "No — we started with SWE but the platform now covers Product Management, Data Science, DevOps, and general tech roles. The interview question bank, prep tracks, and resume analyzer all adapt to the role you're targeting." },
-  { q: "How is the feedback different from just watching YouTube?", a: "YouTube gives you the same generic tips regardless of what your specific answers look like. Our AI reads your actual response, scores it on 5 dimensions, and tells you specifically what's weak in what you said. It's the difference between watching someone work out vs. a trainer watching you." },
-  { q: "My English isn't great — will this help or just judge me?", a: "It helps. The platform scores communication clarity and structure separately from language polish. We work with a lot of candidates for whom English is a second language, and the feedback is designed to improve the structure and impact of your answers, not just grammar." },
-  { q: "Can I use this on my phone?", a: "Yes. The platform is fully responsive. The mock interview feature works with your phone's microphone. A lot of people practice during commutes." },
-  { q: "What if I'm a fresher with no industry experience?", a: "Freshers are our most common users. The platform has specific tracks for campus placements, internship interviews, and off-campus fresher roles. You don't need work experience to practice — you need practice to get work experience." },
+  { q: "Is this only for software engineers?", a: "No, we started with SWE, but the platform now has roles in Product Management, Data Science, DevOps, and general tech. The interview question bank, the prep tracks, and the resume analyzer all change based on the job you're going for." },
+  { q: "How is the feedback different from just watching YouTube?", a: "No matter what your responses are, YouTube provides you the same general advice. Our AI scans your response, gives it a score on five different things, and then informs you exactly what you said that was weak. It's like seeing someone work out vs. having a trainer observe you." },
+  { q: "My English isn't great — will this help or just judge me?", a: "It works. The platform gives different rankings for language polish and communication clarity and organization. We deal with a lot of people who speak English as a second language, and the feedback is meant to help you improve the structure and impact of your responses, not simply your grammar." },
+  { q: "Can I use this on my phone?", a: "Yes. The platform works on all devices. You can use your phone's microphone for the mock interview feature. A lot of individuals practice on the way to work." },
+  { q: "What if I'm a fresher with no industry experience?", a: "Most of our users are new students. There are specialized paths on the platform for campus placements, internship interviews, and jobs for new graduates who aren't on campus. You don't need to have worked before to practice; you need to practice to obtain job experience." },
 ];
 
 const FAQSection = () => {
@@ -589,8 +587,8 @@ const FinalCTA = ({ onStart }: { onStart: () => void }) => (
               <span className="text-blue-200">Change the outcome.</span>
             </h2>
             <p className="text-blue-100 text-lg mb-8 max-w-2xl mx-auto">
-              Free to start. Takes 10 minutes to see exactly where you stand.
-              Most people who do one mock interview do ten.
+              You can start for free. It takes 10 minutes to find out exactly where you are.
+              One mock interview is all it takes to get hooked.
             </p>
             <button
               onClick={onStart}
@@ -601,7 +599,7 @@ const FinalCTA = ({ onStart }: { onStart: () => void }) => (
               <ChevronRight className="w-5 h-5" />
             </button>
             <p className="text-blue-200/70 text-sm mt-4 flex items-center justify-center gap-2">
-              <Shield className="w-4 h-4" /> No spam. No credit card. Takes 2 minutes to sign up.
+              <Shield className="w-4 h-4" /> It just takes 2 minutes to sign up. No Credit Card Required.
             </p>
           </div>
         </div>
