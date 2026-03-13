@@ -39,6 +39,7 @@ import { SessionsModule } from './sessions/sessions.module';
 import { AudioModule } from './audio/audio.module';
 import { EmailModule } from './email/email.module';
 import { JobsModule } from './jobs/jobs.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
@@ -84,6 +85,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     AudioModule,
     EmailModule,
     JobsModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

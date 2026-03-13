@@ -9,7 +9,7 @@ export class ResultsController {
 
   @Get('mine')
   async getMyResults(@Req() req) {
-    const userId = req.user.sub; // user info comes from JwtAuthGuard
+    const userId = req.user.sub;
     return this.service.getMyResults(userId);
   }
 
@@ -23,5 +23,25 @@ export class ResultsController {
   async storeExternalAnalytics(@Req() req, @Body() data: any) {
     const userId = req.user.sub;
     return this.service.createEnhancedResult(userId, data);
+  }
+
+  @Post(':sessionId/feedback')
+  async submitFeedback(
+    @Req() req,
+    @Param('sessionId') sessionId: string,
+    @Body() body: {
+      experienceRating: number;
+      resultRating: number;
+      comment?: string;
+    },
+  ) {
+    const userId = req.user.sub;
+    return this.service.submitFeedback(
+      userId,
+      sessionId,
+      body.experienceRating,
+      body.resultRating,
+      body.comment || '',
+    );
   }
 }

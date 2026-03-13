@@ -143,6 +143,21 @@ export class Result {
 
   @Prop({ type: String })
   rawOutput: string;
-}
 
+  @Prop({
+    type: {
+      experienceRating: { type: Number, min: 1, max: 5 },
+      resultRating:     { type: Number, min: 1, max: 5 },
+      comment:          String,
+      submittedAt:      Date,
+    },
+    default: null,
+  })
+  feedback: {
+    experienceRating: number; // how was the interview experience
+    resultRating:     number; // how accurate/useful did the result feel
+    comment:          string;
+    submittedAt:      Date;
+  } | null;
+}
 export const ResultSchema = SchemaFactory.createForClass(Result);

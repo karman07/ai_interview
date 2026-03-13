@@ -29,6 +29,18 @@ export class AIUsage {
     @Prop({ required: true, enum: ['free', 'active', 'expired', 'trial'], default: 'free' })
     subscriptionStatus: string;
 
+    @Prop({ enum: ['interview', 'resume', 'cv', 'tts', 'other'], default: 'interview', index: true })
+    source: string;
+
+    @Prop({ enum: ['technical', 'behavioral', 'problem', 'hr', 'general', ''], default: '' })
+    interviewType: string;
+
+    @Prop({ default: '' })
+    role: string;
+
+    @Prop({ default: '' })
+    company: string;
+
     @Prop({ default: Date.now })
     timestamp: Date;
 }

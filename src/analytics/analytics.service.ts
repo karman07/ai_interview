@@ -693,11 +693,25 @@ export class AnalyticsService {
     // Get recent session breakdown with user details
     const recentSessions = await this.aiUsageModel.aggregate([
       { $sort: { timestamp: -1 } },
-      { $limit: 50 },
+      { $limit: 100 },
+      {
+        // Convert userId to ObjectId for $lookup — handles both string and ObjectId storage.
+        // onError/onNull return null (no match) instead of throwing.
+        $addFields: {
+          userIdObj: {
+            $convert: {
+              input: '$userId',
+              to: 'objectId',
+              onError: null,
+              onNull: null,
+            },
+          },
+        },
+      },
       {
         $lookup: {
           from: 'users',
-          localField: 'userId',
+          localField: 'userIdObj',
           foreignField: '_id',
           as: 'userDetails',
         },
@@ -710,7 +724,9 @@ export class AnalyticsService {
       {
         $project: {
           userDetails: 0,
+          userIdObj: 0,
           'user.password': 0,
+          'user.tokens': 0,
         },
       },
     ]);
@@ -721,40 +737,53 @@ export class AnalyticsService {
     };
   }
 
-  async saveAIUsage(data: Partial<AIUsage>) {
-    // If status is not provided or likely generic, try to lookup from user profile
-    if (data.userId && Types.ObjectId.isValid(data.userId)) {
+  async saveAIUsage(data: Partial<AIUsage> & { source?: string; interviewType?: string; role?: string; company?: string }) {
+    // Cast userId to ObjectId so the $lookup in aggregates works correctly
+    let userObjectId: Types.ObjectId | undefined;
+    if (data.userId) {
+      const idStr = data.userId.toString();
+      if (Types.ObjectId.isValid(idStr)) {
+        userObjectId = new Types.ObjectId(idStr);
+      }
+    }
+
+    // Lookup user's actual subscription status
+    let subscriptionStatus = data.subscriptionStatus || 'free';
+    if (userObjectId) {
       try {
-        const user = await this.userModel.findById(data.userId).select('subscriptionStatus');
+        const user = await this.userModel.findById(userObjectId).select('subscriptionStatus').lean();
         if (user) {
-          data.subscriptionStatus = user.subscriptionStatus || 'free';
+          subscriptionStatus = (user as any).subscriptionStatus || 'free';
         }
       } catch (err) {
         console.error('Error fetching user for AI usage:', err);
       }
     }
 
-    // Use $inc to accumulate tokens instead of replacing them
+    // Python sends CUMULATIVE running totals (not per-turn deltas), so we always $set
+    // the latest values rather than $inc (which would double-count on every turn report).
     const usage = await this.aiUsageModel.findOneAndUpdate(
       { sessionId: data.sessionId },
       {
         $set: {
-          userId: data.userId,
+          userId: userObjectId,
           model: data.model || 'gemini-2.0-flash',
-          subscriptionStatus: data.subscriptionStatus || 'free',
-          timestamp: data.timestamp || new Date()
+          subscriptionStatus,
+          source: data.source || 'interview',
+          interviewType: data.interviewType || '',
+          role: data.role || '',
+          company: data.company || '',
+          inputTokens: data.inputTokens ?? 0,
+          outputTokens: data.outputTokens ?? 0,
+          totalTokens: data.totalTokens ?? 0,
+          costUsd: data.costUsd ?? 0,
+          timestamp: data.timestamp || new Date(),
         },
-        $inc: {
-          inputTokens: data.inputTokens || 0,
-          outputTokens: data.outputTokens || 0,
-          totalTokens: data.totalTokens || 0,
-          costUsd: data.costUsd || 0
-        }
       },
       { upsert: true, new: true }
     );
 
-    // Get fresh stats and broadcast
+    // Broadcast fresh stats over SSE/Socket
     const stats = await this.getAIUsageStats();
     this.aiUsageSubject.next(stats);
 
