@@ -723,10 +723,14 @@ export class AnalyticsService {
 
   async saveAIUsage(data: Partial<AIUsage>) {
     // If status is not provided or likely generic, try to lookup from user profile
-    if (data.userId) {
-      const user = await this.userModel.findById(data.userId).select('subscriptionStatus');
-      if (user) {
-        data.subscriptionStatus = user.subscriptionStatus || 'free';
+    if (data.userId && Types.ObjectId.isValid(data.userId)) {
+      try {
+        const user = await this.userModel.findById(data.userId).select('subscriptionStatus');
+        if (user) {
+          data.subscriptionStatus = user.subscriptionStatus || 'free';
+        }
+      } catch (err) {
+        console.error('Error fetching user for AI usage:', err);
       }
     }
 
