@@ -82,4 +82,34 @@ export class UsersService {
   async setRefreshToken(userId: string, hash: string | null): Promise<void> {
     await this.userModel.findByIdAndUpdate(userId, { refreshTokenHash: hash }).exec();
   }
+
+  async adminUpdateUserPlan(
+    userId: string,
+    planId: string | null,
+    status: string,
+    expiryDays?: number,
+  ): Promise<UserDocument> {
+    const plan = planId
+      ? await this.subscriptionModel.findById(planId).exec()
+      : await this.getFreeTierPlan();
+
+    if (!plan) throw new NotFoundException('Subscription plan not found');
+
+    const expiry = expiryDays && expiryDays > 0
+      ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
+      : undefined;
+
+    const update: any = {
+      subscriptionPlan: plan._id,
+      subscriptionStatus: status,
+    };
+    if (expiry) update.subscriptionExpiry = expiry;
+
+    const updated = await this.userModel
+      .findByIdAndUpdate(userId, update, { new: true })
+      .populate('subscriptionPlan')
+      .exec();
+    if (!updated) throw new NotFoundException('User not found');
+    return updated;
+  }
 }

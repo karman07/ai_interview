@@ -1,6 +1,6 @@
 import {
-  Controller, Get, Param, Patch, UseGuards,
-  UploadedFile, UseInterceptors, Body,
+  Controller, Get, Param, Patch, UseGuards, Body,
+  UploadedFile, UseInterceptors,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -22,6 +22,23 @@ export class UsersController {
   @Get('admin/all')
   async getAllUsers() {
     return this.usersService.findAll();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch('admin/:id/plan')
+  async adminUpdatePlan(
+    @Param('id') id: string,
+    @Body() body: { planId?: string; status: string; expiryDays?: number },
+  ) {
+    const updated = await this.usersService.adminUpdateUserPlan(
+      id,
+      body.planId ?? null,
+      body.status,
+      body.expiryDays,
+    );
+    const { passwordHash, refreshTokenHash, ...safe } = (updated as any).toObject();
+    return safe;
   }
 
   @UseGuards(JwtAuthGuard)
