@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { ResultsService } from './results.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { SubmitFeedbackDto } from './dto/submit-feedback.dto';
 
 @Controller(['results', 'enhanced-interview'])
 @UseGuards(JwtAuthGuard)
@@ -29,13 +30,15 @@ export class ResultsController {
   async submitFeedback(
     @Req() req,
     @Param('sessionId') sessionId: string,
-    @Body() body: {
-      experienceRating: number;
-      resultRating: number;
-      comment?: string;
-    },
+    @Body() body: SubmitFeedbackDto,
   ) {
     const userId = req.user.sub;
+    console.log('Feedback submission:', {
+      userId,
+      sessionId,
+      body,
+    });
+    
     return this.service.submitFeedback(
       userId,
       sessionId,

@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
 
 import { AdzunaService } from './adzuna/adzuna.service';
-import { CtsService } from './cts/cts.service';
 
 import { Job, JobDocument } from './schemas/job.schema';
 import { JobSyncLog, JobSyncLogDocument } from './schemas/job-sync-log.schema';
@@ -24,7 +23,6 @@ export class JobService {
         @InjectModel(Bookmark.name) public bookmarkModel: Model<BookmarkDocument>,
         @InjectModel(EmailSubscription.name) public emailSubscriptionModel: Model<EmailSubscriptionDocument>,
         private adzunaService: AdzunaService,
-        private ctsService: CtsService,
         private configService: ConfigService,
     ) { }
 
@@ -113,13 +111,8 @@ export class JobService {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + expiryDays);
 
-        // Try to create in CTS
+        // Create job in database only (CTS integration removed)
         let ctsJobName = null;
-        try {
-            ctsJobName = await this.ctsService.createJob({ ...jobData, requisition_id: requisitionId });
-        } catch (err) {
-            this.logger.warn(`Failed to push job directly to CTS, keeping local only for now. Error: ${err.message}`);
-        }
 
         const newJob = {
             adzuna_id: jobData.adzuna_id,
@@ -177,10 +170,6 @@ export class JobService {
                 },
             },
         );
-
-        if (existingJob.cts_job_name) {
-            await this.ctsService.updateJob(existingJob.cts_job_name, jobData);
-        }
 
         this.logger.debug(`Updated job: ${jobData.title}`);
     }

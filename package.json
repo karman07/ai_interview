@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.985.0",
-    "@google-cloud/talent": "^7.1.1",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/axios": "^3.1.2",
     "@nestjs/cache-manager": "^3.1.0",

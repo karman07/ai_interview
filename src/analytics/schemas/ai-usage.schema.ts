@@ -5,7 +5,7 @@ export type AIUsageDocument = AIUsage & Document;
 
 @Schema({ timestamps: true })
 export class AIUsage {
-    @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
+    @Prop({ type: Types.ObjectId, ref: 'User', required: false, index: true })
     userId: Types.ObjectId;
 
     @Prop({ required: true, index: true })

@@ -93,29 +93,36 @@ export class ResultsService {
     resultRating: number,
     comment: string,
   ) {
-    const result = await this.resultModel
-      .findOne({ sessionId, owner: new Types.ObjectId(userId) })
-      .exec();
+    try {
+      let result = await this.resultModel
+        .findOne({ sessionId, owner: new Types.ObjectId(userId) })
+        .exec();
 
-    if (!result) {
-      // Try finding without owner check (e.g. sessionId not yet linked)
-      const any = await this.resultModel.findOne({ sessionId }).exec();
-      if (!any) throw new Error('Session result not found');
-      any.feedback = {
+      if (!result) {
+        // Try finding without owner check (e.g. sessionId not yet linked)
+        result = await this.resultModel.findOne({ sessionId }).exec();
+        if (!result) {
+          throw new Error(`Session result not found for sessionId: ${sessionId}`);
+        }
+      }
+
+      result.feedback = {
         experienceRating,
         resultRating,
         comment: comment?.trim() || '',
         submittedAt: new Date(),
       };
-      return any.save();
+      
+      const saved = await result.save();
+      return saved;
+    } catch (error) {
+      console.error('Error in submitFeedback:', {
+        userId,
+        sessionId,
+        error: error.message,
+        stack: error.stack,
+      });
+      throw error;
     }
-
-    result.feedback = {
-      experienceRating,
-      resultRating,
-      comment: comment?.trim() || '',
-      submittedAt: new Date(),
-    };
-    return result.save();
   }
 }

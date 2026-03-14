@@ -11,7 +11,6 @@ import { SyncScheduler } from './sync.scheduler';
 import { EmailService } from './email.service';
 import { MongooseModule } from '@nestjs/mongoose';
 
-import { CtsService } from './cts/cts.service';
 import { AdzunaService } from './adzuna/adzuna.service';
 import { RagMatcherService } from './rag-matcher.service';
 
@@ -70,7 +69,6 @@ import { EmailSubscription, EmailSubscriptionSchema } from './schemas/email-subs
         JobService,
         SyncScheduler,
         EmailService,
-        CtsService,
         AdzunaService,
         RagMatcherService,
     ],

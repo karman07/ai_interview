@@ -739,10 +739,10 @@ export class AnalyticsService {
 
   async saveAIUsage(data: Partial<AIUsage> & { source?: string; interviewType?: string; role?: string; company?: string }) {
     // Cast userId to ObjectId so the $lookup in aggregates works correctly
-    let userObjectId: Types.ObjectId | undefined;
+    let userObjectId: Types.ObjectId | null = null;
     if (data.userId) {
       const idStr = data.userId.toString();
-      if (Types.ObjectId.isValid(idStr)) {
+      if (idStr && idStr !== 'anonymous' && Types.ObjectId.isValid(idStr)) {
         userObjectId = new Types.ObjectId(idStr);
       }
     }
@@ -762,24 +762,28 @@ export class AnalyticsService {
 
     // Python sends CUMULATIVE running totals (not per-turn deltas), so we always $set
     // the latest values rather than $inc (which would double-count on every turn report).
+    const updatePayload: any = {
+      model: data.model || 'gemini-2.0-flash',
+      subscriptionStatus,
+      source: data.source || 'interview',
+      interviewType: data.interviewType || '',
+      role: data.role || '',
+      company: data.company || '',
+      inputTokens: data.inputTokens ?? 0,
+      outputTokens: data.outputTokens ?? 0,
+      totalTokens: data.totalTokens ?? 0,
+      costUsd: data.costUsd ?? 0,
+      timestamp: data.timestamp || new Date(),
+    };
+
+    // Only set userId when it's a real ObjectId (skip anonymous)
+    if (userObjectId) {
+      updatePayload.userId = userObjectId;
+    }
+
     const usage = await this.aiUsageModel.findOneAndUpdate(
       { sessionId: data.sessionId },
-      {
-        $set: {
-          userId: userObjectId,
-          model: data.model || 'gemini-2.0-flash',
-          subscriptionStatus,
-          source: data.source || 'interview',
-          interviewType: data.interviewType || '',
-          role: data.role || '',
-          company: data.company || '',
-          inputTokens: data.inputTokens ?? 0,
-          outputTokens: data.outputTokens ?? 0,
-          totalTokens: data.totalTokens ?? 0,
-          costUsd: data.costUsd ?? 0,
-          timestamp: data.timestamp || new Date(),
-        },
-      },
+      { $set: updatePayload },
       { upsert: true, new: true }
     );
 
