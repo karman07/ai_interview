@@ -167,16 +167,25 @@ export class ResultsService {
     comment: string,
   ) {
     try {
-      let result = await this.resultModel
+      let result: ResultDocument | null = null;
+
+      // 1. Try by sessionId field + owner
+      result = await this.resultModel
         .findOne({ sessionId, owner: new Types.ObjectId(userId) })
         .exec();
 
+      // 2. Try by sessionId field without owner check
       if (!result) {
-        // Try finding without owner check (e.g. sessionId not yet linked)
         result = await this.resultModel.findOne({ sessionId }).exec();
-        if (!result) {
-          throw new Error(`Session result not found for sessionId: ${sessionId}`);
-        }
+      }
+
+      // 3. If it looks like a Mongo ObjectId, try finding by _id
+      if (!result && Types.ObjectId.isValid(sessionId)) {
+        result = await this.resultModel.findById(sessionId).exec();
+      }
+
+      if (!result) {
+        throw new Error(`Session result not found for sessionId: ${sessionId}`);
       }
 
       result.feedback = {
@@ -185,7 +194,7 @@ export class ResultsService {
         comment: comment?.trim() || '',
         submittedAt: new Date(),
       };
-      
+
       const saved = await result.save();
       return saved;
     } catch (error) {
