@@ -465,9 +465,16 @@ const TestimonialsSection = () => {
 
 /* ══════════════════════ COMPARISON ════════════════════════════════════ */
 const ComparisonSection = () => (
-  <section className="py-24 bg-white dark:bg-slate-950">
-    <div className="max-w-5xl mx-auto px-6">
-      <Reveal className="text-center mb-14">
+  <section className="relative py-28 bg-slate-50 dark:bg-slate-900/50 overflow-hidden">
+    {/* Subtle background blobs */}
+    <div className="pointer-events-none absolute -top-32 -left-32 w-96 h-96 rounded-full bg-blue-100/40 dark:bg-blue-900/10 blur-3xl" />
+    <div className="pointer-events-none absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-indigo-100/30 dark:bg-indigo-900/10 blur-3xl" />
+
+    <div className="relative max-w-5xl mx-auto px-6">
+      <Reveal className="text-center mb-16">
+        <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest uppercase bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 mb-5">
+          Why it matters
+        </span>
         <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white mb-4">
           The Old Way vs. The Right Way
         </h2>
@@ -476,48 +483,70 @@ const ComparisonSection = () => (
         </p>
       </Reveal>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="relative grid md:grid-cols-2 gap-6 items-stretch">
+        {/* VS badge */}
+        <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 shadow-lg items-center justify-center text-[11px] font-black text-slate-400 dark:text-slate-500">
+          VS
+        </div>
+
         <Reveal delay={0}>
-          <div className="border border-slate-200 dark:border-slate-700/60 rounded-2xl p-8 bg-slate-50/80 dark:bg-slate-900/40">
-            <h3 className="font-bold text-lg text-slate-700 dark:text-slate-300 mb-5">
-              Without AI for Job
-            </h3>
-            <ul className="space-y-4">
-              {[
-                "Mock interviews with a friend who is too nice to tell you you're rambling",
-                "Reading Leetcode solutions without actually practicing the communication part",
-                "Sending your resume to 40 companies and wondering why you only get 2 replies",
-                "Not knowing if your answer was good until you get a rejection email a week later",
-                "Starting prep 3 days before the interview every single time",
-              ].map((item, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm text-slate-500 dark:text-slate-400">
-                  <span className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0">✕</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
+          <div className="h-full relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900 shadow-sm">
+            <div className="h-1 w-full bg-slate-200 dark:bg-slate-700/80" />
+            <div className="p-8 flex flex-col gap-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5">Without AI for Job</p>
+                <h3 className="font-extrabold text-xl text-slate-700 dark:text-slate-300">
+                  Guessing your way through
+                </h3>
+              </div>
+              <ul className="space-y-3.5 flex-1">
+                {[
+                  "Mock interviews with a friend who is too nice to tell you you're rambling",
+                  "Reading Leetcode solutions without actually practicing the communication part",
+                  "Sending your resume to 40 companies and wondering why you only get 2 replies",
+                  "Not knowing if your answer was good until you get a rejection email a week later",
+                  "Starting prep 3 days before the interview every single time",
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-400">✕</span>
+                    <span className="line-through decoration-slate-300 dark:decoration-slate-600">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </Reveal>
 
         <Reveal delay={0.1}>
-          <div className="border border-blue-200 dark:border-blue-800/40 rounded-2xl p-8 bg-blue-50/50 dark:bg-blue-900/5">
-            <h3 className="font-bold text-lg text-blue-700 dark:text-blue-400 mb-5">
-              With AI for Job
-            </h3>
-            <ul className="space-y-4">
-              {[
-                "Brutally honest feedback after every answer—what worked, what didn't, and what to say instead",
-                "ATS score for your resume in 30 seconds with specific gap analysis by job role",
-                "Know your realistic match % before applying—stop wasting applications.",
-                "See your score go up every week so you know when you're really ready",
-                "Structured daily prep that takes 30–45 minutes and builds up over time"
-              ].map((item, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-                  <CheckCircle2 className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                  {item}
-                </li>
-              ))}
-            </ul>
+          <div className="h-full relative rounded-2xl overflow-hidden border border-blue-200 dark:border-blue-700/50 bg-white dark:bg-slate-900 shadow-md shadow-blue-100/60 dark:shadow-blue-900/20">
+            <div className="h-1 w-full bg-gradient-to-r from-blue-500 to-indigo-500" />
+            <div className="p-8 flex flex-col gap-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-blue-500 dark:text-blue-400 mb-1.5">With AI for Job</p>
+                <h3 className="font-extrabold text-xl text-slate-800 dark:text-white">
+                  Knowing exactly where you stand
+                </h3>
+              </div>
+              <ul className="space-y-3.5 flex-1">
+                {[
+                  "Brutally honest feedback after every answer—what worked, what didn't, and what to say instead",
+                  "ATS score for your resume in 30 seconds with specific gap analysis by job role",
+                  "Know your realistic match % before applying—stop wasting applications",
+                  "See your score go up every week so you know when you're really ready",
+                  "Structured daily prep that takes 30–45 minutes and builds up over time",
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-200 leading-relaxed">
+                    <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-900/40 border border-blue-100 dark:border-blue-800/60 flex items-center justify-center">
+                      <CheckCircle2 className="w-3 h-3 text-blue-500 dark:text-blue-400" />
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <div className="pt-2 border-t border-blue-100 dark:border-blue-900/40">
+                <p className="text-xs text-blue-500 dark:text-blue-400 font-medium">68% of our users report getting an interview within 3 weeks.</p>
+              </div>
+            </div>
           </div>
         </Reveal>
       </div>
