@@ -1091,6 +1091,15 @@ const JDMatchTab = ({ resume }: { resume: any }) => {
   );
 };
 
+const safeText = (item: any): string => {
+  if (!item) return '';
+  if (typeof item === 'string') return item;
+  if (typeof item === 'object') {
+    return item.name || item.description || item.title || item.text || item.content || JSON.stringify(item);
+  }
+  return String(item);
+};
+
 const ImprovementTab = ({ resume }: { resume: any }) => {
   return (
     <div className="space-y-6">
@@ -1113,10 +1122,10 @@ const ImprovementTab = ({ resume }: { resume: any }) => {
             </h4>
           </div>
           <div className="p-4 space-y-2">
-            {resume.enhancement.tailored_resume.experience.map((exp: string, idx: number) => (
+            {resume.enhancement.tailored_resume.experience.map((exp: any, idx: number) => (
               <div key={idx} className="flex items-start gap-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                <span className="text-gray-700 dark:text-gray-300 text-sm">{exp}</span>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">{safeText(exp)}</span>
               </div>
             ))}
           </div>
@@ -1140,10 +1149,10 @@ const ImprovementTab = ({ resume }: { resume: any }) => {
             </h4>
           </div>
           <div className="p-4 space-y-2">
-            {resume.enhancement.tailored_resume.projects.map((proj: string, idx: number) => (
+            {resume.enhancement.tailored_resume.projects.map((proj: any, idx: number) => (
               <div key={idx} className="flex items-start gap-2">
                 <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-                <span className="text-gray-700 dark:text-gray-300 text-sm">{proj}</span>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">{safeText(proj)}</span>
               </div>
             ))}
           </div>
@@ -1162,10 +1171,10 @@ const ImprovementTab = ({ resume }: { resume: any }) => {
               <div>
                 <h5 className="font-medium text-gray-900 dark:text-white mb-2">Strengths</h5>
                 <div className="space-y-1">
-                  {resume.enhancement.top_1_percent_gap.strengths.map((s: string, i: number) => (
+                  {resume.enhancement.top_1_percent_gap.strengths.map((s: any, i: number) => (
                     <div key={i} className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{s}</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{safeText(s)}</span>
                     </div>
                   ))}
                 </div>
@@ -1175,10 +1184,10 @@ const ImprovementTab = ({ resume }: { resume: any }) => {
               <div>
                 <h5 className="font-medium text-gray-900 dark:text-white mb-2">Gaps</h5>
                 <div className="space-y-1">
-                  {resume.enhancement.top_1_percent_gap.gaps.map((g: string, i: number) => (
+                  {resume.enhancement.top_1_percent_gap.gaps.map((g: any, i: number) => (
                     <div key={i} className="flex items-start gap-2">
                       <XCircle className="w-4 h-4 text-red-500 mt-0.5" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{g}</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{safeText(g)}</span>
                     </div>
                   ))}
                 </div>
@@ -1188,10 +1197,10 @@ const ImprovementTab = ({ resume }: { resume: any }) => {
               <div>
                 <h5 className="font-medium text-gray-900 dark:text-white mb-2">Actionable Next Steps</h5>
                 <div className="space-y-1">
-                  {resume.enhancement.top_1_percent_gap.actionable_next_steps.map((step: string, i: number) => (
+                  {resume.enhancement.top_1_percent_gap.actionable_next_steps.map((step: any, i: number) => (
                     <div key={i} className="flex items-start gap-2">
                       <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{step}</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{safeText(step)}</span>
                     </div>
                   ))}
                 </div>
@@ -1265,12 +1274,12 @@ const ImprovementSkills = ({
     </div>
     <div className="p-4">
       <div className="flex flex-wrap gap-2">
-        {skills?.map((skill, idx) => (
+        {skills?.map((skill: any, idx: number) => (
           <span
             key={idx}
             className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-sm font-medium border border-gray-200 dark:border-gray-600"
           >
-            {skill}
+            {safeText(skill)}
           </span>
         ))}
       </div>
