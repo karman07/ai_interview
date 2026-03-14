@@ -26,7 +26,6 @@ function Reveal({ children, delay = 0, className = "" }: { children: React.React
   );
 }
 
-/* ── plan accent colours (blue → indigo palette) ─────────────────────── */
 const CARD_ACCENTS = [
   { from: "#2563eb", to: "#4f46e5" },
   { from: "#1d4ed8", to: "#4338ca" },
@@ -67,7 +66,7 @@ export default function PricingPage() {
             className="inline-flex items-center px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 mb-6"
           >
             <Sparkles className="w-4 h-4 mr-2" />
-            <span className="text-sm font-semibold tracking-wide">TRANSPARENT PRICING</span>
+            <span className="text-sm font-semibold tracking-wide">PRICING</span>
           </motion.div>
 
           <motion.h1
@@ -76,9 +75,9 @@ export default function PricingPage() {
             transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
             className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight text-slate-900 dark:text-white leading-tight"
           >
-            Simple pricing.{" "}
+            Pay for what you need.{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
-              No surprises.
+              Nothing more.
             </span>
           </motion.h1>
 
@@ -88,7 +87,8 @@ export default function PricingPage() {
             transition={{ duration: 0.55, delay: 0.2 }}
             className="text-base text-slate-500 dark:text-slate-400 max-w-xl mx-auto mb-6 leading-relaxed"
           >
-            Start free forever. Upgrade when you need more mock interviews, deeper resume analysis, or advanced analytics.
+            Start free — no time limit, no credit card. When you're ready for more mock interviews,
+            deeper resume feedback, or detailed analytics, upgrading takes about 30 seconds.
           </motion.p>
 
           {!user && (
@@ -99,7 +99,7 @@ export default function PricingPage() {
               className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 text-blue-700 dark:text-blue-400 rounded-xl px-5 py-3 text-sm font-medium"
             >
               <Lock className="w-4 h-4 flex-shrink-0" />
-              No card required to sign up. Upgrade from inside your dashboard.
+              No card needed to get started. You can upgrade anytime from your dashboard.
             </motion.div>
           )}
         </div>
@@ -113,7 +113,7 @@ export default function PricingPage() {
               <div className="w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center mx-auto mb-4">
                 <X className="w-7 h-7 text-red-500" />
               </div>
-              <p className="text-slate-600 dark:text-slate-400 mb-4">{error}</p>
+              <p className="text-slate-600 dark:text-slate-400 mb-4">Something went wrong loading the plans. Sorry about that.</p>
               <button onClick={() => window.location.reload()} className="text-blue-600 dark:text-blue-400 text-sm font-semibold hover:underline">
                 Try again
               </button>
@@ -125,11 +125,10 @@ export default function PricingPage() {
               ))}
             </div>
           ) : (
-            <div className={`grid grid-cols-1 gap-6 ${
-              pricingPlans.length === 2 ? "md:grid-cols-2 max-w-3xl mx-auto" :
+            <div className={`grid grid-cols-1 gap-6 ${pricingPlans.length === 2 ? "md:grid-cols-2 max-w-3xl mx-auto" :
               pricingPlans.length === 3 ? "md:grid-cols-3" :
-              "md:grid-cols-2 lg:grid-cols-4"
-            }`}>
+                "md:grid-cols-2 lg:grid-cols-4"
+              }`}>
               {pricingPlans.map((plan, i) => {
                 const accent = CARD_ACCENTS[i % CARD_ACCENTS.length];
                 const isFree = plan.numericPrice === 0;
@@ -161,7 +160,7 @@ export default function PricingPage() {
                           className="absolute top-0 right-5 px-3 py-1 rounded-b-lg text-xs font-bold text-white tracking-widest flex items-center gap-1"
                           style={{ background: `linear-gradient(90deg, ${accent.from}, ${accent.to})` }}
                         >
-                          <TrendingUp className="w-3 h-3" /> POPULAR
+                          <TrendingUp className="w-3 h-3" /> MOST PICKED
                         </div>
                       )}
 
@@ -189,29 +188,28 @@ export default function PricingPage() {
                             {!isFree && <span className="text-slate-400 dark:text-slate-500 text-sm mb-0.5">/ month</span>}
                           </div>
                           <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                            {isFree ? "No credit card required" : "+18% GST · Cancel anytime"}
+                            {isFree ? "No card, no catch" : "+18% GST · Cancel whenever you like"}
                           </p>
                         </div>
 
                         {/* CTA button */}
                         <button
                           onClick={() => isFree ? navigate("/signup") : handleSubscribe()}
-                          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all duration-200 mb-6 ${
-                            isFree
-                              ? "border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400"
-                              : "text-white hover:opacity-90"
-                          }`}
+                          className={`w-full flex items-center gap-2 p-3 rounded-xl font-bold text-sm transition-all duration-200 mb-6 ${isFree
+                            ? "border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400"
+                            : "text-white hover:opacity-90"
+                            }`}
                           style={!isFree ? {
                             background: `linear-gradient(90deg, ${accent.from}, ${accent.to})`,
                             boxShadow: `0 6px 20px -4px ${accent.from}66`
                           } : {}}
                         >
                           {isFree ? (
-                            <><Zap className="w-4 h-4" /> Get Started Free</>
+                            <><Zap className="w-4 h-4" /> Start for free</>
                           ) : user ? (
-                            <><Crown className="w-4 h-4" /> Subscribe Now</>
+                            <><Crown className="w-4 h-4" /> Upgrade now</>
                           ) : (
-                            <><Lock className="w-4 h-4" /> Sign Up to Subscribe</>
+                            <><Lock className="w-4 h-4" /> Sign up to subscribe</>
                           )}
                           <ChevronRight className="w-4 h-4 ml-auto" />
                         </button>
@@ -219,7 +217,7 @@ export default function PricingPage() {
                         {/* feature list */}
                         <div className="border-t border-slate-100 dark:border-slate-800 pt-5 flex-grow">
                           <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">
-                            What's included
+                            What you get
                           </p>
                           <ul className="space-y-2.5">
                             {plan.features.map((f, j) => (
@@ -240,8 +238,8 @@ export default function PricingPage() {
                             <Lock className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                             <span className="text-xs text-slate-500 dark:text-slate-400">
                               <button onClick={() => navigate("/signup")} className="font-semibold text-blue-600 dark:text-blue-400 hover:underline">
-                                Create a free account
-                              </button>{" "}to subscribe
+                                Create a free account first
+                              </button>{" "}— then subscribe in seconds
                             </span>
                           </div>
                         )}
@@ -257,4 +255,3 @@ export default function PricingPage() {
     </div>
   );
 }
-
