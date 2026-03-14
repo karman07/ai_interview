@@ -62,27 +62,19 @@ export default function Navbar() {
         } border-gray-200 dark:border-gray-800`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-24">
           {/* Logo */}
           <Link
             to={routes.home}
-            className="flex items-center space-x-3 group"
+            className="flex items-center group"
             onClick={() => setActiveLink(routes.home)}
           >
-            <div className="h-10 transition-transform duration-300 group-hover:scale-110">
+            <div className="h-20 transition-transform duration-300 group-hover:scale-105 drop-shadow-md">
               <img
                 src="/logo.png"
                 alt="ai for job"
                 className="h-full w-auto object-contain dark:invert"
               />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-black text-gray-900 dark:text-white leading-tight tracking-tighter uppercase italic">
-                ai for job
-              </span>
-              <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400 leading-tight -mt-0.5 uppercase tracking-widest">
-                AI Interview Platform
-              </span>
             </div>
           </Link>
 

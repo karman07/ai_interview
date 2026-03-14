@@ -263,30 +263,6 @@ const HowItWorksSection = () => (
   </section>
 );
 
-/* ══════════════════════ VIDEO ═════════════════════════════════════════ */
-const VideoSection = () => (
-  <section className="py-20 bg-slate-50 dark:bg-slate-900/40">
-    <div className="max-w-5xl mx-auto px-6">
-      <Reveal className="text-center mb-12">
-        <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-slate-100 mb-4">
-          See It In Action
-        </h2>
-        <p className="text-slate-500 dark:text-slate-400 text-lg max-w-xl mx-auto">
-          A 2-minute walkthrough of a live mock interview session and the feedback you'd get.
-        </p>
-      </Reveal>
-      <Reveal delay={0.1}>
-        <div className="relative aspect-video rounded-3xl overflow-hidden shadow-2xl shadow-blue-500/10 dark:shadow-black/60 border-4 border-white dark:border-slate-800 bg-slate-100 dark:bg-slate-900">
-          <video className="w-full h-full object-cover" controls playsInline>
-            <source src="/videos/good.mp4" type="video/mp4" />
-          </video>
-          <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-slate-900/5 dark:ring-white/5 rounded-3xl" />
-        </div>
-      </Reveal>
-    </div>
-  </section>
-);
-
 /* ══════════════════════ FEATURES ══════════════════════════════════════ */
 const FeaturesSection = ({ navigate }: { navigate: (p: string) => void }) => {
   const features = [
@@ -646,7 +622,6 @@ const Home = () => {
         <HeroSection onStart={() => navigate("/signup")} onResume={() => navigate("/dashboard")} />
         <StatsSection />
         <HowItWorksSection />
-        <VideoSection />
         <FeaturesSection navigate={navigate} />
         <TestimonialsSection />
         <ComparisonSection />

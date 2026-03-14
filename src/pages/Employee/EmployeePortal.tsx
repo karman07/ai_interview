@@ -40,7 +40,7 @@ const EmployeePortal = () => {
   const [engineeringTypes, setEngineeringTypes] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [availableLocations, setAvailableLocations] = useState<string[]>([]);
-  const [country, setCountry] = useState('');
+  const [country, setCountry] = useState('us');
   const [availableCountries, setAvailableCountries] = useState<string[]>([]);
 
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -58,7 +58,7 @@ const EmployeePortal = () => {
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [expandedDesc, setExpandedDesc] = useState<Set<string>>(new Set());
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
 
   // Subscription State
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);

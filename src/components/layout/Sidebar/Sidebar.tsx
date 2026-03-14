@@ -37,12 +37,12 @@ const sidebarRoutes = [
         description: "Practice with AI interviewer",
         path: "/interview_round",
       },
-      {
-        label: "Preparation Hub",
-        icon: <BookOpen size={18} />,
-        description: "Resources & study materials",
-        path: "/subjects",
-      },
+      // {
+      //   label: "Preparation Hub",
+      //   icon: <BookOpen size={18} />,
+      //   description: "Resources & study materials",
+      //   path: "/subjects",
+      // },
       {
         label: "Resources",
         icon: <Layers size={18} />,
@@ -95,13 +95,10 @@ export default function Sidebar() {
     <>
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 h-16 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="h-8">
+        <div className="flex items-center">
+          <div className="h-14">
             <img src="/logo.png" alt="ai for job" className="h-full w-auto object-contain dark:invert" />
           </div>
-          <h2 className="text-lg font-black text-gray-900 dark:text-white uppercase italic tracking-tighter">
-            ai for job
-          </h2>
         </div>
         <button
           onClick={toggleMobileMenu}
@@ -191,15 +188,9 @@ export default function Sidebar() {
           className="fixed top-0 left-0 w-64 h-screen border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-y-auto no-scrollbar"
         >
           <div className="p-6">
-            <div className="flex items-center gap-3 mb-10 px-2 group cursor-pointer" onClick={() => navigate('/dashboard')}>
-              <div className="h-10 transition-transform duration-300 group-hover:scale-110">
+            <div className="flex items-center mb-10 px-2 group cursor-pointer" onClick={() => navigate('/dashboard')}>
+              <div className="h-20 transition-transform duration-300 group-hover:scale-105 drop-shadow-sm">
                 <img src="/logo.png" alt="ai for job" className="h-full w-auto object-contain dark:invert" />
-              </div>
-              <div className="flex flex-col">
-                <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tighter leading-none uppercase italic">
-                  ai for job
-                </h2>
-                <span className="text-[9px] font-bold text-blue-600 tracking-widest uppercase mt-1">AI INTERVIEW PLATFORM</span>
               </div>
             </div>
 

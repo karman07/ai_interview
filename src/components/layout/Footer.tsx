@@ -7,15 +7,9 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
           <div className="lg:col-span-2">
-            <Link to="/" className="flex items-center mb-6 group inline-flex">
-              <div className="h-10 mr-3 transition-transform duration-300 group-hover:scale-110">
+            <Link to="/" className="inline-flex mb-6 group">
+              <div className="h-20 transition-transform duration-300 group-hover:scale-105 drop-shadow-sm">
                 <img src="/logo.png" alt="ai for job" className="h-full w-auto object-contain dark:invert" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-2xl font-black uppercase italic tracking-tighter text-gray-900 dark:text-white leading-tight">ai for job</span>
-                <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 leading-tight -mt-0.5 uppercase tracking-widest">
-                  AI Interview Platform
-                </span>
               </div>
             </Link>
             <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed max-w-md text-sm">
@@ -29,7 +23,7 @@ export default function Footer() {
             <ul className="space-y-4">
               <li><Link to="/dashboard" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Dashboard</Link></li>
               <li><Link to="/interview_round" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Practice Interviews</Link></li>
-              <li><Link to="/subjects" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Preparation Hub</Link></li>
+              {/* <li><Link to="/subjects" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Preparation Hub</Link></li> */}
               <li><Link to="/resources" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Resources</Link></li>
               <li><Link to="/employee" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Job Portal</Link></li>
               <li><Link to="/pricing" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors duration-200">Pricing</Link></li>

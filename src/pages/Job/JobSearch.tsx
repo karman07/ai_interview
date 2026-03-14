@@ -20,7 +20,7 @@ const JobSearch: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [locationFilter, setLocationFilter] = useState('');
+  const [locationFilter, setLocationFilter] = useState('United States');
   const { user } = useAuth();
   const navigate = useNavigate();
   const isAuthenticated = !!user || !!localStorage.getItem('access_token');
@@ -39,7 +39,8 @@ const JobSearch: React.FC = () => {
     try {
       const jobsData = await fetchJobs({
         limit: 50,
-        location: locationFilter || undefined
+        location: locationFilter || undefined,
+        country: locationFilter.toLowerCase().includes('united states') || locationFilter.toLowerCase() === 'us' || locationFilter.toLowerCase() === 'usa' ? 'us' : undefined,
       });
       setJobs(jobsData.jobs || []);
     } catch (error) {
@@ -117,10 +118,6 @@ const JobSearch: React.FC = () => {
                 />
               </div>
             </div>
-
-
-
-
           </div>
         </div>
 

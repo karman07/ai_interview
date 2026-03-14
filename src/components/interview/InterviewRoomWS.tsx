@@ -58,16 +58,13 @@ export default function InterviewRoomWS() {
         }
     }, [type]);
 
-    // ── Generate a stable client ID that survives page refresh ──
+    // ── Generate a unique client ID for each interview session ──
+    // Do NOT persist to localStorage — each mount is a fresh interview session,
+    // ensuring the backend creates a new AI-usage record rather than overwriting
+    // the previous session's token counts.
     const clientId = useMemo(() => {
-        const key = 'ws_interview_client_id';
-        let id = localStorage.getItem(key);
-        if (!id) {
-            id = `ws_${user?._id || 'anon'}_${Date.now()}`;
-            localStorage.setItem(key, id);
-        }
-        return id;
-    }, [user]);
+        return `ws_${user?._id || 'anon'}_${Date.now()}`;
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── Hooks ──
     const { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding, error: wsError, isCodingQuestion } =
