@@ -7,7 +7,7 @@ import Button from "@/components/ui/button";
 import {
   Briefcase, Building2, FileText, Layers, Loader2, ArrowRight,
   Users, Code, Lightbulb, MessageCircle,
-  Award, BarChart3, Eye, Upload, X, CheckCircle, Clock, TrendingUp, Zap
+  Award, BarChart3, Eye, Upload, X, CheckCircle, Clock, TrendingUp, Zap, Lock
 } from "lucide-react";
 import { InterviewAnalyticsApi, type Analytics, type RoundStats } from "@/api/interviewAnalytics";
 import { resumeService } from "@/api/resumeService";
@@ -126,6 +126,20 @@ export default function InterviewStart() {
   const isAtLimit = totalInterviewsTaken >= interviewLimit;
   const totalResumes = resumes.length;
   const isAtResumeLimit = totalResumes >= resumeLimit;
+
+  const isPaidUser = useMemo(() => {
+    const planName = (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object')
+      ? (user.subscriptionPlan as any).name
+      : user?.subscriptionPlan;
+    return user?.subscriptionStatus === 'active' || (planName && planName !== 'free_tier_in');
+  }, [user]);
+
+  // Free users are restricted to 15-minute sessions only
+  useEffect(() => {
+    if (!isPaidUser && duration !== 15) {
+      setDuration(15);
+    }
+  }, [isPaidUser]);
 
   const bestResumeId = useMemo(() => {
     if (!resumes.length) return null;
@@ -579,19 +593,42 @@ export default function InterviewStart() {
                       <Clock className="w-3.5 h-3.5 text-blue-500" /> Session Duration
                     </label>
                     <div className="flex items-center gap-4">
-                      {[15, 30, 45, 60].map((mins) => (
-                        <button
-                          key={mins}
-                          onClick={() => setDuration(mins)}
-                          className={`flex-1 flex flex-col items-center p-3 rounded-2xl border transition-all ${duration === mins
-                            ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/20 scale-105'
-                            : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-800 hover:border-blue-200'}`}
-                        >
-                          <span className="text-sm font-black">{mins}</span>
-                          <span className="text-[8px] font-bold uppercase">Mins</span>
-                        </button>
-                      ))}
+                      {[15, 30, 45, 60].map((mins) => {
+                        const isLocked = !isPaidUser && mins !== 15;
+                        const isSelected = duration === mins;
+                        return (
+                          <button
+                            key={mins}
+                            onClick={() => {
+                              if (isLocked) { setShowPricing(true); return; }
+                              setDuration(mins);
+                            }}
+                            title={isLocked ? 'Upgrade to unlock longer sessions' : undefined}
+                            className={`relative flex-1 flex flex-col items-center p-3 rounded-2xl border transition-all ${
+                              isLocked
+                                ? 'bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 border-slate-200 dark:border-slate-700 cursor-pointer opacity-60'
+                                : isSelected
+                                  ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/20 scale-105'
+                                  : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-800 hover:border-blue-200'
+                            }`}
+                          >
+                            {isLocked && (
+                              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center shadow-sm">
+                                <Lock className="w-2.5 h-2.5 text-white" />
+                              </span>
+                            )}
+                            <span className="text-sm font-black">{mins}</span>
+                            <span className="text-[8px] font-bold uppercase">Mins</span>
+                          </button>
+                        );
+                      })}
                     </div>
+                    {!isPaidUser && (
+                      <p className="mt-2 text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                        <Lock className="w-3 h-3" /> 30, 45 & 60 min sessions require a paid plan.
+                        <button onClick={() => setShowPricing(true)} className="underline hover:text-amber-700">Upgrade</button>
+                      </p>
+                    )}
                   </div>
 
                   <div className="w-full lg:flex-[1.5]">
