@@ -30,6 +30,7 @@ import {
 import { InterviewV2Report } from "@/api/interviewV2";
 import { InterviewAnalyticsApi } from "@/api/interviewAnalytics";
 import FeedbackDialog from "@/components/interview/FeedbackDialog";
+import { generateInterviewReport } from "@/utils/pdfGenerator";
 
 // ────────────────────────────────────────────────────────────
 // Main Component
@@ -147,11 +148,15 @@ export default function InterviewResultsV2() {
               </button>
             )}
             <button
-              onClick={() => window.print()}
+              onClick={() => generateInterviewReport(
+                report,
+                (report as any).role ?? undefined,
+                (report as any).roundType ?? (report as any).round_type ?? undefined,
+              )}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm"
             >
               <Download className="w-4 h-4" />
-              Export
+              Download Report
             </button>
           </div>
         </div>
