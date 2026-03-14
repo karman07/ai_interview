@@ -91,7 +91,24 @@ export class ResumeService {
       throw new BadRequestException(`You have reached your monthly limit of ${limit} resumes. Your limit will reset on the 1st of next month.`);
     }
 
-    // Ensure uploads folder exists
+        // ✅ ENFORCE FILE-SIZE LIMIT based on subscription tier
+    const planName = (user?.subscriptionPlan as any)?.name?.toString() || '';
+    const isPremium =
+      user?.subscriptionStatus === 'active' &&
+      planName !== 'free_tier_in' &&
+      planName !== '';
+
+    const maxFileBytes = isPremium ? 15 * 1024 * 1024 : 5 * 1024 * 1024;
+    const maxFileMB    = isPremium ? 15 : 5;
+    const maxPages     = isPremium ? 20 : 7;
+
+    if (file.size > maxFileBytes) {
+      throw new BadRequestException(
+        isPremium
+          ? `Your resume is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum allowed for your plan is ${maxFileMB} MB.`
+          : `Your resume is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Free accounts support resumes up to ${maxFileMB} MB (≈ ${maxPages} pages). Please upgrade your plan to upload larger resumes.`
+      );
+    }
     const uploadDir = path.dirname(file.path);
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
@@ -106,7 +123,8 @@ export class ResumeService {
         jdText,
         jdFile?.path,
         jdFile?.originalname,
-        token
+        token,
+        maxPages
       );
     } catch (err) {
       this.logger.error('💥 Error calling cv_evaluate:', err.message);
@@ -124,7 +142,8 @@ export class ResumeService {
           jdText,
           jdFile?.path,
           jdFile?.originalname,
-          token
+          token,
+          maxPages
         );
       } catch (err) {
         this.logger.error('💥 Error calling cv_improvement:', err.message);
@@ -139,7 +158,8 @@ export class ResumeService {
           '', // Empty JD text
           undefined, // No JD file
           undefined,
-          token
+          token,
+          maxPages
         );
       } catch (err) {
         this.logger.error('💥 Error calling cv_improvement:', err.message);

@@ -127,7 +127,8 @@ export class AiCvApiService {
     jdText?: string,
     jdFilePath?: string,
     jdFileName?: string,
-    token?: string
+    token?: string,
+    maxPages: number = 7
   ): Promise<any> {
     try {
       const endpoint = this.configService.get<string>('AI_CV_EVALUATE_UPLOAD_ENDPOINT', '/api/v1/upload/cv_evaluate');
@@ -144,6 +145,7 @@ export class AiCvApiService {
 
       const jdTextValue = jdText || '';
       formData.append('jd_text', jdTextValue);
+      formData.append('max_pages', String(maxPages));
 
       if (jdFilePath && jdFileName) {
         if (!fs.existsSync(jdFilePath)) {
@@ -190,7 +192,8 @@ export class AiCvApiService {
     jdText?: string,
     jdFilePath?: string,
     jdFileName?: string,
-    token?: string
+    token?: string,
+    maxPages: number = 7
   ): Promise<any> {
     try {
       const endpoint = this.configService.get<string>('AI_CV_IMPROVEMENT_UPLOAD_ENDPOINT', '/api/v1/upload/cv_improvement');
@@ -207,6 +210,7 @@ export class AiCvApiService {
 
       const jdTextValue = jdText || '';
       formData.append('jd_text', jdTextValue);
+      formData.append('max_pages', String(maxPages));
 
       if (jdFilePath && jdFileName) {
         if (!fs.existsSync(jdFilePath)) {
