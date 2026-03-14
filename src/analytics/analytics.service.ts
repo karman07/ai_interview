@@ -781,10 +781,20 @@ export class AnalyticsService {
       updatePayload.userId = userObjectId;
     }
 
+    if (!data.sessionId) {
+      console.error('[AI Usage] saveAIUsage called without sessionId — record cannot be upserted, skipping.');
+      return null;
+    }
+
     const usage = await this.aiUsageModel.findOneAndUpdate(
       { sessionId: data.sessionId },
       { $set: updatePayload },
-      { upsert: true, new: true }
+      { upsert: true, new: true, runValidators: false },
+    );
+
+    console.log(
+      `[AI Usage] Saved — session=${data.sessionId} user=${userObjectId ?? 'anon'} ` +
+      `plan=${subscriptionStatus} tokens=${updatePayload.totalTokens} cost=$${updatePayload.costUsd.toFixed(6)}`,
     );
 
     // Broadcast fresh stats over SSE/Socket

@@ -265,6 +265,23 @@ export class JobService {
     async getJobsWithFilters(filters: any, skip: number = 0, limit: number = 50): Promise<[any[], number]> {
         const query: any = { status: 'active' };
 
+        // Map 2-letter country codes → full names stored by Adzuna in location_structured.country
+        const COUNTRY_NAME_MAP: Record<string, string> = {
+            us: 'United States',
+            gb: 'United Kingdom',
+            in: 'India',
+            ca: 'Canada',
+            au: 'Australia',
+            nz: 'New Zealand',
+            za: 'South Africa',
+            sg: 'Singapore',
+            de: 'Germany',
+            fr: 'France',
+            nl: 'Netherlands',
+            br: 'Brazil',
+            mx: 'Mexico',
+        };
+
         if (filters.min_stipend !== undefined && filters.max_stipend !== undefined) {
             query.$or = [
                 { salary_min: { $gte: parseFloat(filters.min_stipend), $lte: parseFloat(filters.max_stipend) } },
@@ -287,7 +304,20 @@ export class JobService {
             query.location = { $regex: filters.location, $options: 'i' };
         }
         if (filters.country) {
-            query['location_structured.country'] = { $regex: filters.country, $options: 'i' };
+            const code = filters.country.toLowerCase().trim();
+            const fullName = COUNTRY_NAME_MAP[code];
+            if (fullName) {
+                // Match exactly the full name OR the 2-letter code (upper/lower) — anchored so 'us' never matches 'Australia'
+                const escaped = fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                query['location_structured.country'] = {
+                    $regex: `^(${escaped}|${code}|${code.toUpperCase()})$`,
+                    $options: 'i',
+                };
+            } else {
+                // Unknown code — anchored exact match as fallback (still safer than free regex)
+                const escaped = filters.country.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                query['location_structured.country'] = { $regex: `^${escaped}$`, $options: 'i' };
+            }
         }
         if (filters.category) {
             query.$or = query.$or || [];

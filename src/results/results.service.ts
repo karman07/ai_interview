@@ -5,6 +5,13 @@ import { Result, ResultDocument } from './schemas/result.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { AIUsage, AIUsageDocument } from '../analytics/schemas/ai-usage.schema';
 
+export interface AdminResultsFilters {
+  search?: string;   // filter by user email/name
+  roundType?: string;
+  page?: number;
+  limit?: number;
+}
+
 @Injectable()
 export class ResultsService {
   constructor(
@@ -12,6 +19,72 @@ export class ResultsService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(AIUsage.name) private aiUsageModel: Model<AIUsageDocument>,
   ) { }
+
+  // Admin: get ALL results with user details (paginated)
+  async getAllResults(filters: AdminResultsFilters = {}) {
+    const page  = Math.max(1, filters.page  ?? 1);
+    const limit = Math.min(100, filters.limit ?? 50);
+    const skip  = (page - 1) * limit;
+
+    const pipeline: any[] = [
+      { $sort: { createdAt: -1 } },
+      // join user
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'owner',
+          foreignField: '_id',
+          as: '_user',
+        },
+      },
+      { $addFields: { user: { $arrayElemAt: ['$_user', 0] } } },
+      { $project: { _user: 0, 'user.passwordHash': 0, 'user.refreshTokenHash': 0, 'user.tokens': 0 } },
+    ];
+
+    // optional filters
+    if (filters.roundType) {
+      pipeline.splice(1, 0, { $match: { roundType: filters.roundType } });
+    }
+    if (filters.search) {
+      const re = { $regex: filters.search, $options: 'i' };
+      pipeline.splice(1, 0, {
+        $lookup: {
+          from: 'users',
+          localField: 'owner',
+          foreignField: '_id',
+          as: '_searchUser',
+        },
+      },
+      {
+        $match: {
+          $or: [
+            { role: re },
+            { 'jobDescription': re },
+            { '_searchUser.email': re },
+            { '_searchUser.name': re },
+          ],
+        },
+      },
+      { $project: { _searchUser: 0 } });
+    }
+
+    // count total before pagination
+    const countPipeline = [...pipeline, { $count: 'total' }];
+    const paginatedPipeline = [...pipeline, { $skip: skip }, { $limit: limit }];
+
+    const [results, countResult] = await Promise.all([
+      this.resultModel.aggregate(paginatedPipeline),
+      this.resultModel.aggregate(countPipeline),
+    ]);
+
+    return {
+      results,
+      total: countResult[0]?.total ?? 0,
+      page,
+      limit,
+      pages: Math.ceil((countResult[0]?.total ?? 0) / limit),
+    };
+  }
 
   // Get all results for logged-in user
   async getMyResults(userId: string) {

@@ -1,12 +1,28 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Req, Query } from '@nestjs/common';
 import { ResultsService } from './results.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { UserRole } from '../users/schemas/user.schema';
 import { SubmitFeedbackDto } from './dto/submit-feedback.dto';
 
 @Controller(['results', 'enhanced-interview'])
 @UseGuards(JwtAuthGuard)
 export class ResultsController {
   constructor(private readonly service: ResultsService) { }
+
+  // ── Admin: all interview results ──────────────────────────────────────────
+  @Get('admin/all')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getAllResults(
+    @Query('page')      page?: number,
+    @Query('limit')     limit?: number,
+    @Query('roundType') roundType?: string,
+    @Query('search')    search?: string,
+  ) {
+    return this.service.getAllResults({ page: +page || 1, limit: +limit || 50, roundType, search });
+  }
 
   @Get('mine')
   async getMyResults(@Req() req) {
