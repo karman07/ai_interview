@@ -163,9 +163,23 @@ export default function InterviewStart() {
         setError(`Invalid file type. Please upload PDF, DOCX, or TXT file.`);
         return;
       }
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        setError(`File too large. Maximum size is 10MB.`);
-        return;
+      // Resume file: free users get 5 MB, paid users get 15 MB
+      if (fileType === 'resume') {
+        const maxMB = isPaidUser ? 15 : 5;
+        if (file.size > maxMB * 1024 * 1024) {
+          if (!isPaidUser) {
+            setError(`Your resume is ${(file.size / 1024 / 1024).toFixed(1)} MB. Free accounts support up to 5 MB (≈ 7 pages). Upgrade to upload larger resumes.`);
+            setShowPricing(true);
+          } else {
+            setError(`File too large. Maximum size for your plan is 15 MB.`);
+          }
+          return;
+        }
+      } else {
+        if (file.size > 10 * 1024 * 1024) {
+          setError(`File too large. Maximum size is 10 MB.`);
+          return;
+        }
       }
       setError("");
       if (fileType === 'resume') {

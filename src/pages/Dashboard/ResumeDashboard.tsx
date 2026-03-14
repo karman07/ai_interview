@@ -211,6 +211,41 @@ const ResumeDashboard: React.FC = () => {
 
   const isAtLimit = totalResumes >= resumeLimit;
 
+  // Determine if user is on a paid plan
+  const isPaidUser = useMemo(() => {
+    const planName = (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object')
+      ? (user.subscriptionPlan as any).name
+      : user?.subscriptionPlan;
+    return user?.subscriptionStatus === 'active' || (planName && planName !== 'free_tier_in');
+  }, [user]);
+
+  // Free users: 5 MB cap · Paid users: 15 MB cap
+  const MAX_RESUME_MB = isPaidUser ? 15 : 5;
+  const MAX_RESUME_BYTES = MAX_RESUME_MB * 1024 * 1024;
+
+  /** Validate file size before setting. Returns false and shows notification if invalid. */
+  const validateAndSetResumeFile = (file: File | null | undefined): void => {
+    if (!file) return;
+    if (file.size > MAX_RESUME_BYTES) {
+      if (!isPaidUser) {
+        addNotification({
+          type: 'warning',
+          title: `Resume too large for free plan (${(file.size / 1024 / 1024).toFixed(1)} MB)`,
+          message: `Free accounts support resumes up to 5 MB (≈ 7 pages). Upgrade to Pro to upload files up to 15 MB and resumes with up to 20 pages.`,
+        });
+        setShowPricing(true);
+      } else {
+        addNotification({
+          type: 'error',
+          title: `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB)`,
+          message: `Maximum allowed file size is 15 MB.`,
+        });
+      }
+      return;
+    }
+    setResumeFile(file);
+  };
+
   const handleUpload = async (): Promise<void> => {
     if (!resumeFile) return;
     setIsUploading(true);
@@ -237,27 +272,36 @@ const ResumeDashboard: React.FC = () => {
     } catch (err: any) {
       console.error('Upload failed', err);
 
-      // Check for limit exhaustion (400 error)
-      if (err.response?.status === 400 || err.status === 400) {
-        const errorMsg = err.response?.data?.message || err.message || '';
+      // Check for page/size limit errors from backend or AI
+      const rawMsg: string = err.response?.data?.message || err.response?.data?.detail || err.message || '';
+      const isPageLimit = /page|7 page|20 page|maximum allowed length/i.test(rawMsg);
+      const isSizeLimit = /size|5\s*mb|15\s*mb|too large/i.test(rawMsg);
 
-        // Show pricing if it's a limit error
-        if (errorMsg.toLowerCase().includes('limit') || errorMsg.toLowerCase().includes('plan')) {
-          setIsUploadOpen(false);
-          setShowPricing(true);
-          addNotification({
-            type: 'error',
-            title: 'Limit Reached',
-            message: 'You have reached your resume upload limit. Please upgrade your plan to continue.',
-          });
-          return;
-        }
+      if (isPageLimit && !isPaidUser) {
+        addNotification({
+          type: 'warning',
+          title: 'Resume exceeds free plan page limit',
+          message: 'Free accounts support resumes up to 7 pages. Upgrade to Pro to process resumes up to 20 pages.',
+        });
+        setIsUploadOpen(false);
+        setShowPricing(true);
+        return;
+      }
+      if (isSizeLimit && !isPaidUser) {
+        addNotification({
+          type: 'warning',
+          title: 'Resume too large for free plan',
+          message: 'Free accounts support resumes up to 5 MB. Upgrade to Pro for up to 15 MB.',
+        });
+        setIsUploadOpen(false);
+        setShowPricing(true);
+        return;
       }
 
       addNotification({
         type: 'error',
         title: 'Upload failed',
-        message: 'Failed to upload and analyze resume. Please try again.',
+        message: rawMsg || 'Failed to upload and analyze resume. Please try again.',
       });
     } finally {
       setIsUploading(false);
@@ -268,7 +312,7 @@ const ResumeDashboard: React.FC = () => {
     e.preventDefault();
     setIsDragOver(false);
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) setResumeFile(droppedFile);
+    if (droppedFile) validateAndSetResumeFile(droppedFile);
   };
 
   const handleJDDrop = (e: React.DragEvent<HTMLDivElement>): void => {
@@ -759,7 +803,9 @@ const ResumeDashboard: React.FC = () => {
                             Drop your resume here
                           </p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            or click to browse • PDF, DOC, DOCX up to 50MB
+                            {isPaidUser
+                              ? 'or click to browse • PDF, DOC, DOCX up to 15 MB · 20 pages'
+                              : 'or click to browse • PDF, DOC, DOCX up to 5 MB · 7 pages (upgrade for larger resumes)'}
                           </p>
                         </div>
                       )}
@@ -767,7 +813,7 @@ const ResumeDashboard: React.FC = () => {
                         ref={resumeInputRef}
                         type="file"
                         accept=".pdf,.doc,.docx"
-                        onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                        onChange={(e) => validateAndSetResumeFile(e.target.files?.[0])}
                         className="hidden"
                       />
                     </div>
