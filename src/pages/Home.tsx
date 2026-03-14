@@ -478,9 +478,9 @@ const ComparisonSection = () => (
 
       <div className="grid md:grid-cols-2 gap-6">
         <Reveal delay={0}>
-          <div className="border border-red-200 dark:border-red-800/40 rounded-2xl p-8 bg-red-50/50 dark:bg-red-900/5">
-            <h3 className="font-bold text-lg text-red-700 dark:text-red-400 mb-5 flex items-center gap-2">
-              <span className="text-2xl">😰</span> Without AI for Job
+          <div className="border border-slate-200 dark:border-slate-700/60 rounded-2xl p-8 bg-slate-50/80 dark:bg-slate-900/40">
+            <h3 className="font-bold text-lg text-slate-700 dark:text-slate-300 mb-5">
+              Without AI for Job
             </h3>
             <ul className="space-y-4">
               {[
@@ -490,8 +490,8 @@ const ComparisonSection = () => (
                 "Not knowing if your answer was good until you get a rejection email a week later",
                 "Starting prep 3 days before the interview every single time",
               ].map((item, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-                  <span className="text-red-400 mt-0.5 flex-shrink-0">✕</span>
+                <li key={i} className="flex items-start gap-3 text-sm text-slate-500 dark:text-slate-400">
+                  <span className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0">✕</span>
                   {item}
                 </li>
               ))}
@@ -500,9 +500,9 @@ const ComparisonSection = () => (
         </Reveal>
 
         <Reveal delay={0.1}>
-          <div className="border border-emerald-200 dark:border-emerald-800/40 rounded-2xl p-8 bg-emerald-50/50 dark:bg-emerald-900/5">
-            <h3 className="font-bold text-lg text-emerald-700 dark:text-emerald-400 mb-5 flex items-center gap-2">
-              <span className="text-2xl">🎯</span> With AI for Job
+          <div className="border border-blue-200 dark:border-blue-800/40 rounded-2xl p-8 bg-blue-50/50 dark:bg-blue-900/5">
+            <h3 className="font-bold text-lg text-blue-700 dark:text-blue-400 mb-5">
+              With AI for Job
             </h3>
             <ul className="space-y-4">
               {[
@@ -513,7 +513,7 @@ const ComparisonSection = () => (
                 "Structured daily prep that takes 30–45 minutes and builds up over time"
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                   {item}
                 </li>
               ))}

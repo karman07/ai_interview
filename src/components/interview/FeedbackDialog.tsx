@@ -76,14 +76,15 @@ export default function FeedbackDialog({ sessionId, open, onClose }: FeedbackDia
   const canSubmit = experienceRating > 0 && resultRating > 0;
 
   const handleSubmit = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit || !sessionId) return;
     setLoading(true);
     try {
       await submitFeedback(sessionId, experienceRating, resultRating, comment);
       setDone(true);
       setTimeout(onClose, 1800);
-    } catch {
-      /* silent — don't block user if feedback fails */
+    } catch (error) {
+      console.error('Feedback submission failed:', error);
+      // Still show success to avoid blocking user  
       setDone(true);
       setTimeout(onClose, 1800);
     } finally {
