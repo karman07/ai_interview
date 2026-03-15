@@ -42,6 +42,9 @@
     "three": "^0.183.2",
     "web-vitals": "^5.1.0"
   },
+  "overrides": {
+    "react-reconciler": "0.29.2"
+  },
   "devDependencies": {
     "@types/node": "^20.12.8",
     "@types/react": "^18.3.1",

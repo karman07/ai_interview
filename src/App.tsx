@@ -1,49 +1,60 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
+// Home is the landing page — keep eager for instant first paint
 import Home from "@/pages/Home";
-import About from "@/pages/About";
 import Sidebar from "@/components/layout/Sidebar/Sidebar";
 import { InterviewProvider } from "@/contexts/InterviewContext";
 import { ResultsProvider } from "@/contexts/ResultsContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import NotificationToast from "@/components/common/NotificationToast";
-import PricingDialog from "@/pages/Pricing/PricingDialog";
-import PricingPage from "@/pages/Pricing/PricingPage";
 import routes from "@/constants/routes";
-import AuthPage from "./pages/Auth/AuthPage";
-import VerifyEmail from "./pages/Auth/VerifyEmail";
-import ProtectedRoute from "./routes/ProtectedRoute";
-import Profile from "./pages/Profile/Profile";
 import { PricingProvider } from "@/contexts/PricingContext";
 import Footer from "./components/layout/Footer";
-import ResumeDashboard from "@/pages/Dashboard/ResumeDashboard";
 import { useAuth } from "@/contexts/AuthContext";
-import InterviewApp from "./pages/Interview/Interview";
-import ResourcesHub from "./pages/Resources/Resources";
-import JobSearch from "./pages/Job/JobSearch";
-import SubjectsPage from "./pages/Subjects/SubjectsPage";
-import SubjectDetailsPage from "./pages/Subjects/SubjectDetailsPage";
-import { SubjectsProvider } from "./contexts/SubjectsContext";
-import { ProgressProvider } from "./contexts/ProgressContext";
-import LessonDetailsPage from "./pages/Lessons/LessonDetailsPage";
-import { LessonsProvider } from "./contexts/LessonsContext";
-import InterviewHome from "./pages/Interview_round/InterviewHome";
-import InterviewStart from "./pages/Interview_round/InterviewStart";
-import InterviewRoomPage from "./pages/Interview_round/InterviewRoomPage";
-import InterviewHistory from "./pages/Interview_round/InterviewHistory";
-import InterviewResultsV2 from "./pages/Interview_round/InterviewResultsV2";
-import InterviewSessionDetails from "./pages/Interview_round/InterviewSessionDetails";
-import { AnalyticsProvider } from "./contexts/AnalyticsContext";
-import AnalyticsTest from "./pages/Test/AnalyticsTest";
-import ContactPage from "./pages/contact/ContactPage";
-import JobsPublicPage from "./pages/JobsPublic";
-import EmployeePortal from "./pages/Employee/EmployeePortal";
-import ResumeBuilder from "./pages/ResumeBuilder";
-import PrivacyPolicy from "./pages/Legal/PrivacyPolicy";
-import TermsOfService from "./pages/Legal/TermsOfService";
-import CookiePolicy from "./pages/Legal/CookiePolicy";
 import ScrollToTop from "@/components/layout/ScrollToTop";
 import WebVitalsMonitor from "@/components/common/WebVitalsMonitor";
+import { SubjectsProvider } from "./contexts/SubjectsContext";
+import { ProgressProvider } from "./contexts/ProgressContext";
+import { LessonsProvider } from "./contexts/LessonsContext";
+import { AnalyticsProvider } from "./contexts/AnalyticsContext";
+import ProtectedRoute from "./routes/ProtectedRoute";
+
+// ── Lazy-loaded pages (each becomes its own JS chunk) ─────────────────────
+const About                   = lazy(() => import("@/pages/About"));
+const PricingPage             = lazy(() => import("@/pages/Pricing/PricingPage"));
+const PricingDialog           = lazy(() => import("@/pages/Pricing/PricingDialog"));
+const ContactPage             = lazy(() => import("@/pages/contact/ContactPage"));
+const JobsPublicPage          = lazy(() => import("@/pages/JobsPublic"));
+const PrivacyPolicy           = lazy(() => import("@/pages/Legal/PrivacyPolicy"));
+const TermsOfService          = lazy(() => import("@/pages/Legal/TermsOfService"));
+const CookiePolicy            = lazy(() => import("@/pages/Legal/CookiePolicy"));
+const AuthPage                = lazy(() => import("./pages/Auth/AuthPage"));
+const VerifyEmail             = lazy(() => import("./pages/Auth/VerifyEmail"));
+const Profile                 = lazy(() => import("./pages/Profile/Profile"));
+const ResumeDashboard         = lazy(() => import("@/pages/Dashboard/ResumeDashboard"));
+const InterviewApp            = lazy(() => import("./pages/Interview/Interview"));
+const ResourcesHub            = lazy(() => import("./pages/Resources/Resources"));
+const JobSearch               = lazy(() => import("./pages/Job/JobSearch"));
+const SubjectsPage            = lazy(() => import("./pages/Subjects/SubjectsPage"));
+const SubjectDetailsPage      = lazy(() => import("./pages/Subjects/SubjectDetailsPage"));
+const LessonDetailsPage       = lazy(() => import("./pages/Lessons/LessonDetailsPage"));
+const InterviewHome           = lazy(() => import("./pages/Interview_round/InterviewHome"));
+const InterviewStart          = lazy(() => import("./pages/Interview_round/InterviewStart"));
+const InterviewRoomPage       = lazy(() => import("./pages/Interview_round/InterviewRoomPage"));
+const InterviewHistory        = lazy(() => import("./pages/Interview_round/InterviewHistory"));
+const InterviewResultsV2      = lazy(() => import("./pages/Interview_round/InterviewResultsV2"));
+const InterviewSessionDetails = lazy(() => import("./pages/Interview_round/InterviewSessionDetails"));
+const AnalyticsTest           = lazy(() => import("./pages/Test/AnalyticsTest"));
+const EmployeePortal          = lazy(() => import("./pages/Employee/EmployeePortal"));
+const ResumeBuilder           = lazy(() => import("./pages/ResumeBuilder"));
+
+// ── Minimal loading fallback (no layout shift) ────────────────────────────
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 const RedirectIfLoggedIn = ({ children }: { children: JSX.Element }) => {
   const { user } = useAuth();
@@ -90,14 +101,17 @@ function App() {
             <ResultsProvider>
               <ScrollToTop />
               <WebVitalsMonitor />
-              <PricingDialog />
               <div className="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
                 {!shouldHideNavbar && <Navbar />}
 
                 <NotificationToast />
 
-                <div className="flex-grow">
-                  <Routes>
+                <Suspense fallback={<PageLoader />}>
+                  {/* PricingDialog is lazy — rendered inside Suspense */}
+                  <PricingDialog />
+
+                  <div className="flex-grow">
+                    <Routes>
                     {/* Public Routes */}
                     <Route path={routes.home} element={<Home />} />
                     <Route path={routes.about} element={<About />} />
@@ -300,7 +314,8 @@ function App() {
                     {/* Catch-all: redirect unknown routes to home */}
                     <Route path="*" element={<Navigate to={routes.home} replace />} />
                   </Routes>
-                </div>
+                  </div>
+                </Suspense>
 
                 {!shouldHideNavbar && <Footer />}
               </div>

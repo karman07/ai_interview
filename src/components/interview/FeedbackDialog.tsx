@@ -15,11 +15,19 @@ async function submitFeedback(
   resultRating: number,
   comment: string,
 ) {
-  return http.post(`/results/${sessionId}/feedback`, {
-    experienceRating,
-    resultRating,
-    comment,
-  });
+  // Post to results feedback (session-level) AND to reviews collection (admin-visible)
+  await Promise.allSettled([
+    http.post(`/results/${sessionId}/feedback`, {
+      experienceRating,
+      resultRating,
+      comment,
+    }),
+    http.post('/reviews', {
+      rating: experienceRating,
+      comment: comment || undefined,
+      sessionId,
+    }),
+  ]);
 }
 
 /* ── Star row ─────────────────────────────────────────────────────── */
