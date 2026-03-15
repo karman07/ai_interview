@@ -96,7 +96,7 @@ function App() {
 
                 <NotificationToast />
 
-                <div className="flex-grow">
+                <main id="main-content" className="flex-grow" role="main">
                   <Routes>
                     {/* Public Routes */}
                     <Route path={routes.home} element={<Home />} />
@@ -300,7 +300,7 @@ function App() {
                     {/* Catch-all: redirect unknown routes to home */}
                     <Route path="*" element={<Navigate to={routes.home} replace />} />
                   </Routes>
-                </div>
+                </main>
 
                 {!shouldHideNavbar && <Footer />}
               </div>
