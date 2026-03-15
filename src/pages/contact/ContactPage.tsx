@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { Mail, Phone, MapPin, Send, MessageCircle, Clock, Globe, CheckCircle } from "lucide-react";
 import Button from "@/components/ui/button";
+import SEO from "@/components/SEO/SEO";
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
@@ -25,6 +26,12 @@ const ContactPage = () => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 selection:bg-blue-500/30 transition-colors duration-500">
+      <SEO 
+        title="Contact Us - AI for Job"
+        description="Get in touch with AI for Job. Have questions about our AI-powered interview platform? Contact our support team for help with interview preparation, resume analysis, or technical support."
+        keywords="contact AI for Job, interview platform support, customer service, help, get in touch, technical support"
+        url="https://aiforjob.ai/contact"
+      />
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden bg-white dark:bg-slate-950">

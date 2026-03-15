@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import routes from '@/constants/routes';
 import Button from '@/components/ui/button';
 import { fetchJobs, type Job } from '@/api/jobService';
+import { SEO } from '@/components/SEO';
 
 /* ─── Static sample jobs ─────────────────────────────────────────────── */
 const SAMPLE_JOBS = [
@@ -113,6 +114,12 @@ const JobsPublicPage = () => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 transition-colors duration-500">
+      <SEO 
+        title="Job Listings - AI for Job"
+        description="Browse curated job opportunities and AI-powered interview practice. Find your dream job and prepare with our AI interview platform. Practice coding, behavioral, and technical interviews."
+        keywords="job listings, job search, career opportunities, AI interview practice, job preparation, tech jobs, software engineer jobs"
+        url="https://aiforjob.ai/jobs"
+      />
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <section className="relative pt-32 pb-20 overflow-hidden bg-white dark:bg-slate-950">

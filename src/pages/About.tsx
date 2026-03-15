@@ -12,12 +12,19 @@ import {
   Heart
 } from "lucide-react";
 import Button from "../components/ui/button";
+import SEO from "@/components/SEO/SEO";
 
 const AboutUs = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 selection:bg-blue-500/30 transition-colors duration-500">
+      <SEO 
+        title="About Us - AI for Job"
+        description="Learn about AI for Job's mission to democratize interview preparation. Discover how we're helping candidates ace their job interviews with AI-powered practice and personalized feedback."
+        keywords="about AI for Job, interview preparation mission, AI interview platform, career development, job interview help"
+        url="https://aiforjob.ai/about"
+      />
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden bg-white dark:bg-slate-950">

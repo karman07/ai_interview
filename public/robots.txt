@@ -1,0 +1,14 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /employee/
+Disallow: /dashboard/
+Disallow: /profile/
+Disallow: /interview/room/
+Disallow: /interview/results/
+Disallow: /interview/start/
+
+# Sitemap location
+Sitemap: https://aiforjob.ai/sitemap.xml

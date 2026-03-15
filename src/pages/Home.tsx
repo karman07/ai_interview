@@ -8,6 +8,9 @@ import {
   Code2, Layers, BookOpen, Bot, ChevronDown
 } from "lucide-react";
 import Button from "../components/ui/button";
+import SEO from "@/components/SEO/SEO";
+import StructuredData from "@/components/SEO/StructuredData";
+import { structuredData } from "@/utils/seo";
 
 /* ── Typewriter hook ───────────────────────────────────────────────── */
 function useTypewriter(words: string[], speed = 80, pause = 1800) {
@@ -618,6 +621,16 @@ const Home = () => {
   const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 transition-colors duration-500">
+      <SEO 
+        title="AI for Job | AI-Powered Interview Practice Platform"
+        description="Master your job interviews with AI-powered mock interviews, resume analysis, and personalized feedback. Practice coding, behavioral, and technical interviews with real-time AI assistance."
+        keywords="AI interview practice, mock interview, resume analysis, coding interview, technical interview, behavioral interview, job preparation, career development"
+        url="https://aiforjob.ai"
+      />
+      <StructuredData data={structuredData.organization} />
+      <StructuredData data={structuredData.website} />
+      <StructuredData data={structuredData.service} />
+      
       <main>
         <HeroSection onStart={() => navigate("/signup")} onResume={() => navigate("/dashboard")} />
         <StatsSection />

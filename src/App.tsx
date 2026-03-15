@@ -43,6 +43,7 @@ import PrivacyPolicy from "./pages/Legal/PrivacyPolicy";
 import TermsOfService from "./pages/Legal/TermsOfService";
 import CookiePolicy from "./pages/Legal/CookiePolicy";
 import ScrollToTop from "@/components/layout/ScrollToTop";
+import WebVitalsMonitor from "@/components/common/WebVitalsMonitor";
 
 const RedirectIfLoggedIn = ({ children }: { children: JSX.Element }) => {
   const { user } = useAuth();
@@ -88,6 +89,7 @@ function App() {
           <InterviewProvider>
             <ResultsProvider>
               <ScrollToTop />
+              <WebVitalsMonitor />
               <PricingDialog />
               <div className="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
                 {!shouldHideNavbar && <Navbar />}

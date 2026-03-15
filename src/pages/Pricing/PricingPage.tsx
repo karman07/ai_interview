@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { usePricing } from "@/contexts/PricingContext";
 import { useAuth } from "@/contexts/AuthContext";
+import SEO from "@/components/SEO/SEO";
 
 /* ── helpers ─────────────────────────────────────────────────────────── */
 function Reveal({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
@@ -50,8 +51,12 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50">
-
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50">      <SEO 
+        title="Pricing Plans - AI for Job"
+        description="Choose the perfect plan for your interview preparation. Flexible pricing options for AI-powered mock interviews, resume analysis, and career development tools. Start free today!"
+        keywords="interview preparation pricing, AI interview cost, mock interview plans, resume analysis pricing, career development subscription"
+        url="https://aiforjob.ai/pricing"
+      />
       {/* ── HERO ─────────────────────────────────────────────────── */}
       <section className="relative pt-28 pb-10 overflow-hidden">
         <div className="absolute inset-0 -z-10">
