@@ -16,18 +16,24 @@ async function submitFeedback(
   comment: string,
 ) {
   // Post to results feedback (session-level) AND to reviews collection (admin-visible)
-  await Promise.allSettled([
-    http.post(`/results/${sessionId}/feedback`, {
-      experienceRating,
-      resultRating,
-      comment,
-    }),
-    http.post('/reviews', {
-      rating: experienceRating,
-      comment: comment || undefined,
-      sessionId,
-    }),
-  ]);
+  try {
+    const responses = await Promise.allSettled([
+      http.post(`/results/${sessionId}/feedback`, {
+        experienceRating,
+        resultRating,
+        comment,
+      }),
+      http.post('/reviews', {
+        experienceRating,
+        resultRating,
+        comment: comment || undefined,
+        sessionId,
+      }),
+    ]);
+    console.log("Feedback submission results:", responses);
+  } catch (err) {
+    console.error("Failed to post feedback:", err);
+  }
 }
 
 /* ── Star row ─────────────────────────────────────────────────────── */
