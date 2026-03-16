@@ -15,7 +15,7 @@ export class ReviewsService {
   async create(userId: string, dto: CreateReviewDto): Promise<Review> {
     const review = new this.reviewModel({
       userId: new Types.ObjectId(userId),
-      rating: dto.rating,
+      rating: dto.rating ?? dto.experienceRating ?? 5,
       comment: dto.comment?.trim() ?? '',
       sessionId: dto.sessionId ?? undefined,
       interviewType: dto.interviewType ?? undefined,

@@ -1,23 +1,27 @@
 const mongoose = require('mongoose');
-require('dotenv').config();
 
-async function test() {
-  await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ai-interview-v4');
-  const AIUsage = mongoose.connection.collection('aiusages');
-  const Results = mongoose.connection.collection('results');
+async function check() {
+  const uri = "mongodb+srv://karmansingharora03_db_user:8813917626%24Karman@cluster0.yyjs2ln.mongodb.net/ai-interview?retryWrites=true&w=majority&appName=Cluster0";
 
-  // Find latest AIUsage
-  const latestUsage = await AIUsage.find().sort({_id: -1}).limit(1).toArray();
-  console.log("Latest AI Usage:\n", JSON.stringify(latestUsage, null, 2));
+  try {
+    await mongoose.connect(uri);
+    const db = mongoose.connection.db;
 
-  // Find latest Result
-  const latestResult = await Results.find().sort({_id: -1}).limit(1).toArray();
-  console.log("Latest Result (check tokenUsage field):\n", JSON.stringify(latestResult.map(r => ({
-     _id: r._id,
-     sessionId: r.sessionId,
-     tokenUsage: r.tokenUsage,
-  })), null, 2));
+    const collections = await db.listCollections().toArray();
+    console.log('Collections:', collections.map(c => c.name));
 
-  process.exit(0);
+    for (const c of collections) {
+      const count = await db.collection(c.name).countDocuments();
+      if (count > 0 && c.name.toLowerCase().includes('review') || c.name.toLowerCase().includes('feed')) {
+         console.log(`Matched item ${c.name} with count=${count}`);
+      }
+    }
+
+  } catch (err) {
+    console.error(err);
+  } finally {
+    await mongoose.disconnect();
+  }
 }
-test();
+
+check();

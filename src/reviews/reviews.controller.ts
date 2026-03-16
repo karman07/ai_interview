@@ -28,8 +28,21 @@ export class ReviewsController {
   /** POST /reviews — submit a review after an interview */
   @Post()
   @UseGuards(JwtAuthGuard)
-  create(@CurrentUser() user: any, @Body() dto: CreateReviewDto) {
-    return this.reviewsService.create(user.sub, dto);
+  async create(@CurrentUser() user: any, @Body() dto: CreateReviewDto) {
+    const fs = require('fs');
+    const logPath = '/Users/karmansingh/Desktop/work/ai_interview/backend/reviews_debug.log';
+    const log = (msg: string) => fs.appendFileSync(logPath, `[${new Date().toISOString()}] ${msg}\n`);
+
+    log(`POST /reviews hit - User: ${user.sub} - Body: ${JSON.stringify(dto)}`);
+
+    try {
+      const res = await this.reviewsService.create(user.sub, dto);
+      log(`POST /reviews SUCCESS - Result: ${JSON.stringify(res)}`);
+      return res;
+    } catch (err: any) {
+      log(`POST /reviews ERROR: ${err.message || err}`);
+      throw err;
+    }
   }
 
   /** GET /reviews/my — logged-in user's own reviews */
