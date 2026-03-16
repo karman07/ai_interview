@@ -169,16 +169,16 @@ export function generateInterviewReport(report: InterviewV2Report, role?: string
     doc.text(`Generated  ${dateStr}`, MARGIN + 4, 31);
 
     // Score badge in header
-    drawScoreBadge(doc, PAGE_W - MARGIN - 14, 23, scoreNorm, 14);
+    drawScoreBadge(doc, PAGE_W - MARGIN - 14, 21, scoreNorm, 12);
 
     // Hire recommendation chip
     const hireColour = hireRec.toLowerCase().includes('strong') || hireRec.toLowerCase().includes('hire')
         ? C.teal : hireRec.toLowerCase().includes('consider') ? C.amber : C.red;
-    fillRect(doc, PAGE_W - MARGIN - 52, 34, 38, 7, hireColour);
+    fillRect(doc, PAGE_W - MARGIN - 52, 36, 38, 7, hireColour);
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...C.dark);
-    doc.text(clamp(hireRec, 22), PAGE_W - MARGIN - 33, 39, { align: 'center' });
+    doc.text(clamp(hireRec, 22), PAGE_W - MARGIN - 33, 40.5, { align: 'center' });
 
     let y = 54;
 
@@ -207,7 +207,7 @@ export function generateInterviewReport(report: InterviewV2Report, role?: string
     y += 20;
 
     // ── Dimension Scores ──────────────────────────────────────────────────────
-    y = sectionHeading(doc, y, '📊  Dimension Scores');
+    y = sectionHeading(doc, y, 'Dimension Scores');
     const dims: Array<[string, number]> = [
         ['Technical Depth',   report.dimension_scores?.technical_depth  ?? 0],
         ['Problem Solving',   report.dimension_scores?.problem_solving   ?? 0],
@@ -225,7 +225,7 @@ export function generateInterviewReport(report: InterviewV2Report, role?: string
         const dy = y + row * 14;
         doc.setFontSize(8.5);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...C.white);
+        doc.setTextColor(...C.dark);
         doc.text(label, dx, dy + 1);
         drawBar(doc, dx, dy + 3, colW - 24, score, rgb);
         doc.setFontSize(9);
@@ -236,7 +236,7 @@ export function generateInterviewReport(report: InterviewV2Report, role?: string
 
     // ── Key Strengths & Areas to Improve ─────────────────────────────────────
     y = ensureSpace(doc, y, 30);
-    y = sectionHeading(doc, y, '💪  Strengths & Areas to Improve');
+    y = sectionHeading(doc, y, 'Strengths & Areas to Improve');
 
     const halfW = (CONTENT_W - 6) / 2;
     const strengths = report.summary?.key_strengths ?? [];
@@ -265,7 +265,7 @@ export function generateInterviewReport(report: InterviewV2Report, role?: string
     const questions = report.question_wise_analysis ?? [];
     if (questions.length > 0) {
         y = ensureSpace(doc, y, 20);
-        y = sectionHeading(doc, y, '🧩  Question-by-Question Analysis');
+        y = sectionHeading(doc, y, 'Question-by-Question Analysis');
 
         for (let qi = 0; qi < questions.length; qi++) {
             const q = questions[qi];
@@ -340,7 +340,7 @@ export function generateInterviewReport(report: InterviewV2Report, role?: string
     const gaps = report.skill_gap_analysis;
     if (gaps) {
         y = ensureSpace(doc, y, 20);
-        y = sectionHeading(doc, y, '🎯  Skill Gap Analysis');
+        y = sectionHeading(doc, y, 'Skill Gap Analysis');
         const gapCols: Array<[string, string[], [number,number,number]]> = [
             ['Critical',  gaps.critical_gaps  ?? [], C.red   ],
             ['Moderate',  gaps.moderate_gaps  ?? [], C.amber ],
@@ -365,7 +365,7 @@ export function generateInterviewReport(report: InterviewV2Report, role?: string
     const bi = report.behavioral_insights;
     if (bi) {
         y = ensureSpace(doc, y, 24);
-        y = sectionHeading(doc, y, '🧠  Behavioral Insights');
+        y = sectionHeading(doc, y, 'Behavioral Insights');
         const biItems: Array<[string, string]> = [
             ['Communication Style', bi.communication_style ?? '—'],
             ['Thinking Pattern',    bi.thinking_pattern    ?? '—'],
@@ -390,7 +390,7 @@ export function generateInterviewReport(report: InterviewV2Report, role?: string
     const plan = report.improvement_plan;
     if (plan) {
         y = ensureSpace(doc, y, 20);
-        y = sectionHeading(doc, y, '🚀  Improvement Plan');
+        y = sectionHeading(doc, y, 'Improvement Plan');
         const planCols: Array<[string, string[], [number,number,number]]> = [
             ['Immediate',  plan.immediate_actions ?? [], C.red   ],
             ['1 Week',     plan.plan_1_week       ?? [], C.amber ],
@@ -415,7 +415,7 @@ export function generateInterviewReport(report: InterviewV2Report, role?: string
     const verdict = report.verdict;
     if (verdict) {
         y = ensureSpace(doc, y, 30);
-        y = sectionHeading(doc, y, '🏁  Final Verdict');
+        y = sectionHeading(doc, y, 'Final Verdict');
 
         if (verdict.final_recommendation_text) {
             fillRect(doc, MARGIN, y, CONTENT_W, 1, C.purple);
