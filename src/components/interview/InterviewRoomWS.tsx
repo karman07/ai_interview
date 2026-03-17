@@ -528,18 +528,18 @@ export default function InterviewRoomWS() {
 
                     {/* Left UI: Always visible */}
                     <motion.div
-                        animate={{ width: showCodeEditor ? 380 : "100%", maxWidth: showCodeEditor ? 380 : 800 }}
-                        className="flex flex-col gap-4 shrink-0 min-h-0 overflow-hidden mx-auto"
+                        animate={{ width: showCodeEditor ? 360 : "100%", maxWidth: showCodeEditor ? 360 : 780 }}
+                        className="flex flex-col gap-3 shrink-0 min-h-0 mx-auto"
                     >
                         {/* Avatar / Interviewer Card */}
-                        <div className={`bg-white dark:bg-slate-900 rounded-[2rem] border border-blue-50 dark:border-slate-800 shadow-sm overflow-hidden relative group transition-all duration-500 ${showCodeEditor ? 'h-[300px]' : 'h-[380px]'}`}>
+                        <div className={`shrink-0 bg-white dark:bg-slate-900 rounded-[2rem] border border-blue-50 dark:border-slate-800 shadow-sm overflow-hidden relative group transition-all duration-500 ${showCodeEditor ? 'h-[260px]' : 'h-[360px]'}`}>
                             <ThreeAvatar
                                 isSpeaking={isSpeaking}
                                 isListening={isListening}
                             />
 
                             {/* User Webcam PIP */}
-                            <div className="absolute bottom-16 right-4 w-28 h-40 rounded-2xl overflow-hidden border-2 border-slate-700/50 shadow-2xl backdrop-blur-md bg-slate-950/80 z-20">
+                            <div className={`absolute right-3 rounded-2xl overflow-hidden shadow-2xl bg-slate-950 z-20 transition-all duration-500 ${showCodeEditor ? 'bottom-3 w-24 h-[88px] border border-white/20' : 'bottom-14 w-28 h-36 border-2 border-white/25'}`}>
                                 <video
                                     ref={videoRef}
                                     autoPlay
@@ -548,14 +548,14 @@ export default function InterviewRoomWS() {
                                     className={`w-full h-full object-cover scale-x-[-1] transition-opacity duration-300 ${webcamActive ? 'opacity-100' : 'opacity-0 absolute inset-0'}`}
                                 />
                                 {!webcamActive && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80">
-                                        <VideoOff className="w-5 h-5 text-slate-500" />
+                                    <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
+                                        <VideoOff className="w-4 h-4 text-slate-500" />
                                     </div>
                                 )}
                             </div>
 
                             {/* Identity Overlay: Compact */}
-                            <div className="absolute bottom-4 left-4 right-4 p-3 bg-black/20 backdrop-blur-md rounded-xl border border-white/5 flex items-center justify-between">
+                            <div className={`absolute left-3 right-3 p-2.5 bg-black/25 backdrop-blur-md rounded-xl border border-white/5 flex items-center justify-between transition-all duration-500 ${showCodeEditor ? 'bottom-3' : 'bottom-3'}`}>
                                 <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">
                                     {(messages.length > 0 && messages[messages.length - 1].role === 'user' && !isStreamingResponse && !isSpeaking) ? 'Ryntra Bot (Thinking...)' : 'Ryntra Bot'}
                                 </span>
@@ -577,26 +577,26 @@ export default function InterviewRoomWS() {
                             {isQuestionBoxOpen && messages.length > 0 && messages[messages.length - 1].role === 'model' && (
                                 <motion.div
                                     key="question-box"
-                                    initial={{ opacity: 0, height: 0, y: -8 }}
-                                    animate={{ opacity: 1, height: 'auto', y: 0 }}
-                                    exit={{ opacity: 0, height: 0, y: -8 }}
+                                    initial={{ opacity: 0, y: -6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -6 }}
                                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                                    className="overflow-hidden"
+                                    className="shrink-0"
                                 >
-                                    <div className="bg-blue-600/10 dark:bg-blue-900/20 border border-blue-500/20 rounded-2xl p-4 backdrop-blur-sm">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                                    <div className="bg-blue-600/10 dark:bg-blue-900/20 border border-blue-500/20 rounded-2xl p-3.5 backdrop-blur-sm">
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-1.5">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                                                Question
+                                                Current Question
                                             </p>
                                             <button
                                                 onClick={() => setIsQuestionBoxOpen(false)}
-                                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
+                                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold leading-none"
                                             >
                                                 ✕
                                             </button>
                                         </div>
-                                        <p className="text-sm font-medium text-slate-700 dark:text-slate-200 leading-relaxed">
+                                        <p className="text-[13px] font-medium text-slate-700 dark:text-slate-200 leading-relaxed line-clamp-4">
                                             {messages[messages.length - 1].content}
                                         </p>
                                     </div>
@@ -605,12 +605,12 @@ export default function InterviewRoomWS() {
                         </AnimatePresence>
 
                         <WSTranscriptPanel
-                            messages={messages}
-                            transcript={transcript}
-                            isListening={isListening}
-                            isSpeaking={isSpeaking}
-                            isTranscribing={isTranscribing}
-                        />
+                                messages={messages}
+                                transcript={transcript}
+                                isListening={isListening}
+                                isSpeaking={isSpeaking}
+                                isTranscribing={isTranscribing}
+                            />
                     </motion.div>
 
                     {/* Perspective: Center/Right UI (Code/Task) */}
