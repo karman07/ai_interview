@@ -48,6 +48,9 @@ const InterviewSessionDetails = lazy(() => import("./pages/Interview_round/Inter
 const AnalyticsTest           = lazy(() => import("./pages/Test/AnalyticsTest"));
 const EmployeePortal          = lazy(() => import("./pages/Employee/EmployeePortal"));
 const ResumeBuilder           = lazy(() => import("./pages/ResumeBuilder"));
+const BlogsPage               = lazy(() => import("@/pages/Blogs/BlogsPage"));
+const BlogDetailPage         = lazy(() => import("@/pages/Blogs/BlogDetailPage"));
+const DocsPage               = lazy(() => import("@/pages/Docs/DocsPage"));
 
 // ── Minimal loading fallback (no layout shift) ────────────────────────────
 const PageLoader = () => (
@@ -83,6 +86,7 @@ function App() {
     routes.interviewHome,
     routes.interviewHistory,
     routes.resumeBuilder,
+    '/docs',
   ];
   const shouldHideNavbar =
     hideNavbarRoutes.includes(location.pathname) ||
@@ -156,6 +160,14 @@ function App() {
                         </div>
                       }
                     />
+                    <Route
+                      path={routes.blogs}
+                      element={<BlogsPage />}
+                    />
+                    <Route
+                      path="/blogs/:slug"
+                      element={<BlogDetailPage />}
+                    />
                     <Route path="/analytics-test" element={<AnalyticsTest />} />
 
                     {/* Auth Routes */}
@@ -181,6 +193,7 @@ function App() {
 
                     {/* Protected Routes */}
                     <Route element={<ProtectedRoute />}>
+                      <Route path="/docs" element={<DocsPage />} />
                       <Route
                         path={routes.dashboard}
                         element={

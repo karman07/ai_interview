@@ -42,9 +42,12 @@ export default function InterviewResultsV2() {
   const [report, setReport] = useState<InterviewV2Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
   useEffect(() => {
     if (!loading && report && sessionId) {
+      if ((report as any).feedback || feedbackSubmitted) return; // Feedback already submitted
+      
       const t = setTimeout(() => setShowFeedback(true), 3000);
       return () => clearTimeout(t);
     }
@@ -144,7 +147,7 @@ export default function InterviewResultsV2() {
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
               >
                 <MessageSquare className="w-4 h-4" />
-                Rate Session
+                {(report as any).feedback || feedbackSubmitted ? "Update Rating" : "Rate Session"}
               </button>
             )}
             <button
@@ -229,6 +232,7 @@ export default function InterviewResultsV2() {
           sessionId={sessionId}
           open={showFeedback}
           onClose={() => setShowFeedback(false)}
+          onSuccess={() => setFeedbackSubmitted(true)}
         />
       )}
     </div>

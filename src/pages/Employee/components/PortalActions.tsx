@@ -7,7 +7,7 @@ interface PortalActionsProps {
     setShowSubscriptionModal: (v: boolean) => void;
     isResumeFiltered: boolean;
     clearResumeFilter: () => void;
-    fileInputRef: React.RefObject<HTMLInputElement>;
+    onMatchResumeClick: () => void;
     showFavorites: boolean;
     setShowFavorites: (v: boolean) => void;
     showBookmarks: boolean;
@@ -16,14 +16,13 @@ interface PortalActionsProps {
     setShowFilters: (v: boolean) => void;
     viewMode: 'grid' | 'table';
     setViewMode: (v: 'grid' | 'table') => void;
-    handleResumeFilterUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const PortalActions = ({
     setShowSubscriptionModal,
     isResumeFiltered,
     clearResumeFilter,
-    fileInputRef,
+    onMatchResumeClick,
     showFavorites,
     setShowFavorites,
     showBookmarks,
@@ -32,18 +31,17 @@ const PortalActions = ({
     setShowFilters,
     viewMode,
     setViewMode,
-    handleResumeFilterUpload
 }: PortalActionsProps) => {
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4 }}
-            className="flex flex-wrap items-center gap-2.5 p-1.5 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-xl shadow-slate-200/20 dark:shadow-none"
+            className="flex flex-wrap items-center gap-2.5 p-1 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-xl shadow-slate-200/20 dark:shadow-none"
         >
-            <div className="flex items-center gap-2 pr-2.5 border-r border-slate-200 dark:border-slate-800/60 ml-1">
+            <div className="flex items-center gap-2 pr-2.5 border-r border-slate-200 dark:border-slate-800/60 ml-0.5">
                 <button
-                    onClick={() => isResumeFiltered ? clearResumeFilter() : fileInputRef.current?.click()}
+                    onClick={() => isResumeFiltered ? clearResumeFilter() : onMatchResumeClick()}
                     className={cn(
                         "px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 font-black text-[10px] uppercase tracking-widest border shadow-sm",
                         isResumeFiltered
@@ -57,7 +55,6 @@ const PortalActions = ({
                         <span className="ml-1 px-1 py-0.5 bg-white/20 rounded text-[7px] border border-white/20">BETA</span>
                     )}
                 </button>
-                <input type="file" ref={fileInputRef} onChange={handleResumeFilterUpload} className="hidden" accept=".pdf,.doc,.docx" />
             </div>
 
             <div className="flex items-center gap-1.5 px-1">

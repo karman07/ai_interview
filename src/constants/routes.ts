@@ -28,6 +28,8 @@ const routes = {
   privacy: '/privacy',
   terms: '/terms',
   cookies: '/cookies',
+  blogs: '/blogs',
+  blogDetail: (slug: string) => `/blogs/${slug}`,
 };
 
 export default routes;

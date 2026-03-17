@@ -7,6 +7,7 @@ interface FeedbackDialogProps {
   sessionId: string;
   open: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 async function submitFeedback(
@@ -80,7 +81,7 @@ function StarRow({
 }
 
 /* ── Dialog ───────────────────────────────────────────────────────── */
-export default function FeedbackDialog({ sessionId, open, onClose }: FeedbackDialogProps) {
+export default function FeedbackDialog({ sessionId, open, onClose, onSuccess }: FeedbackDialogProps) {
   const [experienceRating, setExperienceRating] = useState(0);
   const [resultRating, setResultRating]         = useState(0);
   const [comment, setComment]                   = useState("");
@@ -95,11 +96,13 @@ export default function FeedbackDialog({ sessionId, open, onClose }: FeedbackDia
     try {
       await submitFeedback(sessionId, experienceRating, resultRating, comment);
       setDone(true);
+      onSuccess?.();
       setTimeout(onClose, 1800);
     } catch (error) {
       console.error('Feedback submission failed:', error);
       // Still show success to avoid blocking user  
       setDone(true);
+      onSuccess?.();
       setTimeout(onClose, 1800);
     } finally {
       setLoading(false);

@@ -4,458 +4,612 @@ import { Resume } from '@/types/Resume';
 import type { InterviewV2Report } from '@/api/interviewV2';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Interview Report PDF Generator
+// Interview Report PDF Generator  —  Clean Light Edition
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PAGE_W  = 210;
-const PAGE_H  = 297;
-const MARGIN  = 16;
+const PAGE_W    = 210;
+const PAGE_H    = 297;
+const MARGIN    = 14;
 const CONTENT_W = PAGE_W - MARGIN * 2;
 
-// Brand colours (RGB)
-const C = {
-    purple  : [108, 99, 255] as [number, number, number],
-    teal    : [0, 212, 170]  as [number, number, number],
-    amber   : [255, 184, 0]  as [number, number, number],
-    red     : [255, 77, 77]  as [number, number, number],
-    dark    : [15, 23, 42]   as [number, number, number],
-    slate   : [30, 41, 59]   as [number, number, number],
-    mid     : [71, 85, 105]  as [number, number, number],
-    light   : [148, 163, 184] as [number, number, number],
+// Light-theme palette
+const L = {
     white   : [255, 255, 255] as [number, number, number],
-    success : [34, 197, 94]  as [number, number, number],
+    bg      : [249, 250, 252] as [number, number, number], // page background (near-white)
+    card    : [255, 255, 255] as [number, number, number],
+    border  : [220, 224, 235] as [number, number, number],
+    divider : [234, 236, 244] as [number, number, number],
+
+    // header band
+    headerBg : [30,  36,  70]  as [number, number, number], // deep navy strip only in header
+    headerBg2: [44,  52,  94]  as [number, number, number],
+
+    // accents
+    violet   : [99,  91, 235]  as [number, number, number],
+    violetLt : [220, 218, 255] as [number, number, number],
+    teal     : [16, 185, 129]  as [number, number, number],
+    tealLt   : [209, 250, 229] as [number, number, number],
+    amber    : [217, 119,   6] as [number, number, number],
+    amberLt  : [254, 243, 199] as [number, number, number],
+    red      : [220,  38,  38] as [number, number, number],
+    redLt    : [254, 226, 226] as [number, number, number],
+    green    : [5,  150,  105] as [number, number, number],
+    greenLt  : [209, 250, 229] as [number, number, number],
+
+    // text
+    textDark : [17,  24,  39]  as [number, number, number],
+    textMid  : [75,  85, 100]  as [number, number, number],
+    textDim  : [156, 163, 175] as [number, number, number],
 };
 
-function scoreColour(s: number): [number, number, number] {
-    if (s >= 75) return C.teal;
-    if (s >= 50) return C.amber;
-    return C.red;
+// ─── Pure utilities ───────────────────────────────────────────────────────────
+
+function scoreAccent(s: number): [number, number, number] {
+    if (s >= 75) return L.teal;
+    if (s >= 50) return L.amber;
+    return L.red;
+}
+function scoreBg(s: number): [number, number, number] {
+    if (s >= 75) return L.tealLt;
+    if (s >= 50) return L.amberLt;
+    return L.redLt;
 }
 
 function clamp(text: string, max: number) {
     return text.length > max ? text.slice(0, max - 1) + '…' : text;
 }
-
 function safeStr(v: unknown): string {
     if (typeof v === 'string') return v;
     if (v && typeof v === 'object' && 'name' in v) return String((v as any).name);
     return String(v ?? '');
 }
 
-/** Add a coloured filled rectangle (handy helper) */
-function fillRect(doc: jsPDF, x: number, y: number, w: number, h: number, rgb: [number,number,number]) {
+// ─── Drawing primitives ──────────────────────────────────────────────────────
+
+function fillRect(doc: jsPDF, x: number, y: number, w: number, h: number, rgb: [number, number, number]) {
     doc.setFillColor(rgb[0], rgb[1], rgb[2]);
     doc.rect(x, y, w, h, 'F');
 }
-
-/** Draw the standard footer on the current page */
-function drawFooter(doc: jsPDF, pageNum: number, totalPages: number, role: string) {
-    const y = PAGE_H - 8;
-    doc.setDrawColor(30, 41, 59);
-    doc.setLineWidth(0.3);
-    doc.line(MARGIN, y - 3, PAGE_W - MARGIN, y - 3);
-    doc.setFontSize(7.5);
-    doc.setTextColor(...C.mid);
-    doc.setFont('helvetica', 'normal');
-    doc.text('AI for Job™ · Interview Report', MARGIN, y);
-    doc.text(`Role: ${role}`, PAGE_W / 2, y, { align: 'center' });
-    doc.text(`Page ${pageNum} / ${totalPages}`, PAGE_W - MARGIN, y, { align: 'right' });
+function fillRR(doc: jsPDF, x: number, y: number, w: number, h: number, r: number, rgb: [number, number, number]) {
+    doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+    doc.roundedRect(x, y, w, h, r, r, 'F');
 }
-
-/** Draw coloured score badge (circle + number) */
-function drawScoreBadge(doc: jsPDF, cx: number, cy: number, score: number, radius = 12) {
-    const rgb = scoreColour(score);
-    doc.setFillColor(rgb[0], rgb[1], rgb[2], 0.15);
-    // Outer ring
+function strokeRR(doc: jsPDF, x: number, y: number, w: number, h: number, r: number, rgb: [number, number, number], lw = 0.3) {
     doc.setDrawColor(rgb[0], rgb[1], rgb[2]);
-    doc.setLineWidth(1.5);
-    doc.circle(cx, cy, radius, 'S');
-    // Score text
-    doc.setFontSize(radius > 10 ? 14 : 10);
+    doc.setLineWidth(lw);
+    doc.roundedRect(x, y, w, h, r, r, 'S');
+}
+
+/** Smooth arc segments for the score ring */
+function drawArc(doc: jsPDF, cx: number, cy: number, radius: number, startDeg: number, endDeg: number, lw: number, rgb: [number, number, number], steps = 72) {
+    if (startDeg >= endDeg) return;
+    const s = (startDeg - 90) * (Math.PI / 180);
+    const e = (endDeg   - 90) * (Math.PI / 180);
+    const inc = (e - s) / steps;
+    doc.setDrawColor(rgb[0], rgb[1], rgb[2]);
+    doc.setLineWidth(lw);
+    for (let i = 0; i < steps; i++) {
+        const a1 = s + i * inc, a2 = s + (i + 1) * inc;
+        doc.line(cx + radius * Math.cos(a1), cy + radius * Math.sin(a1),
+                 cx + radius * Math.cos(a2), cy + radius * Math.sin(a2));
+    }
+}
+
+/** Score ring (light version — white centre, coloured arc on light track) */
+function scoreRing(doc: jsPDF, cx: number, cy: number, r: number, score: number) {
+    const accent = scoreAccent(score);
+    // track
+    drawArc(doc, cx, cy, r, -135, 135, 3.5, L.divider);
+    // fill arc
+    const endDeg = -135 + (Math.min(score, 100) / 100) * 270;
+    drawArc(doc, cx, cy, r, -135, endDeg, 3.5, accent);
+    // white centre
+    doc.setFillColor(255, 255, 255);
+    doc.circle(cx, cy, r - 5, 'F');
+    // score text
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(rgb[0], rgb[1], rgb[2]);
-    doc.text(`${score}`, cx, cy + 1.5, { align: 'center' });
+    doc.setFontSize(20);
+    doc.setTextColor(accent[0], accent[1], accent[2]);
+    doc.text(`${score}`, cx, cy + 3.5, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    doc.text('/100', cx, cy + 6.5, { align: 'center' });
+    doc.setTextColor(...L.textDim);
+    doc.text('/100', cx, cy + 9.5, { align: 'center' });
 }
 
-/** Draw a mini horizontal bar  */
-function drawBar(doc: jsPDF, x: number, y: number, w: number, pct: number, rgb: [number,number,number]) {
-    doc.setFillColor(30, 41, 59);
-    doc.roundedRect(x, y, w, 3, 1.5, 1.5, 'F');
+/** Simple horizontal bar (light style) */
+function bar(doc: jsPDF, x: number, y: number, w: number, h: number, pct: number, accent: [number, number, number]) {
+    const R = h / 2;
+    fillRR(doc, x, y, w, h, R, L.divider);
     if (pct > 0) {
-        doc.setFillColor(rgb[0], rgb[1], rgb[2]);
-        doc.roundedRect(x, y, w * Math.min(pct / 100, 1), 3, 1.5, 1.5, 'F');
+        const fw = Math.max(w * Math.min(pct / 100, 1), h);
+        doc.setFillColor(accent[0], accent[1], accent[2]);
+        doc.roundedRect(x, y, fw, h, R, R, 'F');
     }
 }
 
-/** Write a section heading */
-function sectionHeading(doc: jsPDF, y: number, title: string): number {
-    doc.setFillColor(108, 99, 255, 0.08);
-    fillRect(doc, MARGIN, y, CONTENT_W, 7, [20, 30, 50]);
-    doc.setDrawColor(...C.purple);
-    doc.setLineWidth(0.8);
-    doc.line(MARGIN, y, MARGIN + 3, y + 7);
-    doc.setFontSize(9.5);
+/** Section heading — thin accent left bar + bold label */
+function secHead(doc: jsPDF, y: number, title: string): number {
+    // separator line above each section
+    doc.setDrawColor(L.divider[0], L.divider[1], L.divider[2]);
+    doc.setLineWidth(0.4);
+    doc.line(MARGIN, y, PAGE_W - MARGIN, y);
+    // accent pin
+    fillRect(doc, MARGIN, y + 2, 3, 7, L.violet);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...C.purple);
-    doc.text(title.toUpperCase(), MARGIN + 6, y + 5);
-    return y + 10;
-}
-
-/** Ensure there is at least `needed` mm left; add page if not */
-function ensureSpace(doc: jsPDF, y: number, needed: number): number {
-    if (y + needed > PAGE_H - 16) {
-        doc.addPage();
-        return 18;
-    }
-    return y;
-}
-
-/** Bullet list helper — returns new y */
-function bulletList(
-    doc: jsPDF,
-    items: string[],
-    x: number,
-    y: number,
-    maxW: number,
-    rgb: [number,number,number] = C.light,
-    bulletRgb: [number,number,number] = C.purple,
-): number {
     doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    for (const raw of items) {
-        const item = safeStr(raw);
-        y = ensureSpace(doc, y, 8);
-        doc.setFillColor(bulletRgb[0], bulletRgb[1], bulletRgb[2]);
-        doc.circle(x + 1.2, y - 1, 1, 'F');
-        doc.setTextColor(rgb[0], rgb[1], rgb[2]);
-        const lines = doc.splitTextToSize(item, maxW - 5);
-        doc.text(lines, x + 4, y);
-        y += lines.length * 4.5;
+    doc.setTextColor(...L.textDark);
+    doc.text(title, MARGIN + 6, y + 8);
+    return y + 15;
+}
+
+/** Add page with white/near-white background */
+function ensureSpace(doc: jsPDF, y: number, needed: number): number {
+    if (y + needed > PAGE_H - 18) {
+        doc.addPage();
+        fillRect(doc, 0, 0, PAGE_W, PAGE_H, L.bg);
+        return 16;
     }
     return y;
 }
+
+/** Bullet list — returns new y */
+function bulletList(doc: jsPDF, items: string[], x: number, y: number, maxW: number,
+    textRgb: [number, number, number] = L.textMid,
+    dotRgb:  [number, number, number] = L.violet): number {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    for (const raw of items) {
+        y = ensureSpace(doc, y, 8);
+        doc.setFillColor(dotRgb[0], dotRgb[1], dotRgb[2]);
+        doc.circle(x + 1.5, y - 1.5, 1, 'F');
+        doc.setTextColor(textRgb[0], textRgb[1], textRgb[2]);
+        const lines = doc.splitTextToSize(safeStr(raw), maxW - 6);
+        doc.text(lines, x + 5, y);
+        y += lines.length * 5;
+    }
+    return y;
+}
+
+/** Footer */
+function drawFooter(doc: jsPDF, pageNum: number, totalPages: number, role: string) {
+    const fy = PAGE_H - 7;
+    doc.setDrawColor(L.divider[0], L.divider[1], L.divider[2]);
+    doc.setLineWidth(0.3);
+    doc.line(MARGIN, PAGE_H - 12, PAGE_W - MARGIN, PAGE_H - 12);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...L.textDim);
+    doc.text('AI for Job™  ·  Interview Performance Report', MARGIN, fy);
+    doc.text(clamp(role, 40), PAGE_W / 2, fy, { align: 'center' });
+    doc.text(`${pageNum} / ${totalPages}`, PAGE_W - MARGIN, fy, { align: 'right' });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main export
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function generateInterviewReport(report: InterviewV2Report, role?: string, roundType?: string): void {
     const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
-    const overallScore = Math.round((report.summary?.overall_score ?? 0) * (report.summary?.overall_score > 1 ? 1 : 10));
-    const scoreNorm    = overallScore <= 10 ? overallScore * 10 : overallScore;   // ensure 0-100
-    const roleName     = role ?? 'Interview Report';
-    const dateStr      = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
-    const hireRec      = report.summary?.hire_recommendation ?? '';
 
-    // ── PAGE 1: Header + Summary ──────────────────────────────────────────────
+    const rawScore  = report.summary?.overall_score ?? 0;
+    const scoreNorm = Math.min(100, Math.round(rawScore <= 10 ? rawScore * 10 : rawScore));
+    const roleName  = role      ?? 'Interview Report';
+    const roundName = roundType ?? 'General';
+    const dateStr   = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+    const hireRec   = report.summary?.hire_recommendation ?? '';
 
-    // Dark header block
-    fillRect(doc, 0, 0, PAGE_W, 46, C.dark);
-    // Accent bar left edge
-    fillRect(doc, 0, 0, 3, 46, C.purple);
+    const hireAccent: [number, number, number] =
+        hireRec.toLowerCase().includes('strong') || hireRec.toLowerCase().includes('yes') ? L.green
+        : hireRec.toLowerCase().includes('consider') || hireRec.toLowerCase().includes('maybe') ? L.amber
+        : L.red;
+    const hireBg: [number, number, number] =
+        hireAccent === L.green ? L.greenLt : hireAccent === L.amber ? L.amberLt : L.redLt;
+
+    // ── Background (all pages start white) ───────────────────────────────────
+    fillRect(doc, 0, 0, PAGE_W, PAGE_H, L.bg);
+
+    // ── HEADER BANNER ─────────────────────────────────────────────────────────
+    fillRect(doc, 0, 0, PAGE_W, 52, L.headerBg);
+    fillRect(doc, 0, 0, PAGE_W, 52, L.headerBg);
+    // left accent stripe
+    fillRect(doc, 0, 0, 4, 52, L.violet);
+
+    // Brand line
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(L.violetLt[0], L.violetLt[1], L.violetLt[2]);
+    doc.text('AI FOR JOB™', MARGIN + 5, 12);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setTextColor(160, 165, 200);
+    doc.text('Candidate Assessment Platform', MARGIN + 5, 17);
 
     // Title
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.setTextColor(...C.white);
-    doc.text('Interview Performance Report', MARGIN + 4, 16);
+    doc.setFontSize(19);
+    doc.setTextColor(255, 255, 255);
+    doc.text('Interview Performance Report', MARGIN + 5, 32);
 
-    // Role pill
-    doc.setFontSize(9);
-    doc.setTextColor(...C.light);
-    doc.text(`${roundType ? roundType.toUpperCase() + ' ROUND  ·  ' : ''}${roleName}`, MARGIN + 4, 24);
+    // Sub-info
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(180, 185, 215);
+    doc.text(`${roundName.toUpperCase()} ROUND  ·  ${roleName}`, MARGIN + 5, 40);
+    doc.setFontSize(7);
+    doc.setTextColor(120, 130, 170);
+    doc.text(`Generated on ${dateStr}`, MARGIN + 5, 47);
 
-    doc.setFontSize(8);
-    doc.setTextColor(...C.mid);
-    doc.text(`Generated  ${dateStr}`, MARGIN + 4, 31);
+    // Score ring — top right of header
+    scoreRing(doc, PAGE_W - 28, 30, 18, scoreNorm);
 
-    // Score badge in header
-    drawScoreBadge(doc, PAGE_W - MARGIN - 14, 21, scoreNorm, 12);
+    // ── HIRE BADGE + INFO CARDS (below header on white bg) ───────────────────
+    let y = 60;
 
-    // Hire recommendation chip
-    const hireColour = hireRec.toLowerCase().includes('strong') || hireRec.toLowerCase().includes('hire')
-        ? C.teal : hireRec.toLowerCase().includes('consider') ? C.amber : C.red;
-    fillRect(doc, PAGE_W - MARGIN - 52, 36, 38, 7, hireColour);
+    // Hire recommendation badge
+    const hireLabel = hireRec || 'Under Review';
+    const hireW     = Math.min(Math.max(hireLabel.length * 2.4 + 16, 40), 80);
+    fillRR(doc, MARGIN, y, hireW, 8, 4, hireBg);
+    strokeRR(doc, MARGIN, y, hireW, 8, 4, hireAccent, 0.5);
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...C.dark);
-    doc.text(clamp(hireRec, 22), PAGE_W - MARGIN - 33, 40.5, { align: 'center' });
+    doc.setTextColor(hireAccent[0], hireAccent[1], hireAccent[2]);
+    doc.text(clamp(hireLabel, 26), MARGIN + hireW / 2, y + 5.5, { align: 'center' });
 
-    let y = 54;
+    y += 13;
 
-    // ── Summary cards row ─────────────────────────────────────────────────────
-    const cardW = (CONTENT_W - 6) / 3;
-    const cards: Array<{ label: string; value: string; rgb: [number,number,number] }> = [
-        { label: 'Seniority',  value: report.summary?.seniority_assessment  ?? '—', rgb: C.purple },
-        { label: 'Confidence', value: report.summary?.confidence_assessment ?? '—', rgb: C.teal   },
-        { label: 'Round',      value: roundType ?? 'N/A',                           rgb: C.amber   },
+    // Info cards (seniority / confidence / round)
+    const cardW = (CONTENT_W - 8) / 3;
+    const infoCards: Array<{ label: string; value: string; accent: [number, number, number]; bg: [number, number, number] }> = [
+        { label: 'Seniority Level',  value: report.summary?.seniority_assessment  ?? '—', accent: L.violet, bg: L.violetLt },
+        { label: 'Confidence',       value: report.summary?.confidence_assessment ?? '—', accent: L.teal,   bg: L.tealLt   },
+        { label: 'Interview Round',  value: roundName,                                    accent: L.amber,  bg: L.amberLt  },
     ];
-    cards.forEach((card, i) => {
-        const cx = MARGIN + i * (cardW + 3);
-        fillRect(doc, cx, y, cardW, 14, C.slate);
-        doc.setDrawColor(card.rgb[0], card.rgb[1], card.rgb[2]);
-        doc.setLineWidth(0.5);
-        doc.rect(cx, y, cardW, 14);
-        doc.setFontSize(7);
+    infoCards.forEach((card, i) => {
+        const cx = MARGIN + i * (cardW + 4);
+        fillRR(doc, cx, y, cardW, 18, 3, L.card);
+        strokeRR(doc, cx, y, cardW, 18, 3, L.border, 0.3);
+        // left colour accent
+        fillRR(doc, cx, y, 3, 18, 1, card.accent);
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...C.mid);
-        doc.text(card.label.toUpperCase(), cx + 4, y + 5);
-        doc.setFontSize(9.5);
+        doc.setFontSize(6.5);
+        doc.setTextColor(...L.textDim);
+        doc.text(card.label.toUpperCase(), cx + 7, y + 7);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...C.white);
-        doc.text(clamp(card.value, 22), cx + 4, y + 11);
-    });
-    y += 20;
-
-    // ── Dimension Scores ──────────────────────────────────────────────────────
-    y = sectionHeading(doc, y, 'Dimension Scores');
-    const dims: Array<[string, number]> = [
-        ['Technical Depth',   report.dimension_scores?.technical_depth  ?? 0],
-        ['Problem Solving',   report.dimension_scores?.problem_solving   ?? 0],
-        ['System Design',     report.dimension_scores?.system_design     ?? 0],
-        ['Communication',     report.dimension_scores?.communication     ?? 0],
-        ['Role Fit',          report.dimension_scores?.role_fit          ?? 0],
-    ];
-    const colW = (CONTENT_W - 4) / 2;
-    dims.forEach(([label, rawScore], i) => {
-        const score = rawScore <= 10 ? rawScore * 10 : rawScore;
-        const rgb = scoreColour(score);
-        const col = i % 2;
-        const row = Math.floor(i / 2);
-        const dx = MARGIN + col * (colW + 4);
-        const dy = y + row * 14;
-        doc.setFontSize(8.5);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...C.dark);
-        doc.text(label, dx, dy + 1);
-        drawBar(doc, dx, dy + 3, colW - 24, score, rgb);
         doc.setFontSize(9);
-        doc.setTextColor(rgb[0], rgb[1], rgb[2]);
-        doc.text(`${score}`, dx + colW - 20, dy + 6, { align: 'right' });
+        doc.setTextColor(...L.textDark);
+        doc.text(clamp(safeStr(card.value), 18), cx + 7, y + 14.5);
     });
-    y += Math.ceil(dims.length / 2) * 14 + 6;
+    y += 26;
 
-    // ── Key Strengths & Areas to Improve ─────────────────────────────────────
-    y = ensureSpace(doc, y, 30);
-    y = sectionHeading(doc, y, 'Strengths & Areas to Improve');
+    // ── PERFORMANCE DIMENSIONS ────────────────────────────────────────────────
+    y = secHead(doc, y, 'PERFORMANCE DIMENSIONS');
 
-    const halfW = (CONTENT_W - 6) / 2;
-    const strengths = report.summary?.key_strengths ?? [];
-    const improvements = report.summary?.key_areas_for_improvement ?? [];
+    const dims: Array<[string, number]> = [
+        ['Technical Depth',  report.dimension_scores?.technical_depth  ?? 0],
+        ['Problem Solving',  report.dimension_scores?.problem_solving   ?? 0],
+        ['System Design',    report.dimension_scores?.system_design     ?? 0],
+        ['Communication',    report.dimension_scores?.communication     ?? 0],
+        ['Role Fit',         report.dimension_scores?.role_fit          ?? 0],
+    ];
+    const dimCW = (CONTENT_W - 6) / 2;
+    dims.forEach(([label, raw], i) => {
+        const score  = Math.min(100, raw <= 10 ? raw * 10 : raw);
+        const accent = scoreAccent(score);
+        const bg     = scoreBg(score);
+        const col = i % 2, row = Math.floor(i / 2);
+        const dx = MARGIN + col * (dimCW + 6);
+        const dy = y + row * 16;
 
-    // Left column: strengths
-    doc.setFontSize(8.5);
+        fillRR(doc, dx, dy, dimCW, 13, 2, L.card);
+        strokeRR(doc, dx, dy, dimCW, 13, 2, L.border, 0.3);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...L.textMid);
+        doc.text(label, dx + 5, dy + 6);
+
+        bar(doc, dx + 5, dy + 8, dimCW - 30, 3.5, score, accent);
+
+        // Score pill
+        fillRR(doc, dx + dimCW - 18, dy + 3.5, 15, 7, 3.5, bg);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(accent[0], accent[1], accent[2]);
+        doc.text(`${score}`, dx + dimCW - 10.5, dy + 9, { align: 'center' });
+    });
+    y += Math.ceil(dims.length / 2) * 16 + 6;
+
+    // ── KEY STRENGTHS & AREAS TO IMPROVE ─────────────────────────────────────
+    y = ensureSpace(doc, y, 40);
+    y = secHead(doc, y, 'KEY STRENGTHS & AREAS TO IMPROVE');
+
+    const halfW   = (CONTENT_W - 5) / 2;
+    const strList = report.summary?.key_strengths             ?? [];
+    const impList = report.summary?.key_areas_for_improvement ?? [];
+
+    // Column headers
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...C.teal);
+    doc.setFontSize(8);
+    doc.setTextColor(...L.teal);
     doc.text('Key Strengths', MARGIN, y + 1);
-    let leftY = y + 5;
-    leftY = bulletList(doc, strengths.slice(0, 5), MARGIN, leftY, halfW, C.light, C.teal);
+    doc.setTextColor(...L.red);
+    doc.text('Areas to Improve', MARGIN + halfW + 5, y + 1);
 
-    // Right column: improvements
-    doc.setFontSize(8.5);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...C.red);
-    doc.text('Areas to Improve', MARGIN + halfW + 6, y + 1);
-    let rightY = y + 5;
-    rightY = bulletList(doc, improvements.slice(0, 5), MARGIN + halfW + 6, rightY, halfW, C.light, C.red);
+    doc.setDrawColor(L.teal[0], L.teal[1], L.teal[2]);
+    doc.setLineWidth(0.25);
+    doc.line(MARGIN, y + 3, MARGIN + halfW, y + 3);
+    doc.setDrawColor(L.red[0], L.red[1], L.red[2]);
+    doc.line(MARGIN + halfW + 5, y + 3, PAGE_W - MARGIN, y + 3);
 
-    y = Math.max(leftY, rightY) + 6;
+    let leftY  = y + 7;
+    let rightY = y + 7;
+    leftY  = bulletList(doc, strList.slice(0, 6), MARGIN + 1, leftY,  halfW - 3, L.textMid, L.teal);
+    rightY = bulletList(doc, impList.slice(0, 6), MARGIN + halfW + 6, rightY, halfW - 3, L.textMid, L.red);
+    y = Math.max(leftY, rightY) + 8;
 
-    // ── PAGE BREAK before Q&A ─────────────────────────────────────────────────
-    // ── Question-Wise Analysis ────────────────────────────────────────────────
+    // ── QUESTION-BY-QUESTION ANALYSIS ────────────────────────────────────────
     const questions = report.question_wise_analysis ?? [];
     if (questions.length > 0) {
-        y = ensureSpace(doc, y, 20);
-        y = sectionHeading(doc, y, 'Question-by-Question Analysis');
+        y = ensureSpace(doc, y, 28);
+        y = secHead(doc, y, 'QUESTION-BY-QUESTION ANALYSIS');
 
         for (let qi = 0; qi < questions.length; qi++) {
-            const q = questions[qi];
-            const qScore = Math.round(q.score <= 10 ? q.score * 10 : q.score);
-            const qRgb = scoreColour(qScore);
+            const q      = questions[qi];
+            const qScore = Math.min(100, Math.round(q.score <= 10 ? q.score * 10 : q.score));
+            const accent = scoreAccent(qScore);
+            const qBg    = scoreBg(qScore);
 
-            y = ensureSpace(doc, y, 28);
+            const pillW   = 15;
+            const pillGap = pillW + 4;
+            doc.setFontSize(8.5);
+            const qText  = safeStr(q.question);
+            const qLines = doc.splitTextToSize(qText, CONTENT_W - 14 - pillGap);
+            const qBarH  = Math.max(qLines.length * 5.2 + 7, 12);
 
-            // Question number pill
-            doc.setFillColor(108, 99, 255, 0.15);
-            fillRect(doc, MARGIN, y, CONTENT_W, 8, C.slate);
-            doc.setFontSize(7.5);
+            y = ensureSpace(doc, y, qBarH + 5);
+
+            // Question row background
+            fillRR(doc, MARGIN, y, CONTENT_W, qBarH, 2, L.card);
+            strokeRR(doc, MARGIN, y, CONTENT_W, qBarH, 2, L.border, 0.25);
+            // left accent
+            fillRR(doc, MARGIN, y, 3, qBarH, 1, L.violet);
+
+            // Q-number
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...C.purple);
-            doc.text(`Q${qi + 1}`, MARGIN + 2, y + 5.5);
+            doc.setFontSize(7);
+            doc.setTextColor(...L.violet);
+            doc.text(`Q${qi + 1}`, MARGIN + 6, y + qBarH / 2 + 1.5, { align: 'center' });
 
             // Question text
             doc.setFont('helvetica', 'normal');
-            doc.setTextColor(...C.white);
-            const qLines = doc.splitTextToSize(safeStr(q.question), CONTENT_W - 22);
-            doc.text(qLines, MARGIN + 8, y + 5.5);
+            doc.setFontSize(8.5);
+            doc.setTextColor(...L.textDark);
+            doc.text(qLines, MARGIN + 10, y + 6.5);
 
-            // Score pill right-aligned
-            doc.setFillColor(qRgb[0], qRgb[1], qRgb[2]);
-            fillRect(doc, PAGE_W - MARGIN - 14, y + 1, 10, 6, qRgb);
-            doc.setFontSize(7.5);
+            // Score pill
+            fillRR(doc, PAGE_W - MARGIN - pillW - 1, y + (qBarH - 7) / 2, pillW, 7, 3.5, qBg);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...C.dark);
-            doc.text(`${qScore}`, PAGE_W - MARGIN - 9, y + 5.5, { align: 'center' });
+            doc.setFontSize(7.5);
+            doc.setTextColor(accent[0], accent[1], accent[2]);
+            doc.text(`${qScore}`, PAGE_W - MARGIN - pillW / 2 - 1, y + (qBarH - 7) / 2 + 5, { align: 'center' });
 
-            y += qLines.length * 4.5 + 5;
+            y += qBarH + 3;
 
             // Answer summary
             if (q.user_answer_summary) {
-                y = ensureSpace(doc, y, 8);
-                doc.setFontSize(7.5);
+                const aLines = doc.splitTextToSize(safeStr(q.user_answer_summary), CONTENT_W - 10);
+                const aH = aLines.length * 5 + 10;
+                y = ensureSpace(doc, y, aH + 3);
+                fillRR(doc, MARGIN, y, CONTENT_W, aH, 2, L.amberLt);
                 doc.setFont('helvetica', 'bold');
-                doc.setTextColor(...C.amber);
-                doc.text('Answer Summary:', MARGIN + 2, y);
-                y += 4;
+                doc.setFontSize(6.5);
+                doc.setTextColor(...L.amber);
+                doc.text('ANSWER SUMMARY', MARGIN + 5, y + 5.5);
                 doc.setFont('helvetica', 'normal');
-                doc.setTextColor(...C.light);
-                const aLines = doc.splitTextToSize('  ' + safeStr(q.user_answer_summary), CONTENT_W - 6);
-                doc.text(aLines, MARGIN + 2, y);
-                y += aLines.length * 4 + 2;
+                doc.setFontSize(8);
+                doc.setTextColor(...L.textMid);
+                doc.text(aLines, MARGIN + 5, y + 10.5);
+                y += aH + 3;
             }
 
-            // Strengths / weaknesses (compact)
-            const eStr = (q.evaluation?.strengths ?? []).slice(0, 2).map(safeStr);
-            const eWeak = (q.evaluation?.weaknesses ?? []).slice(0, 2).map(safeStr);
-            if (eStr.length || eWeak.length) {
-                y = ensureSpace(doc, y, 10);
-                doc.setFontSize(7);
-                if (eStr.length) {
-                    doc.setTextColor(...C.teal);
-                    doc.setFont('helvetica', 'bold');
-                    doc.text('✓ ' + eStr.join('  ·  '), MARGIN + 2, y);
-                    y += 4.5;
-                }
-                if (eWeak.length) {
-                    doc.setTextColor(...C.red);
-                    doc.setFont('helvetica', 'bold');
-                    doc.text('✗ ' + eWeak.join('  ·  '), MARGIN + 2, y);
-                    y += 4.5;
-                }
-            }
-            y += 4;
+            // Eval chips (strengths + weaknesses)
+            const eStr  = (q.evaluation?.strengths  ?? []).slice(0, 3).map(safeStr);
+            const eWeak = (q.evaluation?.weaknesses ?? []).slice(0, 3).map(safeStr);
+            const renderChips = (items: string[], chipAccent: [number, number, number], chipBg: [number, number, number]) => {
+                if (!items.length) return;
+                y = ensureSpace(doc, y, 8);
+                let cx2 = MARGIN + 1;
+                items.forEach(item => {
+                    const label = item.length > 40 ? item.slice(0, 39) + '…' : item;
+                    doc.setFontSize(6.5);
+                    const tw = doc.getTextWidth(label) + 7;
+                    if (cx2 + tw > PAGE_W - MARGIN) { cx2 = MARGIN + 1; y += 7; y = ensureSpace(doc, y, 7); }
+                    fillRR(doc, cx2, y - 4.5, tw, 6, 3, chipBg);
+                    strokeRR(doc, cx2, y - 4.5, tw, 6, 3, chipAccent, 0.25);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(chipAccent[0], chipAccent[1], chipAccent[2]);
+                    doc.text(label, cx2 + tw / 2, y, { align: 'center' });
+                    cx2 += tw + 3;
+                });
+                y += 7;
+            };
+            renderChips(eStr,  L.teal, L.tealLt);
+            renderChips(eWeak, L.red,  L.redLt);
+
+            // Thin divider between questions
+            doc.setDrawColor(L.divider[0], L.divider[1], L.divider[2]);
+            doc.setLineWidth(0.2);
+            doc.line(MARGIN, y + 1, PAGE_W - MARGIN, y + 1);
+            y += 6;
         }
     }
 
-    // ── Skill Gap Analysis ────────────────────────────────────────────────────
+    // ── SKILL GAP ANALYSIS ────────────────────────────────────────────────────
     const gaps = report.skill_gap_analysis;
     if (gaps) {
-        y = ensureSpace(doc, y, 20);
-        y = sectionHeading(doc, y, 'Skill Gap Analysis');
-        const gapCols: Array<[string, string[], [number,number,number]]> = [
-            ['Critical',  gaps.critical_gaps  ?? [], C.red   ],
-            ['Moderate',  gaps.moderate_gaps  ?? [], C.amber ],
-            ['Minor',     gaps.minor_gaps     ?? [], C.teal  ],
+        y = ensureSpace(doc, y, 28);
+        y = secHead(doc, y, 'SKILL GAP ANALYSIS');
+
+        const gapCols: Array<[string, string[], [number,number,number], [number,number,number]]> = [
+            ['Critical Gaps',  gaps.critical_gaps  ?? [], L.red,   L.redLt   ],
+            ['Moderate Gaps',  gaps.moderate_gaps  ?? [], L.amber, L.amberLt ],
+            ['Minor Gaps',     gaps.minor_gaps     ?? [], L.teal,  L.tealLt  ],
         ];
         const gapW = (CONTENT_W - 8) / 3;
         let maxGapY = y;
-        gapCols.forEach(([label, items, rgb], gi) => {
+
+        gapCols.forEach(([label, items, accent, bg], gi) => {
             const gx = MARGIN + gi * (gapW + 4);
-            doc.setFontSize(8);
+            fillRR(doc, gx, y, gapW, 7, 2, bg);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(rgb[0], rgb[1], rgb[2]);
-            doc.text(label, gx, y + 1);
-            let gy = y + 6;
-            gy = bulletList(doc, items, gx, gy, gapW + 2, C.light, rgb);
+            doc.setFontSize(7.5);
+            doc.setTextColor(accent[0], accent[1], accent[2]);
+            doc.text(label, gx + 4, y + 5);
+            let gy = y + 11;
+            items.slice(0, 6).forEach(item => {
+                gy = ensureSpace(doc, gy, 8);
+                doc.setFillColor(accent[0], accent[1], accent[2]);
+                doc.circle(gx + 2.5, gy - 1.5, 1, 'F');
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                doc.setTextColor(...L.textMid);
+                const lines = doc.splitTextToSize(safeStr(item), gapW - 7);
+                doc.text(lines, gx + 6, gy);
+                gy += lines.length * 5;
+            });
             maxGapY = Math.max(maxGapY, gy);
         });
-        y = maxGapY + 6;
+        y = maxGapY + 8;
     }
 
-    // ── Behavioral Insights ───────────────────────────────────────────────────
+    // ── BEHAVIORAL INSIGHTS ───────────────────────────────────────────────────
     const bi = report.behavioral_insights;
     if (bi) {
-        y = ensureSpace(doc, y, 24);
-        y = sectionHeading(doc, y, 'Behavioral Insights');
-        const biItems: Array<[string, string]> = [
-            ['Communication Style', bi.communication_style ?? '—'],
-            ['Thinking Pattern',    bi.thinking_pattern    ?? '—'],
-            ['Pressure Handling',   bi.pressure_handling   ?? '—'],
+        y = ensureSpace(doc, y, 30);
+        y = secHead(doc, y, 'BEHAVIORAL INSIGHTS');
+
+        const biRows: Array<{ label: string; value: string; accent: [number,number,number]; bg: [number,number,number] }> = [
+            { label: 'Communication Style', value: bi.communication_style ?? '—', accent: L.violet, bg: L.violetLt },
+            { label: 'Thinking Pattern',    value: bi.thinking_pattern    ?? '—', accent: L.teal,   bg: L.tealLt   },
+            { label: 'Pressure Handling',   value: bi.pressure_handling   ?? '—', accent: L.amber,  bg: L.amberLt  },
         ];
-        biItems.forEach(([label, value]) => {
-            y = ensureSpace(doc, y, 10);
-            doc.setFontSize(8);
+        biRows.forEach(row => {
+            const valLines = doc.splitTextToSize(safeStr(row.value), CONTENT_W - 44);
+            const cardH    = Math.max(valLines.length * 5 + 10, 14);
+            y = ensureSpace(doc, y, cardH + 4);
+            fillRR(doc, MARGIN, y, CONTENT_W, cardH, 2, L.card);
+            strokeRR(doc, MARGIN, y, CONTENT_W, cardH, 2, L.border, 0.3);
+            fillRR(doc, MARGIN, y, 3, cardH, 1, row.accent);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...C.purple);
-            doc.text(`${label}: `, MARGIN, y);
+            doc.setFontSize(7.5);
+            doc.setTextColor(row.accent[0], row.accent[1], row.accent[2]);
+            doc.text(row.label, MARGIN + 7, y + 6);
             doc.setFont('helvetica', 'normal');
-            doc.setTextColor(...C.white);
-            const vLines = doc.splitTextToSize(safeStr(value), CONTENT_W - 40);
-            doc.text(vLines, MARGIN + 38, y);
-            y += Math.max(vLines.length * 4, 5) + 2;
+            doc.setFontSize(8.5);
+            doc.setTextColor(...L.textMid);
+            doc.text(valLines, MARGIN + 7, y + 11.5);
+            y += cardH + 4;
         });
-        y += 4;
+        y += 3;
     }
 
-    // ── Improvement Plan ─────────────────────────────────────────────────────
+    // ── IMPROVEMENT PLAN ──────────────────────────────────────────────────────
     const plan = report.improvement_plan;
     if (plan) {
-        y = ensureSpace(doc, y, 20);
-        y = sectionHeading(doc, y, 'Improvement Plan');
-        const planCols: Array<[string, string[], [number,number,number]]> = [
-            ['Immediate',  plan.immediate_actions ?? [], C.red   ],
-            ['1 Week',     plan.plan_1_week       ?? [], C.amber ],
-            ['1 Month',    plan.plan_1_month      ?? [], C.teal  ],
+        y = ensureSpace(doc, y, 28);
+        y = secHead(doc, y, 'IMPROVEMENT PLAN');
+
+        const planCols: Array<[string, string[], [number,number,number], [number,number,number]]> = [
+            ['Immediate Actions', plan.immediate_actions ?? [], L.red,   L.redLt   ],
+            ['1-Week Plan',       plan.plan_1_week       ?? [], L.amber, L.amberLt ],
+            ['1-Month Plan',      plan.plan_1_month      ?? [], L.teal,  L.tealLt  ],
         ];
-        const pColW = (CONTENT_W - 8) / 3;
+        const planW = (CONTENT_W - 8) / 3;
         let maxPlanY = y;
-        planCols.forEach(([label, items, rgb], pi) => {
-            const px = MARGIN + pi * (pColW + 4);
-            doc.setFontSize(8);
+
+        planCols.forEach(([label, items, accent, bg], pi) => {
+            const px = MARGIN + pi * (planW + 4);
+            fillRR(doc, px, y, planW, 7, 2, bg);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(rgb[0], rgb[1], rgb[2]);
-            doc.text(label, px, y + 1);
-            let py = y + 6;
-            py = bulletList(doc, items, px, py, pColW + 2, C.light, rgb);
+            doc.setFontSize(7.5);
+            doc.setTextColor(accent[0], accent[1], accent[2]);
+            doc.text(label, px + 4, y + 5);
+            let py = y + 11;
+            items.slice(0, 6).forEach((item, idx) => {
+                py = ensureSpace(doc, py, 10);
+                // number badge
+                fillRR(doc, px, py - 4, 5.5, 5.5, 2, bg);
+                strokeRR(doc, px, py - 4, 5.5, 5.5, 2, accent, 0.3);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(6.5);
+                doc.setTextColor(accent[0], accent[1], accent[2]);
+                doc.text(`${idx + 1}`, px + 2.75, py, { align: 'center' });
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7.5);
+                doc.setTextColor(...L.textMid);
+                const lines = doc.splitTextToSize(safeStr(item), planW - 9);
+                doc.text(lines, px + 8, py);
+                py += lines.length * 4.8 + 2.5;
+            });
             maxPlanY = Math.max(maxPlanY, py);
         });
-        y = maxPlanY + 6;
+        y = maxPlanY + 8;
     }
 
-    // ── Final Verdict ─────────────────────────────────────────────────────────
+    // ── FINAL VERDICT ─────────────────────────────────────────────────────────
     const verdict = report.verdict;
     if (verdict) {
-        y = ensureSpace(doc, y, 30);
-        y = sectionHeading(doc, y, 'Final Verdict');
+        y = ensureSpace(doc, y, 36);
+        y = secHead(doc, y, 'FINAL VERDICT');
 
+        // Recommendation box
         if (verdict.final_recommendation_text) {
-            fillRect(doc, MARGIN, y, CONTENT_W, 1, C.purple);
-            y += 4;
-            doc.setFontSize(9);
+            const recLines = doc.splitTextToSize(safeStr(verdict.final_recommendation_text), CONTENT_W - 10);
+            const boxH     = recLines.length * 5.5 + 12;
+            y = ensureSpace(doc, y, boxH + 6);
+            fillRR(doc, MARGIN, y, CONTENT_W, boxH, 3, L.violetLt);
+            fillRR(doc, MARGIN, y, 3, boxH, 1, L.violet);
             doc.setFont('helvetica', 'bolditalic');
-            doc.setTextColor(...C.white);
-            const recLines = doc.splitTextToSize(`"${safeStr(verdict.final_recommendation_text)}"`, CONTENT_W - 4);
-            doc.text(recLines, MARGIN + 2, y);
-            y += recLines.length * 5 + 6;
+            doc.setFontSize(9);
+            doc.setTextColor(...L.violet);
+            doc.text(recLines, MARGIN + 8, y + 9);
+            y += boxH + 8;
         }
 
-        const verdictCols: Array<[string, string[], [number,number,number]]> = [
-            ['Highlight These',         verdict.strengths_to_highlight            ?? [], C.teal ],
-            ['Fix Before Next Round',   verdict.areas_to_fix_before_next_interview ?? [], C.red  ],
+        // Two columns
+        const vW = (CONTENT_W - 5) / 2;
+        const vCols: Array<[string, string[], [number,number,number], [number,number,number]]> = [
+            ['Highlight These',           verdict.strengths_to_highlight            ?? [], L.teal, L.tealLt ],
+            ['Fix Before Next Interview', verdict.areas_to_fix_before_next_interview ?? [], L.red,  L.redLt  ],
         ];
-        const vColW = (CONTENT_W - 4) / 2;
         let maxVY = y;
-        verdictCols.forEach(([label, items, rgb], vi) => {
-            const vx = MARGIN + vi * (vColW + 4);
-            doc.setFontSize(8);
+        vCols.forEach(([label, items, accent], vi) => {
+            const vx = MARGIN + vi * (vW + 5);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+            doc.setFontSize(8);
+            doc.setTextColor(accent[0], accent[1], accent[2]);
             doc.text(label, vx, y + 1);
-            let vy = y + 6;
-            vy = bulletList(doc, items, vx, vy, vColW + 2, C.light, rgb);
+            doc.setDrawColor(accent[0], accent[1], accent[2]);
+            doc.setLineWidth(0.25);
+            doc.line(vx, y + 3, vx + vW, y + 3);
+            let vy = y + 7;
+            vy = bulletList(doc, items, vx + 1, vy, vW - 3, L.textMid, accent);
             maxVY = Math.max(maxVY, vy);
         });
-        y = maxVY + 4;
+        y = maxVY + 6;
     }
 
-    // ── Add footers to all pages ──────────────────────────────────────────────
+    // ── FOOTERS ───────────────────────────────────────────────────────────────
     const totalPages = (doc as any).internal.getNumberOfPages();
     for (let p = 1; p <= totalPages; p++) {
         doc.setPage(p);
+        // ensure white bg on each page
+        if (p > 1) fillRect(doc, 0, 0, PAGE_W, PAGE_H, L.bg);
         drawFooter(doc, p, totalPages, roleName);
     }
 
-    const filename = `Interview_Report_${roleName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
-    doc.save(filename);
+    doc.save(`Interview_Report_${roleName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 export const generateResumeReport = (resume: Resume) => {

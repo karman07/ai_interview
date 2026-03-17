@@ -48,8 +48,13 @@ const sidebarRoutes = [
         icon: <Layers size={18} />,
         description: "Resources & study materials",
         path: "/resources",
-      }
-      ,
+      },
+      // {
+      //   label: "Docs",
+      //   icon: <BookOpen size={18} />,
+      //   description: "Technical Documentation",
+      //   path: "/docs",
+      // },
       {
         label: "Job Portal",
         icon: <Briefcase size={18} />,

@@ -3,13 +3,14 @@ import { useState, useEffect } from "react";
 import routes from "@/constants/routes";
 import Button from "../ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, ChevronDown } from "lucide-react";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeLink, setActiveLink] = useState(routes.home);
   const [scrolled, setScrolled] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [blogsDropdown, setBlogsDropdown] = useState(false);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isAuthenticated = !!user || !!localStorage.getItem('access_token');
@@ -41,6 +42,7 @@ export default function Navbar() {
     { to: routes.home, label: "Home" },
     { to: routes.jobsPublic, label: "Jobs" },
     { to: "/pricing", label: "Pricing" },
+    { to: routes.blogs, label: "Blogs" },
     { to: routes.about, label: "About" },
     { to: routes.contact, label: "Contact" }
   ];
@@ -80,24 +82,76 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                onClick={(e) => handleNavLinkClick(link.to, e)}
-                className={`relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${activeLink === link.to
-                  ? 'text-primary dark:text-primary bg-primary/10 dark:bg-primary/20'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
-              >
-                {link.label}
-                {activeLink === link.to && (
-                  <span
-                    className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary dark:bg-primary"
-                  />
-                )}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const isActive = activeLink === link.to || (link.to === routes.blogs && activeLink.startsWith(routes.blogs));
+              
+              if (link.to === routes.blogs) {
+                return (
+                  <div 
+                    key={link.to} 
+                    className="relative"
+                    onMouseEnter={() => setBlogsDropdown(true)}
+                    onMouseLeave={() => setBlogsDropdown(false)}
+                  >
+                    <button
+                      className={`relative flex items-center gap-1 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${isActive
+                        ? 'text-primary dark:text-primary bg-primary/10 dark:bg-primary/20'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
+                      }`}
+                    >
+                      {link.label}
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${blogsDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {blogsDropdown && (
+                      <div className="absolute left-0 mt-1 w-48 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xl z-50">
+                        <ul className="p-1.5 text-sm">
+                          {['Interview Prep', 'Resume Building', 'Career Growth', 'Technical Skills', 'AI in Recruitment'].map((cat, i) => (
+                            <li key={i}>
+                              <Link 
+                                to={`${routes.blogs}?category=${encodeURIComponent(cat)}`}
+                                onClick={() => { setBlogsDropdown(false); setActiveLink(routes.blogs); }}
+                                className="block px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-primary dark:hover:text-primary transition-colors"
+                              >
+                                {cat}
+                              </Link>
+                            </li>
+                          ))}
+                          <li className="border-t border-gray-100 dark:border-gray-800 mt-1 pt-1">
+                            <Link 
+                              to={routes.blogs}
+                              onClick={() => { setBlogsDropdown(false); setActiveLink(routes.blogs); }}
+                              className="block px-4 py-2 rounded-lg text-primary text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                            >
+                              All Articles
+                            </Link>
+                          </li>
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onClick={(e) => handleNavLinkClick(link.to, e)}
+                  className={`relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${isActive
+                    ? 'text-primary dark:text-primary bg-primary/10 dark:bg-primary/20'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                >
+                  {link.label}
+                  {isActive && (
+                    <span
+                      className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary dark:bg-primary"
+                    />
+                  )}
+                </Link>
+              );
+            })}
           </div>
 
           {/* Desktop Auth Buttons + Theme Toggle */}

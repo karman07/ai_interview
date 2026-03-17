@@ -9,7 +9,9 @@ import {
 import { fetchJobs, Job, parseResume, getEngineeringTypes, getLocations, getCountries, toggleFavoriteJob, fetchFavoriteJobs, toggleBookmarkJob, fetchBookmarkJobs } from '../../api/jobService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useResume } from '@/contexts/ResumeContext';
+import { usePricing } from '@/contexts/PricingContext';
 import { subscriptionService } from '@/api/subscriptionService';
+import { matchResume } from '../../api/jobService';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -20,10 +22,12 @@ import SearchFilters from './components/SearchFilters';
 import JobDetailsPortal from './components/JobDetailsPortal';
 import PortalActions from './components/PortalActions';
 import SubscriptionModal from './components/SubscriptionModal';
+import MatchResumeModal from './components/MatchResumeModal';
 
 const EmployeePortal = () => {
   const { user } = useAuth();
-  const { resumes } = useResume();
+  const { resumes, uploadResume, isLoading: uploadingResume } = useResume();
+  const { setShowPricing } = usePricing();
   const navigate = useNavigate();
 
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -73,6 +77,15 @@ const EmployeePortal = () => {
   const [subLocation, setSubLocation] = useState('');
   const [subMinSalary, setSubMinSalary] = useState('');
   const [subInternship, setSubInternship] = useState(false);
+
+  const [showMatchResumeModal, setShowMatchResumeModal] = useState(false);
+
+  const isPaidUser = React.useMemo(() => {
+    const planName = (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object')
+      ? (user.subscriptionPlan as any).name
+      : user?.subscriptionPlan;
+    return user?.subscriptionStatus === 'active' || (planName && planName !== 'free_tier_in');
+  }, [user]);
 
   const loadLocations = useCallback(async () => {
     try {
@@ -389,6 +402,47 @@ const EmployeePortal = () => {
     }
   };
 
+  const filterJobsByResumeText = async (resumeText: string) => {
+    if (!resumeText) {
+      toast.error("Resume file contains no readable text.");
+      return;
+    }
+    try {
+      setLoading(true);
+      const data = await matchResume({ resume_text: resumeText });
+
+      if (data.jobs) {
+        setJobs(data.jobs);
+        setTotalJobs(data.total_matches || data.jobs.length);
+        setIsResumeFiltered(true);
+        setSkip(0);
+      } else {
+        toast.error("Format returned by resume match not recognized.");
+      }
+    } catch (error) {
+      console.error("Error matching by resume text:", error);
+      toast.error("Failed to filter jobs by resume match.");
+      setJobs([]);
+      setTotalJobs(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUploadNewMatchResume = async (file: File) => {
+    try {
+      const newResume = await uploadResume([file]);
+      if (newResume && newResume.text) {
+        filterJobsByResumeText(newResume.text);
+      } else if (newResume) {
+         filterJobsByResume(file);
+      }
+      setShowMatchResumeModal(false);
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    }
+  };
+
   const clearResumeFilter = () => {
 
     setIsResumeFiltered(false);
@@ -514,8 +568,14 @@ const EmployeePortal = () => {
                 setShowSubscriptionModal={setShowSubscriptionModal}
                 isResumeFiltered={isResumeFiltered}
                 clearResumeFilter={clearResumeFilter}
-                fileInputRef={fileInputRef}
-                handleResumeFilterUpload={handleResumeFilterUpload}
+                onMatchResumeClick={() => {
+                  if (!isPaidUser) {
+                    toast.error("Resume matching with AI is only available to Premium customers.");
+                    setShowPricing(true);
+                    return;
+                  }
+                  setShowMatchResumeModal(true);
+                }}
                 showFavorites={showFavorites}
                 setShowFavorites={setShowFavorites}
                 showBookmarks={showBookmarks}
@@ -689,6 +749,16 @@ const EmployeePortal = () => {
           handleTriggerUpdate={handleTriggerUpdate}
           handleUnsubscribe={handleUnsubscribe}
           subscribing={subscribing}
+        />
+
+        <MatchResumeModal
+          open={showMatchResumeModal}
+          onClose={() => setShowMatchResumeModal(false)}
+          resumes={resumes}
+          onSelectResume={(resume) => filterJobsByResumeText(resume.text)}
+          onUploadNew={handleUploadNewMatchResume}
+          uploadingResume={uploadingResume}
+          setShowPricing={setShowPricing}
         />
       </div>
     </div >
