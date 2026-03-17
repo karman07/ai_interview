@@ -79,13 +79,14 @@ export class JobsController {
             resumeText = file.buffer.toString('utf-8');
         }
 
-        const [candidateJobs] = await this.jobService.getJobsWithFilters({}, 0, 5000);
+        const filters: any = {};
+        if (location) filters.location = location;
+        if (internshipOnly) filters.internship = internshipOnly;
+        if (stipendMin) filters.min_stipend = stipendMin;
+        if (jobLevel) filters.job_level = jobLevel;
 
+        const [candidateJobs] = await this.jobService.getJobsWithFilters(filters, 0, 5000);
         let filteredCandidates = candidateJobs;
-        if (internshipOnly) filteredCandidates = filteredCandidates.filter(j => j.is_internship);
-        if (jobLevel) filteredCandidates = filteredCandidates.filter(j => j.job_level === jobLevel);
-        if (stipendMin) filteredCandidates = filteredCandidates.filter(j => (j.salary_min && j.salary_min >= stipendMin) || (j.salary_max && j.salary_max >= stipendMin));
-        if (location) filteredCandidates = filteredCandidates.filter(j => j.location && j.location.toLowerCase().includes(location.toLowerCase()));
 
         const scoredJobsResult = await this.ragMatcherService.matchResumeToJobsBatch(resumeText, filteredCandidates);
         const scoredJobs = scoredJobsResult.filter(item => item.score > 0.05).sort((a, b) => b.score - a.score).slice(0, 50);
@@ -102,12 +103,14 @@ export class JobsController {
     async matchResume(@Body() body: any) {
         const { resume_text, location, internship_only, job_level, stipend_min } = body;
 
-        const [candidateJobs] = await this.jobService.getJobsWithFilters({}, 0, 5000);
+        const filters: any = {};
+        if (location) filters.location = location;
+        if (internship_only) filters.internship = internship_only;
+        if (stipend_min) filters.min_stipend = stipend_min;
+        if (job_level) filters.job_level = job_level;
+
+        const [candidateJobs] = await this.jobService.getJobsWithFilters(filters, 0, 5000);
         let filteredCandidates = candidateJobs;
-        if (internship_only) filteredCandidates = filteredCandidates.filter(j => j.is_internship);
-        if (job_level) filteredCandidates = filteredCandidates.filter(j => j.job_level === job_level);
-        if (stipend_min) filteredCandidates = filteredCandidates.filter(j => (j.salary_min && j.salary_min >= stipend_min) || (j.salary_max && j.salary_max >= stipend_min));
-        if (location) filteredCandidates = filteredCandidates.filter(j => j.location && j.location.toLowerCase().includes(location.toLowerCase()));
 
         const scoredJobsResult = await this.ragMatcherService.matchResumeToJobsBatch(resume_text, filteredCandidates);
         const scoredJobs = scoredJobsResult.filter(item => item.score > 0.05).sort((a, b) => b.score - a.score).slice(0, 50);

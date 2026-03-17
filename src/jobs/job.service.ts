@@ -324,6 +324,9 @@ export class JobService {
             query.$or.push({ category: { $regex: filters.category, $options: 'i' } });
             query.$or.push({ title: { $regex: filters.category, $options: 'i' } });
         }
+        if (filters.job_level) {
+            query.job_level = filters.job_level;
+        }
 
         const total = await this.jobModel.countDocuments(query);
         const jobs = await this.jobModel.find(query).sort({ created_at: -1 }).skip(skip).limit(limit).exec();

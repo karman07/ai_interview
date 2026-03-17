@@ -41,6 +41,8 @@ import { EmailModule } from './email/email.module';
 import { JobsModule } from './jobs/jobs.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { BlogsModule } from './blogs/blogs.module';
+import { DocsModule } from './docs/docs.module';
 
 @Module({
   imports: [
@@ -49,6 +51,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 
     // Scheduling
     ScheduleModule.forRoot(),
+    BlogsModule,
+    DocsModule,
 
     // MongoDB connection with optimized settings
     MongooseModule.forRoot(process.env.MONGO_URI, {
@@ -86,6 +90,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     EmailModule,
     JobsModule,
     ReviewsModule,
+    BlogsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
