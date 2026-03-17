@@ -32,14 +32,6 @@ export default defineConfig({
           if (id.includes('node_modules/framer-motion')) {
             return 'framer-motion';
           }
-          // Core React ecosystem — always needed
-          if (
-            id.includes('node_modules/react/') ||
-            id.includes('node_modules/react-dom/') ||
-            id.includes('node_modules/react-router-dom/')
-          ) {
-            return 'react-vendor';
-          }
           // Radix UI
           if (id.includes('node_modules/@radix-ui')) {
             return 'radix-ui';
