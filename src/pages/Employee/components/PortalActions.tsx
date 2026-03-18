@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Heart, Bookmark, Filter, Grid3x3, List, X } from 'lucide-react';
+import { Sparkles, Heart, Bookmark, Filter, Grid3x3, List, X, Bell, BellOff, Lock } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
 interface PortalActionsProps {
     setShowSubscriptionModal: (v: boolean) => void;
+    isSubscribed: boolean;
     isResumeFiltered: boolean;
     clearResumeFilter: () => void;
     onMatchResumeClick: () => void;
@@ -16,10 +17,13 @@ interface PortalActionsProps {
     setShowFilters: (v: boolean) => void;
     viewMode: 'grid' | 'table';
     setViewMode: (v: 'grid' | 'table') => void;
+    isPaidUser: boolean;
+    onUpgradeClick: () => void;
 }
 
 const PortalActions = ({
     setShowSubscriptionModal,
+    isSubscribed,
     isResumeFiltered,
     clearResumeFilter,
     onMatchResumeClick,
@@ -31,6 +35,8 @@ const PortalActions = ({
     setShowFilters,
     viewMode,
     setViewMode,
+    isPaidUser,
+    onUpgradeClick,
 }: PortalActionsProps) => {
     return (
         <motion.div
@@ -40,18 +46,41 @@ const PortalActions = ({
             className="flex flex-wrap items-center gap-2.5 p-1 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-xl shadow-slate-200/20 dark:shadow-none"
         >
             <div className="flex items-center gap-2 pr-2.5 border-r border-slate-200 dark:border-slate-800/60 ml-0.5">
+                {/* Subscribe / Job Alert button */}
+                <button
+                    onClick={() => isPaidUser ? setShowSubscriptionModal(true) : onUpgradeClick()}
+                    className={cn(
+                        "px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 font-black text-[10px] uppercase tracking-widest border shadow-sm",
+                        !isPaidUser
+                            ? "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
+                            : isSubscribed
+                                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border-emerald-100 dark:border-emerald-900/30"
+                                : "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/25"
+                    )}
+                >
+                    {!isPaidUser ? <Lock className="w-3.5 h-3.5" /> : isSubscribed ? <BellOff className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
+                    {isSubscribed && isPaidUser ? 'Subscribed' : 'Job Alerts'}
+                    {!isPaidUser && (
+                        <span className="ml-1 px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[7px] border border-slate-300 dark:border-slate-600">PRO</span>
+                    )}
+                </button>
+
                 <button
                     onClick={() => isResumeFiltered ? clearResumeFilter() : onMatchResumeClick()}
                     className={cn(
                         "px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 font-black text-[10px] uppercase tracking-widest border shadow-sm",
-                        isResumeFiltered
-                            ? "bg-rose-50 dark:bg-rose-900/20 text-rose-600 border-rose-100 dark:border-rose-900/30"
-                            : "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/20"
+                        !isPaidUser
+                            ? "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
+                            : isResumeFiltered
+                                ? "bg-rose-50 dark:bg-rose-900/20 text-rose-600 border-rose-100 dark:border-rose-900/30"
+                                : "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/20"
                     )}
                 >
-                    {isResumeFiltered ? <X className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
-                    {isResumeFiltered ? 'Clear Match' : 'Match Resume'}
-                    {!isResumeFiltered && (
+                    {!isPaidUser ? <Lock className="w-3.5 h-3.5" /> : isResumeFiltered ? <X className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+                    {isResumeFiltered && isPaidUser ? 'Clear Match' : 'Match Resume'}
+                    {!isPaidUser ? (
+                        <span className="ml-1 px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[7px] border border-slate-300 dark:border-slate-600">PRO</span>
+                    ) : !isResumeFiltered && (
                         <span className="ml-1 px-1 py-0.5 bg-white/20 rounded text-[7px] border border-white/20">BETA</span>
                     )}
                 </button>

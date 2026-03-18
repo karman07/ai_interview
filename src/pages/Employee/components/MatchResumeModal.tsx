@@ -11,6 +11,7 @@ interface MatchResumeModalProps {
     onUploadNew: (file: File) => Promise<void>;
     uploadingResume: boolean;
     setShowPricing: (v: boolean) => void;
+    resumeLimit: number;
 }
 
 const MatchResumeModal = ({
@@ -20,7 +21,8 @@ const MatchResumeModal = ({
     onSelectResume,
     onUploadNew,
     uploadingResume,
-    setShowPricing
+    setShowPricing,
+    resumeLimit,
 }: MatchResumeModalProps) => {
     const [uploadFile, setUploadFile] = useState<File | null>(null);
 
@@ -41,14 +43,49 @@ const MatchResumeModal = ({
                         exit={{ opacity: 0, scale: 0.9, y: 30 }}
                         className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-white/20 overflow-hidden z-10 flex flex-col max-h-[90vh]"
                     >
-                        <div className="p-6 sm:p-8 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
-                            <div>
-                                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">AI Resume matcher</h3>
-                                <p className="text-xs font-medium text-slate-500 mt-1">Select an existing resume or upload a new one to filter perfectly matched positions.</p>
+                        <div className="p-6 sm:p-8 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">AI Resume matcher</h3>
+                                    <p className="text-xs font-medium text-slate-500 mt-1">Select an existing resume or upload a new one to filter perfectly matched positions.</p>
+                                </div>
+                                <button onClick={onClose} className="p-2 text-slate-400 hover:text-rose-500 rounded-xl transition-all flex-shrink-0">
+                                    <X className="w-5 h-5" />
+                                </button>
                             </div>
-                            <button onClick={onClose} className="p-2 text-slate-400 hover:text-rose-500 rounded-xl transition-all">
-                                <X className="w-5 h-5" />
-                            </button>
+
+                            {/* Usage indicator */}
+                            {(() => {
+                                const pct = Math.min((resumes.length / resumeLimit) * 100, 100);
+                                const atLimit = resumes.length >= resumeLimit;
+                                const nearLimit = !atLimit && resumes.length / resumeLimit >= 0.8;
+                                const color = atLimit ? 'bg-red-500' : nearLimit ? 'bg-amber-500' : 'bg-blue-500';
+                                const textColor = atLimit ? 'text-red-600 dark:text-red-400' : nearLimit ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400';
+                                const bgColor = atLimit ? 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800/30' : nearLimit ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/30' : 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800/30';
+                                return (
+                                    <div className={`mt-4 flex items-center gap-3 px-3.5 py-2.5 rounded-xl border ${bgColor}`}>
+                                        <div className="flex-1">
+                                            <div className="flex items-center justify-between mb-1.5">
+                                                <span className={`text-[11px] font-bold uppercase tracking-wide ${textColor}`}>
+                                                    {atLimit ? 'Limit reached' : 'Storage used'}
+                                                </span>
+                                                <span className={`text-[11px] font-bold tabular-nums ${textColor}`}>
+                                                    {resumes.length} <span className="font-normal opacity-60">/ {resumeLimit}</span>
+                                                </span>
+                                            </div>
+                                            <div className="w-full h-2 bg-white/60 dark:bg-slate-700/60 rounded-full overflow-hidden">
+                                                <div
+                                                    className={`h-full rounded-full transition-all duration-500 ${color}`}
+                                                    style={{ width: `${pct}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                        {atLimit && (
+                                            <span className="text-[10px] font-bold text-red-500 bg-red-100 dark:bg-red-900/40 px-2 py-0.5 rounded-md flex-shrink-0">FULL</span>
+                                        )}
+                                    </div>
+                                );
+                            })()}
                         </div>
 
                         <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar bg-white dark:bg-gray-800">

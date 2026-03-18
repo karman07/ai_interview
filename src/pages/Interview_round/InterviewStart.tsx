@@ -90,36 +90,23 @@ export default function InterviewStart() {
   }, [stats, analytics]);
 
   const interviewLimit = useMemo(() => {
-    const planName = (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object')
-      ? (user.subscriptionPlan as any).name
-      : user?.subscriptionPlan;
-
-    if (user?.subscriptionStatus === 'active' || (planName && planName !== 'free_tier_in')) {
-      if (planName?.toString().includes('pro_tier_200')) return 20;
-      if (planName?.toString().includes('pro_tier_100')) return 10;
-      if (planName?.toString().includes('enterprise')) return 1000;
+    if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
+      const limitFeature = (user.subscriptionPlan as any).features?.find?.(
+        (f: any) => f.name === 'Interview Limit'
+      );
+      if (limitFeature) return Number(limitFeature.value ?? limitFeature.limit ?? 3);
     }
-
-    return 3; // Default free tier
+    return 3; // default free tier
   }, [user]);
 
   const resumeLimit = useMemo(() => {
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
-      const limitFeature = user.subscriptionPlan.features?.find?.((f: any) => f.name.toLowerCase().includes('resume upload limit'));
-      if (limitFeature && typeof limitFeature.value === 'number') {
-        return limitFeature.value;
-      }
+      const limitFeature = (user.subscriptionPlan as any).features?.find?.(
+        (f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit'
+      );
+      if (limitFeature) return Number(limitFeature.value ?? limitFeature.limit ?? 5);
     }
-    const planName = (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object')
-      ? (user.subscriptionPlan as any).name
-      : user?.subscriptionPlan;
-
-    if (user?.subscriptionStatus === 'active' || (planName && planName !== 'free_tier_in')) {
-      if (planName?.toString().includes('pro_tier_200')) return 40;
-      if (planName?.toString().includes('pro_tier_100')) return 15;
-      if (planName?.toString().includes('enterprise')) return 1000;
-    }
-    return 5;
+    return 5; // default free tier
   }, [user]);
 
   const totalInterviewsTaken = analytics?.overall?.totalInterviews || 0;

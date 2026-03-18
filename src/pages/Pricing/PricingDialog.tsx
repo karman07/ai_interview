@@ -14,8 +14,8 @@ import { useState, useEffect } from 'react';
 // ── helpers ───────────────────────────────────────────────────────────────────
 const fmtAmount = (lowestUnit: number, currency: string): string => {
   const major = lowestUnit / 100;
-  if (currency === 'INR') return `\u20b9${Math.round(major).toLocaleString('en-IN')}`;
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(major);
+  if (currency === 'INR') return `\u20b9${major % 1 === 0 ? Math.round(major).toLocaleString('en-IN') : major.toFixed(2)}`;
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(major);
 };
 
 interface CouponState {

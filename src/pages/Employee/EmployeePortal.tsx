@@ -87,6 +87,16 @@ const EmployeePortal = () => {
     return user?.subscriptionStatus === 'active' || (planName && planName !== 'free_tier_in');
   }, [user]);
 
+  const resumeLimit = React.useMemo(() => {
+    if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
+      const feature = (user.subscriptionPlan as any).features?.find?.(
+        (f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit'
+      );
+      if (feature) return Number(feature.value ?? feature.limit ?? 5);
+    }
+    return 5; // default free tier
+  }, [user]);
+
   const loadLocations = useCallback(async () => {
     try {
       const locs = await getLocations();
@@ -457,28 +467,36 @@ const EmployeePortal = () => {
       return;
     }
 
-    if (resumes.length > 0 && !selectedResumeId) {
-      toast.error('Please select a resume to tailor your alerts.');
-      return;
-    }
-
     try {
       setSubscribing(true);
-      let parsedData = null;
+      let resumeText: string | undefined;
+
+      // If user uploaded a new file, parse it
       if (resumeFile) {
         try {
           const result = await parseResume(resumeFile);
-          parsedData = result;
+          resumeText = result?.text || result?.resume_text;
         } catch (err) {
           console.error("Resume parsing failed", err);
         }
+      }
+
+      // If no new file but user picked an existing resume, use its text
+      if (!resumeText && selectedResumeId) {
+        const picked = resumes.find(r => (r._id || (r as any).id) === selectedResumeId);
+        resumeText = picked?.text;
+      }
+
+      // Fall back to first resume if available and nothing explicitly selected
+      if (!resumeText && resumes.length > 0) {
+        resumeText = resumes[0]?.text;
       }
 
       await subscriptionService.subscribe({
         email: subscriptionEmail,
         userId: user?._id,
         frequency,
-        resumeData: parsedData,
+        resumeData: resumeText ? { resume_text: resumeText } : undefined,
       });
       setIsSubscribed(true);
       toast.success('Successfully subscribed to job updates!');
@@ -566,6 +584,7 @@ const EmployeePortal = () => {
 
               <PortalActions
                 setShowSubscriptionModal={setShowSubscriptionModal}
+                isSubscribed={isSubscribed}
                 isResumeFiltered={isResumeFiltered}
                 clearResumeFilter={clearResumeFilter}
                 onMatchResumeClick={() => {
@@ -584,6 +603,8 @@ const EmployeePortal = () => {
                 setShowFilters={setShowFilters}
                 viewMode={viewMode}
                 setViewMode={setViewMode}
+                isPaidUser={isPaidUser}
+                onUpgradeClick={() => setShowPricing(true)}
               />
             </div>
 
@@ -749,6 +770,9 @@ const EmployeePortal = () => {
           handleTriggerUpdate={handleTriggerUpdate}
           handleUnsubscribe={handleUnsubscribe}
           subscribing={subscribing}
+          isPaidUser={isPaidUser}
+          onUpgradeClick={() => setShowPricing(true)}
+          resumeLimit={resumeLimit}
         />
 
         <MatchResumeModal
@@ -759,6 +783,7 @@ const EmployeePortal = () => {
           onUploadNew={handleUploadNewMatchResume}
           uploadingResume={uploadingResume}
           setShowPricing={setShowPricing}
+          resumeLimit={resumeLimit}
         />
       </div>
     </div >
