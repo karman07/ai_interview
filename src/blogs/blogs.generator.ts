@@ -3,9 +3,9 @@ import { Cron } from '@nestjs/schedule';
 import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
+import { AiConfigService } from '../ai-config/ai-config.service';
 
 const CATEGORIES = ['Interview Prep', 'Resume Building', 'Career Growth', 'Technical Skills', 'AI in Recruitment'];
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
 const IMAGES = [
   "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=600",
@@ -24,6 +24,8 @@ const AUTHORS = ['Karman Singh', 'Rahat Bhatia', 'Advitya Dua'];
 export class BlogsGeneratorService {
   private readonly logger = new Logger(BlogsGeneratorService.name);
   private readonly blogsDir = path.join(__dirname, '..', '..', '..', 'blogs_content');
+
+  constructor(private readonly aiConfigService: AiConfigService) {}
 
   @Cron('0 0 * * *') // Runs everyday at midnight
   async handleDailyBlog() {
@@ -57,6 +59,7 @@ coverImage: "Provide a real high-quality absolute Unsplash image URL that matche
 `;
 
     try {
+      const groqKey = await this.aiConfigService.getActiveKey('groq');
       const res = await axios.post(
         'https://api.groq.com/openai/v1/chat/completions',
         {
@@ -66,7 +69,7 @@ coverImage: "Provide a real high-quality absolute Unsplash image URL that matche
         },
         {
           headers: {
-            Authorization: `Bearer ${GROQ_API_KEY}`,
+            Authorization: `Bearer ${groqKey}`,
             'Content-Type': 'application/json',
           },
         },

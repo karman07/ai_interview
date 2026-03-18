@@ -1,7 +1,8 @@
 import {
-  Controller, Get, Param, Patch, UseGuards, Body,
+  Controller, Get, Param, Patch, Post, UseGuards, Body, Req,
   UploadedFile, UseInterceptors,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -98,6 +99,13 @@ export class UsersController {
     const updated: UserDocument = await this.usersService.updateProfile(user.sub, dto);
     const { passwordHash, refreshTokenHash, ...safe } = updated.toObject();
     return safe;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me/track-interview')
+  async trackInterviewStart(@CurrentUser() user: any) {
+    await this.usersService.incrementInterviewCount(user.sub);
+    return { ok: true };
   }
 
   @UseGuards(JwtAuthGuard)

@@ -79,6 +79,10 @@ export class UsersService {
     return updated;
   }
 
+  async incrementInterviewCount(userId: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, { $inc: { interviewCount: 1 } }).exec();
+  }
+
   async setRefreshToken(userId: string, hash: string | null): Promise<void> {
     await this.userModel.findByIdAndUpdate(userId, { refreshTokenHash: hash }).exec();
   }
