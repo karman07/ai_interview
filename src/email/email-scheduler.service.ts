@@ -14,7 +14,7 @@ export class EmailSchedulerService {
     private emailService: EmailService,
   ) { }
 
-  // @Cron('25 9 * * *', { timeZone: 'Asia/Kolkata' })
+  @Cron('25 9 * * *', { timeZone: 'Asia/Kolkata' })
   async sendDailyUpdates() {
     this.logger.log('Starting daily update email task...');
 

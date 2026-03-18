@@ -144,6 +144,51 @@ export class SubscriptionService implements OnModuleInit {
     }
   }
 
+  // Silently generate a Razorpay plan for a subscription document. Skips if already valid or keys missing.
+  private async autoGenerateRazorpayPlan(subscription: SubscriptionDocument): Promise<void> {
+    const key_id = process.env.RAZORPAY_KEY_ID;
+    const key_secret = process.env.RAZORPAY_KEY_SECRET;
+    if (!key_id || !key_secret) return; // keys not configured — skip silently
+
+    const razorpay = new Razorpay({ key_id, key_secret });
+
+    type RazorpayPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
+    const periodMap: Record<string, RazorpayPeriod> = {
+      monthly: 'monthly', yearly: 'yearly',
+      'half-yearly': 'monthly', quarterly: 'monthly',
+    };
+    const intervalMap: Record<string, number> = {
+      monthly: 1, yearly: 1, 'half-yearly': 6, quarterly: 3,
+    };
+    const period: RazorpayPeriod = periodMap[subscription.type] ?? 'monthly';
+    const interval = intervalMap[subscription.type] ?? 1;
+
+    // Verify existing plan is still valid
+    if (subscription.razorpayPlanId) {
+      try {
+        await razorpay.plans.fetch(subscription.razorpayPlanId);
+        return; // still valid, nothing to do
+      } catch { /* fall through to create */ }
+    }
+
+    try {
+      const newPlan: any = await (razorpay.plans.create as Function)({
+        period, interval,
+        item: {
+          name: subscription.displayName || subscription.name,
+          amount: subscription.price, // stored in paisa
+          currency: subscription.currency || 'INR',
+          description: subscription.description || `Plan for ${subscription.displayName}`,
+        },
+      });
+      subscription.razorpayPlanId = newPlan.id;
+      await subscription.save();
+      this.logger.log(`Auto-generated Razorpay plan ${newPlan.id} for ${subscription.name}`);
+    } catch (err) {
+      this.logger.warn(`Razorpay plan auto-generation failed for ${subscription.name}: ${err.message}`);
+    }
+  }
+
   async create(createSubscriptionDto: CreateSubscriptionDto): Promise<SubscriptionResponseDto> {
     try {
       const existingSubscription = await this.subscriptionModel.findOne({
@@ -167,6 +212,7 @@ export class SubscriptionService implements OnModuleInit {
       });
 
       await subscription.save();
+      await this.autoGenerateRazorpayPlan(subscription);
       this.logger.log(`Subscription created: ${subscription.name}`);
       return this.toSubscriptionResponseDto(subscription);
     } catch (error) {
@@ -233,14 +279,34 @@ export class SubscriptionService implements OnModuleInit {
     if (updateData.originalPrice !== undefined) updateData.originalPrice = Math.round(updateData.originalPrice * 100);
     if (updateData.country) updateData.country = updateData.country.toUpperCase();
 
+    // Razorpay plans are immutable — if price or currency changed, force a new plan
+    if (updateData.price !== undefined || updateData.currency !== undefined) {
+      const existing = await this.subscriptionModel.findById(id);
+      if (existing) {
+        const priceChanged = updateData.price !== undefined && existing.price !== updateData.price;
+        const currencyChanged = updateData.currency !== undefined && existing.currency !== updateData.currency;
+        if (priceChanged || currencyChanged) {
+          updateData.razorpayPlanId = null; // clear so autoGenerateRazorpayPlan creates a fresh one
+        }
+      }
+    }
+
     const subscription = await this.subscriptionModel.findByIdAndUpdate(id, updateData, { new: true });
     if (!subscription) throw new NotFoundException('Subscription not found');
+    await this.autoGenerateRazorpayPlan(subscription);
     return this.toSubscriptionResponseDto(subscription);
   }
 
   async remove(id: string): Promise<void> {
     const result = await this.subscriptionModel.findByIdAndDelete(id);
     if (!result) throw new NotFoundException('Subscription not found');
+  }
+
+  async generateRazorpayPlan(id: string): Promise<SubscriptionResponseDto> {
+    const subscription = await this.subscriptionModel.findById(id);
+    if (!subscription) throw new NotFoundException('Subscription not found');
+    await this.autoGenerateRazorpayPlan(subscription);
+    return this.toSubscriptionResponseDto(subscription);
   }
 
   async activate(id: string): Promise<SubscriptionResponseDto> {

@@ -1,23 +1,55 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import axios from 'axios';
 const FormData = require('form-data');
+import { EmailLog, EmailLogDocument } from './schemas/email-log.schema';
+import { MailConfig, MailConfigDocument } from './schemas/mail-config.schema';
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
 
-  constructor() { }
+  constructor(
+    @InjectModel(EmailLog.name) private emailLogModel: Model<EmailLogDocument>,
+    @InjectModel(MailConfig.name) private mailConfigModel: Model<MailConfigDocument>,
+  ) { }
+
+  /** Reads config from DB first, falls back to env vars */
+  async getMailConfig(): Promise<{ apiKey: string; apiUrl: string; from: string; isActive: boolean }> {
+    const config = await this.mailConfigModel.findOne().sort({ updatedAt: -1 }).lean();
+    return {
+      apiKey: config?.mailgunApiKey || process.env.MAILGUN_API_KEY || '',
+      apiUrl: config?.mailgunApiUrl || process.env.MAILGUN_API_URL || '',
+      from: config?.mailgunFrom || process.env.MAILGUN_FROM || 'AIForJob.ai <postmaster@aiforjob.ai>',
+      isActive: config?.isActive ?? true,
+    };
+  }
 
   /**
-   * Universal method to send email via Mailgun API
+   * Universal method to send email via Mailgun API — reads config from DB, logs result
    */
-  private async sendEmail(to: string, subject: string, text: string, html?: string): Promise<boolean> {
-    const apiKey = process.env.MAILGUN_API_KEY;
-    const apiUrl = process.env.MAILGUN_API_URL;
-    const from = process.env.MAILGUN_FROM || 'AIForJob.ai <postmaster@aiforjob.ai>';
+  private async sendEmail(
+    to: string,
+    subject: string,
+    text: string,
+    html?: string,
+    type: string = 'other',
+  ): Promise<boolean> {
+    const cfg = await this.getMailConfig();
+
+    if (!cfg.isActive) {
+      this.logger.warn('Mail sending is disabled in config');
+      return false;
+    }
+    if (!cfg.apiKey || !cfg.apiUrl) {
+      this.logger.error('Mailgun API key or URL not configured');
+      await this.emailLogModel.create({ email: to, type, status: 'failed', error: 'Mailgun not configured' });
+      return false;
+    }
 
     const form = new FormData();
-    form.append('from', from);
+    form.append('from', cfg.from);
     form.append('to', to);
     form.append('subject', subject);
     form.append('text', text);
@@ -26,16 +58,18 @@ export class EmailService {
     }
 
     try {
-      const response = await axios.post(apiUrl, form, {
+      await axios.post(cfg.apiUrl, form, {
         headers: {
           ...form.getHeaders(),
-          Authorization: `Basic ${Buffer.from(`api:${apiKey}`).toString('base64')}`,
+          Authorization: `Basic ${Buffer.from(`api:${cfg.apiKey}`).toString('base64')}`,
         },
       });
-
+      await this.emailLogModel.create({ email: to, type, status: 'sent' });
       return true;
     } catch (error) {
-      this.logger.error(`Failed to send email to ${to}: ${error.response?.data?.message || error.message}`);
+      const errMsg = error.response?.data?.message || error.message;
+      this.logger.error(`Failed to send email to ${to}: ${errMsg}`);
+      await this.emailLogModel.create({ email: to, type, status: 'failed', error: errMsg });
       return false;
     }
   }
@@ -44,28 +78,26 @@ export class EmailService {
     const subject = '🎉 Welcome to AIForJob.ai - Subscription Confirmed!';
     const text = `Thank you for subscribing to AIForJob.ai! You'll receive updates about new opportunities.`;
     const html = this.getWelcomeEmailTemplate();
-
-    return this.sendEmail(to, subject, text, html);
+    return this.sendEmail(to, subject, text, html, 'welcome');
   }
 
   async sendPaymentSuccessEmail(to: string, planName: string, amount: number): Promise<boolean> {
     const subject = '💳 Payment Successful - AIForJob.ai';
     const text = `Success! Your payment for ${planName} of ₹${amount / 100} was successful. Your account is now upgraded.`;
-    return this.sendEmail(to, subject, text);
+    return this.sendEmail(to, subject, text, undefined, 'payment_success');
   }
 
   async sendSubscriptionCancelledEmail(to: string): Promise<boolean> {
     const subject = '⚠️ Subscription Cancelled - AIForJob.ai';
     const text = `Your subscription has been cancelled. You will continue to have access until your current period ends.`;
-    return this.sendEmail(to, subject, text);
+    return this.sendEmail(to, subject, text, undefined, 'subscription_cancelled');
   }
 
   async sendDailyUpdateEmail(to: string): Promise<boolean> {
     const subject = '🚀 Daily Update from AIForJob.ai';
     const text = `Hello! Check out the latest opportunities at AIForJob.ai. Visit https://aiforjob.ai now!`;
     const html = this.getDailyUpdateEmailTemplate();
-
-    return this.sendEmail(to, subject, text, html);
+    return this.sendEmail(to, subject, text, html, 'daily_update');
   }
 
   async sendBulkDailyEmails(emails: string[]): Promise<{ sent: number; failed: number }> {

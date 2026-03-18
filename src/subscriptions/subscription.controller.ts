@@ -90,6 +90,13 @@ export class SubscriptionController {
     return this.subscriptionService.deactivate(id);
   }
 
+  @Post(':id/generate-razorpay-plan')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async generateRazorpayPlan(@Param('id') id: string): Promise<SubscriptionResponseDto> {
+    return this.subscriptionService.generateRazorpayPlan(id);
+  }
+
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
