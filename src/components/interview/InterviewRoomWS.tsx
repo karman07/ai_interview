@@ -306,6 +306,17 @@ export default function InterviewRoomWS() {
     }, [messages, isStreamingResponse, isSpeaking, isListening, isConnected, interviewEnded, showCodeEditor, isTypingInEditor, handleEndSession]);
 
 
+    // ── Increment interview count when first AI message arrives (interview truly started) ──
+    const countIncrementedRef = useRef(false);
+    useEffect(() => {
+        if (messages.length === 1 && messages[0].role === 'model' && !countIncrementedRef.current) {
+            countIncrementedRef.current = true;
+            http.post('/users/me/track-interview').catch(err =>
+                console.warn('[InterviewRoomWS] Failed to track interview start:', err)
+            );
+        }
+    }, [messages]);
+
     // ── Handle interview ended — save results and navigate ──
     const hasEndedRef = useRef(false);
     useEffect(() => {
@@ -327,7 +338,7 @@ export default function InterviewRoomWS() {
 
             localStorage.setItem('v2_interview_report', JSON.stringify(report));
 
-            // Only save to backend and increment counter if user actually answered questions
+            // Only save full analytics to backend if user actually answered questions
             if (userMessageCount > 0) {
                 // Post external analytics to backend, including context metadata
                 const externalPayload = {
@@ -351,8 +362,8 @@ export default function InterviewRoomWS() {
                     navigate(`/interview/results/${clientId}`);
                 });
             } else {
-                // No answers given - just navigate back without saving or incrementing count
-                console.log('[InterviewRoomWS] No answers given - skipping analytics save and counter increment');
+                // No answers given — count was already incremented at interview start
+                console.log('[InterviewRoomWS] No answers given — navigating back');
                 localStorage.removeItem('ws_interview_setup');
                 localStorage.removeItem('ws_interview_client_id');
                 navigate('/interview_round');
@@ -523,13 +534,13 @@ export default function InterviewRoomWS() {
             </header>
 
             {/* Content Area */}
-            <main className="flex-1 min-h-0 flex flex-col p-4 md:p-6 gap-4">
+            <main className="flex-1 min-h-0 flex flex-col p-4 md:p-6 gap-4 pb-16">
                 <div className="flex-1 min-h-0 flex gap-4 max-w-[1600px] mx-auto w-full">
 
                     {/* Left UI: Always visible */}
                     <motion.div
                         animate={{ width: showCodeEditor ? 360 : "100%", maxWidth: showCodeEditor ? 360 : 780 }}
-                        className="flex flex-col gap-3 shrink-0 min-h-0 mx-auto"
+                        className="flex flex-col gap-3 shrink-0 h-full min-h-0 overflow-hidden mx-auto"
                     >
                         {/* Avatar / Interviewer Card */}
                         <div className={`shrink-0 bg-white dark:bg-slate-900 rounded-[2rem] border border-blue-50 dark:border-slate-800 shadow-sm overflow-hidden relative group transition-all duration-500 ${showCodeEditor ? 'h-[260px]' : 'h-[360px]'}`}>

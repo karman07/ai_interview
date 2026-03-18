@@ -40,7 +40,7 @@ export const WSTranscriptPanel: React.FC<TranscriptPanelProps> = ({ messages, tr
     const unreadCount = messages.length;
 
     return (
-        <div className="shrink-0 rounded-2xl overflow-hidden bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl border border-blue-50/30 dark:border-slate-800/20 shadow-md">
+        <div className="flex-1 min-h-0 flex flex-col rounded-2xl overflow-hidden bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl border border-blue-50/30 dark:border-slate-800/20 shadow-md">
             {/* Clickable header — always visible */}
             <button
                 onClick={() => setIsOpen(o => !o)}
@@ -90,13 +90,13 @@ export const WSTranscriptPanel: React.FC<TranscriptPanelProps> = ({ messages, tr
                 {isOpen && (
                     <motion.div
                         key="transcript-body"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 280, opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25, ease: 'easeInOut' }}
-                        className="overflow-hidden"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex-1 min-h-0 flex flex-col"
                     >
-                        <div ref={containerRef} className="h-[280px] overflow-y-auto px-5 py-4 space-y-4 scroll-smooth no-scrollbar">
+                        <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto pl-5 pr-3 py-4 space-y-4 scroll-smooth thin-scrollbar">
                             {messages.length === 0 && (
                                 <div className="h-full flex flex-col items-center justify-center text-center p-6 opacity-30">
                                     <Sparkles className="w-5 h-5 mb-2" />
@@ -114,9 +114,9 @@ export const WSTranscriptPanel: React.FC<TranscriptPanelProps> = ({ messages, tr
                                         animate={{ opacity: 1, y: 0 }}
                                         className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
                                     >
-                                        <div className={`relative px-4 py-2.5 rounded-2xl max-w-[85%] text-xs leading-relaxed ${msg.role === 'model'
-                                            ? 'bg-blue-600/90 text-white rounded-tl-none ring-1 ring-blue-500/20'
-                                            : 'bg-white/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-200 border border-slate-100 dark:border-slate-700/50 rounded-tr-none'
+                                        <div className={`relative px-4 py-3 rounded-2xl max-w-[85%] text-[13px] leading-relaxed font-medium ${msg.role === 'model'
+                                            ? 'bg-blue-600 text-white rounded-tl-none shadow-sm'
+                                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-100 border border-slate-200 dark:border-slate-700/50 rounded-tr-none shadow-sm'
                                         }`}>
                                             {msg.content}
                                         </div>
