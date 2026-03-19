@@ -26,6 +26,12 @@ export class AIUsage {
     @Prop({ required: true, default: 0 })
     costUsd: number;
 
+    @Prop({ default: 0 })
+    inputCostUsd: number;
+
+    @Prop({ default: 0 })
+    outputCostUsd: number;
+
     @Prop({ required: true, enum: ['free', 'active', 'expired', 'trial'], default: 'free' })
     subscriptionStatus: string;
 

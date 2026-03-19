@@ -643,6 +643,8 @@ export class AnalyticsService {
           totalInputTokens: { $sum: '$inputTokens' },
           totalOutputTokens: { $sum: '$outputTokens' },
           totalCost: { $sum: '$costUsd' },
+          totalInputCost: { $sum: '$inputCostUsd' },
+          totalOutputCost: { $sum: '$outputCostUsd' },
           sessions: { $addToSet: '$sessionId' },
         },
       },
@@ -653,6 +655,8 @@ export class AnalyticsService {
           totalInputTokens: 1,
           totalOutputTokens: 1,
           totalCost: 1,
+          totalInputCost: 1,
+          totalOutputCost: 1,
           sessionCount: { $size: '$sessions' },
           _id: 0,
         },
@@ -667,11 +671,13 @@ export class AnalyticsService {
           inputTokens: { $sum: '$inputTokens' },
           outputTokens: { $sum: '$outputTokens' },
           cost: { $sum: '$costUsd' },
+          inputCost: { $sum: '$inputCostUsd' },
+          outputCost: { $sum: '$outputCostUsd' },
         },
       },
       { $sort: { _id: 1 } },
       { $limit: 30 },
-      { $project: { date: '$_id', tokens: 1, inputTokens: 1, outputTokens: 1, cost: 1, _id: 0 } },
+      { $project: { date: '$_id', tokens: 1, inputTokens: 1, outputTokens: 1, cost: 1, inputCost: 1, outputCost: 1, _id: 0 } },
     ]);
 
     const totalRevenueData = await this.paymentModel.aggregate([
@@ -779,6 +785,8 @@ export class AnalyticsService {
       outputTokens: data.outputTokens ?? 0,
       totalTokens: data.totalTokens ?? 0,
       costUsd: data.costUsd ?? 0,
+      inputCostUsd: (data as any).inputCostUsd ?? 0,
+      outputCostUsd: (data as any).outputCostUsd ?? 0,
       timestamp: data.timestamp || new Date(),
     };
 
