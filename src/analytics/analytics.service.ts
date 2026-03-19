@@ -640,6 +640,8 @@ export class AnalyticsService {
         $group: {
           _id: '$subscriptionStatus',
           totalTokens: { $sum: '$totalTokens' },
+          totalInputTokens: { $sum: '$inputTokens' },
+          totalOutputTokens: { $sum: '$outputTokens' },
           totalCost: { $sum: '$costUsd' },
           sessions: { $addToSet: '$sessionId' },
         },
@@ -648,6 +650,8 @@ export class AnalyticsService {
         $project: {
           plan: '$_id',
           totalTokens: 1,
+          totalInputTokens: 1,
+          totalOutputTokens: 1,
           totalCost: 1,
           sessionCount: { $size: '$sessions' },
           _id: 0,
@@ -660,12 +664,14 @@ export class AnalyticsService {
         $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$timestamp' } },
           tokens: { $sum: '$totalTokens' },
+          inputTokens: { $sum: '$inputTokens' },
+          outputTokens: { $sum: '$outputTokens' },
           cost: { $sum: '$costUsd' },
         },
       },
       { $sort: { _id: 1 } },
       { $limit: 30 },
-      { $project: { date: '$_id', tokens: 1, cost: 1, _id: 0 } },
+      { $project: { date: '$_id', tokens: 1, inputTokens: 1, outputTokens: 1, cost: 1, _id: 0 } },
     ]);
 
     const totalRevenueData = await this.paymentModel.aggregate([
