@@ -24,6 +24,8 @@ export default function Login() {
   const handlePostLoginNavigation = (user: any) => {
     if (!user.isEmailVerified) {
       navigate('/verify-email', { replace: true });
+    } else if (!user.isPhoneVerified) {
+      navigate(routes.verifyPhone, { replace: true });
     } else {
       navigate(redirect, { replace: true });
     }

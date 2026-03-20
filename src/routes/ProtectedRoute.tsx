@@ -20,5 +20,9 @@ export default function ProtectedRoute() {
     return <Navigate to={routes.verifyEmail} replace />;
   }
 
+  if (user.isEmailVerified && !user.isPhoneVerified && location.pathname !== routes.verifyPhone) {
+    return <Navigate to={routes.verifyPhone} replace />;
+  }
+
   return <Outlet />;
 }

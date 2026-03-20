@@ -8,6 +8,8 @@ export interface User {
   email: string;
   role?: Role;
   isEmailVerified?: boolean;
+  phoneNumber?: string;
+  isPhoneVerified?: boolean;
   bio?: string;
   location?: string;
   experienceLevel?: string;

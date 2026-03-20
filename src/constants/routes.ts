@@ -9,6 +9,7 @@ const routes = {
   login: '/login',
   signup: '/signup',
   verifyEmail: '/verify-email',
+  verifyPhone: '/verify-phone',
   profile: '/profile',
   completeProfile: '/complete-profile',
   dashboard: '/dashboard',
