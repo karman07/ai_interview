@@ -10,6 +10,8 @@ const routes = {
   signup: '/signup',
   verifyEmail: '/verify-email',
   verifyPhone: '/verify-phone',
+  universityLogin: '/university-login',
+  studentDashboard: '/student/dashboard',
   profile: '/profile',
   completeProfile: '/complete-profile',
   dashboard: '/dashboard',

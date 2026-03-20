@@ -28,7 +28,8 @@ import {
   Camera,
   Fingerprint,
   CreditCard,
-  Zap
+  Zap,
+  GraduationCap,
 } from 'lucide-react';
 
 export default function Profile() {
@@ -38,6 +39,17 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState<string | undefined>();
   const [params, setParams] = useSearchParams();
+  const [universityInfo, setUniversityInfo] = useState<{ name: string; resumeLimit: number; interviewLimit: number; domain: string; allowedFeatures: string[] } | null>(null);
+
+  useEffect(() => {
+    if ((user as any)?.role === 'student' && (user as any)?.universityId) {
+      import('@/api/http').then(({ default: http }) => {
+        http.get(`/universities/${(user as any).universityId}`)
+          .then(res => setUniversityInfo(res.data))
+          .catch(() => {});
+      });
+    }
+  }, [(user as any)?.universityId]);
 
   const [form, setForm] = useState({
     name: user?.name ?? '',
@@ -279,35 +291,74 @@ export default function Profile() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-[#0D1117] rounded-[2.5rem] p-8 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden group">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
-                  <CreditCard className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight leading-none uppercase tracking-widest">Subscription</h3>
-              </div>
-              <div className="p-6 rounded-[2rem] bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-100/50 dark:border-blue-800/30 mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Current Plan</span>
-                  <div className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 ${user?.subscriptionStatus === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-gray-500/10 text-gray-500'}`}>
-                    <div className={`w-1.5 h-1.5 rounded-full ${user?.subscriptionStatus === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-500'}`} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{user?.subscriptionStatus || 'Free'}</span>
+            {user?.role === 'student' ? (
+              /* ── University info card (students) ── */
+              <div className="bg-white dark:bg-[#0D1117] rounded-[2.5rem] p-8 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-10 h-10 bg-purple-50 dark:bg-purple-900/20 rounded-2xl flex items-center justify-center text-purple-600">
+                    <GraduationCap className="w-5 h-5" />
                   </div>
+                  <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight leading-none uppercase tracking-widest">University Account</h3>
                 </div>
-                <h4 className="text-xl font-black text-gray-900 dark:text-white mb-4 flex items-center gap-3">
-                  {user?.subscriptionPlan && typeof user.subscriptionPlan === 'object' ? (user.subscriptionPlan as any).displayName : (user?.subscriptionPlan || 'Foundation Tier')}
-                  {user?.subscriptionStatus === 'active' && <Zap className="w-4 h-4 text-blue-600" />}
-                </h4>
+                <div className="p-6 rounded-[2rem] bg-gradient-to-br from-purple-50/50 to-violet-50/50 dark:from-purple-900/10 dark:to-violet-900/10 border border-purple-100/50 dark:border-purple-800/30 mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Account Type</span>
+                    <div className="px-2.5 py-1 rounded-lg flex items-center gap-1.5 bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                      <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Student</span>
+                    </div>
+                  </div>
+                  <h4 className="text-xl font-black text-gray-900 dark:text-white mb-4 flex items-center gap-3">
+                    {universityInfo?.name || 'University'}
+                    <GraduationCap className="w-4 h-4 text-purple-600" />
+                  </h4>
+                  {universityInfo && (
+                    <div className="grid grid-cols-2 gap-3 mt-2">
+                      <div className="bg-white/60 dark:bg-gray-800/40 rounded-2xl p-3 text-center">
+                        <p className="text-2xl font-black text-gray-900 dark:text-white">{universityInfo.resumeLimit}</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">Resume Limit</p>
+                      </div>
+                      <div className="bg-white/60 dark:bg-gray-800/40 rounded-2xl p-3 text-center">
+                        <p className="text-2xl font-black text-gray-900 dark:text-white">{universityInfo.interviewLimit}</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">Interview Limit</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 text-center">Your access is managed by your university administrator.</p>
               </div>
-              <Button
-                variant="outline"
-                className="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] border-gray-100 dark:border-gray-800 group-hover:border-blue-500/50 transition-all hover:bg-blue-50 dark:hover:bg-blue-900/10"
-                onClick={() => setShowPricing(true)}
-              >
-                Update Intelligence Tier
-                <ChevronRight className="w-3 h-3 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </div>
+            ) : (
+              /* ── Subscription card (regular users) ── */
+              <div className="bg-white dark:bg-[#0D1117] rounded-[2.5rem] p-8 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden group">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight leading-none uppercase tracking-widest">Subscription</h3>
+                </div>
+                <div className="p-6 rounded-[2rem] bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-100/50 dark:border-blue-800/30 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Current Plan</span>
+                    <div className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 ${user?.subscriptionStatus === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-gray-500/10 text-gray-500'}`}>
+                      <div className={`w-1.5 h-1.5 rounded-full ${user?.subscriptionStatus === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-500'}`} />
+                      <span className="text-[10px] font-black uppercase tracking-widest">{user?.subscriptionStatus || 'Free'}</span>
+                    </div>
+                  </div>
+                  <h4 className="text-xl font-black text-gray-900 dark:text-white mb-4 flex items-center gap-3">
+                    {user?.subscriptionPlan && typeof user.subscriptionPlan === 'object' ? (user.subscriptionPlan as any).displayName : (user?.subscriptionPlan || 'Foundation Tier')}
+                    {user?.subscriptionStatus === 'active' && <Zap className="w-4 h-4 text-blue-600" />}
+                  </h4>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] border-gray-100 dark:border-gray-800 group-hover:border-blue-500/50 transition-all hover:bg-blue-50 dark:hover:bg-blue-900/10"
+                  onClick={() => setShowPricing(true)}
+                >
+                  Update Intelligence Tier
+                  <ChevronRight className="w-3 h-3 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </div>
+            )}
 
             <div className="bg-white dark:bg-[#0D1117] rounded-[2.5rem] p-8 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden group">
               <div className="flex items-center gap-4 mb-8">

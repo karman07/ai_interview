@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { auth, googleProvider } from "@/firebase";
@@ -234,7 +234,51 @@ export default function AuthPage() {
                             </Button>
                         </div>
 
-                        <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+                        {isLogin && (
+                            <div className="mt-5">
+                                {/* Divider */}
+                                <div className="relative flex items-center gap-3 mb-4">
+                                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                                    <span className="text-[11px] uppercase tracking-widest text-gray-400 font-semibold shrink-0">
+                                        University Access
+                                    </span>
+                                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                                </div>
+
+                                {/* Card */}
+                                <Link
+                                    to={routes.universityLogin}
+                                    className="group block w-full rounded-xl border border-indigo-100 dark:border-indigo-900 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950/60 dark:to-blue-950/60 hover:from-indigo-100 hover:to-blue-100 dark:hover:from-indigo-900/80 dark:hover:to-blue-900/80 transition-all duration-200 shadow-sm hover:shadow-md p-4"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        {/* Icon bubble */}
+                                        <div className="shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-200">
+                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                                            </svg>
+                                        </div>
+
+                                        {/* Text */}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">
+                                                Student Login
+                                            </p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                                                Sign in with your university credentials
+                                            </p>
+                                        </div>
+
+                                        {/* Arrow */}
+                                        <svg className="w-4 h-4 text-indigo-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 group-hover:translate-x-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </div>
+                                </Link>
+                            </div>
+                        )}
+
+                        <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
                             {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
                             <button
                                 type="button"

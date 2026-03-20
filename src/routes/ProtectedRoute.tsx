@@ -16,6 +16,9 @@ export default function ProtectedRoute() {
 
   if (!user) return <Navigate to={routes.login} replace />;
 
+  // Students skip email/phone verification gates — they are auto-verified on login
+  if (user.role === 'student') return <Outlet />;
+
   if (!user.isEmailVerified && location.pathname !== routes.verifyEmail) {
     return <Navigate to={routes.verifyEmail} replace />;
   }

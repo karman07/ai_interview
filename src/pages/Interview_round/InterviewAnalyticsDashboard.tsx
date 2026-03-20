@@ -64,11 +64,19 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
   const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState<ExternalAnalyticsSession[]>([]);
   const [dashboardData, setDashboardData] = useState<any>(null);
+  const [universityInterviewLimit, setUniversityInterviewLimit] = useState<number | null>(null);
   const { user } = useAuth();
   const { setShowPricing } = usePricing();
 
   useEffect(() => {
     loadData();
+    if ((user as any)?.role === 'student' && (user as any)?.universityId) {
+      import('@/api/http').then(({ default: http }) => {
+        http.get(`/universities/${(user as any).universityId}`)
+          .then(res => setUniversityInterviewLimit(res.data?.interviewLimit ?? null))
+          .catch(() => {});
+      });
+    }
   }, []);
 
   const loadData = async () => {
@@ -89,6 +97,11 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
   };
 
   const interviewLimit = useMemo(() => {
+    // Students: always use their university's configured limit (dynamic)
+    if ((user as any)?.role === 'student') {
+      return universityInterviewLimit ?? 20;
+    }
+
     // 1. Try fetching from dashboardData (direct from DB)
     if (dashboardData?.overview?.plan?.features) {
       const limitFeature = dashboardData.overview.plan.features.find((f: any) =>
@@ -99,7 +112,7 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
       }
     }
 
-    // 2. Fallback to auth context popuplate check
+    // 2. Fallback to auth context
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
       const limitFeature = user.subscriptionPlan.features.find(f => f.name.toLowerCase().includes('interview limit'));
       if (limitFeature && typeof limitFeature.value === 'number') {
@@ -109,7 +122,7 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
 
     // 3. Absolute default
     return user?.subscriptionStatus === 'active' ? 10 : 3;
-  }, [user, dashboardData]);
+  }, [user, dashboardData, universityInterviewLimit]);
 
   // Use monthly usage for capacity display, total historical sessions for everything else
   const currentMonthlyUsage = Math.max(dashboardData?.overview?.monthlyInterviews || 0, sessions.length);
@@ -236,7 +249,10 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
                   <motion.button
                     whileHover={{ scale: 1.01, y: -1 }}
                     whileTap={{ scale: 0.99 }}
-                    onClick={() => isAtLimit ? setShowPricing(true) : onStartNew()}
+                    onClick={() => {
+                      if (isAtLimit && (user as any)?.role !== 'student') setShowPricing(true);
+                      else if (!isAtLimit) onStartNew();
+                    }}
                     className={`flex items-center gap-3 px-6 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all duration-300 shadow-lg ${isAtLimit
                       ? 'bg-rose-600 text-white shadow-rose-500/10'
                       : 'bg-blue-600 text-white shadow-blue-600/10 hover:bg-blue-700'

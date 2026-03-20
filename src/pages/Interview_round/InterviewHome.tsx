@@ -92,13 +92,26 @@ export default function InterviewHome() {
   const { results, fetchMine } = useResults();
   const [showInterviewSelection, setShowInterviewSelection] = useState(false);
   const [analytics, setAnalytics] = useState<any>(null);
+  const [universityInterviewLimit, setUniversityInterviewLimit] = useState<number | null>(null);
 
   React.useEffect(() => {
     fetchMine();
     InterviewAnalyticsApi.getAnalytics().then(setAnalytics).catch(console.error);
+    if ((user as any)?.role === 'student' && (user as any)?.universityId) {
+      import('@/api/http').then(({ default: http }) => {
+        http.get(`/universities/${(user as any).universityId}`)
+          .then(res => setUniversityInterviewLimit(res.data?.interviewLimit ?? null))
+          .catch(() => {});
+      });
+    }
   }, []);
 
   const interviewLimit = useMemo(() => {
+    // Students: always use their university's configured limit (dynamic)
+    if ((user as any)?.role === 'student') {
+      return universityInterviewLimit ?? 20;
+    }
+
     // 1. Try fetching from analytics (direct from DB)
     if (analytics?.plan?.features) {
       const limitFeature = analytics.plan.features.find((f: any) =>
@@ -109,7 +122,7 @@ export default function InterviewHome() {
       }
     }
 
-    // 2. Fallback to auth context popuplate check
+    // 2. Fallback to auth context
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
       const limitFeature = user.subscriptionPlan.features.find(f => f.name.toLowerCase().includes('interview limit'));
       if (limitFeature && typeof limitFeature.value === 'number') {
@@ -119,13 +132,16 @@ export default function InterviewHome() {
 
     // 3. Absolute default
     return user?.subscriptionStatus === 'active' ? 10 : 3;
-  }, [user, analytics]);
+  }, [user, analytics, universityInterviewLimit]);
 
   const currentInterviews = analytics?.overall?.monthlyInterviews ?? analytics?.overall?.totalInterviews ?? results?.length ?? 0;
   const isAtLimit = currentInterviews >= interviewLimit;
 
   const handleLimitExceeded = () => {
-    setShowPricing(true);
+    // Students cannot upgrade — their limit is set by their university admin
+    if ((user as any)?.role !== 'student') {
+      setShowPricing(true);
+    }
   };
 
   const rounds = [

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import {
   RadarChart,
   PolarGrid,
@@ -136,6 +136,26 @@ const ResumeDashboard: React.FC = () => {
   const resumeInputRef = useRef<HTMLInputElement>(null);
   const jdInputRef = useRef<HTMLInputElement>(null);
 
+  // University data for student users
+  const [universityLimits, setUniversityLimits] = useState<{ resumeLimit: number; interviewLimit: number; name: string } | null>(null);
+  useEffect(() => {
+    if (user?.role === 'student' && user?.universityId) {
+      import('@/api/http').then(({ default: http }) => {
+        http.get(`/universities/${user.universityId}`)
+          .then(res => {
+            if (res.data?.resumeLimit != null) {
+              setUniversityLimits({
+                resumeLimit: res.data.resumeLimit,
+                interviewLimit: res.data.interviewLimit,
+                name: res.data.name,
+              });
+            }
+          })
+          .catch(() => { /* silently ignore — fallback to plan limits */ });
+      });
+    }
+  }, [user?.role, user?.universityId]);
+
   // Chart colors
   // Vibrant & Diverse Palette for Charts
   const COLORS = [
@@ -186,8 +206,13 @@ const ResumeDashboard: React.FC = () => {
     { name: 'Red Flags', value: (safeResumes[0].analytics?.key_takeaways?.red_flags?.length || 0) * 10, color: COLORS[3] }
   ].filter(d => d.value > 0) : [];
 
-  // Calculate resume limit from subscription plan features
+  // Calculate resume limit from subscription plan features (or university for students)
   const resumeLimit = useMemo(() => {
+    // Students: use their university's configured limit
+    if (user?.role === 'student') {
+      return universityLimits?.resumeLimit ?? 5;
+    }
+
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
       const limitFeature = user.subscriptionPlan.features.find(f => f.name.toLowerCase().includes('resume upload limit'));
       if (limitFeature && typeof limitFeature.value === 'number') {
@@ -207,12 +232,13 @@ const ResumeDashboard: React.FC = () => {
     }
 
     return 5; // Default free tier
-  }, [user]);
+  }, [user, universityLimits]);
 
   const isAtLimit = totalResumes >= resumeLimit;
 
-  // Determine if user is on a paid plan
+  // Determine if user is on a paid plan (students are treated as paid within their university limits)
   const isPaidUser = useMemo(() => {
+    if (user?.role === 'student') return true;
     const planName = (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object')
       ? (user.subscriptionPlan as any).name
       : user?.subscriptionPlan;
@@ -379,6 +405,16 @@ const ResumeDashboard: React.FC = () => {
                 Resume Analytics Dashboard
               </h1>
               <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base lg:text-lg">Transform your career with data-driven insights</p>
+              {/* University badge for students */}
+              {user?.role === 'student' && universityLimits && (
+                <div className="mt-2 inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                  </svg>
+                  {universityLimits.name} · Student Account
+                </div>
+              )}
             </div>
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
               {/* Usage Indicator */}
@@ -410,15 +446,18 @@ const ResumeDashboard: React.FC = () => {
                   <ArrowDownTrayIcon className="absolute right-2 top-2.5 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
                 </div>
                 <button
-                  onClick={() => isAtLimit ? setShowPricing(true) : setIsUploadOpen(true)}
+                  onClick={() => {
+                    if (!isAtLimit) { setIsUploadOpen(true); return; }
+                    if (user?.role !== 'student') setShowPricing(true);
+                  }}
                   className={`px-6 py-2 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 shadow-sm hover:shadow-md ${isAtLimit
                     ? 'bg-red-500 hover:bg-red-600 text-white border-red-400'
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
                     }`}
-                  title={isAtLimit ? "You've reached your plan limit. Upgrade for more storage." : "Upload New Resume"}
+                  title={isAtLimit ? (user?.role === 'student' ? "You've reached your university's resume limit." : "You've reached your plan limit. Upgrade for more storage.") : "Upload New Resume"}
                 >
                   {isAtLimit ? <TrendingUpIcon className="w-5 h-5" /> : <CloudArrowUpIcon className="w-5 h-5" />}
-                  {isAtLimit ? 'Upgrade Plan' : 'Upload Resume'}
+                  {isAtLimit ? (user?.role === 'student' ? 'Limit Reached' : 'Upgrade Plan') : 'Upload Resume'}
                 </button>
               </div>
             </div>

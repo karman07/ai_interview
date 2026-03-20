@@ -61,10 +61,24 @@ export default function InterviewStart() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [universityLimits, setUniversityLimits] = useState<{ resumeLimit: number; interviewLimit: number } | null>(null);
 
   useEffect(() => {
     InterviewAnalyticsApi.getAnalytics().then(setAnalytics).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if ((user as any)?.role === 'student' && (user as any)?.universityId) {
+      import('@/api/http').then(({ default: http }) => {
+        http.get(`/universities/${(user as any).universityId}`)
+          .then(res => setUniversityLimits({
+            resumeLimit: res.data?.resumeLimit ?? 5,
+            interviewLimit: res.data?.interviewLimit ?? 20,
+          }))
+          .catch(() => {});
+      });
+    }
+  }, [(user as any)?.universityId]);
 
   const types = {
     technical: { icon: <Code className="w-6 h-6" />, color: "from-blue-500 to-indigo-600", title: "Technical Round", accent: "blue" },
@@ -90,6 +104,9 @@ export default function InterviewStart() {
   }, [stats, analytics]);
 
   const interviewLimit = useMemo(() => {
+    if ((user as any)?.role === 'student') {
+      return universityLimits?.interviewLimit ?? 20;
+    }
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
       const limitFeature = (user.subscriptionPlan as any).features?.find?.(
         (f: any) => f.name === 'Interview Limit'
@@ -97,9 +114,12 @@ export default function InterviewStart() {
       if (limitFeature) return Number(limitFeature.value ?? limitFeature.limit ?? 3);
     }
     return 3; // default free tier
-  }, [user]);
+  }, [user, universityLimits]);
 
   const resumeLimit = useMemo(() => {
+    if ((user as any)?.role === 'student') {
+      return universityLimits?.resumeLimit ?? 5;
+    }
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
       const limitFeature = (user.subscriptionPlan as any).features?.find?.(
         (f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit'
@@ -107,7 +127,7 @@ export default function InterviewStart() {
       if (limitFeature) return Number(limitFeature.value ?? limitFeature.limit ?? 5);
     }
     return 5; // default free tier
-  }, [user]);
+  }, [user, universityLimits]);
 
   const totalInterviewsTaken = analytics?.overall?.totalInterviews || 0;
   const isAtLimit = totalInterviewsTaken >= interviewLimit;
@@ -115,6 +135,7 @@ export default function InterviewStart() {
   const isAtResumeLimit = totalResumes >= resumeLimit;
 
   const isPaidUser = useMemo(() => {
+    if ((user as any)?.role === 'student') return true;
     const planName = (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object')
       ? (user.subscriptionPlan as any).name
       : user?.subscriptionPlan;
@@ -234,7 +255,7 @@ export default function InterviewStart() {
 
   const handleStart = async () => {
     if (isAtLimit) {
-      setShowPricing(true);
+      if ((user as any)?.role !== 'student') setShowPricing(true);
       return;
     }
 
@@ -647,7 +668,7 @@ export default function InterviewStart() {
                       ) : isAtLimit ? (
                         <div className="flex items-center gap-3">
                           <Zap className="w-5 h-5 fill-current" />
-                          <span>Upgrade to Continue</span>
+                          <span>{(user as any)?.role === 'student' ? 'Interview Limit Reached' : 'Upgrade to Continue'}</span>
                           <ArrowRight className="w-5 h-5 opacity-50" />
                         </div>
                       ) : (
@@ -723,16 +744,18 @@ export default function InterviewStart() {
                           <div className="text-center p-4">
                             <p className="text-sm font-bold text-slate-700 dark:text-slate-300">You've reached the maximum number of resumes you can securely store.</p>
                           </div>
-                          <Button
-                            onClick={() => {
-                              setShowUploadModal(false);
-                              setShowPricing(true);
-                            }}
-                            className="w-full h-12 rounded-xl font-bold gap-2 text-white bg-blue-600 hover:bg-blue-700 shadow-lg"
-                          >
-                            <TrendingUp className="w-5 h-5" />
-                            Upgrade Plan
-                          </Button>
+                          {(user as any)?.role !== 'student' && (
+                            <Button
+                              onClick={() => {
+                                setShowUploadModal(false);
+                                setShowPricing(true);
+                              }}
+                              className="w-full h-12 rounded-xl font-bold gap-2 text-white bg-blue-600 hover:bg-blue-700 shadow-lg"
+                            >
+                              <TrendingUp className="w-5 h-5" />
+                              Upgrade Plan
+                            </Button>
+                          )}
                         </div>
                       ) : (
                         <div className="space-y-4">

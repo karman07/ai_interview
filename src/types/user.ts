@@ -1,6 +1,6 @@
 import { SubscriptionPlan } from './subscription';
 
-export type Role = 'user' | 'admin' | string;
+export type Role = 'user' | 'admin' | 'student' | string;
 
 export interface User {
   _id: string;
@@ -27,6 +27,7 @@ export interface User {
   googleId?: string;
   company?: string;
   industry?: string;
+  universityId?: string;
   createdAt?: string;
   updatedAt?: string;
 }

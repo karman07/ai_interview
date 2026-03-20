@@ -14,6 +14,7 @@ import { subscriptionService } from '@/api/subscriptionService';
 import { matchResume } from '../../api/jobService';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import http from '@/api/http';
 
 // New Components
 import JobCard from './components/JobCard';
@@ -80,14 +81,37 @@ const EmployeePortal = () => {
 
   const [showMatchResumeModal, setShowMatchResumeModal] = useState(false);
 
+  // University features + limits for student users
+  const [universityFeatures, setUniversityFeatures] = useState<string[]>([]);
+  const [universityStudentLimits, setUniversityStudentLimits] = useState<{ resumeLimit: number; interviewLimit: number } | null>(null);
+  useEffect(() => {
+    if (user?.role === 'student' && (user as any)?.universityId) {
+      http.get(`/universities/${(user as any).universityId}`)
+        .then(res => {
+          setUniversityFeatures(res.data?.allowedFeatures ?? []);
+          if (res.data?.resumeLimit != null) {
+            setUniversityStudentLimits({
+              resumeLimit: res.data.resumeLimit,
+              interviewLimit: res.data.interviewLimit ?? 10,
+            });
+          }
+        })
+        .catch(() => { /* silently ignore */ });
+    }
+  }, [(user as any)?.role, (user as any)?.universityId]);
+
   const isPaidUser = React.useMemo(() => {
+    // Students' access to premium features is gated by university allowedFeatures
+    if (user?.role === 'student') return universityFeatures.length > 0;
     const planName = (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object')
       ? (user.subscriptionPlan as any).name
       : user?.subscriptionPlan;
     return user?.subscriptionStatus === 'active' || (planName && planName !== 'free_tier_in');
-  }, [user]);
+  }, [user, universityFeatures]);
 
   const resumeLimit = React.useMemo(() => {
+    // Students: use their university's configured resume limit
+    if (user?.role === 'student') return universityStudentLimits?.resumeLimit ?? 5;
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
       const feature = (user.subscriptionPlan as any).features?.find?.(
         (f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit'
@@ -95,7 +119,7 @@ const EmployeePortal = () => {
       if (feature) return Number(feature.value ?? feature.limit ?? 5);
     }
     return 5; // default free tier
-  }, [user]);
+  }, [user, universityStudentLimits]);
 
   const loadLocations = useCallback(async () => {
     try {
@@ -588,9 +612,14 @@ const EmployeePortal = () => {
                 isResumeFiltered={isResumeFiltered}
                 clearResumeFilter={clearResumeFilter}
                 onMatchResumeClick={() => {
-                  if (!isPaidUser) {
-                    toast.error("Resume matching with AI is only available to Premium customers.");
-                    setShowPricing(true);
+                  const canMatch = isPaidUser || universityFeatures.includes('matchResume');
+                  if (!canMatch) {
+                    if (user?.role === 'student') {
+                      toast.error('Resume matching is not enabled for your university. Contact your administrator.');
+                    } else {
+                      toast.error('Resume matching with AI is only available to Premium customers.');
+                      setShowPricing(true);
+                    }
                     return;
                   }
                   setShowMatchResumeModal(true);
@@ -604,7 +633,17 @@ const EmployeePortal = () => {
                 viewMode={viewMode}
                 setViewMode={setViewMode}
                 isPaidUser={isPaidUser}
-                onUpgradeClick={() => setShowPricing(true)}
+                featureOverrides={{
+                  jobAlerts: universityFeatures.includes('jobAlerts'),
+                  matchResume: universityFeatures.includes('matchResume'),
+                }}
+                onUpgradeClick={() => {
+                  if (user?.role === 'student') {
+                    toast.error('This feature is not enabled for your university. Contact your administrator.');
+                    return;
+                  }
+                  setShowPricing(true);
+                }}
               />
             </div>
 
@@ -771,7 +810,9 @@ const EmployeePortal = () => {
           handleUnsubscribe={handleUnsubscribe}
           subscribing={subscribing}
           isPaidUser={isPaidUser}
-          onUpgradeClick={() => setShowPricing(true)}
+          onUpgradeClick={() => {
+            if (user?.role !== 'student') setShowPricing(true);
+          }}
           resumeLimit={resumeLimit}
         />
 

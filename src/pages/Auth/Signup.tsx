@@ -146,7 +146,7 @@ export default function Signup() {
           </div>
 
           {/* Google Login */}
-          <div className="mt-8">
+          <div className="mt-8 space-y-3">
             <Button
               variant="secondary"
               className="w-full py-3 flex items-center justify-center gap-3 rounded-xl shadow-sm hover:shadow-md transition"
@@ -159,6 +159,17 @@ export default function Signup() {
               />
               Continue with Google
             </Button>
+
+            <Link
+              to={routes.universityLogin}
+              className="w-full py-3 flex items-center justify-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-sm shadow-sm hover:shadow-md transition"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+              </svg>
+              Continue with University ID
+            </Link>
           </div>
         </motion.div>
       </div>

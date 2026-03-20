@@ -31,8 +31,8 @@ const TermsOfService          = lazy(() => import("@/pages/Legal/TermsOfService"
 const CookiePolicy            = lazy(() => import("@/pages/Legal/CookiePolicy"));
 const AuthPage                = lazy(() => import("./pages/Auth/AuthPage"));
 const VerifyEmail             = lazy(() => import("./pages/Auth/VerifyEmail"));
-const VerifyPhone             = lazy(() => import("./pages/Auth/VerifyPhone"));
-const Profile                 = lazy(() => import("./pages/Profile/Profile"));
+const VerifyPhone             = lazy(() => import("./pages/Auth/VerifyPhone"));const UniversityLogin         = lazy(() => import('./pages/Auth/UniversityLogin'));
+const StudentDashboard        = lazy(() => import('./pages/Student/StudentDashboard'));const Profile                 = lazy(() => import("./pages/Profile/Profile"));
 const ResumeDashboard         = lazy(() => import("@/pages/Dashboard/ResumeDashboard"));
 const InterviewApp            = lazy(() => import("./pages/Interview/Interview"));
 const ResourcesHub            = lazy(() => import("./pages/Resources/Resources"));
@@ -73,6 +73,7 @@ function App() {
     routes.signup,
     routes.verifyEmail,
     routes.verifyPhone,
+    routes.universityLogin,
     routes.profile,
     routes.dashboard,
     routes.interview,
@@ -183,6 +184,19 @@ function App() {
 
                     {/* Verify Phone - requires JWT, accessible while logged in but phone unverified */}
                     <Route path={routes.verifyPhone} element={<VerifyPhone />} />
+
+                    {/* University Student Login */}
+                    <Route
+                      path={routes.universityLogin}
+                      element={
+                        <RedirectIfLoggedIn>
+                          <UniversityLogin />
+                        </RedirectIfLoggedIn>
+                      }
+                    />
+
+                    {/* Student Dashboard — redirect to main dashboard (students use the same UI with university limits) */}
+                    <Route path={routes.studentDashboard} element={<Navigate to={routes.dashboard} replace />} />
 
                     {/* Protected Routes */}
                     <Route element={<ProtectedRoute />}>
