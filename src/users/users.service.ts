@@ -50,6 +50,10 @@ export class UsersService {
     return this.userModel.findOne({ googleId }).exec();
   }
 
+  async findByPhoneNumber(phoneNumber: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ phoneNumber }).exec();
+  }
+
   async findByRazorpaySubscriptionId(id: string): Promise<UserDocument | null> {
     return this.userModel.findOne({ razorpaySubscriptionId: id }).exec();
   }

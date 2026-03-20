@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Res, UseGuards, Get, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { Body, Controller, Post, Res, UseGuards, Get, HttpException, HttpStatus, Logger, ConflictException } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
@@ -84,6 +84,30 @@ export class AuthController {
       this.logger.error('Logout failed:', error.message);
       throw new HttpException(error.message || 'Logout failed', HttpStatus.BAD_REQUEST);
     }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('verify-phone')
+  async verifyPhone(@Body() body: { firebaseIdToken: string }, @CurrentUser() user: any) {
+    try {
+      return await this.auth.verifyPhone(user.sub, body.firebaseIdToken);
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw new HttpException(error.message, HttpStatus.CONFLICT);
+      }
+      this.logger.error('Phone verification failed:', error.message);
+      throw new HttpException(error.message || 'Phone verification failed', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('check-phone')
+  async checkPhone(@Body() body: { phoneNumber: string }, @CurrentUser() user: any) {
+    const full = body.phoneNumber?.trim();
+    if (!full) return { taken: false };
+    const existing = await this.auth.findUserByPhone(full);
+    const taken = !!(existing && existing._id.toString() !== user.sub);
+    return { taken };
   }
 
   @Post('refresh')

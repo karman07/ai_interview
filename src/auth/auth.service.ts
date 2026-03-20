@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -129,6 +129,34 @@ export class AuthService {
     const tokens = await this.issueTokens(userId, email, user.role);
     await this.saveRefresh(userId, tokens.refreshToken);
     return tokens;
+  }
+
+  async findUserByPhone(phoneNumber: string) {
+    return this.usersService.findByPhoneNumber(phoneNumber);
+  }
+
+  async verifyPhone(userId: string, firebaseIdToken: string) {
+    const decoded = await this.firebase.verifyIdToken(firebaseIdToken);
+    const phoneNumber = (decoded as any).phone_number as string | undefined;
+
+    if (!phoneNumber) {
+      throw new UnauthorizedException('Token does not contain a verified phone number');
+    }
+
+    // Ensure phone not already used by another account
+    const existing = await this.usersService.findByPhoneNumber(phoneNumber);
+    if (existing && existing._id.toString() !== userId) {
+      throw new ConflictException(
+        'This phone number is already associated with another account. Please use a different number.',
+      );
+    }
+
+    await this.usersService.updateProfile(userId, {
+      phoneNumber,
+      isPhoneVerified: true,
+    } as any);
+
+    return { success: true, phoneNumber };
   }
 
   async logout(userId: string) {

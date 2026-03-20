@@ -17,6 +17,10 @@ export class FirebaseService implements OnModuleInit {
     return admin.auth().verifyIdToken(idToken);
   }
 
+  async verifyIdToken(idToken: string) {
+    return admin.auth().verifyIdToken(idToken);
+  }
+
   async getUserByEmail(email: string) {
     return admin.auth().getUserByEmail(email);
   }
