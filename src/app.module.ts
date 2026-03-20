@@ -42,6 +42,7 @@ import { JobsModule } from './jobs/jobs.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AiConfigModule } from './ai-config/ai-config.module';
+import { UniversitiesModule } from './universities/universities.module';
 
 @Module({
   imports: [
@@ -88,6 +89,7 @@ import { AiConfigModule } from './ai-config/ai-config.module';
     JobsModule,
     ReviewsModule,
     AiConfigModule,
+    UniversitiesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -7,12 +7,14 @@ import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { FirebaseModule } from 'src/common/firebase/firebase.module';
 import { EmailModule } from '../email/email.module';
+import { UniversitiesModule } from '../universities/universities.module';
 
 @Module({
   imports: [
     UsersModule,
     FirebaseModule,
     EmailModule,
+    UniversitiesModule,
     JwtModule.register({}), // config provided at call time in service
   ],
   controllers: [AuthController],

@@ -42,6 +42,22 @@ export class UsersController {
     return safe;
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch('admin/:id/verify')
+  async adminVerifyUser(
+    @Param('id') id: string,
+    @Body() body: { isEmailVerified?: boolean; isPhoneVerified?: boolean },
+  ) {
+    const updated = await this.usersService.adminVerifyUser(
+      id,
+      body.isEmailVerified,
+      body.isPhoneVerified,
+    );
+    const { passwordHash, refreshTokenHash, ...safe } = (updated as any).toObject();
+    return safe;
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@CurrentUser() user: any) {

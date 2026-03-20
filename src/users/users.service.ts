@@ -120,4 +120,20 @@ export class UsersService {
     if (!updated) throw new NotFoundException('User not found');
     return updated;
   }
+
+  async adminVerifyUser(
+    userId: string,
+    isEmailVerified?: boolean,
+    isPhoneVerified?: boolean,
+  ): Promise<UserDocument> {
+    const update: any = {};
+    if (isEmailVerified !== undefined) update.isEmailVerified = isEmailVerified;
+    if (isPhoneVerified !== undefined) update.isPhoneVerified = isPhoneVerified;
+    const updated = await this.userModel
+      .findByIdAndUpdate(userId, update, { new: true })
+      .populate('subscriptionPlan')
+      .exec();
+    if (!updated) throw new NotFoundException('User not found');
+    return updated;
+  }
 }

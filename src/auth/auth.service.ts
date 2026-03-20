@@ -6,6 +6,7 @@ import { CreateUserDto } from '../users/dto/create-user.dto';
 import { UserDocument, UserRole } from '../users/schemas/user.schema';
 import { FirebaseService } from '../common/firebase/firebase.service';
 import { EmailService } from '../email/email.service';
+import { UniversitiesService } from '../universities/universities.service';
 
 @Injectable()
 export class AuthService {
@@ -14,6 +15,7 @@ export class AuthService {
     private jwt: JwtService,
     private firebase: FirebaseService,
     private email: EmailService,
+    private universities: UniversitiesService,
   ) { }
 
   async signup(dto: CreateUserDto) {
@@ -133,6 +135,108 @@ export class AuthService {
 
   async findUserByPhone(phoneNumber: string) {
     return this.usersService.findByPhoneNumber(phoneNumber);
+  }
+
+  async studentLogin(email: string, password: string, rollNumber?: string) {
+    if (!email || !password) throw new UnauthorizedException('Email and password are required');
+
+    const domain = email.split('@')[1]?.toLowerCase();
+    if (!domain) throw new UnauthorizedException('Invalid email address');
+
+    const university = await this.universities.findByDomain(domain);
+    if (!university) {
+      throw new UnauthorizedException('Your email domain is not associated with any registered university.');
+    }
+
+    // Find or auto-create the student account
+    let user = await this.usersService.findByEmail(email);
+    if (!user) {
+      // Auto-register as student with that university's limits
+      user = await this.usersService.create({
+        name: email.split('@')[0],
+        email,
+        password,
+        role: UserRole.STUDENT,
+        isEmailVerified: true, // university email implicitly trusted
+        universityId: university._id.toString(),
+        rollNumber: rollNumber || undefined,
+        resumeCount: 0,
+        interviewCount: 0,
+      });
+    } else {
+      // Existing user: verify password
+      if (!user.passwordHash) throw new UnauthorizedException('Please use Google login or reset your password');
+      const valid = await bcrypt.compare(password, user.passwordHash);
+      if (!valid) throw new UnauthorizedException('Wrong password');
+      // Ensure student role and universityId are set; update rollNumber if provided
+      if (user.role !== UserRole.STUDENT || !user.universityId || (rollNumber && user.rollNumber !== rollNumber)) {
+        user.role = UserRole.STUDENT;
+        user.universityId = university._id.toString();
+        if (rollNumber) user.rollNumber = rollNumber;
+        await user.save();
+      }
+    }
+
+    const tokens = await this.issueTokens(user._id.toString(), user.email, user.role);
+    await this.saveRefresh(user._id.toString(), tokens.refreshToken);
+
+    const { passwordHash, refreshTokenHash, ...safe } = user.toObject();
+    return { user: { ...safe, university }, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken };
+  }
+
+  async studentGoogleLogin(idToken: string, universityId: string, rollNumber?: string) {
+    const decoded = await this.firebase.verifyGoogleToken(idToken);
+
+    const emailDomain = decoded.email?.split('@')[1]?.toLowerCase();
+    if (!emailDomain) throw new UnauthorizedException('Invalid email in Google token');
+
+    // Verify the Google email domain matches the selected university
+    const university = await this.universities.findById(universityId);
+    if (!university) throw new UnauthorizedException('University not found.');
+    if (emailDomain !== university.domain.toLowerCase()) {
+      throw new UnauthorizedException(
+        `Your Google account email must use the @${university.domain} domain to sign in as a student of this university.`,
+      );
+    }
+
+    let user = await this.usersService.findByGoogleId(decoded.uid);
+    if (!user) {
+      user = await this.usersService.findByEmail(decoded.email);
+      if (!user) {
+        user = await this.usersService.createGoogleUser({
+          name: decoded.name ?? decoded.email.split('@')[0],
+          email: decoded.email,
+          googleId: decoded.uid,
+          profileImageUrl: decoded.picture,
+          isEmailVerified: true,
+          role: UserRole.STUDENT,
+          universityId: university._id.toString(),
+          rollNumber: rollNumber || undefined,
+        } as any);
+        await this.email.sendWelcomeEmail(user.email);
+      } else {
+        user.googleId = decoded.uid;
+        user.isEmailVerified = true;
+        user.role = UserRole.STUDENT;
+        user.universityId = university._id.toString();
+        if (rollNumber) user.rollNumber = rollNumber;
+        await user.save();
+      }
+    } else {
+      // Existing google user — ensure student fields are set
+      if (user.role !== UserRole.STUDENT || !user.universityId || (rollNumber && user.rollNumber !== rollNumber)) {
+        user.role = UserRole.STUDENT;
+        user.universityId = university._id.toString();
+        if (rollNumber) user.rollNumber = rollNumber;
+        await user.save();
+      }
+    }
+
+    const tokens = await this.issueTokens(user._id.toString(), user.email, user.role);
+    await this.saveRefresh(user._id.toString(), tokens.refreshToken);
+
+    const { passwordHash, refreshTokenHash, ...safe } = user.toObject();
+    return { user: { ...safe, university }, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken };
   }
 
   async verifyPhone(userId: string, firebaseIdToken: string) {

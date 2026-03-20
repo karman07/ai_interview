@@ -5,7 +5,9 @@ export type UserDocument = User & Document;
 
 export enum UserRole {
   USER = 'user',
-  ADMIN = 'admin'
+  STUDENT = 'student',
+  ADMIN = 'admin',
+  UNIVERSITY_TEACHER = 'university_teacher',
 }
 
 @Schema({ timestamps: true })
@@ -85,6 +87,12 @@ export class User {
 
   @Prop()
   googleId?: string;
+
+  @Prop({ type: String })
+  universityId?: string; // ref to University._id (string for simplicity)
+
+  @Prop({ type: String })
+  rollNumber?: string; // university roll / registration number
 
   // Timestamps (automatically added by Mongoose)
   createdAt?: Date;

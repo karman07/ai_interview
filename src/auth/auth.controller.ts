@@ -110,6 +110,33 @@ export class AuthController {
     return { taken };
   }
 
+  @Post('student-google-login')
+  async studentGoogleLogin(
+    @Body() body: { idToken: string; universityId: string; rollNumber?: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    try {
+      const result = await this.auth.studentGoogleLogin(body.idToken, body.universityId, body.rollNumber);
+      res.cookie('refresh_token', result.refreshToken, { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 7 * 24 * 3600 * 1000, path: '/' });
+      return result;
+    } catch (error: any) {
+      this.logger.error('Student Google login failed:', error.message);
+      throw new HttpException(error.message || 'Student Google login failed', HttpStatus.UNAUTHORIZED);
+    }
+  }
+
+  @Post('student-login')
+  async studentLogin(@Body() body: { email: string; password: string; rollNumber?: string }, @Res({ passthrough: true }) res: Response) {
+    try {
+      const result = await this.auth.studentLogin(body.email, body.password, body.rollNumber);
+      res.cookie('refresh_token', result.refreshToken, { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 7 * 24 * 3600 * 1000, path: '/' });
+      return { user: result.user, accessToken: result.accessToken, refreshToken: result.refreshToken };
+    } catch (error) {
+      this.logger.error('Student login failed:', error.message);
+      throw new HttpException(error.message || 'Login failed', HttpStatus.UNAUTHORIZED);
+    }
+  }
+
   @Post('refresh')
   async refresh(@Body() body: { userId: string; email: string }, @Res({ passthrough: true }) res: Response) {
     try {
