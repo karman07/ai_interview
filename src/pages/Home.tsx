@@ -156,7 +156,7 @@ const HeroSection = ({ onStart, onResume }: { onStart: () => void; onResume: () 
           <div className="flex -space-x-2">
             {[
               { url: "https://media.licdn.com/dms/image/v2/D5603AQExDIe-7STGWA/profile-displayphoto-scale_400_400/B56ZyFUCf2KgAg-/0/1771763150880?e=1775088000&v=beta&t=yymUWoQVpxkID74wX9x6Exxm0zdoBKWECrThJjaDG80", name: "Karman" },
-              { url: "https://media.licdn.com/dms/image/v2/D5635AQFDzXGekpeRgQ/profile-framedphoto-shrink_400_400/B56ZfMjNCUG0Ak-/0/1751483470343?e=1773997200&v=beta&t=Avfj6RzGFoO0xhJbyy_4RVocRAMaGJh9JYkO7HBQnCg", name: "Rahat" },
+              { url: "https://media.licdn.com/dms/image/v2/D5635AQFDzXGekpeRgQ/profile-framedphoto-shrink_400_400/B56ZfMjNCUG0Ak-/0/1751483470343?e=1774792800&v=beta&t=68sAk2OnN0hKiz7fdklgk4BboV5O7uZQF0D-KXInAtA", name: "Rahat" },
               { url: "https://media.licdn.com/dms/image/v2/D5603AQHCK_ANQCya4Q/profile-displayphoto-scale_400_400/B56ZyjXnt1HQAg-/0/1772267407833?e=1775088000&v=beta&t=5ZI6FkyIGfMJIKFEPBLdqtfFb9j2odZsQpMOXQQQr_o", name: "Advitya" },
             ].map((p, i) => (
               <img key={i} src={p.url} alt={p.name} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-950 object-cover" />
@@ -369,7 +369,7 @@ const testimonials = [
   },
   {
     name: "Rahat Bhatia", role: "Student at UCSD", avatar: "R",
-    img: "https://media.licdn.com/dms/image/v2/D5635AQFDzXGekpeRgQ/profile-framedphoto-shrink_400_400/B56ZfMjNCUG0Ak-/0/1751483470343?e=1773997200&v=beta&t=Avfj6RzGFoO0xhJbyy_4RVocRAMaGJh9JYkO7HBQnCg",
+    img: "https://media.licdn.com/dms/image/v2/D5635AQFDzXGekpeRgQ/profile-framedphoto-shrink_400_400/B56ZfMjNCUG0Ak-/0/1751483470343?e=1774792800&v=beta&t=68sAk2OnN0hKiz7fdklgk4BboV5O7uZQF0D-KXInAtA",
     text: "I wasn't receiving any calls back on my resume until I ran it through the ATS analyzer. The keyword gap report said that 38% of the roles I was interested in matched. Interviews started rolling in within two weeks of following the advice. That and mock prep cemented the deal.",
     stars: 5,
   },
