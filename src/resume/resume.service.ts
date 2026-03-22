@@ -318,6 +318,15 @@ export class ResumeService {
     }
   }
 
+  async saveBuilderData(resumeId: string, userId: string, builderData: Record<string, any>) {
+    const resume = await this.resumeModel.findById(resumeId);
+    if (!resume) throw new NotFoundException('Resume not found');
+    if (resume.user.toString() !== userId) throw new BadRequestException('Unauthorized');
+    resume.builder_data = builderData;
+    await resume.save();
+    return { message: 'Builder data saved', id: resumeId };
+  }
+
   async deleteResume(resumeId: string, userId: string) {
     const resume = await this.resumeModel.findById(resumeId);
     if (!resume) {

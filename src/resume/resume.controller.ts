@@ -159,6 +159,7 @@ export class ResumeController {
         url: resume.url,
         text: resume.text || "",
         createdAt: resume.createdAt,
+        builder_data: resume.builder_data || null,
         analytics: {
           cv_quality: stats.cv_quality || null,
           jd_match: stats.jd_match || null,
@@ -270,6 +271,17 @@ export class ResumeController {
       this.logger.error('💥 Resume improvement failed:', error.message);
       throw error;
     }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('save-builder/:id')
+  async saveBuilderData(
+    @Param('id') id: string,
+    @Body() body: { builder_data: Record<string, any> },
+    @Req() req,
+  ) {
+    const userId = req.user.sub;
+    return this.resumeService.saveBuilderData(id, userId, body.builder_data);
   }
 
   @UseGuards(JwtAuthGuard)

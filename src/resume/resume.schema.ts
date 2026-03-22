@@ -27,6 +27,10 @@ export class Resume {
   @Prop({ required: false, default: "" })
   text: string;
 
+  // ✅ Cached AI-built resume JSON (avoids re-generating and burning tokens)
+  @Prop({ type: Object, required: false, default: null })
+  builder_data: Record<string, any> | null;
+
   @Prop({ type: Types.ObjectId, ref: User.name, required: true })
   user: User;
 
