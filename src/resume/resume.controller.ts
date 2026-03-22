@@ -160,6 +160,7 @@ export class ResumeController {
         text: resume.text || "",
         createdAt: resume.createdAt,
         builder_data: resume.builder_data || null,
+        is_platform_generated: resume.is_platform_generated || false,
         analytics: {
           cv_quality: stats.cv_quality || null,
           jd_match: stats.jd_match || null,

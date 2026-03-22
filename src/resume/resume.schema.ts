@@ -31,6 +31,10 @@ export class Resume {
   @Prop({ type: Object, required: false, default: null })
   builder_data: Record<string, any> | null;
 
+  // ✅ True when this resume was downloaded from our Resume Builder (AIForJob-Platform metadata detected)
+  @Prop({ required: false, default: false })
+  is_platform_generated: boolean;
+
   @Prop({ type: Types.ObjectId, ref: User.name, required: true })
   user: User;
 
