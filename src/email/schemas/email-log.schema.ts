@@ -10,7 +10,7 @@ export class EmailLog {
 
   @Prop({
     required: true,
-    enum: ['welcome', 'daily_update', 'payment_success', 'subscription_cancelled', 'other'],
+    enum: ['welcome', 'daily_update', 'payment_success', 'subscription_cancelled', 'university_report', 'other'],
     default: 'other',
   })
   type: string;

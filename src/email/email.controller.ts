@@ -7,6 +7,7 @@ import { EmailSubscription, EmailSubscriptionDocument } from './schemas/email-su
 import { EmailLog, EmailLogDocument } from './schemas/email-log.schema';
 import { MailConfig, MailConfigDocument } from './schemas/mail-config.schema';
 import { EmailSchedulerService } from './email-scheduler.service';
+import { UniversityReportSchedulerService } from './university-report-scheduler.service';
 import { EmailService } from './email.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -22,6 +23,7 @@ export class EmailController {
     @InjectModel(EmailLog.name) private emailLogModel: Model<EmailLogDocument>,
     @InjectModel(MailConfig.name) private mailConfigModel: Model<MailConfigDocument>,
     private schedulerService: EmailSchedulerService,
+    private universityReportScheduler: UniversityReportSchedulerService,
     private emailService: EmailService,
   ) { }
 
@@ -284,5 +286,47 @@ export class EmailController {
   async sendTestEmail(@Body() body: { to: string }) {
     const result = await this.emailService.sendWelcomeEmail(body.to);
     return { success: result, message: result ? 'Test email sent successfully' : 'Failed to send — check your config' };
+  }
+
+  // ── University report routes ─────────────────────────────────────────────────
+
+  /**
+   * POST /email/university-report/trigger-all
+   * Admin-only: trigger weekly reports for ALL active universities immediately.
+   */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('university-report/trigger-all')
+  async triggerAllUniversityReports() {
+    const result = await this.universityReportScheduler.dispatchAllUniversityReports();
+    return {
+      success: true,
+      message: `Reports dispatched for ${result.universities} universities`,
+      ...result,
+    };
+  }
+
+  /**
+   * POST /email/university-report/trigger/:universityId
+   * Admin OR teacher of that university: trigger report for a single university.
+   */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.UNIVERSITY_TEACHER)
+  @Post('university-report/trigger/:universityId')
+  async triggerUniversityReport(
+    @Param('universityId') universityId: string,
+    @CurrentUser() user: any,
+  ) {
+    // Teachers can only trigger reports for their own university
+    if (user.role === UserRole.UNIVERSITY_TEACHER && user.universityId !== universityId) {
+      return { success: false, message: 'Access denied — you can only trigger reports for your own university' };
+    }
+
+    const result = await this.universityReportScheduler.dispatchReportForUniversity(universityId);
+    return {
+      success: true,
+      message: `Report sent: ${result.sent} delivered, ${result.failed} failed`,
+      ...result,
+    };
   }
 }
