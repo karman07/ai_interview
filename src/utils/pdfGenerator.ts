@@ -811,6 +811,21 @@ export function generateResumeFromBuilderData(
     const name: string = pi?.name || pi?.fullName || pi?.full_name || 'Resume';
 
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+    // ── Platform metadata (used for origin detection on re-upload) ─────────────
+    doc.setProperties({
+        title: name,
+        creator: 'AIForJob-Platform',
+        keywords: 'aiforjob-platform-generated',
+        subject: 'AIForJob-Platform-Generated-Resume',
+    });
+    // Invisible marker text (font-size 1pt, white on white) — survives in the PDF
+    // text layer so pdf-parse picks it up even when metadata is stripped by a tool.
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(1);
+    doc.setTextColor(255, 255, 255);
+    doc.text('AIFORJOB-PLATFORM-GENERATED-v1', 0, 1);
+
     const PW = 210, ML = 14, MR = 14, CW = PW - ML - MR;
     let y = 18;
 

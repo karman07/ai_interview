@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   EyeIcon,
   FileText,
@@ -33,10 +33,11 @@ import ResumeBuilder from "@/pages/ResumeBuilder";
 
 interface ResumeDetailsProps {
   resume: any;
+  autoOpenBuilder?: boolean;
   onBuilderDataSaved?: (builderData: any) => void;
 }
 
-const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, onBuilderDataSaved }) => {
+const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, autoOpenBuilder, onBuilderDataSaved }) => {
   const { setShowPricing } = usePricing();
   const { addNotification } = useNotification();
   const { user } = useAuth();
@@ -52,12 +53,20 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, onBuilderDataSave
   const [isDownloadingResume, setIsDownloadingResume] = useState(false);
   const [showProgressDialog, setShowProgressDialog] = useState(false);
   const [progress, setProgress] = useState(0);
-  // Pre-seed from cached DB data so we never regenerate after a remount
-  const [enhancedResumeData, setEnhancedResumeData] = useState<any>(resume?.builder_data || null);
   const [showBuilderModal, setShowBuilderModal] = useState(false);
 
+  // Auto-open builder when navigated here from "Open Enhanced" shortcut
+  useEffect(() => {
+    if (autoOpenBuilder && resume?.builder_data) {
+      setShowBuilderModal(true);
+    }
+  }, [autoOpenBuilder, resume?.builder_data]);
+
   const hasImprovement = Boolean(resume?.enhancement);
-  const hasBuilderData = !!(enhancedResumeData || resume?.builder_data);
+  // DB is the single source of truth — no local state caching
+  const hasBuilderData = !!resume?.builder_data;
+  // True when this resume was downloaded from our own Resume Builder
+  const isPlatformGenerated = !!resume?.is_platform_generated;
   const hasJDMatch = Boolean(resume?.analytics?.jd_match?.subscores?.length > 0);
   const overallScore = Math.round(resume.analytics?.overall_score || resume.analytics?.cv_quality?.overall_score || 0);
   const sections = resume.analytics?.sections || resume.analytics?.cv_quality?.subscores || [];
@@ -66,28 +75,19 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, onBuilderDataSave
 
 
   const handleViewEnhancedResume = async () => {
-    // If we already fetched it this session, open immediately
-    if (enhancedResumeData) {
-      setShowBuilderModal(true);
-      return;
-    }
-
-    // If the DB already has cached builder data, use it — no AI call needed
+    // DB has it — open immediately, no AI call
     if (resume?.builder_data) {
-      setEnhancedResumeData(resume.builder_data);
       setShowBuilderModal(true);
       return;
     }
 
+    // Not in DB yet — generate once, save, done
     setIsDownloadingResume(true);
     setShowProgressDialog(true);
     setProgress(0);
 
     const progressInterval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 90) return prev;
-        return prev + Math.random() * 15;
-      });
+      setProgress(prev => prev >= 90 ? prev : prev + Math.random() * 15);
     }, 500);
 
     try {
@@ -96,9 +96,20 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, onBuilderDataSave
 
       clearInterval(progressInterval);
       setProgress(100);
-
-      setEnhancedResumeData(data);
       setShowProgressDialog(false);
+
+      // Save to DB and push up to parent — this makes resume.builder_data truthy
+      const resumeId = resume?._id || resume?.id;
+      if (resumeId) {
+        try {
+          await resumeService.saveBuilderData(resumeId, data);
+          onBuilderDataSaved?.(data);
+        } catch {
+          // save failed — still open the builder for this session
+          onBuilderDataSaved?.(data);
+        }
+      }
+
       setShowBuilderModal(true);
 
       addNotification({
@@ -106,30 +117,11 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, onBuilderDataSave
         title: 'Resume Ready!',
         message: 'Your enhanced resume is open in the builder.',
       });
-
-      // Persist to DB so future views don't re-generate
-      if (resume?._id || resume?.id) {
-        const resumeId = resume._id || resume.id;
-        resumeService.saveBuilderData(resumeId, data)
-          .then(() => {
-            // Push builder_data back to parent so selectedResume stays fresh
-            onBuilderDataSaved?.(data);
-          })
-          .catch(() => {
-            // Non-critical — silently ignore save failures
-          });
-      }
     } catch (error: any) {
       clearInterval(progressInterval);
-
       const errorMsgRaw = error?.response?.data?.detail || error?.message || 'Failed to generate enhanced resume.';
       const errorMsg = typeof errorMsgRaw === 'object' ? JSON.stringify(errorMsgRaw) : errorMsgRaw;
-
-      addNotification({
-        type: 'error',
-        title: 'Enhancement Failed',
-        message: errorMsg,
-      });
+      addNotification({ type: 'error', title: 'Enhancement Failed', message: errorMsg });
       setShowProgressDialog(false);
     } finally {
       setIsDownloadingResume(false);
@@ -158,6 +150,11 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, onBuilderDataSave
                   <p className="text-gray-600 dark:text-gray-400 mt-1 text-xs sm:text-sm">
                     Resume Analysis Dashboard
                   </p>
+                  {isPlatformGenerated && (
+                    <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700">
+                      ✦ Generated by AIForJob™
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="text-center md:text-right">
@@ -266,7 +263,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, onBuilderDataSave
             onClick={() => window.location.href = `/interview_round`}
           />
 
-          {!hasImprovement && (
+          {!hasImprovement && !isPlatformGenerated && (
             <>
               <ActionCard
                 icon={<Upload className="w-5 h-5 text-green-600" />}
@@ -413,7 +410,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, onBuilderDataSave
             </>
           )}
 
-          {hasImprovement && (
+          {hasImprovement && !isPlatformGenerated && (
             <ActionCard
               icon={<Download className="w-5 h-5 text-blue-600" />}
               title={hasBuilderData ? 'Enhanced Resume Ready' : 'View Enhanced Resume'}
@@ -425,6 +422,19 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, onBuilderDataSave
                 >
                   {isDownloadingResume ? 'Loading...' : hasBuilderData ? 'Open Resume Builder →' : 'Generate & Open →'}
                 </button>
+              }
+              color="gray"
+            />
+          )}
+
+          {isPlatformGenerated && (
+            <ActionCard
+              icon={<Award className="w-5 h-5 text-violet-600" />}
+              title="AIForJob™ Enhanced"
+              subtitle={
+                <span className="text-violet-600 text-sm font-medium">
+                  This resume was built by our AI — already optimized ✓
+                </span>
               }
               color="gray"
             />
@@ -472,9 +482,9 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, onBuilderDataSave
           {/* Builder Modal */}
           <Dialog open={showBuilderModal} onOpenChange={setShowBuilderModal}>
             <DialogContent className="max-w-[95vw] w-full h-[95vh] p-0 m-0 overflow-y-auto bg-gray-100 flex flex-col pt-10">
-              {enhancedResumeData && (
+              {resume?.builder_data && (
                 <div className="relative min-h-full">
-                  <ResumeBuilder initialResumeData={enhancedResumeData} />
+                  <ResumeBuilder initialResumeData={resume.builder_data} />
                 </div>
               )}
             </DialogContent>

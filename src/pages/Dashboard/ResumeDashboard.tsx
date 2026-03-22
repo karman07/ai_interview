@@ -5,9 +5,6 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
-  PieChart,
-  Pie,
-  Cell,
   CartesianGrid,
   XAxis,
   YAxis,
@@ -128,6 +125,7 @@ const ResumeDashboard: React.FC = () => {
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [selectedResume, setSelectedResume] = useState<Resume | null>(null);
+  const [autoOpenBuilder, setAutoOpenBuilder] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [jdFile, setJDFile] = useState<File | null>(null);
   const [jdText, setJDText] = useState<string>('');
@@ -156,6 +154,12 @@ const ResumeDashboard: React.FC = () => {
     }
   }, [user?.role, user?.universityId]);
 
+  // Track hovered chart point for stable open-button below chart
+  const [hoveredPoint, setHoveredPoint] = useState<{ resumeIndex: number; fullName: string; cvQuality: number; jdMatch: number } | null>(null);
+
+  // Double-click detection for chart points
+  const lastClickRef = useRef<{ resumeIndex: number; time: number } | null>(null);
+
   // Chart colors
   // Vibrant & Diverse Palette for Charts
   const COLORS = [
@@ -182,13 +186,16 @@ const ResumeDashboard: React.FC = () => {
     const jdMatchScore = Math.round(r.analytics?.jd_match?.overall_score || 0);
     const greenFlags = r.analytics?.key_takeaways?.green_flags?.length || 0;
     const redFlags = r.analytics?.key_takeaways?.red_flags?.length || 0;
+    const shortName = (r.filename || `Resume ${index + 1}`).replace(/\.[^/.]+$/, '').slice(0, 16) + ((r.filename || '').replace(/\.[^/.]+$/, '').length > 16 ? '…' : '');
     return {
-      name: `Resume ${index + 1}`,
+      name: shortName,
+      fullName: r.filename || `Resume ${index + 1}`,
       date: new Date(r.createdAt).toLocaleDateString(),
       cvQuality: cvQualityScore,
       jdMatch: jdMatchScore,
       greenFlags: greenFlags,
-      redFlags: redFlags
+      redFlags: redFlags,
+      resumeIndex: index,
     };
   });
 
@@ -199,12 +206,13 @@ const ResumeDashboard: React.FC = () => {
     evidence: sub.evidence
   })) : [];
 
-  const pieData = safeResumes.length > 0 ? [
-    { name: 'CV Quality', value: safeResumes[0].analytics?.cv_quality?.overall_score || 0, color: COLORS[0] },
-    { name: 'JD Match', value: safeResumes[0].analytics?.jd_match?.overall_score || 0, color: COLORS[2] },
-    { name: 'Green Flags', value: (safeResumes[0].analytics?.key_takeaways?.green_flags?.length || 0) * 10, color: COLORS[1] },
-    { name: 'Red Flags', value: (safeResumes[0].analytics?.key_takeaways?.red_flags?.length || 0) * 10, color: COLORS[3] }
-  ].filter(d => d.value > 0) : [];
+  // Score distribution: one slice per resume, sized by CV quality score
+  const pieData = safeResumes.map((r, i) => ({
+    name: (r.filename || `Resume ${i + 1}`).replace(/\.[^/.]+$/, '').slice(0, 20),
+    value: Math.round(r.analytics?.cv_quality?.overall_score || 0) || 1,
+    color: COLORS[i % COLORS.length],
+    resumeIndex: i,
+  }));
 
   // Calculate resume limit from subscription plan features (or university for students)
   const resumeLimit = useMemo(() => {
@@ -543,52 +551,107 @@ const ResumeDashboard: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8">
               {/* Performance Trends */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center gap-3">
-                  <TrendingUpIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
-                  Performance Trends
-                </h3>
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
+                    <TrendingUpIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+                    Performance Trends
+                  </h3>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">Click a point → open resume</span>
+                </div>
                 {performanceData.length > 0 ? (
-                  <div className="h-[200px] sm:h-[300px] w-full mt-4 sm:mt-6">
+                  <>
+                  <div className="h-[220px] sm:h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={performanceData}>
+                      <AreaChart
+                        data={performanceData}
+                        onClick={(e: any) => {
+                          const idx = e?.activePayload?.[0]?.payload?.resumeIndex;
+                          if (idx == null) return;
+                          const now = Date.now();
+                          if (lastClickRef.current?.resumeIndex === idx && now - lastClickRef.current.time < 400) {
+                            setSelectedResume(safeResumes[idx]);
+                            lastClickRef.current = null;
+                          } else {
+                            lastClickRef.current = { resumeIndex: idx, time: now };
+                          }
+                        }}
+                        onMouseMove={(e: any) => {
+                          const p = e?.activePayload?.[0]?.payload;
+                          if (p?.resumeIndex != null) {
+                            setHoveredPoint({ resumeIndex: p.resumeIndex, fullName: p.fullName, cvQuality: p.cvQuality, jdMatch: p.jdMatch });
+                          }
+                        }}
+                        onMouseLeave={() => setHoveredPoint(null)}
+                        style={{ cursor: 'pointer' }}
+                      >
                         <defs>
                           <linearGradient id="colorCV" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.25} />
                             <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
                           </linearGradient>
-                          <linearGradient id="colorGreen" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
-                          </linearGradient>
                           <linearGradient id="colorJD" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                            <stop offset="5%" stopColor="#10B981" stopOpacity={0.25} />
                             <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
                           </linearGradient>
-                          <linearGradient id="colorRed" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
-                          </linearGradient>
                         </defs>
-                        <XAxis dataKey="name" stroke="#6B7280" fontSize={10} hide={window.innerWidth < 640} />
-                        <YAxis stroke="#6B7280" fontSize={10} width={30} />
+                        <XAxis
+                          dataKey="resumeIndex"
+                          stroke="#9CA3AF"
+                          fontSize={11}
+                          tick={{ fill: '#6B7280', fontWeight: 600 }}
+                          tickFormatter={(v) => `#${Number(v) + 1}`}
+                          interval={0}
+                          height={28}
+                        />
+                        <YAxis stroke="#9CA3AF" fontSize={10} width={28} domain={[0, 100]} tick={{ fill: '#6B7280' }} />
                         <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
                         <Tooltip
-                          contentStyle={{
-                            backgroundColor: 'white',
-                            border: '1px solid #E5E7EB',
-                            borderRadius: '12px',
-                            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                            fontSize: '12px'
+                          content={({ active, payload }) => {
+                            if (!active || !payload?.length) return null;
+                            const d = payload[0].payload;
+                            return (
+                              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl p-3 text-xs min-w-[180px]">
+                                <p className="font-bold text-gray-900 dark:text-white mb-2 truncate max-w-[200px]">{d.fullName}</p>
+                                <p className="text-gray-400 dark:text-gray-500 mb-2">{d.date}</p>
+                                {payload.map((p: any) => (
+                                  <div key={p.dataKey} className="flex items-center justify-between gap-4 mb-1">
+                                    <span className="flex items-center gap-1.5" style={{ color: p.color }}>
+                                      <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
+                                      {p.name}
+                                    </span>
+                                    <span className="font-bold text-gray-900 dark:text-white">{p.value}</span>
+                                  </div>
+                                ))}
+                                <p className="text-gray-400 dark:text-gray-500 mt-2 border-t border-gray-100 dark:border-gray-700 pt-2">See open button below ↓</p>
+                              </div>
+                            );
                           }}
                         />
-                        <Legend iconSize={8} wrapperStyle={{ fontSize: '10px' }} />
-                        <Area type="monotone" dataKey="cvQuality" stroke="#3B82F6" fillOpacity={1} fill="url(#colorCV)" strokeWidth={2} name="CV Quality" />
-                        <Area type="monotone" dataKey="jdMatch" stroke="#10B981" fillOpacity={1} fill="url(#colorJD)" strokeWidth={2} name="JD Match" />
-                        <Area type="monotone" dataKey="greenFlags" stroke="#F59E0B" fillOpacity={1} fill="url(#colorGreen)" strokeWidth={2} name="Green Flags" />
-                        <Area type="monotone" dataKey="redFlags" stroke="#EF4444" fillOpacity={1} fill="url(#colorRed)" strokeWidth={2} name="Red Flags" />
+                        <Legend iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
+                        <Area type="monotone" dataKey="cvQuality" stroke="#3B82F6" fillOpacity={1} fill="url(#colorCV)" strokeWidth={2.5} name="CV Quality" dot={{ r: 4, fill: '#3B82F6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7, fill: '#3B82F6', stroke: '#fff', strokeWidth: 2 }} />
+                        <Area type="monotone" dataKey="jdMatch" stroke="#10B981" fillOpacity={1} fill="url(#colorJD)" strokeWidth={2.5} name="JD Match" dot={{ r: 4, fill: '#10B981', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7, fill: '#10B981', stroke: '#fff', strokeWidth: 2 }} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
+
+                  {/* Stable hover-open bar — never disappears when cursor moves */}
+                  <div className={`mt-3 transition-all duration-150 ${hoveredPoint ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                    <button
+                      onClick={() => hoveredPoint && setSelectedResume(safeResumes[hoveredPoint.resumeIndex])}
+                      className="w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors group"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+                        <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{hoveredPoint?.fullName}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">CV: <strong className="text-blue-600 dark:text-blue-400">{hoveredPoint?.cvQuality}</strong></span>
+                        {(hoveredPoint?.jdMatch ?? 0) > 0 && (
+                          <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">JD: <strong className="text-emerald-600 dark:text-emerald-400">{hoveredPoint?.jdMatch}</strong></span>
+                        )}
+                      </div>
+                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400 flex-shrink-0 group-hover:translate-x-0.5 transition-transform">Open Resume →</span>
+                    </button>
+                  </div>
+                </>
                 ) : (
                   <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
                     <div className="text-center">
@@ -599,30 +662,49 @@ const ResumeDashboard: React.FC = () => {
                 )}
               </div>
 
-              {/* Score Distribution */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">Score Distribution</h3>
+              {/* Resume Leaderboard */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <ChartBarIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    Resume Leaderboard
+                  </h3>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">CV Quality score</span>
+                </div>
                 {pieData.length > 0 ? (
-                  <div className="h-[250px] sm:h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={pieData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={window.innerWidth < 640 ? 40 : 60}
-                          outerRadius={window.innerWidth < 640 ? 70 : 100}
-                          paddingAngle={5}
-                          dataKey="value"
-                        >
-                          {pieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px' }} />
-                        <Legend iconSize={8} wrapperStyle={{ fontSize: '10px' }} />
-                      </PieChart>
-                    </ResponsiveContainer>
+                  <div className="flex flex-col gap-2 overflow-y-auto max-h-[340px] pr-1">
+                    {[...pieData]
+                      .sort((a, b) => b.value - a.value)
+                      .map((entry, rank) => {
+                        const pct = Math.min((entry.value / 100) * 100, 100);
+                        const medal = rank === 0 ? '🥇' : rank === 1 ? '🥈' : rank === 2 ? '🥉' : null;
+                        return (
+                          <button
+                            key={entry.resumeIndex}
+                            onClick={() => setSelectedResume(safeResumes[entry.resumeIndex])}
+                            className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left w-full"
+                          >
+                            {/* rank */}
+                            <span className="w-6 text-center text-xs font-bold text-gray-400 dark:text-gray-500 flex-shrink-0">
+                              {medal ?? `#${rank + 1}`}
+                            </span>
+                            {/* color dot */}
+                            <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: entry.color }} />
+                            {/* name */}
+                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate flex-1 min-w-0">{entry.name}</span>
+                            {/* bar */}
+                            <div className="w-20 sm:w-28 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex-shrink-0">
+                              <div
+                                className="h-full rounded-full transition-all duration-700"
+                                style={{ width: `${pct}%`, background: entry.color }}
+                              />
+                            </div>
+                            {/* score */}
+                            <span className="text-xs font-bold w-8 text-right flex-shrink-0" style={{ color: entry.color }}>{entry.value}</span>
+                            <ArrowRight className="w-3 h-3 text-gray-200 dark:text-gray-600 group-hover:text-blue-500 transition-colors flex-shrink-0" />
+                          </button>
+                        );
+                      })}
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
@@ -771,7 +853,17 @@ const ResumeDashboard: React.FC = () => {
             ) : resumes.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {safeResumes.map((resume) => (
-                  <DetailedResumeCard key={resume.id || resume._id} resume={resume} />
+                  <DetailedResumeCard
+                    key={resume.id || resume._id}
+                    resume={resume}
+                    isPremium={isPaidUser}
+                    onViewDetails={() => { setAutoOpenBuilder(false); setSelectedResume(resume); }}
+                    onEnhance={() => {
+                      setAutoOpenBuilder(!!(resume as any)?.builder_data);
+                      setSelectedResume(resume);
+                    }}
+                    onUpgrade={() => setShowPricing(true)}
+                  />
                 ))}
               </div>
             ) : (
@@ -960,6 +1052,7 @@ const ResumeDashboard: React.FC = () => {
             {selectedResume && (
               <ResumeDetails
                 resume={selectedResume}
+                autoOpenBuilder={autoOpenBuilder}
                 onBuilderDataSaved={(data) =>
                   setSelectedResume(prev => prev ? { ...prev, builder_data: data } : prev)
                 }

@@ -10,6 +10,7 @@ export const resumeService = {
       analytics: resume.stats || resume.analytics,
       enhancement: resume.improvement_resume || resume.enhancement,
       builder_data: resume.builder_data || null,
+      is_platform_generated: resume.is_platform_generated || false,
     }));
   },
   /**
