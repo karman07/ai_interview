@@ -28,15 +28,21 @@ import aiHttp from "@/api/aiHttp";
 import { generateResumeReport } from "@/utils/pdfGenerator";
 import { usePricing } from "@/contexts/PricingContext";
 import { useNotification } from "@/contexts/NotificationContext";
+import { useAuth } from "@/contexts/AuthContext";
 import ResumeBuilder from "@/pages/ResumeBuilder";
 
 interface ResumeDetailsProps {
   resume: any;
+  onBuilderDataSaved?: (builderData: any) => void;
 }
 
-const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
+const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, onBuilderDataSaved }) => {
   const { setShowPricing } = usePricing();
   const { addNotification } = useNotification();
+  const { user } = useAuth();
+
+  // Only premium subscribers and university students can generate enhancements
+  const canEnhance = user?.subscriptionStatus === 'active' || user?.role === 'student';
   const [openJDDialog, setOpenJDDialog] = useState(false);
   const [jdFile, setJdFile] = useState<File | null>(null);
   const [jdText, setJdText] = useState<string>('');
@@ -46,10 +52,12 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
   const [isDownloadingResume, setIsDownloadingResume] = useState(false);
   const [showProgressDialog, setShowProgressDialog] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [enhancedResumeData, setEnhancedResumeData] = useState<any>(null);
+  // Pre-seed from cached DB data so we never regenerate after a remount
+  const [enhancedResumeData, setEnhancedResumeData] = useState<any>(resume?.builder_data || null);
   const [showBuilderModal, setShowBuilderModal] = useState(false);
 
   const hasImprovement = Boolean(resume?.enhancement);
+  const hasBuilderData = !!(enhancedResumeData || resume?.builder_data);
   const hasJDMatch = Boolean(resume?.analytics?.jd_match?.subscores?.length > 0);
   const overallScore = Math.round(resume.analytics?.overall_score || resume.analytics?.cv_quality?.overall_score || 0);
   const sections = resume.analytics?.sections || resume.analytics?.cv_quality?.subscores || [];
@@ -57,13 +65,24 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
   const weaknesses = resume.analytics?.weaknesses || resume.analytics?.key_takeaways?.red_flags || [];
 
 
-  const handleDownloadEnhancedResume = async () => {
+  const handleViewEnhancedResume = async () => {
+    // If we already fetched it this session, open immediately
+    if (enhancedResumeData) {
+      setShowBuilderModal(true);
+      return;
+    }
+
+    // If the DB already has cached builder data, use it — no AI call needed
+    if (resume?.builder_data) {
+      setEnhancedResumeData(resume.builder_data);
+      setShowBuilderModal(true);
+      return;
+    }
+
     setIsDownloadingResume(true);
     setShowProgressDialog(true);
     setProgress(0);
-    setEnhancedResumeData(null);
 
-    // Simulate progress
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 90) return prev;
@@ -79,12 +98,27 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
       setProgress(100);
 
       setEnhancedResumeData(data);
+      setShowProgressDialog(false);
+      setShowBuilderModal(true);
 
       addNotification({
         type: 'success',
-        title: 'Success!',
-        message: 'Your enhanced resume is ready for the builder.',
+        title: 'Resume Ready!',
+        message: 'Your enhanced resume is open in the builder.',
       });
+
+      // Persist to DB so future views don't re-generate
+      if (resume?._id || resume?.id) {
+        const resumeId = resume._id || resume.id;
+        resumeService.saveBuilderData(resumeId, data)
+          .then(() => {
+            // Push builder_data back to parent so selectedResume stays fresh
+            onBuilderDataSaved?.(data);
+          })
+          .catch(() => {
+            // Non-critical — silently ignore save failures
+          });
+      }
     } catch (error: any) {
       clearInterval(progressInterval);
 
@@ -198,10 +232,20 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
             title="View Resume"
             subtitle={
               <a
-                href={`${import.meta.env.VITE_API_BASE_URL}/${resume?.path}`}
+                href={
+                  resume?.url || 
+                  resume?.file_url || 
+                  (resume?.path ? `${import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'https://api.aiforjob.ai'}/${resume.path}` : '#')
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                onClick={(e) => {
+                  if (!resume?.url && !resume?.file_url && !resume?.path) {
+                    e.preventDefault();
+                    addNotification({ type: 'error', title: 'File missing', message: 'The document link is currently unavailable.' });
+                  }
+                }}
               >
                 Open Document →
               </a>
@@ -228,13 +272,25 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
                 icon={<Upload className="w-5 h-5 text-green-600" />}
                 title="Upload Job Description"
                 subtitle={
-                  <span className="text-green-600 text-sm font-medium">
-                    Enhance Resume →
-                  </span>
+                  canEnhance ? (
+                    <span className="text-green-600 text-sm font-medium">
+                      Enhance Resume →
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 text-sm font-medium">
+                      Premium feature — upgrade to enhance
+                    </span>
+                  )
                 }
                 color="green"
                 clickable
-                onClick={() => setOpenJDDialog(true)}
+                onClick={() => {
+                  if (!canEnhance) {
+                    setShowPricing(true);
+                    return;
+                  }
+                  setOpenJDDialog(true);
+                }}
               />
 
               <Dialog open={openJDDialog} onOpenChange={setOpenJDDialog}>
@@ -360,14 +416,14 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
           {hasImprovement && (
             <ActionCard
               icon={<Download className="w-5 h-5 text-blue-600" />}
-              title="Download Enhanced Resume"
+              title={hasBuilderData ? 'Enhanced Resume Ready' : 'View Enhanced Resume'}
               subtitle={
                 <button
-                  onClick={handleDownloadEnhancedResume}
+                  onClick={handleViewEnhancedResume}
                   disabled={isDownloadingResume}
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium hover:underline text-left disabled:opacity-50"
                 >
-                  {isDownloadingResume ? 'Generating...' : 'Get Enhanced Resume →'}
+                  {isDownloadingResume ? 'Loading...' : hasBuilderData ? 'Open Resume Builder →' : 'Generate & Open →'}
                 </button>
               }
               color="gray"
@@ -381,72 +437,35 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume }) => {
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle className="text-xl font-semibold">
-                  {enhancedResumeData ? 'Resume Ready!' : 'Generating Enhanced Resume'}
+                  Loading Your Enhanced Resume
                 </DialogTitle>
                 <DialogDescription>
-                  {enhancedResumeData
-                    ? 'Your AI-powered resume has been generated and is ready for use.'
-                    : 'We are using AI to optimize your resume content based on the target job profile.'}
+                  Preparing your AI-enhanced resume for the builder...
                 </DialogDescription>
               </DialogHeader>
 
-              {!enhancedResumeData ? (
-                <div className="space-y-4 py-4">
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                      <span>Processing...</span>
-                      <span>{Math.round(progress)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <motion.div
-                        className="bg-blue-600 h-2 rounded-full"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progress}%` }}
-                        transition={{ duration: 0.3 }}
-                      />
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-                    Please wait while we generate your enhanced resume...
-                  </p>
+              <div className="space-y-4 py-4">
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                 </div>
-              ) : (
-                <div className="space-y-4 py-4">
-                  <div className="flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-                      <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
-                    </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                    <span>Loading...</span>
+                    <span>{Math.round(progress)}%</span>
                   </div>
-                  <p className="text-center text-gray-700 dark:text-gray-300">
-                    Your enhanced resume has been generated successfully!
-                  </p>
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={() => {
-                        setShowProgressDialog(false);
-                        setShowBuilderModal(true);
-                      }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700"
-                    >
-                      Open Resume Editor
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setShowProgressDialog(false);
-                        setEnhancedResumeData(null);
-                        setProgress(0);
-                      }}
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      Close
-                    </Button>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <motion.div
+                      className="bg-blue-600 h-2 rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progress}%` }}
+                      transition={{ duration: 0.3 }}
+                    />
                   </div>
                 </div>
-              )}
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+                  Please wait...
+                </p>
+              </div>
             </DialogContent>
           </Dialog>
 

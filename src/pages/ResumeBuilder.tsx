@@ -9,6 +9,7 @@ import ExecutiveTemplate from '../components/ResumeBuilder/templates/ExecutiveTe
 import CustomizationPanel from '../components/ResumeBuilder/panels/CustomizationPanel';
 import ContentPanel from '../components/ResumeBuilder/panels/ContentPanel';
 import { generatePDF } from '../utils/htmlPdfGenerator';
+import { generateResumeFromBuilderData } from '../utils/pdfGenerator';
 import { ResumeBuilderData, ResumeBuilderSettings } from '../types/ResumeBuilder';
 
 const initialData: { status: string; resume_content: ResumeBuilderData } = {
@@ -115,7 +116,8 @@ const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ initialResumeData }) => {
     }, [initialResumeData]);
 
     const handleDownload = () => {
-        generatePDF('resume-preview', `Resume_${resumeData.resume_content.personal_info.name.replace(/\s+/g, '_')}.pdf`);
+        const name = resumeData.resume_content.personal_info.name.replace(/\s+/g, '_');
+        generateResumeFromBuilderData(resumeData, `Resume_${name}.pdf`);
     };
 
     const renderTemplate = () => {

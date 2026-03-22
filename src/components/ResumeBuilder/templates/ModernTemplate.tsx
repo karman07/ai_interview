@@ -250,14 +250,7 @@ const ModernTemplate: React.FC<Props> = ({ data, settings }) => {
                     </section>
                 )}
 
-                {/* Footer / Trademark */}
-                <footer className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center text-[10px] text-gray-400">
-                    <div className="flex items-center gap-1">
-                        <span className="font-bold text-blue-500">AI Interview Coach™</span>
-                        <span>• Verified Professional Document</span>
-                    </div>
-                    <div>© 2026 | Confidential & Proprietary</div>
-                </footer>
+
             </main>
         </div>
     );

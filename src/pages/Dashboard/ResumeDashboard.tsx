@@ -957,7 +957,14 @@ const ResumeDashboard: React.FC = () => {
                 </DialogDescription>
               </DialogHeader>
             </div>
-            {selectedResume && <ResumeDetails resume={selectedResume} />}
+            {selectedResume && (
+              <ResumeDetails
+                resume={selectedResume}
+                onBuilderDataSaved={(data) =>
+                  setSelectedResume(prev => prev ? { ...prev, builder_data: data } : prev)
+                }
+              />
+            )}
           </DialogContent>
         </Dialog>
       </div>

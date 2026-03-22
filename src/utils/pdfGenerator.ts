@@ -796,3 +796,231 @@ export const generateResumeReport = (resume: Resume) => {
     // Save the PDF
     doc.save(`Resume_Analysis_${resume.filename.replace(/\.[^/.]+$/, "")}.pdf`);
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Text-based Resume PDF Generator
+// Uses jsPDF text methods — produces a real text layer for ATS parsing.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function generateResumeFromBuilderData(
+    resumeData: { resume_content: any },
+    filename?: string
+) {
+    const rc = resumeData?.resume_content ?? (resumeData as any);
+    const pi = rc?.personal_info ?? {};
+    const name: string = pi?.name || pi?.fullName || pi?.full_name || 'Resume';
+
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    const PW = 210, ML = 14, MR = 14, CW = PW - ML - MR;
+    let y = 18;
+
+    const primary: [number, number, number] = [37, 99, 235];   // blue-600
+    const dark:    [number, number, number] = [17, 24, 39];
+    const mid:     [number, number, number] = [75, 85, 100];
+    const rule:    [number, number, number] = [229, 231, 235];
+
+    const addPage = () => { doc.addPage(); y = 18; };
+    const checkY = (need: number) => { if (y + need > 280) addPage(); };
+
+    const hline = (yPos: number) => {
+        doc.setDrawColor(...rule);
+        doc.setLineWidth(0.3);
+        doc.line(ML, yPos, PW - MR, yPos);
+    };
+
+    const section = (title: string) => {
+        checkY(10);
+        y += 5;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(...primary);
+        doc.text(title.toUpperCase(), ML, y);
+        y += 1.5;
+        hline(y);
+        y += 4;
+        doc.setTextColor(...dark);
+    };
+
+    const wrap = (text: string, x: number, maxW: number, size: number, style: string): number => {
+        doc.setFont('helvetica', style);
+        doc.setFontSize(size);
+        const lines = doc.splitTextToSize(text ?? '', maxW);
+        checkY(lines.length * (size * 0.4));
+        doc.text(lines, x, y);
+        y += lines.length * (size * 0.4) + 1;
+        return y;
+    };
+
+    // ── Name ──────────────────────────────────────────────────────────────────
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(...primary);
+    doc.text(name, ML, y);
+    y += 7;
+
+    // ── Contact row ───────────────────────────────────────────────────────────
+    const contacts = [pi.email, pi.phone, pi.location, pi.linkedin, pi.github, pi.website]
+        .filter(Boolean).join('  •  ');
+    if (contacts) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(...mid);
+        doc.text(contacts, ML, y);
+        y += 4;
+    }
+    hline(y); y += 5;
+
+    // ── Summary ───────────────────────────────────────────────────────────────
+    const summary: string = rc?.professional_summary ?? rc?.summary ?? '';
+    if (summary) {
+        section('Professional Summary');
+        wrap(summary, ML, CW, 9, 'normal');
+    }
+
+    // ── Skills ────────────────────────────────────────────────────────────────
+    const skills = rc?.skills ?? {};
+    const skillGroups: { label: string; items: string[] }[] = [];
+    const addSkillGroup = (label: string, items: any) => {
+        const arr = Array.isArray(items) ? items.filter(Boolean) : [];
+        if (arr.length) skillGroups.push({ label, items: arr });
+    };
+    addSkillGroup('Programming Languages', skills?.programming_languages ?? skills?.frontend);
+    addSkillGroup('Frameworks', skills?.frameworks ?? skills?.backend);
+    addSkillGroup('Tools', skills?.tools ?? skills?.tools_cloud);
+    addSkillGroup('Other', skills?.other);
+    if (skillGroups.length) {
+        section('Skills');
+        for (const g of skillGroups) {
+            checkY(5);
+            doc.setFont('helvetica', 'bold');   doc.setFontSize(9); doc.setTextColor(...dark);
+            doc.text(`${g.label}:`, ML, y);
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...mid);
+            const val = doc.splitTextToSize(g.items.join(', '), CW - 40);
+            doc.text(val, ML + 40, y);
+            y += val.length * 3.8 + 1.2;
+        }
+    }
+
+    // ── Experience ────────────────────────────────────────────────────────────
+    const experience: any[] = rc?.experience ?? [];
+    if (experience.length) {
+        section('Work Experience');
+        for (const job of experience) {
+            checkY(12);
+            const title: string = job?.title ?? job?.role ?? '';
+            const duration: string = job?.duration ?? '';
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...dark);
+            doc.text(title, ML, y);
+            if (duration) {
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...mid);
+                doc.text(duration, PW - MR, y, { align: 'right' });
+            }
+            y += 4;
+            doc.setFont('helvetica', 'bolditalic'); doc.setFontSize(9); doc.setTextColor(...primary);
+            doc.text([job?.company, job?.location].filter(Boolean).join('  —  '), ML, y);
+            y += 4.5;
+            const descs: string[] = Array.isArray(job?.description ?? job?.responsibilities)
+                ? (job?.description ?? job?.responsibilities)
+                : [job?.description ?? job?.responsibilities].filter(Boolean);
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...dark);
+            for (const d of descs) {
+                const lines = doc.splitTextToSize(`• ${d}`, CW - 4);
+                checkY(lines.length * 3.6);
+                doc.text(lines, ML + 2, y);
+                y += lines.length * 3.6 + 0.8;
+            }
+            y += 2;
+        }
+    }
+
+    // ── Projects ──────────────────────────────────────────────────────────────
+    const projects: any[] = rc?.projects ?? [];
+    if (projects.length) {
+        section('Projects');
+        for (const proj of projects) {
+            checkY(10);
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...dark);
+            doc.text(proj?.name ?? '', ML, y);
+            y += 4;
+            if (proj?.technologies?.length) {
+                doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(...mid);
+                doc.text(proj.technologies.join(', '), ML, y);
+                y += 4;
+            }
+            if (proj?.description) {
+                wrap(proj.description, ML + 2, CW - 4, 8.5, 'normal');
+            }
+            const highlights: string[] = proj?.highlights ?? [];
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...dark);
+            for (const h of highlights) {
+                const lines = doc.splitTextToSize(`• ${h}`, CW - 4);
+                checkY(lines.length * 3.6);
+                doc.text(lines, ML + 2, y);
+                y += lines.length * 3.6 + 0.8;
+            }
+            y += 2;
+        }
+    }
+
+    // ── Education ─────────────────────────────────────────────────────────────
+    const education: any[] = rc?.education ?? [];
+    if (education.length) {
+        section('Education');
+        for (const edu of education) {
+            checkY(10);
+            const degree = [edu?.degree, edu?.field].filter(Boolean).join(' in ');
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...dark);
+            doc.text(degree, ML, y);
+            if (edu?.duration) {
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...mid);
+                doc.text(edu.duration, PW - MR, y, { align: 'right' });
+            }
+            y += 4;
+            doc.setFont('helvetica', 'italic'); doc.setFontSize(9); doc.setTextColor(...primary);
+            doc.text([edu?.institution, edu?.location].filter(Boolean).join('  —  '), ML, y);
+            y += 5;
+        }
+    }
+
+    // ── Achievements ──────────────────────────────────────────────────────────
+    const achievements: string[] = rc?.achievements ?? [];
+    if (achievements.length) {
+        section('Achievements');
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...dark);
+        for (const a of achievements) {
+            const lines = doc.splitTextToSize(`• ${a}`, CW - 2);
+            checkY(lines.length * 3.6);
+            doc.text(lines, ML + 2, y);
+            y += lines.length * 3.6 + 1;
+        }
+    }
+
+    // ── Certifications ────────────────────────────────────────────────────────
+    const certs: any[] = rc?.certifications ?? [];
+    if (certs.length) {
+        section('Certifications');
+        for (const c of certs) {
+            checkY(5);
+            const line = typeof c === 'string' ? c
+                : [c?.name, c?.issuer, c?.year ?? c?.date].filter(Boolean).join('  •  ');
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...dark);
+            const lines = doc.splitTextToSize(`• ${line}`, CW - 2);
+            doc.text(lines, ML + 2, y);
+            y += lines.length * 3.8 + 1;
+        }
+    }
+
+    // ── Languages ─────────────────────────────────────────────────────────────
+    const langs: any[] = rc?.languages ?? [];
+    if (langs.length) {
+        section('Languages');
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...dark);
+        const langStr = langs.map((l: any) =>
+            typeof l === 'string' ? l : [l?.language ?? l?.name, l?.proficiency].filter(Boolean).join(' — ')
+        ).join('  •  ');
+        wrap(langStr, ML, CW, 9, 'normal');
+    }
+
+    const safeName = name.replace(/[^a-z0-9_\- ]/gi, '_');
+    doc.save(filename ?? `Resume_${safeName}.pdf`);
+}

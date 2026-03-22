@@ -8,7 +8,8 @@ export const resumeService = {
     return res.data.map((resume: any) => ({
       ...resume,
       analytics: resume.stats || resume.analytics,
-      enhancement: resume.improvement_resume || resume.enhancement
+      enhancement: resume.improvement_resume || resume.enhancement,
+      builder_data: resume.builder_data || null,
     }));
   },
   /**
@@ -33,6 +34,10 @@ export const resumeService = {
       analytics: resumeData.stats || resumeData.analytics,
       enhancement: resumeData.improvement_resume || resumeData.enhancement
     } as Resume;
+  },
+
+  saveBuilderData: async (resumeId: string, builderData: any) => {
+    await http.patch(`/resume/save-builder/${resumeId}`, { builder_data: builderData });
   },
 
   improveResume: async (resumeId: string, jdText?: string, jdFile?: File) => {

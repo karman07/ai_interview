@@ -18,7 +18,7 @@ export default function VerifyPhone() {
   const navigate = useNavigate();
 
   const [step, setStep] = useState<'phone' | 'otp' | 'done'>('phone');
-  const [countryCode, setCountryCode] = useState('+91');
+  const [countryCode, setCountryCode] = useState('+1');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [phoneChecking, setPhoneChecking] = useState(false);
@@ -60,7 +60,11 @@ export default function VerifyPhone() {
           seen.add(c.code);
           return true;
         });
-        setCountries(unique);
+        // Ensure +1 always resolves to United States, not Canada
+        const withUSA = unique.map(c =>
+          c.code === '+1' ? { code: '+1', flag: '🇺🇸', name: 'United States' } : c
+        );
+        setCountries(withUSA);
       })
       .catch(() => {
         // Fallback to common codes if API fails
