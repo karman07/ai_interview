@@ -12,14 +12,14 @@ export class SyncScheduler {
         private readonly emailService: EmailService,
     ) { }
 
-    @Cron('0 2 * * *') // 2:00 AM UTC
+    @Cron('0 2 * * 1,3,5') // 2:00 AM UTC on Monday, Wednesday, Friday (3×/week)
     async handleDailyJobSync() {
-        this.logger.log('Starting daily engineering job sync...');
+        this.logger.log('Starting engineering job sync (3×/week)...');
         try {
             await this.jobService.syncEngineeringJobs();
-            this.logger.log('Daily job sync completed successfully.');
+            this.logger.log('Engineering job sync completed successfully.');
         } catch (error) {
-            this.logger.error(`Daily job sync failed: ${error.message}`);
+            this.logger.error(`Engineering job sync failed: ${error.message}`);
         }
     }
 
