@@ -19,7 +19,8 @@ export default function VerifyEmail() {
     const [showResend, setShowResend] = useState(false);
 
     const fromUniversity = location.state?.from === 'university';
-    const [redirectCountdown, setRedirectCountdown] = useState(fromUniversity ? 8 : 0);
+    const REDIRECT_DURATION = 4;
+    const [redirectCountdown, setRedirectCountdown] = useState(fromUniversity ? REDIRECT_DURATION : -1);
     const emailToVerify = location.state?.email || auth.currentUser?.email || user?.email;
     const loginRoute = fromUniversity ? routes.universityLogin : routes.login;
 
@@ -125,7 +126,7 @@ export default function VerifyEmail() {
                         <div className="w-full bg-indigo-100 rounded-full h-1 mt-2 overflow-hidden">
                             <div
                                 className="bg-indigo-500 h-1 rounded-full transition-all duration-1000"
-                                style={{ width: `${(redirectCountdown / 8) * 100}%` }}
+                                style={{ width: `${(redirectCountdown / REDIRECT_DURATION) * 100}%` }}
                             />
                         </div>
                     </div>
