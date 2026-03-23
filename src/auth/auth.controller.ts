@@ -125,6 +125,16 @@ export class AuthController {
     }
   }
 
+  @Post('student-register')
+  async studentRegister(@Body() body: { email: string; password: string; rollNumber?: string }) {
+    try {
+      return await this.auth.studentRegister(body.email, body.password, body.rollNumber);
+    } catch (error: any) {
+      this.logger.error('Student register failed:', error.message);
+      throw new HttpException(error.message || 'Signup failed', HttpStatus.BAD_REQUEST);
+    }
+  }
+
   @Post('student-login')
   async studentLogin(@Body() body: { email: string; password: string; rollNumber?: string }, @Res({ passthrough: true }) res: Response) {
     try {

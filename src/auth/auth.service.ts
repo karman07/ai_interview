@@ -137,6 +137,34 @@ export class AuthService {
     return this.usersService.findByPhoneNumber(phoneNumber);
   }
 
+  async studentRegister(email: string, password: string, rollNumber?: string) {
+    if (!email || !password) throw new UnauthorizedException('Email and password are required');
+
+    const domain = email.split('@')[1]?.toLowerCase();
+    if (!domain) throw new UnauthorizedException('Invalid email address');
+
+    const university = await this.universities.findByDomain(domain);
+    if (!university) {
+      throw new UnauthorizedException('Your email domain is not associated with any registered university.');
+    }
+
+    let user = await this.usersService.findByEmail(email);
+    if (!user) {
+      user = await this.usersService.create({
+        name: email.split('@')[0],
+        email,
+        password,
+        role: UserRole.STUDENT,
+        isEmailVerified: false, // Must verify via Firebase first to login
+        universityId: university._id.toString(),
+        rollNumber: rollNumber || undefined,
+        resumeCount: 0,
+        interviewCount: 0,
+      });
+    }
+    return { success: true };
+  }
+
   async studentLogin(email: string, password: string, rollNumber?: string) {
     if (!email || !password) throw new UnauthorizedException('Email and password are required');
 
@@ -168,10 +196,10 @@ export class AuthService {
       if (!user.passwordHash) throw new UnauthorizedException('Please use Google login or reset your password');
       const valid = await bcrypt.compare(password, user.passwordHash);
       if (!valid) throw new UnauthorizedException('Wrong password');
-      // Ensure student role and universityId are set; update rollNumber if provided
-      if (user.role !== UserRole.STUDENT || !user.universityId || (rollNumber && user.rollNumber !== rollNumber)) {
+      if (user.role !== UserRole.STUDENT || !user.universityId || (rollNumber && user.rollNumber !== rollNumber) || !user.isEmailVerified) {
         user.role = UserRole.STUDENT;
         user.universityId = university._id.toString();
+        user.isEmailVerified = true; // They passed Firebase validation to reach here
         if (rollNumber) user.rollNumber = rollNumber;
         await user.save();
       }
