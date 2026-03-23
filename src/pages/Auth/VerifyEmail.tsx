@@ -20,7 +20,7 @@ export default function VerifyEmail() {
 
     const fromUniversity = location.state?.from === 'university';
     const emailToVerify = location.state?.email || auth.currentUser?.email || user?.email;
-    const loginRoute = fromUniversity ? routes.universityLogin : routes.login;
+    const loginRoute = routes.login;
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
