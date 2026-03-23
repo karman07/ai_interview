@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   GraduationCap, FileText, Mic, BookOpen,
-  BarChart2, Award, Building2, LogOut, ArrowRight,
+  BarChart2, Award, Building2, LogOut, ArrowRight, MessageSquare, ClipboardList, School,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import routes from '@/constants/routes';
@@ -50,7 +50,40 @@ export default function StudentDashboard() {
       disabled: resumeUsed >= resumeLimit,
     },
     {
+      title: 'My Classes',
+      description: 'Courses and enrollment',
+      icon: <School className="w-6 h-6" />,
+      color: 'bg-indigo-600',
+      labelColor: 'text-indigo-600',
+      bgLight: 'bg-indigo-50',
+      route: routes.studentClasses,
+      disabled: false,
+    },
+    {
+      title: 'Course Assignments',
+
+      description: 'Pending tasks from mentors',
+      icon: <ClipboardList className="w-6 h-6" />,
+      color: 'bg-indigo-600',
+      labelColor: 'text-indigo-600',
+      bgLight: 'bg-indigo-50',
+      route: routes.studentAssignments,
+      disabled: false,
+    },
+    {
+      title: 'Mentor Feedback',
+
+      description: 'View guidance from faculty',
+      icon: <MessageSquare className="w-6 h-6" />,
+      color: 'bg-rose-500',
+      labelColor: 'text-rose-500',
+      bgLight: 'bg-rose-50',
+      route: routes.studentFeedback,
+      disabled: false,
+    },
+    {
       title: 'Practice Interview',
+
       description: `${interviewUsed} / ${interviewLimit} used`,
       icon: <Mic className="w-6 h-6" />,
       color: 'bg-indigo-600',

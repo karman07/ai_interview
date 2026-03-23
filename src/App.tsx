@@ -31,8 +31,10 @@ const TermsOfService          = lazy(() => import("@/pages/Legal/TermsOfService"
 const CookiePolicy            = lazy(() => import("@/pages/Legal/CookiePolicy"));
 const AuthPage                = lazy(() => import("./pages/Auth/AuthPage"));
 const VerifyEmail             = lazy(() => import("./pages/Auth/VerifyEmail"));
-const VerifyPhone             = lazy(() => import("./pages/Auth/VerifyPhone"));const UniversityLogin         = lazy(() => import('./pages/Auth/UniversityLogin'));
-const StudentDashboard        = lazy(() => import('./pages/Student/StudentDashboard'));const Profile                 = lazy(() => import("./pages/Profile/Profile"));
+const VerifyPhone             = lazy(() => import("./pages/Auth/VerifyPhone"));
+const UniversityLogin         = lazy(() => import('./pages/Auth/UniversityLogin'));
+const StudentDashboard        = lazy(() => import('./pages/Student/StudentDashboard'));
+const Profile                 = lazy(() => import("./pages/Profile/Profile"));
 const ResumeDashboard         = lazy(() => import("@/pages/Dashboard/ResumeDashboard"));
 const InterviewApp            = lazy(() => import("./pages/Interview/Interview"));
 const ResourcesHub            = lazy(() => import("./pages/Resources/Resources"));
@@ -49,6 +51,10 @@ const InterviewSessionDetails = lazy(() => import("./pages/Interview_round/Inter
 const AnalyticsTest           = lazy(() => import("./pages/Test/AnalyticsTest"));
 const EmployeePortal          = lazy(() => import("./pages/Employee/EmployeePortal"));
 const ResumeBuilder           = lazy(() => import("./pages/ResumeBuilder"));
+const FeedbackInbox           = lazy(() => import("@/pages/Student/FeedbackInbox"));
+const StudentAssignments      = lazy(() => import("@/pages/Student/Assignments"));
+const StudentClasses          = lazy(() => import("@/pages/Student/Classes"));
+const StudentClassDetail      = lazy(() => import("@/pages/Student/ClassDetail"));
 
 // ── Minimal loading fallback (no layout shift) ────────────────────────────
 const PageLoader = () => (
@@ -86,6 +92,9 @@ function App() {
     routes.interviewHome,
     routes.interviewHistory,
     routes.resumeBuilder,
+    routes.studentFeedback,
+    routes.studentAssignments,
+    routes.studentClasses,
   ];
   const shouldHideNavbar =
     hideNavbarRoutes.includes(location.pathname) ||
@@ -94,7 +103,8 @@ function App() {
     location.pathname.startsWith("/interview/start/") ||
     location.pathname.startsWith("/interview/room/") ||
     location.pathname.startsWith("/interview/results/") ||
-    location.pathname.startsWith("/employee/");
+    location.pathname.startsWith("/employee/") ||
+    location.pathname.startsWith("/student/classes/");
 
   return (
     <NotificationProvider>
@@ -273,6 +283,38 @@ function App() {
                         </div>
                       } />
                       <Route path={routes.resumeBuilder} element={<ResumeBuilder />} />
+                      <Route path={routes.studentFeedback} element={
+                        <div className="flex min-h-screen">
+                          <Sidebar />
+                          <div className="flex-1">
+                            <FeedbackInbox />
+                          </div>
+                        </div>
+                      } />
+                      <Route path={routes.studentAssignments} element={
+                        <div className="flex min-h-screen">
+                          <Sidebar />
+                          <div className="flex-1">
+                            <StudentAssignments />
+                          </div>
+                        </div>
+                      } />
+                      <Route path={routes.studentClasses} element={
+                        <div className="flex min-h-screen">
+                          <Sidebar />
+                          <div className="flex-1">
+                            <StudentClasses />
+                          </div>
+                        </div>
+                      } />
+                      <Route path={routes.studentClassDetail(":id")} element={
+                        <div className="flex min-h-screen">
+                          <Sidebar />
+                          <div className="flex-1">
+                            <StudentClassDetail />
+                          </div>
+                        </div>
+                      } />
                     </Route>
 
                     <Route element={<ProtectedRoute />}>

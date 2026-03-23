@@ -13,6 +13,9 @@ import {
   Briefcase,
   User,
   LogOut,
+  MessageSquare,
+  ClipboardList,
+  School,
 } from "lucide-react";
 
 import { cn } from "@/utils/cn";
@@ -49,6 +52,18 @@ const sidebarRoutes = [
         description: "Resources & study materials",
         path: "/resources",
       },
+      {
+        label: "My Classes",
+        icon: <School size={18} />,
+        description: "Enrolled courses",
+        path: "/student/classes",
+      },
+      {
+        label: "My Assignments",
+        icon: <ClipboardList size={18} />,
+        description: "Tasks from your mentor",
+        path: "/student/assignments",
+      },
       // {
       //   label: "Docs",
       //   icon: <BookOpen size={18} />,
@@ -67,9 +82,16 @@ const sidebarRoutes = [
         description: "Manage your account",
         path: "/profile",
       },
+      {
+        label: "Mentor Feedback",
+        icon: <MessageSquare size={18} />,
+        description: "Advice from your faculty",
+        path: "/student/feedback",
+      },
     ],
   },
 ];
+
 
 export default function Sidebar() {
   const [_, setActiveItem] = useState("");
