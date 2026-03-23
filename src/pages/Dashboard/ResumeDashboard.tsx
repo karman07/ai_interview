@@ -12,7 +12,9 @@ import {
   ResponsiveContainer,
   Legend,
   Area,
-  AreaChart
+  AreaChart,
+  BarChart,
+  Bar
 } from "recharts";
 
 import { useResume } from "@/contexts/ResumeContext";
@@ -156,9 +158,6 @@ const ResumeDashboard: React.FC = () => {
 
   // Track hovered chart point for stable open-button below chart
   const [hoveredPoint, setHoveredPoint] = useState<{ resumeIndex: number; fullName: string; cvQuality: number; jdMatch: number } | null>(null);
-
-  // Double-click detection for chart points
-  const lastClickRef = useRef<{ resumeIndex: number; time: number } | null>(null);
 
   // Chart colors
   // Vibrant & Diverse Palette for Charts
@@ -556,7 +555,7 @@ const ResumeDashboard: React.FC = () => {
                     <TrendingUpIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
                     Performance Trends
                   </h3>
-                  <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">Click a point → open resume</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">Double-click a point to open resume</span>
                 </div>
                 {performanceData.length > 0 ? (
                   <>
@@ -564,16 +563,10 @@ const ResumeDashboard: React.FC = () => {
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
                         data={performanceData}
-                        onClick={(e: any) => {
+                        onDoubleClick={(e: any) => {
                           const idx = e?.activePayload?.[0]?.payload?.resumeIndex;
                           if (idx == null) return;
-                          const now = Date.now();
-                          if (lastClickRef.current?.resumeIndex === idx && now - lastClickRef.current.time < 400) {
-                            setSelectedResume(safeResumes[idx]);
-                            lastClickRef.current = null;
-                          } else {
-                            lastClickRef.current = { resumeIndex: idx, time: now };
-                          }
+                          setSelectedResume(safeResumes[idx]);
                         }}
                         onMouseMove={(e: any) => {
                           const p = e?.activePayload?.[0]?.payload;
@@ -622,14 +615,52 @@ const ResumeDashboard: React.FC = () => {
                                     <span className="font-bold text-gray-900 dark:text-white">{p.value}</span>
                                   </div>
                                 ))}
-                                <p className="text-gray-400 dark:text-gray-500 mt-2 border-t border-gray-100 dark:border-gray-700 pt-2">See open button below ↓</p>
+                                <p className="text-gray-400 dark:text-gray-500 mt-2 border-t border-gray-100 dark:border-gray-700 pt-2">Double-click to open resume ↕</p>
                               </div>
                             );
                           }}
                         />
                         <Legend iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
-                        <Area type="monotone" dataKey="cvQuality" stroke="#3B82F6" fillOpacity={1} fill="url(#colorCV)" strokeWidth={2.5} name="CV Quality" dot={{ r: 4, fill: '#3B82F6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7, fill: '#3B82F6', stroke: '#fff', strokeWidth: 2 }} />
-                        <Area type="monotone" dataKey="jdMatch" stroke="#10B981" fillOpacity={1} fill="url(#colorJD)" strokeWidth={2.5} name="JD Match" dot={{ r: 4, fill: '#10B981', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7, fill: '#10B981', stroke: '#fff', strokeWidth: 2 }} />
+                        <Area 
+                          type="monotone" 
+                          dataKey="cvQuality" 
+                          stroke="#3B82F6" 
+                          fillOpacity={1} 
+                          fill="url(#colorCV)" 
+                          strokeWidth={2.5} 
+                          name="CV Quality" 
+                          dot={{ r: 4, fill: '#3B82F6', strokeWidth: 2, stroke: '#fff' }} 
+                          activeDot={{ 
+                            r: 7, 
+                            fill: '#3B82F6', 
+                            stroke: '#fff', 
+                            strokeWidth: 2,
+                            onDoubleClick: (e: any, payload: any) => {
+                              const idx = payload?.payload?.resumeIndex;
+                              if (idx != null) setSelectedResume(safeResumes[idx]);
+                            }
+                          }} 
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="jdMatch" 
+                          stroke="#10B981" 
+                          fillOpacity={1} 
+                          fill="url(#colorJD)" 
+                          strokeWidth={2.5} 
+                          name="JD Match" 
+                          dot={{ r: 4, fill: '#10B981', strokeWidth: 2, stroke: '#fff' }} 
+                          activeDot={{ 
+                            r: 7, 
+                            fill: '#10B981', 
+                            stroke: '#fff', 
+                            strokeWidth: 2,
+                            onDoubleClick: (e: any, payload: any) => {
+                              const idx = payload?.payload?.resumeIndex;
+                              if (idx != null) setSelectedResume(safeResumes[idx]);
+                            }
+                          }} 
+                        />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -712,6 +743,71 @@ const ResumeDashboard: React.FC = () => {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Time vs Improvement Section */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700 mb-6 sm:mb-8">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
+                  <ChartBarIcon className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />
+                  Time vs. Improvement
+                </h3>
+                <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">Chronological progression</span>
+              </div>
+              {performanceData.length > 0 ? (
+                <div className="h-[250px] sm:h-[350px] w-full mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[...performanceData].reverse()}
+                      margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="#9CA3AF" 
+                        fontSize={11} 
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis 
+                        stroke="#9CA3AF" 
+                        fontSize={11} 
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <Tooltip
+                        cursor={{ fill: 'rgba(59,130,246,0.05)' }}
+                        content={({ active, payload }) => {
+                          if (!active || !payload?.length) return null;
+                          const d = payload[0].payload;
+                          return (
+                            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl p-3 text-xs w-48">
+                              <p className="font-bold text-gray-900 dark:text-white mb-2">{d.fullName}</p>
+                              <p className="text-gray-400 dark:text-gray-500 mb-2">{d.date}</p>
+                              {payload.map((p: any) => (
+                                <div key={p.dataKey} className="flex justify-between gap-4 mb-1">
+                                  <span style={{ color: p.color }} className="font-medium">{p.name}</span>
+                                  <span className="font-bold text-gray-900 dark:text-white">{p.value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        }}
+                      />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                      <Bar dataKey="cvQuality" name="CV Score" fill="#8B5CF6" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                      <Bar dataKey="jdMatch" name="JD Match" fill="#EC4899" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+                  <div className="text-center">
+                    <ChartBarIcon className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+                    <p>No historical data available</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Red Flags & Insights Section (New) */}
