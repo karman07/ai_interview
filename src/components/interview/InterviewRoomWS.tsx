@@ -178,10 +178,11 @@ export default function InterviewRoomWS() {
         bufferRef.current += newText;
         processedTextLengthRef.current = fullText.length;
 
-        const sentenceBreak = /[.!?]\s+/;
+        // Lookbehind keeps the . ! ? attached to the sentence before splitting
+        const sentenceBreak = /(?<=[.!?])\s+/;
         const parts = bufferRef.current.split(sentenceBreak);
         if (parts.length > 1) {
-            const completeSentences = parts.slice(0, -1).join('. ');
+            const completeSentences = parts.slice(0, -1).join(' ');
             bufferRef.current = parts[parts.length - 1];
             if (completeSentences.trim()) {
                 speak(completeSentences.trim());
@@ -402,6 +403,12 @@ export default function InterviewRoomWS() {
         }
     }, [messages, cancel, speak]);
 
+    // ── Derived states ──
+    const isThinking = messages.length > 0 &&
+        messages[messages.length - 1].role === 'user' &&
+        !isStreamingResponse &&
+        !isSpeaking;
+
     // ── Loading/Error states ──
     const isActuallyLoading = (messages.length === 0 || !isConnected) && !interviewEnded;
     const displayError = error || wsError;
@@ -579,15 +586,15 @@ export default function InterviewRoomWS() {
                             {/* Identity Overlay: Compact */}
                             <div className={`absolute left-3 right-3 p-2.5 bg-black/25 backdrop-blur-md rounded-xl border border-white/5 flex items-center justify-between transition-all duration-500 ${showCodeEditor ? 'bottom-3' : 'bottom-3'}`}>
                                 <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">
-                                    {(messages.length > 0 && messages[messages.length - 1].role === 'user' && !isStreamingResponse && !isSpeaking) ? 'Ryntra Bot (Thinking...)' : 'Ryntra Bot'}
+                                    {isThinking ? 'Ryntra Bot (Thinking...)' : 'Ryntra Bot'}
                                 </span>
                                 <div className="flex gap-1 h-3 items-center">
                                     {[1, 2, 3].map(i => (
                                         <motion.div
                                             key={i}
-                                            animate={(isSpeaking || (messages.length > 0 && messages[messages.length - 1].role === 'user' && !isStreamingResponse && !isSpeaking)) ? { height: [3, 12, 3] } : { height: 3 }}
+                                            animate={(isSpeaking || isThinking) ? { height: [3, 12, 3] } : { height: 3 }}
                                             transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.1 }}
-                                            className={`w-0.5 rounded-full ${(messages.length > 0 && messages[messages.length - 1].role === 'user' && !isStreamingResponse && !isSpeaking) ? 'bg-orange-400' : 'bg-blue-400'}`}
+                                            className={`w-0.5 rounded-full ${isThinking ? 'bg-orange-400' : 'bg-blue-400'}`}
                                         />
                                     ))}
                                 </div>
@@ -620,6 +627,36 @@ export default function InterviewRoomWS() {
                                         </div>
                                         <p className="text-[13px] font-medium text-slate-700 dark:text-slate-200 leading-relaxed line-clamp-4">
                                             {messages[messages.length - 1].content}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Thinking indicator — shown while AI evaluates the user's answer */}
+                        <AnimatePresence>
+                            {isThinking && (
+                                <motion.div
+                                    key="thinking-indicator"
+                                    initial={{ opacity: 0, y: -4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -4 }}
+                                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                    className="shrink-0"
+                                >
+                                    <div className="bg-orange-500/10 dark:bg-orange-900/20 border border-orange-400/25 rounded-2xl px-4 py-3 flex items-center gap-3">
+                                        <div className="flex gap-1 items-center shrink-0">
+                                            {[0, 1, 2].map(i => (
+                                                <motion.span
+                                                    key={i}
+                                                    animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
+                                                    transition={{ repeat: Infinity, duration: 0.9, delay: i * 0.2 }}
+                                                    className="block w-1.5 h-1.5 rounded-full bg-orange-400"
+                                                />
+                                            ))}
+                                        </div>
+                                        <p className="text-[11px] font-semibold text-orange-600 dark:text-orange-400">
+                                            Evaluating your response…
                                         </p>
                                     </div>
                                 </motion.div>
