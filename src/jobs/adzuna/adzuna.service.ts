@@ -1,5 +1,8 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { AdzunaConfig, AdzunaConfigDocument } from '../schemas/adzuna-config.schema';
 import axios, { AxiosInstance } from 'axios';
 
 @Injectable()
@@ -12,7 +15,10 @@ export class AdzunaService {
     private country: string;
     private resultsPerPage: number;
 
-    constructor(private configService: ConfigService) {
+    constructor(
+        private configService: ConfigService,
+        @InjectModel(AdzunaConfig.name) private configModel: Model<AdzunaConfigDocument>
+    ) {
         this.appId = this.configService.get<string>('ADZUNA_APP_ID');
         this.appKey = this.configService.get<string>('ADZUNA_APP_KEY');
         this.country = this.configService.get<string>('ADZUNA_COUNTRY', 'us');
@@ -26,12 +32,24 @@ export class AdzunaService {
         });
     }
 
+    private async reloadConfig() {
+        const dbConfig = await this.configModel.findOne();
+        if (dbConfig) {
+            this.appId = dbConfig.appId;
+            this.appKey = dbConfig.appKey;
+            if (dbConfig.country) this.country = dbConfig.country;
+            if (dbConfig.resultsPerPage) this.resultsPerPage = dbConfig.resultsPerPage;
+        }
+    }
+
     private buildUrl(endpoint: string, countryCode: string = this.country): string {
         return `${this.BASE_URL}/jobs/${countryCode}/${endpoint}`;
     }
 
-    private async makeRequestWithRetry(endpoint: string, countryCode: string = this.country, params: any = {}, retries = 2): Promise<any> {
-        const url = this.buildUrl(endpoint, countryCode);
+    private async makeRequestWithRetry(endpoint: string, countryCode: string, params: any = {}, retries = 2): Promise<any> {
+        await this.reloadConfig();
+        const effectiveCountry = countryCode || this.country;
+        const url = this.buildUrl(endpoint, effectiveCountry);
         const requestParams = {
             app_id: this.appId,
             app_key: this.appKey,
@@ -56,24 +74,29 @@ export class AdzunaService {
         }
     }
 
-    async searchJobs(what?: string, page: number = 1, countryCode: string = this.country): Promise<any> {
+    async searchJobs(what?: string, page: number = 1, countryCode?: string): Promise<any> {
         const endpoint = `search/${page}`;
         const params: any = {};
         if (what) params.what = what;
 
-        this.logger.log(`Searching Adzuna: page=${page}, what=${what}, country=${countryCode}`);
-        return await this.makeRequestWithRetry(endpoint, countryCode, params);
+        await this.reloadConfig();
+        const effCountry = countryCode || this.country;
+        this.logger.log(`Searching Adzuna: page=${page}, what=${what}, country=${effCountry}`);
+        return await this.makeRequestWithRetry(endpoint, effCountry, params);
     }
 
-    async fetchAllJobs(maxPages: number = 5, what?: string, countryCode: string = this.country): Promise<any[]> {
+    async fetchAllJobs(maxPages: number = 5, what?: string, countryCode?: string): Promise<any[]> {
         const allJobs: any[] = [];
         let page = 1;
 
-        this.logger.log(`Starting job fetch (max ${maxPages} pages, ${this.resultsPerPage} per page, what='${what}', country='${countryCode}')`);
+        await this.reloadConfig();
+        const effCountry = countryCode || this.country;
+
+        this.logger.log(`Starting job fetch (max ${maxPages} pages, ${this.resultsPerPage} per page, what='${what}', country='${effCountry}')`);
 
         while (page <= maxPages) {
             try {
-                const result = await this.searchJobs(what, page, countryCode);
+                const result = await this.searchJobs(what, page, effCountry);
                 const jobs = result.results || [];
 
                 if (jobs.length === 0) {
@@ -105,8 +128,10 @@ export class AdzunaService {
         return allJobs;
     }
 
-    async getJobCategories(countryCode: string = this.country): Promise<any[]> {
-        const result = await this.makeRequestWithRetry('categories', countryCode);
+    async getJobCategories(countryCode?: string): Promise<any[]> {
+        await this.reloadConfig();
+        const effCountry = countryCode || this.country;
+        const result = await this.makeRequestWithRetry('categories', effCountry);
         return result.results || [];
     }
 

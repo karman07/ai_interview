@@ -1,7 +1,11 @@
 import {
   Controller, Get, Post, Patch, Delete, Body, Param,
   UseGuards, HttpException, HttpStatus, ForbiddenException, Req,
+  UseInterceptors, UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { Request } from 'express';
 import { UniversitiesService } from './universities.service';
 import { CreateUniversityDto, UpdateUniversityDto, CreateTeacherDto } from './dto/university.dto';
@@ -53,8 +57,22 @@ export class UniversitiesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Post()
-  async create(@Body() dto: CreateUniversityDto) {
+  @UseInterceptors(
+    FileInterceptor('logo', {
+      storage: diskStorage({
+        destination: './uploads/universities',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, uniqueSuffix + extname(file.originalname));
+        },
+      }),
+    }),
+  )
+  async create(@Body() dto: CreateUniversityDto, @UploadedFile() file?: Express.Multer.File) {
     try {
+      if (file) {
+        dto.logoUrl = `/uploads/universities/${file.filename}`;
+      }
       return await this.service.create(dto);
     } catch (err) {
       throw new HttpException(err.message, err.status ?? HttpStatus.BAD_REQUEST);
@@ -64,8 +82,26 @@ export class UniversitiesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdateUniversityDto) {
+  @UseInterceptors(
+    FileInterceptor('logo', {
+      storage: diskStorage({
+        destination: './uploads/universities',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, uniqueSuffix + extname(file.originalname));
+        },
+      }),
+    }),
+  )
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateUniversityDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
     try {
+      if (file) {
+        dto.logoUrl = `/uploads/universities/${file.filename}`;
+      }
       return await this.service.update(id, dto);
     } catch (err) {
       throw new HttpException(err.message, err.status ?? HttpStatus.BAD_REQUEST);

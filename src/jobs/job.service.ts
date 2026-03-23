@@ -11,6 +11,7 @@ import { JobSyncLog, JobSyncLogDocument } from './schemas/job-sync-log.schema';
 import { Favorite, FavoriteDocument } from './schemas/favorite.schema';
 import { Bookmark, BookmarkDocument } from './schemas/bookmark.schema';
 import { EmailSubscription, EmailSubscriptionDocument } from './schemas/email-subscription.schema';
+import { AdzunaConfig, AdzunaConfigDocument } from './schemas/adzuna-config.schema';
 
 @Injectable()
 export class JobService {
@@ -22,6 +23,7 @@ export class JobService {
         @InjectModel(Favorite.name) public favoriteModel: Model<FavoriteDocument>,
         @InjectModel(Bookmark.name) public bookmarkModel: Model<BookmarkDocument>,
         @InjectModel(EmailSubscription.name) public emailSubscriptionModel: Model<EmailSubscriptionDocument>,
+        @InjectModel(AdzunaConfig.name) public adzunaConfigModel: Model<AdzunaConfigDocument>,
         private adzunaService: AdzunaService,
         private configService: ConfigService,
     ) { }
@@ -414,5 +416,37 @@ export class JobService {
 
         const query = queryParts.length > 1 ? { $or: queryParts } : queryParts[0];
         return await this.jobModel.find(query).exec();
+    }
+
+    async getAdzunaConfig() {
+        let config = await this.adzunaConfigModel.findOne();
+        if (!config) {
+            config = await this.adzunaConfigModel.create({
+                appId: this.configService.get('ADZUNA_APP_ID', ''),
+                appKey: this.configService.get('ADZUNA_APP_KEY', ''),
+                country: this.configService.get('ADZUNA_COUNTRY', 'us'),
+                resultsPerPage: this.configService.get('ADZUNA_RESULTS_PER_PAGE', 50),
+            });
+        }
+        return config;
+    }
+
+    async updateAdzunaConfig(data: any) {
+        let config = await this.adzunaConfigModel.findOne();
+        if (!config) {
+            config = new this.adzunaConfigModel(data);
+            await config.save();
+        } else {
+            Object.assign(config, data);
+            await config.save();
+        }
+        return config;
+    }
+
+    async getJobStats() {
+        const totalActive = await this.jobModel.countDocuments({ status: 'active' });
+        const totalExpired = await this.jobModel.countDocuments({ status: 'expired' });
+        const lastSyncLog = await this.syncLogModel.findOne().sort({ created_at: -1 });
+        return { totalActive, totalExpired, lastSync: lastSyncLog ? lastSyncLog.completed_at : null };
     }
 }

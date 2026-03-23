@@ -22,6 +22,7 @@ import { ResumeSearchCache, ResumeSearchCacheSchema } from './schemas/resume-sea
 import { Favorite, FavoriteSchema } from './schemas/favorite.schema';
 import { Bookmark, BookmarkSchema } from './schemas/bookmark.schema';
 import { EmailSubscription, EmailSubscriptionSchema } from './schemas/email-subscription.schema';
+import { AdzunaConfig, AdzunaConfigSchema } from './schemas/adzuna-config.schema';
 
 @Module({
     imports: [
@@ -44,6 +45,7 @@ import { EmailSubscription, EmailSubscriptionSchema } from './schemas/email-subs
             { name: Favorite.name, schema: FavoriteSchema },
             { name: Bookmark.name, schema: BookmarkSchema },
             { name: EmailSubscription.name, schema: EmailSubscriptionSchema },
+            { name: AdzunaConfig.name, schema: AdzunaConfigSchema },
         ]),
         MailerModule.forRootAsync({
             imports: [ConfigModule],

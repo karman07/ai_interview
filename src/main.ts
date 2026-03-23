@@ -85,7 +85,8 @@ async function bootstrap() {
     const profileDir = path.resolve('uploads/profile-images');
     const audioDir = path.resolve('uploads/audio');
     const videoDir = path.resolve('uploads/video');
-    [resumeDir, profileDir, audioDir, videoDir].forEach((dir) => {
+    const universitiesDir = path.resolve('uploads/universities');
+    [resumeDir, profileDir, audioDir, videoDir, universitiesDir].forEach((dir) => {
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     });
 

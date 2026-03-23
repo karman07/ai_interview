@@ -245,6 +245,21 @@ export class JobsController {
         return { countries: countries.filter(c => !!c).sort() };
     }
 
+    @Get('admin/stats')
+    async getAdminStats() {
+        return await this.jobService.getJobStats();
+    }
+
+    @Get('admin/config')
+    async getAdminConfig() {
+        return await this.jobService.getAdzunaConfig();
+    }
+
+    @Post('admin/config')
+    async updateAdminConfig(@Body() body: any) {
+        return await this.jobService.updateAdzunaConfig(body);
+    }
+
     @Get(':jobId')
     async getJobById(@Param('jobId') jobId: string) {
         let job = await this.jobService.getJobById(jobId);
