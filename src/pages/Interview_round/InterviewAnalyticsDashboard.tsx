@@ -384,13 +384,22 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
                       if (isAtLimit && (user as any)?.role !== 'student') setShowPricing(true);
                       else if (!isAtLimit) onStartNew();
                     }}
-                    className={`flex items-center gap-3 px-6 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all duration-300 shadow-lg ${
-                      isAtLimit ? 'bg-rose-600 text-white shadow-rose-500/10' : 'bg-blue-600 text-white shadow-blue-600/10 hover:bg-blue-700'
+                    disabled={isAtLimit && (user as any)?.role === 'student'}
+                    className={`flex items-center gap-3 px-6 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all duration-300 shadow-lg disabled:cursor-not-allowed ${
+                      isAtLimit
+                        ? (user as any)?.role === 'student'
+                          ? 'bg-rose-600/80 text-white shadow-rose-500/10 opacity-80'
+                          : 'bg-rose-600 text-white shadow-rose-500/10'
+                        : 'bg-blue-600 text-white shadow-blue-600/10 hover:bg-blue-700'
                     }`}>
                     <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center">
                       {isAtLimit ? <ShieldCheck className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5 fill-current" />}
                     </div>
-                    <span>{isAtLimit ? 'Upgrade Now' : 'New Interview'}</span>
+                    <span>
+                      {isAtLimit
+                        ? (user as any)?.role === 'student' ? 'Limit Reached' : 'Upgrade Now'
+                        : 'New Interview'}
+                    </span>
                   </motion.button>
                 )}
               </AnimatePresence>
