@@ -135,6 +135,17 @@ export default function InterviewRoomWS() {
         setShowCodeEditor(isCodingQuestion);
     }, [isCodingQuestion]);
 
+    // ── Keyword-based fallback: open editor if question text contains code-trigger words ──
+    useEffect(() => {
+        if (messages.length === 0) return;
+        const lastMsg = messages[messages.length - 1];
+        if (lastMsg.role !== 'model' || isStreamingResponse) return;
+        const CODE_TRIGGERS = /\b(write|implement|code|program|function|algorithm|script|solution|snippet|define a|create a function|build a|develop a)\b/i;
+        if (CODE_TRIGGERS.test(lastMsg.content)) {
+            setShowCodeEditor(true);
+        }
+    }, [messages, isStreamingResponse]);
+
     // ── Auto-open/close question box ──
     useEffect(() => {
         if (messages.length === 0) return;
