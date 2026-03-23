@@ -3,7 +3,27 @@ import { tokenStore } from './http';
 import { Job, JobListResponse, ResumeMatchRequest, MatchResultResponse } from '../types/job';
 export type { Job, JobListResponse, ResumeMatchRequest, MatchResultResponse };
 
-const API_URL = import.meta.env.VITE_JOB_API_URL || 'http://localhost:8080'; // Recruitment Backend Service URL
+const API_URL = import.meta.env.VITE_JOB_API_URL || 'http://localhost:8080';
+
+// Persist job results in localStorage — TTL ~2.5 days so API is hit ≤3×/week
+const CACHE_TTL_MS = 2.5 * 24 * 60 * 60 * 1000; // 60 hours
+const LS_PREFIX = 'jobs_cache_';
+
+function lsGet(key: string): JobListResponse | null {
+  try {
+    const raw = localStorage.getItem(LS_PREFIX + key);
+    if (!raw) return null;
+    const { data, expiresAt } = JSON.parse(raw);
+    if (Date.now() > expiresAt) { localStorage.removeItem(LS_PREFIX + key); return null; }
+    return data as JobListResponse;
+  } catch { return null; }
+}
+
+function lsSet(key: string, data: JobListResponse): void {
+  try {
+    localStorage.setItem(LS_PREFIX + key, JSON.stringify({ data, expiresAt: Date.now() + CACHE_TTL_MS }));
+  } catch { /* storage full — skip caching */ }
+}
 
 // Create a dedicated axios instance for Job Service
 const jobApiClient = axios.create({
@@ -30,11 +50,16 @@ export const fetchJobs = async (params: any = {}): Promise<JobListResponse> => {
   if (params.limit) queryParams.append('limit', params.limit.toString());
   if (params.engineering_type) queryParams.append('branch_type', params.engineering_type);
 
+  const cacheKey = queryParams.toString();
+  const cached = lsGet(cacheKey);
+  if (cached) return cached;
+
   try {
-    const response = await jobApiClient.get(`?${queryParams.toString()}`);
+    const response = await jobApiClient.get(`?${cacheKey}`);
+    lsSet(cacheKey, response.data);
     return response.data;
   } catch (error) {
-    console.error("fetchJobs Error:", error);
+    console.error('fetchJobs Error:', error);
     throw error;
   }
 };

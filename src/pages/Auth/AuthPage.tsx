@@ -206,77 +206,49 @@ export default function AuthPage() {
                             </Button>
                         </form>
 
-                        <div className="mt-6">
-                            <div className="relative">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-gray-200 dark:border-gray-700" />
-                                </div>
-                                <div className="relative flex justify-center text-sm">
-                                    <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">
-                                        Or continue with
-                                    </span>
-                                </div>
+                        {/* Divider */}
+                        <div className="mt-8 space-y-5">
+                            <div className="relative flex items-center gap-3">
+                                <div className="flex-1 h-px bg-gray-200" />
+                                <span className="text-xs text-gray-500 font-medium shrink-0 uppercase tracking-wider">Or continue with</span>
+                                <div className="flex-1 h-px bg-gray-200" />
                             </div>
 
-                            <Button
+                            <button
                                 type="button"
-                                variant="outline"
+                                className="w-full py-3.5 flex items-center justify-center gap-3 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-semibold shadow-sm transition"
                                 onClick={handleGoogleLogin}
-                                className="mt-6 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg"
                                 disabled={loading}
                             >
-                                <img
-                                    src="https://www.svgrepo.com/show/355037/google.svg"
-                                    alt="Google"
-                                    className="w-5 h-5"
-                                />
+                                <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google" className="w-5 h-5" />
                                 Google
-                            </Button>
-                        </div>
+                            </button>
 
-                        {isLogin && (
-                            <div className="mt-5">
-                                {/* Divider */}
-                                <div className="relative flex items-center gap-3 mb-4">
-                                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-                                    <span className="text-[11px] uppercase tracking-widest text-gray-400 font-semibold shrink-0">
-                                        University Access
-                                    </span>
-                                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-                                </div>
-
-                                {/* Card */}
-                                <Link
-                                    to={routes.universityLogin}
-                                    className="group block w-full rounded-xl border border-indigo-100 dark:border-indigo-900 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950/60 dark:to-blue-950/60 hover:from-indigo-100 hover:to-blue-100 dark:hover:from-indigo-900/80 dark:hover:to-blue-900/80 transition-all duration-200 shadow-sm hover:shadow-md p-4"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        {/* Icon bubble */}
-                                        <div className="shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-200">
-                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                                            </svg>
-                                        </div>
-
-                                        {/* Text */}
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">
-                                                Student Login
-                                            </p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                                                Sign in with your university credentials
-                                            </p>
-                                        </div>
-
-                                        {/* Arrow */}
-                                        <svg className="w-4 h-4 text-indigo-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 group-hover:translate-x-0.5 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </div>
-                                </Link>
+                            <div className="relative flex items-center gap-3 mt-8">
+                                <div className="flex-1 h-px bg-gray-200" />
+                                <span className="text-xs text-gray-500 font-medium shrink-0 uppercase tracking-wider">University Access</span>
+                                <div className="flex-1 h-px bg-gray-200" />
                             </div>
-                        )}
+
+                            <Link
+                                to={routes.universityLogin}
+                                className="group w-full p-4 flex items-center gap-4 rounded-2xl border border-indigo-100 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-200 hover:shadow-sm transition-all text-left"
+                            >
+                                <div className="w-12 h-12 flex-shrink-0 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                                    </svg>
+                                </div>
+                                <div className="flex-1">
+                                    <div className="font-bold text-gray-900 text-[15px] mb-0.5">Student Login</div>
+                                    <div className="text-sm text-gray-500">Sign in with your university credentials</div>
+                                </div>
+                                <svg className="w-5 h-5 text-indigo-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </Link>
+                        </div>
 
                         <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
                             {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
   MapPin,
@@ -21,9 +21,18 @@ const JobSearch: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('United States');
+  // Debounced value — API is only called when this changes
+  const [debouncedLocation, setDebouncedLocation] = useState('United States');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
   const isAuthenticated = !!user || !!localStorage.getItem('access_token');
+
+  const handleLocationChange = (value: string) => {
+    setLocationFilter(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedLocation(value), 600);
+  };
 
   const handleApply = (url: string | null) => {
     if (!isAuthenticated) {
@@ -39,8 +48,8 @@ const JobSearch: React.FC = () => {
     try {
       const jobsData = await fetchJobs({
         limit: 50,
-        location: locationFilter || undefined,
-        country: locationFilter.toLowerCase().includes('united states') || locationFilter.toLowerCase() === 'us' || locationFilter.toLowerCase() === 'usa' ? 'us' : undefined,
+        location: debouncedLocation || undefined,
+        country: debouncedLocation.toLowerCase().includes('united states') || debouncedLocation.toLowerCase() === 'us' || debouncedLocation.toLowerCase() === 'usa' ? 'us' : undefined,
       });
       setJobs(jobsData.jobs || []);
     } catch (error) {
@@ -48,23 +57,21 @@ const JobSearch: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [locationFilter]);
+  }, [debouncedLocation]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Client-side filtering for title/description if API doesn't support keyword search
+  // Client-side filtering for title/description — no API needed
   const filteredJobs = jobs.filter(job => {
     const term = searchTerm.toLowerCase();
-    const titleMatch = job.title.toLowerCase().includes(term);
-    const descMatch = job.description.toLowerCase().includes(term);
-    const companyMatch = job.company.toLowerCase().includes(term);
-
-    // Location is already filtered by API if provided, but double check
-    const locMatch = !locationFilter || (job.location?.toLowerCase().includes(locationFilter.toLowerCase()) ?? false);
-
-    return (titleMatch || descMatch || companyMatch) && locMatch;
+    if (!term) return true;
+    return (
+      job.title.toLowerCase().includes(term) ||
+      job.description.toLowerCase().includes(term) ||
+      job.company.toLowerCase().includes(term)
+    );
   });
 
   const formatSalary = (min: number, max: number) => {
@@ -112,7 +119,7 @@ const JobSearch: React.FC = () => {
                 <input
                   type="text"
                   value={locationFilter}
-                  onChange={(e) => setLocationFilter(e.target.value)}
+                  onChange={(e) => handleLocationChange(e.target.value)}
                   placeholder="City, state, or remote"
                   className="pl-10 w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all"
                 />

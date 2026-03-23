@@ -8,8 +8,7 @@ import {
   sendEmailVerification,
 } from 'firebase/auth';
 import { auth, googleProvider } from '@/firebase';
-import http from '@/api/http';
-import { tokenStore, userStore } from '@/api/http';
+import http, { API_BASE_URL, tokenStore, userStore } from '@/api/http';
 import routes from '@/constants/routes';
 import { useAuth } from '@/contexts/AuthContext';
 import BOTImage from '@/assets/bot_login.png';
@@ -21,9 +20,14 @@ interface UniversityPublic {
   logoUrl?: string | null;
 }
 
-/** Best-effort logo: Clearbit → Google favicon → null (shows initials) */
+/** Best-effort logo: Uploaded → Clearbit → null (shows initials) */
 function getLogoUrl(domain: string, provided?: string | null) {
-  if (provided) return provided;
+  if (provided) {
+    if (provided.startsWith('/')) {
+      return `${API_BASE_URL.replace(/\/api\/?$/, '')}${provided}`;
+    }
+    return provided;
+  }
   return `https://logo.clearbit.com/${domain}`;
 }
 
@@ -311,13 +315,13 @@ export default function UniversityLogin() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Roll / Registration Number
-                  <span className="ml-1.5 text-xs font-normal text-gray-400">(optional)</span>
                 </label>
                 <input
                   type="text"
                   placeholder="e.g. 102117XXX"
                   value={rollNumber}
                   onChange={e => setRollNumber(e.target.value)}
+                  required
                   className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition"
                 />
               </div>
