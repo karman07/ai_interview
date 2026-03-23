@@ -18,7 +18,23 @@ export default function VerifyEmail() {
     const [countdown, setCountdown] = useState(location.state?.email ? 60 : 0);
     const [showResend, setShowResend] = useState(false);
 
+    const fromUniversity = location.state?.from === 'university';
+    const [redirectCountdown, setRedirectCountdown] = useState(fromUniversity ? 8 : 0);
     const emailToVerify = location.state?.email || auth.currentUser?.email || user?.email;
+    const loginRoute = fromUniversity ? routes.universityLogin : routes.login;
+
+    // Auto-redirect back to university login after countdown
+    useEffect(() => {
+        if (!fromUniversity || redirectCountdown <= 0) return;
+        const t = setTimeout(() => setRedirectCountdown(c => c - 1), 1000);
+        return () => clearTimeout(t);
+    }, [fromUniversity, redirectCountdown]);
+
+    useEffect(() => {
+        if (fromUniversity && redirectCountdown === 0) {
+            navigate(loginRoute, { replace: true });
+        }
+    }, [fromUniversity, redirectCountdown]);
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -65,7 +81,7 @@ export default function VerifyEmail() {
                         setTimeout(() => navigate(routes.dashboard, { replace: true }), 2000);
                     } else {
                         // Not logged into backend yet
-                        setTimeout(() => navigate(routes.login, { replace: true }), 2000);
+                        setTimeout(() => navigate(loginRoute, { replace: true }), 2000);
                     }
                 } else {
                     setError('Email not verified yet. Please check your inbox and spam folder.');
@@ -79,24 +95,54 @@ export default function VerifyEmail() {
     };
 
     const handleContinueToLogin = () => {
-        navigate(routes.login, { replace: true });
+        navigate(loginRoute, { replace: true });
     };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white flex items-center justify-center p-6">
             <div className="max-w-md w-full bg-white rounded-3xl p-8 shadow-2xl border border-indigo-100/50">
-                <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Mail className="w-8 h-8 text-indigo-600" />
-                    </div>
-                    <h1 className="text-2xl font-black text-slate-900 mb-4">Check your email</h1>
-                    <p className="text-slate-600 text-sm">
-                        A verification mail has been sent to your email id. Please check your inbox and spam folder.
+
+                {/* Email-sent success hero (shown when redirected from university login) */}
+                {fromUniversity ? (
+                    <div className="text-center mb-8">
+                        <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-5 ring-4 ring-emerald-50">
+                            <ShieldCheck className="w-10 h-10 text-emerald-600" />
+                        </div>
+                        <h1 className="text-2xl font-black text-slate-900 mb-2">Email sent successfully!</h1>
+                        <p className="text-slate-500 text-sm leading-relaxed">
+                            We've sent a verification link to
+                        </p>
                         {emailToVerify && (
-                            <span className="font-semibold text-slate-900 mt-2 block">{emailToVerify}</span>
+                            <p className="font-bold text-slate-800 mt-1 text-base">{emailToVerify}</p>
                         )}
-                    </p>
-                </div>
+                        <p className="text-slate-500 text-sm mt-2">
+                            Click the link in your inbox to activate your account, then sign in.
+                        </p>
+                        {/* Auto-redirect countdown */}
+                        <p className="text-xs text-indigo-500 font-semibold mt-4">
+                            Redirecting to sign in page in {redirectCountdown}s…
+                        </p>
+                        <div className="w-full bg-indigo-100 rounded-full h-1 mt-2 overflow-hidden">
+                            <div
+                                className="bg-indigo-500 h-1 rounded-full transition-all duration-1000"
+                                style={{ width: `${(redirectCountdown / 8) * 100}%` }}
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    <div className="text-center mb-8">
+                        <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Mail className="w-8 h-8 text-indigo-600" />
+                        </div>
+                        <h1 className="text-2xl font-black text-slate-900 mb-4">Check your email</h1>
+                        <p className="text-slate-600 text-sm">
+                            A verification mail has been sent to your email id. Please check your inbox and spam folder.
+                            {emailToVerify && (
+                                <span className="font-semibold text-slate-900 mt-2 block">{emailToVerify}</span>
+                            )}
+                        </p>
+                    </div>
+                )}
 
                 {error && (
                     <div className="mb-6 p-4 bg-rose-50 text-rose-700 rounded-xl flex items-start gap-3 text-sm">
@@ -127,7 +173,7 @@ export default function VerifyEmail() {
                             onClick={handleContinueToLogin}
                             className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-lg flex items-center justify-center gap-2"
                         >
-                            Continue to Login <LogIn className="w-4 h-4" />
+                            {fromUniversity ? 'Back to Sign In' : 'Continue to Login'} <LogIn className="w-4 h-4" />
                         </Button>
                     )}
 

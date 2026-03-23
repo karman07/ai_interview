@@ -71,7 +71,6 @@ export default function UniversityLogin() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
-  const [verifyEmailSent, setVerifyEmailSent] = useState(false);
 
   const selected = universities.find(u => u._id === selectedId) ?? null;
   const emailDomain = email.includes('@') ? email.split('@')[1] : '';
@@ -95,7 +94,6 @@ export default function UniversityLogin() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setVerifyEmailSent(false);
     if (!selected) { setError('Please select your university first.'); return; }
     if (domainMismatch) { setError(`Email must end with @${selected.domain}`); return; }
     setLoading(true);
@@ -136,9 +134,8 @@ export default function UniversityLogin() {
         await fbUser.reload().catch(() => {});
         if (!fbUser.emailVerified) {
           await sendEmailVerification(fbUser);
-          setVerifyEmailSent(true);
-          setError('');
           setLoading(false);
+          navigate(routes.verifyEmail, { state: { email, from: 'university' } });
           return;
         }
       }
@@ -253,22 +250,6 @@ export default function UniversityLogin() {
             </div>
 
             <AnimatePresence>
-              {verifyEmailSent && (
-                <motion.div
-                  className="mb-4 flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-300 rounded-xl p-3.5 text-sm"
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  <div>
-                    <p className="font-semibold">Verify your email first</p>
-                    <p className="mt-0.5 text-xs opacity-90">A verification link has been sent to <span className="font-medium">{email}</span>. Please check your inbox and click the link, then sign in again.</p>
-                  </div>
-                </motion.div>
-              )}
               {error && (
                 <motion.div
                   className="mb-4 flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-xl p-3 text-sm"
