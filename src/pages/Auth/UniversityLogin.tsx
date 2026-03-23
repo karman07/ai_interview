@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendEmailVerification,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth, googleProvider } from '@/firebase';
 import http, { API_BASE_URL, tokenStore, userStore } from '@/api/http';
@@ -71,6 +72,7 @@ export default function UniversityLogin() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resetSent, setResetSent] = useState(false);
 
   const selected = universities.find(u => u._id === selectedId) ?? null;
   const emailDomain = email.includes('@') ? email.split('@')[1] : '';
@@ -94,6 +96,7 @@ export default function UniversityLogin() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setResetSent(false);
     if (!selected) { setError('Please select your university first.'); return; }
     if (domainMismatch) { setError(`Email must end with @${selected.domain}`); return; }
     setLoading(true);
@@ -116,12 +119,20 @@ export default function UniversityLogin() {
               rollNumber: rollNumber.trim() || undefined,
               universityId: selected._id,
             }).catch(() => {});
-          } catch {
-            // Already exists with a different password — proceed without Firebase block
+          } catch (createErr: any) {
+            if (createErr.code === 'auth/email-already-in-use') {
+              // Firebase account exists but password doesn't match — send reset email
+              await sendPasswordResetEmail(auth, email).catch(() => {});
+              setResetSent(true);
+              setLoading(false);
+              return;
+            }
             fbUser = null;
           }
         } else if (fbErr.code === 'auth/wrong-password') {
-          setError('Wrong password. Please try again.');
+          // Known wrong password — offer reset
+          await sendPasswordResetEmail(auth, email).catch(() => {});
+          setResetSent(true);
           setLoading(false);
           return;
         } else {
@@ -250,6 +261,24 @@ export default function UniversityLogin() {
             </div>
 
             <AnimatePresence>
+              {resetSent && (
+                <motion.div
+                  className="mb-4 flex items-start gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 text-blue-800 dark:text-blue-300 rounded-xl p-3.5 text-sm"
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <div>
+                    <p className="font-semibold">Password reset email sent</p>
+                    <p className="mt-0.5 text-xs opacity-90">
+                      We've sent a password reset link to <span className="font-medium">{email}</span>. Check your inbox, reset your password, then sign in again.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
               {error && (
                 <motion.div
                   className="mb-4 flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-xl p-3 text-sm"
