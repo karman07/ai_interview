@@ -111,6 +111,13 @@ export default function UniversityLogin() {
           try {
             const newCred = await createUserWithEmailAndPassword(auth, email, password);
             fbUser = newCred.user;
+            // Send to DB immediately so admins can see the newly registered but unverified student
+            await http.post('/auth/student-register', {
+              email,
+              password,
+              rollNumber: rollNumber.trim() || undefined,
+              universityId: selected._id,
+            }).catch(() => {});
           } catch {
             // Already exists with a different password — proceed without Firebase block
             fbUser = null;
