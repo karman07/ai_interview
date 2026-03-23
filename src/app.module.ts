@@ -43,6 +43,10 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AiConfigModule } from './ai-config/ai-config.module';
 import { UniversitiesModule } from './universities/universities.module';
+import { ClassesModule } from './classes/classes.module';
+import { AssignmentsModule } from './assignments/assignments.module';
+import { AlertsModule } from './alerts/alerts.module';
+import { FeedbackModule } from './feedback/feedback.module';
 
 @Module({
   imports: [
@@ -90,6 +94,10 @@ import { UniversitiesModule } from './universities/universities.module';
     ReviewsModule,
     AiConfigModule,
     UniversitiesModule,
+    ClassesModule,
+    AssignmentsModule,
+    AlertsModule,
+    FeedbackModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -12,6 +12,7 @@ import { Result, ResultSchema } from '../results/schemas/result.schema';
 import { Payment, PaymentSchema } from '../payments/schemas/payment.schema';
 import { Resume, ResumeSchema } from '../resume/resume.schema';
 import { AIUsage, AIUsageSchema } from './schemas/ai-usage.schema';
+import { Class, ClassSchema } from '../classes/schemas/class.schema';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AIUsage, AIUsageSchema } from './schemas/ai-usage.schema';
       { name: Payment.name, schema: PaymentSchema },
       { name: Resume.name, schema: ResumeSchema },
       { name: AIUsage.name, schema: AIUsageSchema },
+      { name: Class.name, schema: ClassSchema },
     ]),
   ],
   controllers: [AnalyticsController],

@@ -61,11 +61,9 @@ async function bootstrap() {
     // Global timeout disabled for AI processing - connections will never timeout
     // app.useGlobalInterceptors(new TimeoutInterceptor(360000));
 
-    // Enable open CORS
+    // Configure CORS to reflect requester origin (unblocks all local and production frontends)
     app.enableCors({
-      origin: (origin, callback) => {
-        callback(null, true);
-      },
+      origin: true,
       credentials: true,
       methods: ['GET', 'PUT', 'POST', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: [
