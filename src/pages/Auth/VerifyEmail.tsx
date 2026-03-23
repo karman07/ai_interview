@@ -19,23 +19,8 @@ export default function VerifyEmail() {
     const [showResend, setShowResend] = useState(false);
 
     const fromUniversity = location.state?.from === 'university';
-    const REDIRECT_DURATION = 4;
-    const [redirectCountdown, setRedirectCountdown] = useState(fromUniversity ? REDIRECT_DURATION : -1);
     const emailToVerify = location.state?.email || auth.currentUser?.email || user?.email;
     const loginRoute = fromUniversity ? routes.universityLogin : routes.login;
-
-    // Auto-redirect back to university login after countdown
-    useEffect(() => {
-        if (!fromUniversity || redirectCountdown <= 0) return;
-        const t = setTimeout(() => setRedirectCountdown(c => c - 1), 1000);
-        return () => clearTimeout(t);
-    }, [fromUniversity, redirectCountdown]);
-
-    useEffect(() => {
-        if (fromUniversity && redirectCountdown === 0) {
-            navigate(loginRoute, { replace: true });
-        }
-    }, [fromUniversity, redirectCountdown]);
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -107,27 +92,22 @@ export default function VerifyEmail() {
                 {fromUniversity ? (
                     <div className="text-center mb-8">
                         <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-5 ring-4 ring-emerald-50">
-                            <ShieldCheck className="w-10 h-10 text-emerald-600" />
+                            <Mail className="w-10 h-10 text-emerald-600" />
                         </div>
-                        <h1 className="text-2xl font-black text-slate-900 mb-2">Email sent successfully!</h1>
-                        <p className="text-slate-500 text-sm leading-relaxed">
-                            We've sent a verification link to
-                        </p>
+                        <h1 className="text-2xl font-black text-slate-900 mb-2">Check your inbox</h1>
                         {emailToVerify && (
-                            <p className="font-bold text-slate-800 mt-1 text-base">{emailToVerify}</p>
+                            <p className="font-semibold text-indigo-600 text-sm mb-3">{emailToVerify}</p>
                         )}
-                        <p className="text-slate-500 text-sm mt-2">
-                            Click the link in your inbox to activate your account, then sign in.
-                        </p>
-                        {/* Auto-redirect countdown */}
-                        <p className="text-xs text-indigo-500 font-semibold mt-4">
-                            Redirecting to sign in page in {redirectCountdown}s…
-                        </p>
-                        <div className="w-full bg-indigo-100 rounded-full h-1 mt-2 overflow-hidden">
-                            <div
-                                className="bg-indigo-500 h-1 rounded-full transition-all duration-1000"
-                                style={{ width: `${(redirectCountdown / REDIRECT_DURATION) * 100}%` }}
-                            />
+                        {/* Step instructions */}
+                        <div className="text-left space-y-3 mt-4 bg-slate-50 rounded-2xl p-4">
+                            <div className="flex items-start gap-3">
+                                <span className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+                                <p className="text-sm text-slate-700">Open the verification email we just sent you and <strong>click the link</strong> inside it.</p>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <span className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+                                <p className="text-sm text-slate-700">Once verified, come back and click <strong>"Go to Sign In"</strong> to access your account.</p>
+                            </div>
                         </div>
                     </div>
                 ) : (
@@ -172,9 +152,9 @@ export default function VerifyEmail() {
                         <Button
                             variant="primary"
                             onClick={handleContinueToLogin}
-                            className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-lg flex items-center justify-center gap-2"
+                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg flex items-center justify-center gap-2"
                         >
-                            {fromUniversity ? 'Back to Sign In' : 'Continue to Login'} <LogIn className="w-4 h-4" />
+                            {fromUniversity ? 'Go to Sign In' : 'Continue to Login'} <LogIn className="w-4 h-4" />
                         </Button>
                     )}
 
