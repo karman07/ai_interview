@@ -6,7 +6,7 @@ import { Result } from "@/types/results";
 
 // Mock Subjects Data - Empty array to force API fetch
 export const mockSubjects: Subject[] = [];
-
+//
 // Mock Lessons Detail Data - Empty array to force API fetch
 export const mockLessonsDetail: LessonDetail[] = [];
 
