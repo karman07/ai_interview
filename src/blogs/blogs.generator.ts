@@ -23,7 +23,7 @@ const AUTHORS = ['Karman Singh', 'Rahat Bhatia', 'Advitya Dua'];
 @Injectable()
 export class BlogsGeneratorService {
   private readonly logger = new Logger(BlogsGeneratorService.name);
-  private readonly blogsDir = path.join(__dirname, '..', '..', '..', 'blogs_content');
+  private readonly blogsDir = path.join(process.cwd(), 'blogs_content');
 
   constructor(private readonly aiConfigService: AiConfigService) {}
 

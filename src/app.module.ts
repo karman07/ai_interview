@@ -47,6 +47,7 @@ import { ClassesModule } from './classes/classes.module';
 import { AssignmentsModule } from './assignments/assignments.module';
 import { AlertsModule } from './alerts/alerts.module';
 import { FeedbackModule } from './feedback/feedback.module';
+import { BlogsModule } from './blogs/blogs.module';
 
 @Module({
   imports: [
@@ -98,6 +99,7 @@ import { FeedbackModule } from './feedback/feedback.module';
     AssignmentsModule,
     AlertsModule,
     FeedbackModule,
+    BlogsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -8,7 +8,9 @@ from dotenv import load_dotenv
 # Read local Env files
 load_dotenv()
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-OUTPUT_DIR = "/Users/karmansingh/Desktop/work/ai_interview/backend/blogs_content"
+# Use path relative to this script's location
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_DIR = os.path.join(BASE_DIR, "blogs_content")
 
 categories = ['Interview Prep', 'Resume Building', 'Career Growth', 'Technical Skills', 'AI in Recruitment']
 
