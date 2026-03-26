@@ -680,6 +680,51 @@ export class AnalyticsService {
       { $project: { date: '$_id', tokens: 1, inputTokens: 1, outputTokens: 1, cost: 1, inputCost: 1, outputCost: 1, _id: 0 } },
     ]);
 
+    // Per-model breakdown
+    const modelBreakdown = await this.aiUsageModel.aggregate([
+      {
+        $group: {
+          _id: '$model',
+          totalInputTokens: { $sum: '$inputTokens' },
+          totalOutputTokens: { $sum: '$outputTokens' },
+          totalTokens: { $sum: '$totalTokens' },
+          totalInputCost: { $sum: '$inputCostUsd' },
+          totalOutputCost: { $sum: '$outputCostUsd' },
+          totalCost: { $sum: '$costUsd' },
+          sessions: { $addToSet: '$sessionId' },
+          lastSeen: { $max: '$timestamp' },
+        },
+      },
+      {
+        $project: {
+          model: '$_id',
+          totalInputTokens: 1,
+          totalOutputTokens: 1,
+          totalTokens: 1,
+          totalInputCost: 1,
+          totalOutputCost: 1,
+          totalCost: 1,
+          sessionCount: { $size: '$sessions' },
+          lastSeen: 1,
+          _id: 0,
+        },
+      },
+      { $sort: { totalCost: -1 } },
+    ]);
+
+    // Derive the active model from the most recent usage record
+    const latestUsage = await this.aiUsageModel.findOne().sort({ timestamp: -1 }).select('model').lean();
+    const activeModel: string = (latestUsage as any)?.model || 'gemini-2.5-flash';
+
+    // Known pricing tables (USD per 1 million tokens) — mirrors streaming_session.py
+    const MODEL_PRICING: Record<string, { input: number; output: number }> = {
+      'gemini-2.5-flash':    { input: 0.075,  output: 0.30  },
+      'gemini-2.5-pro':      { input: 1.25,   output: 10.00 },
+      'gemini-1.5-flash':    { input: 0.075,  output: 0.30  },
+      'gemini-1.5-flash-8b': { input: 0.0375, output: 0.15  },
+    };
+    const activePricing = MODEL_PRICING[activeModel] || { input: 0.075, output: 0.30 };
+
     const totalRevenueData = await this.paymentModel.aggregate([
       { $match: { status: PaymentStatus.PAID } },
       { $group: { _id: null, total: { $sum: '$amount' } } },
@@ -692,6 +737,9 @@ export class AnalyticsService {
     return {
       tokensByPlan,
       usageOverTime,
+      modelBreakdown,
+      activeModel,
+      activePricing,
       totalRevenue: (totalRevenueData[0]?.total || 0) / 100, // in INR/USD base unit
       totalAICost: totalCostData[0]?.total || 0,
       timestamp: new Date(),
