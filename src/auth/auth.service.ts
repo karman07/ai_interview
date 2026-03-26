@@ -73,6 +73,15 @@ export class AuthService {
     if (!ok) throw new UnauthorizedException('Invalid credentials');
 
     const userId = user._id.toString();
+
+    // Upgrade existing user to student if they match a university domain
+    const uni = await this.getUniversityInfo(user.email);
+    if (uni && user.role === UserRole.USER) {
+      user.role = UserRole.STUDENT;
+      user.universityId = uni._id.toString();
+      await user.save();
+    }
+
     const tokens = await this.issueTokens(userId, user.email, user.role, user.universityId);
     await this.saveRefresh(userId, tokens.refreshToken);
     return this.safeResponse(user, tokens);
@@ -136,6 +145,14 @@ export class AuthService {
         if (err instanceof UnauthorizedException) throw err;
         throw new UnauthorizedException('Please verify your email address via Firebase.');
       }
+    }
+
+    // Upgrade existing user to student if they match a university domain
+    const uni = await this.getUniversityInfo(user.email);
+    if (uni && user.role === UserRole.USER) {
+      user.role = UserRole.STUDENT;
+      user.universityId = uni._id.toString();
+      await user.save();
     }
 
     const tokens = await this.issueTokens(userId, email, user.role, user.universityId);
