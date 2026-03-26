@@ -19,6 +19,7 @@ import { ProgressProvider } from "./contexts/ProgressContext";
 import { LessonsProvider } from "./contexts/LessonsContext";
 import { AnalyticsProvider } from "./contexts/AnalyticsContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import UniversityRoute from "./routes/UniversityRoute";
 
 // ── Lazy-loaded pages (each becomes its own JS chunk) ─────────────────────
 const About                   = lazy(() => import("@/pages/About"));
@@ -283,38 +284,42 @@ function App() {
                         </div>
                       } />
                       <Route path={routes.resumeBuilder} element={<ResumeBuilder />} />
-                      <Route path={routes.studentFeedback} element={
-                        <div className="flex min-h-screen">
-                          <Sidebar />
-                          <div className="flex-1">
-                            <FeedbackInbox />
+
+                      {/* University-only Routes */}
+                      <Route element={<UniversityRoute />}>
+                        <Route path={routes.studentFeedback} element={
+                          <div className="flex min-h-screen">
+                            <Sidebar />
+                            <div className="flex-1">
+                              <FeedbackInbox />
+                            </div>
                           </div>
-                        </div>
-                      } />
-                      <Route path={routes.studentAssignments} element={
-                        <div className="flex min-h-screen">
-                          <Sidebar />
-                          <div className="flex-1">
-                            <StudentAssignments />
+                        } />
+                        <Route path={routes.studentAssignments} element={
+                          <div className="flex min-h-screen">
+                            <Sidebar />
+                            <div className="flex-1">
+                              <StudentAssignments />
+                            </div>
                           </div>
-                        </div>
-                      } />
-                      <Route path={routes.studentClasses} element={
-                        <div className="flex min-h-screen">
-                          <Sidebar />
-                          <div className="flex-1">
-                            <StudentClasses />
+                        } />
+                        <Route path={routes.studentClasses} element={
+                          <div className="flex min-h-screen">
+                            <Sidebar />
+                            <div className="flex-1">
+                              <StudentClasses />
+                            </div>
                           </div>
-                        </div>
-                      } />
-                      <Route path={routes.studentClassDetail(":id")} element={
-                        <div className="flex min-h-screen">
-                          <Sidebar />
-                          <div className="flex-1">
-                            <StudentClassDetail />
+                        } />
+                        <Route path={routes.studentClassDetail(":id")} element={
+                          <div className="flex min-h-screen">
+                            <Sidebar />
+                            <div className="flex-1">
+                              <StudentClassDetail />
+                            </div>
                           </div>
-                        </div>
-                      } />
+                        } />
+                      </Route>
                     </Route>
 
                     <Route element={<ProtectedRoute />}>

@@ -38,6 +38,8 @@ export default function StudentDashboard() {
   const resumeLimit = university?.resumeLimit ?? 5;
   const interviewLimit = university?.interviewLimit ?? 10;
 
+  const isUniversityStudent = !!user?.universityId;
+
   const quickActions = [
     {
       title: 'Build Resume',
@@ -49,41 +51,41 @@ export default function StudentDashboard() {
       route: routes.resumeBuilder,
       disabled: resumeUsed >= resumeLimit,
     },
-    {
-      title: 'My Classes',
-      description: 'Courses and enrollment',
-      icon: <School className="w-6 h-6" />,
-      color: 'bg-indigo-600',
-      labelColor: 'text-indigo-600',
-      bgLight: 'bg-indigo-50',
-      route: routes.studentClasses,
-      disabled: false,
-    },
-    {
-      title: 'Course Assignments',
-
-      description: 'Pending tasks from mentors',
-      icon: <ClipboardList className="w-6 h-6" />,
-      color: 'bg-indigo-600',
-      labelColor: 'text-indigo-600',
-      bgLight: 'bg-indigo-50',
-      route: routes.studentAssignments,
-      disabled: false,
-    },
-    {
-      title: 'Mentor Feedback',
-
-      description: 'View guidance from faculty',
-      icon: <MessageSquare className="w-6 h-6" />,
-      color: 'bg-rose-500',
-      labelColor: 'text-rose-500',
-      bgLight: 'bg-rose-50',
-      route: routes.studentFeedback,
-      disabled: false,
-    },
+    // University-only features
+    ...(isUniversityStudent ? [
+      {
+        title: 'My Classes',
+        description: 'Courses and enrollment',
+        icon: <School className="w-6 h-6" />,
+        color: 'bg-indigo-600',
+        labelColor: 'text-indigo-600',
+        bgLight: 'bg-indigo-50',
+        route: routes.studentClasses,
+        disabled: false,
+      },
+      {
+        title: 'Course Assignments',
+        description: 'Pending tasks from mentors',
+        icon: <ClipboardList className="w-6 h-6" />,
+        color: 'bg-indigo-600',
+        labelColor: 'text-indigo-600',
+        bgLight: 'bg-indigo-50',
+        route: routes.studentAssignments,
+        disabled: false,
+      },
+      {
+        title: 'Mentor Feedback',
+        description: 'View guidance from faculty',
+        icon: <MessageSquare className="w-6 h-6" />,
+        color: 'bg-rose-500',
+        labelColor: 'text-rose-500',
+        bgLight: 'bg-rose-50',
+        route: routes.studentFeedback,
+        disabled: false,
+      },
+    ] : []),
     {
       title: 'Practice Interview',
-
       description: `${interviewUsed} / ${interviewLimit} used`,
       icon: <Mic className="w-6 h-6" />,
       color: 'bg-indigo-600',
