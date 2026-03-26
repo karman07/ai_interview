@@ -29,6 +29,15 @@ export class BlogsGeneratorService {
 
   @Cron('0 0 * * *') // Runs everyday at midnight
   async handleDailyBlog() {
+    const result = await this.generateDailyBlog();
+    if (result.success) {
+      this.logger.log(`✅ Daily blog generated and saved: ${result.slug}.md`);
+    } else {
+      this.logger.error(`❌ Failed to generate daily blog: ${result.error}`);
+    }
+  }
+
+  async generateDailyBlog() {
     this.logger.log('Starting daily blog generation via Groq...');
     const cat = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
     const randomImage = IMAGES[Math.floor(Math.random() * IMAGES.length)];
@@ -59,23 +68,32 @@ coverImage: "Provide a real high-quality absolute Unsplash image URL that matche
 `;
 
     try {
-      const groqKey = await this.aiConfigService.getActiveKey('groq');
+      const apiKey = await this.aiConfigService.getActiveKey('gemini');
+      const model = await this.aiConfigService.getActiveModel('gemini');
+      
       const res = await axios.post(
-        'https://api.groq.com/openai/v1/chat/completions',
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.7,
+          contents: [{
+            parts: [{ text: prompt }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            topP: 0.95,
+            topK: 40,
+            maxOutputTokens: 2048,
+          }
         },
         {
-          headers: {
-            Authorization: `Bearer ${groqKey}`,
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
         },
       );
 
-      let content = res.data.choices[0].message.content;
+      let content = res.data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!content) {
+        throw new Error('No content returned from Gemini');
+      }
+
       const slugMatch = content.match(/slug:\s*"([^"]+)"/);
       const slug = slugMatch ? slugMatch[1] : `daily-blog-${Date.now()}`;
       
@@ -96,9 +114,11 @@ coverImage: "Provide a real high-quality absolute Unsplash image URL that matche
       }
 
       fs.writeFileSync(filePath, content);
-      this.logger.log(`✅ Daily blog generated and saved: ${slug}.md`);
+      return { success: true, slug };
     } catch (err) {
-      this.logger.error('❌ Failed to generate daily blog:', err);
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      this.logger.error('❌ Failed to generate daily blog:', errorMsg);
+      return { success: false, error: errorMsg };
     }
   }
 }
