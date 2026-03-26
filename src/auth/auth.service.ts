@@ -73,7 +73,7 @@ export class AuthService {
     if (!ok) throw new UnauthorizedException('Invalid credentials');
 
     const userId = user._id.toString();
-    const tokens = await this.issueTokens(userId, user.email, user.role);
+    const tokens = await this.issueTokens(userId, user.email, user.role, user.universityId);
     await this.saveRefresh(userId, tokens.refreshToken);
     return this.safeResponse(user, tokens);
   }
@@ -111,7 +111,7 @@ export class AuthService {
     }
 
     const userId = user._id.toString();
-    const tokens = await this.issueTokens(userId, user.email, user.role);
+    const tokens = await this.issueTokens(userId, user.email, user.role, user.universityId);
     await this.saveRefresh(userId, tokens.refreshToken);
 
     return this.safeResponse(user, tokens);
@@ -138,7 +138,7 @@ export class AuthService {
       }
     }
 
-    const tokens = await this.issueTokens(userId, email, user.role);
+    const tokens = await this.issueTokens(userId, email, user.role, user.universityId);
     await this.saveRefresh(userId, tokens.refreshToken);
     return tokens;
   }
@@ -215,7 +215,7 @@ export class AuthService {
       }
     }
 
-    const tokens = await this.issueTokens(user._id.toString(), user.email, user.role);
+    const tokens = await this.issueTokens(user._id.toString(), user.email, user.role, user.universityId);
     await this.saveRefresh(user._id.toString(), tokens.refreshToken);
 
     const { passwordHash, refreshTokenHash, ...safe } = user.toObject();
@@ -270,7 +270,7 @@ export class AuthService {
       }
     }
 
-    const tokens = await this.issueTokens(user._id.toString(), user.email, user.role);
+    const tokens = await this.issueTokens(user._id.toString(), user.email, user.role, user.universityId);
     await this.saveRefresh(user._id.toString(), tokens.refreshToken);
 
     const { passwordHash, refreshTokenHash, ...safe } = user.toObject();
@@ -312,13 +312,14 @@ export class AuthService {
     return this.universities.findByDomain(domain);
   }
 
-  private async issueTokens(sub: string, email: string, role: string) {
+  private async issueTokens(sub: string, email: string, role: string, universityId?: string) {
+    const payload = { sub, email, role, universityId };
     const accessToken = await this.jwt.signAsync(
-      { sub, email, role },
+      payload,
       { secret: process.env.JWT_ACCESS_SECRET, expiresIn: process.env.JWT_ACCESS_EXPIRES || '1h' },
     );
     const refreshToken = await this.jwt.signAsync(
-      { sub, email, role },
+      payload,
       { secret: process.env.JWT_REFRESH_SECRET, expiresIn: process.env.JWT_REFRESH_EXPIRES || '7d' },
     );
     return { accessToken, refreshToken };
