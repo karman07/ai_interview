@@ -259,7 +259,7 @@ export default function InterviewRoomWS() {
             sendEndSession();
         } else {
             // Early exit - just go back
-            navigate('/interview_round');
+            navigate('/interview_round', { replace: true });
         }
     };
 
@@ -350,6 +350,9 @@ export default function InterviewRoomWS() {
 
             localStorage.setItem('v2_interview_report', JSON.stringify(report));
 
+            localStorage.removeItem('ws_interview_setup');
+            localStorage.removeItem('ws_interview_client_id');
+
             // Only save full analytics to backend if user actually answered questions
             if (userMessageCount > 0) {
                 // Post external analytics to backend, including context metadata
@@ -364,21 +367,15 @@ export default function InterviewRoomWS() {
                 http.post('/enhanced-interview/external-analytics', externalPayload).then(res => {
                     // Get the real MongoDB ID
                     const dbId = res.data?._id || res.data?.id || clientId;
-                    localStorage.removeItem('ws_interview_setup');
-                    localStorage.removeItem('ws_interview_client_id');
-                    navigate(`/interview/results/${dbId}`);
+                    navigate(`/interview/results/${dbId}`, { replace: true });
                 }).catch(err => {
                     console.error('Failed to save external analytics to backend:', err);
-                    localStorage.removeItem('ws_interview_setup');
-                    localStorage.removeItem('ws_interview_client_id');
-                    navigate(`/interview/results/${clientId}`);
+                    navigate(`/interview/results/${clientId}`, { replace: true });
                 });
             } else {
                 // No answers given — count was already incremented at interview start
                 console.log('[InterviewRoomWS] No answers given — navigating back');
-                localStorage.removeItem('ws_interview_setup');
-                localStorage.removeItem('ws_interview_client_id');
-                navigate('/interview_round');
+                navigate('/interview_round', { replace: true });
             }
         }
     }, [interviewEnded, feedback, clientId, messages, navigate, setupData]);
@@ -437,7 +434,7 @@ export default function InterviewRoomWS() {
                         onClick={() => {
                             localStorage.removeItem('ws_interview_setup');
                             localStorage.removeItem('ws_interview_client_id');
-                            navigate('/interview_round');
+                            navigate('/interview_round', { replace: true });
                         }}
                         className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                     >
@@ -473,7 +470,7 @@ export default function InterviewRoomWS() {
                                     </button>
                                 )}
                                 <button
-                                    onClick={() => navigate('/interview_round')}
+                                    onClick={() => navigate('/interview_round', { replace: true })}
                                     className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] opacity-80"
                                 >
                                     Return to Dashboard
