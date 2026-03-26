@@ -15,9 +15,10 @@ import { Request } from 'express';
 import { ClassesService } from './classes.service';
 import { CreateClassDto, UpdateClassDto, EnrollStudentsDto } from './dto/class.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { UniversityGuard } from '../common/guards/university.guard';
 
 @Controller('classes')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, UniversityGuard)
 export class ClassesController {
   constructor(private readonly service: ClassesService) {}
 

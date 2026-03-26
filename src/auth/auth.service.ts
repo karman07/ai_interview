@@ -19,10 +19,12 @@ export class AuthService {
   ) { }
 
   async signup(dto: CreateUserDto) {
+    const uni = await this.getUniversityInfo(dto.email);
     // Use passed role or default to 'user'
     const userData = {
       ...dto,
-      role: dto.role || UserRole.USER,
+      role: uni ? UserRole.STUDENT : (dto.role || UserRole.USER),
+      universityId: uni ? uni._id.toString() : dto.universityId,
       isEmailVerified: false,
     };
     const user = await this.usersService.create(userData);
@@ -82,6 +84,7 @@ export class AuthService {
 
     if (!user) {
       user = await this.usersService.findByEmail(decoded.email);
+      const uni = await this.getUniversityInfo(decoded.email);
       if (!user) {
         user = await this.usersService.createGoogleUser({
           name: decoded.name ?? 'Google User',
@@ -89,6 +92,8 @@ export class AuthService {
           googleId: decoded.uid,
           profileImageUrl: decoded.picture,
           isEmailVerified: true,
+          role: uni ? UserRole.STUDENT : UserRole.USER,
+          universityId: uni ? uni._id.toString() : undefined,
         } as any);
 
         // New user from Google, send welcome email
@@ -96,6 +101,11 @@ export class AuthService {
       } else {
         user.googleId = decoded.uid;
         user.isEmailVerified = true;
+        // Upgrade existing user to student if they match a university domain
+        if (uni && user.role === UserRole.USER) {
+          user.role = UserRole.STUDENT;
+          user.universityId = uni._id.toString();
+        }
         await user.save();
       }
     }
@@ -294,6 +304,12 @@ export class AuthService {
   async logout(userId: string) {
     await this.usersService.setRefreshToken(userId, null);
     return { success: true };
+  }
+  
+  private async getUniversityInfo(email: string) {
+    const domain = email?.split('@')[1]?.toLowerCase();
+    if (!domain) return null;
+    return this.universities.findByDomain(domain);
   }
 
   private async issueTokens(sub: string, email: string, role: string) {

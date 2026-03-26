@@ -18,9 +18,10 @@ import {
   UpdateAssignmentDto,
 } from './dto/assignment.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { UniversityGuard } from '../common/guards/university.guard';
 
 @Controller('assignments')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, UniversityGuard)
 export class AssignmentsController {
   constructor(private readonly service: AssignmentsService) {}
 

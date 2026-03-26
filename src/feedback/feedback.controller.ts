@@ -17,9 +17,10 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
+import { UniversityGuard } from '../common/guards/university.guard';
 
 @Controller('feedback')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, UniversityGuard)
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
