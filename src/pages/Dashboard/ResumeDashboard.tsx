@@ -119,9 +119,16 @@ const ArrowRight: React.FC<{ className?: string }> = ({ className = "w-6 h-6" })
   </svg>
 );
 
+import { useNotifications } from "@/hooks/useNotifications";
+import NotificationPrompt from "@/components/common/NotificationPrompt";
+
 const ResumeDashboard: React.FC = () => {
   const { resumes, uploadResume, isLoading } = useResume();
   const { user } = useAuth();
+  
+  // Initialize Push Notifications specifically for Dashboard entry
+  useNotifications(user?._id);
+
   const { addNotification } = useNotification();
   const { setShowPricing } = usePricing();
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);

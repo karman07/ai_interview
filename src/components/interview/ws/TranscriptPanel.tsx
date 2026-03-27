@@ -8,10 +8,11 @@ interface TranscriptPanelProps {
     transcript: string;
     isListening: boolean;
     isSpeaking: boolean;
+    isThinking: boolean;
     isTranscribing: boolean;
 }
 
-export const WSTranscriptPanel: React.FC<TranscriptPanelProps> = ({ messages, transcript, isListening, isSpeaking, isTranscribing: _isTranscribing }) => {
+export const WSTranscriptPanel: React.FC<TranscriptPanelProps> = ({ messages, transcript, isListening, isSpeaking, isThinking, isTranscribing: _isTranscribing }) => {
     const [isOpen, setIsOpen] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -56,15 +57,15 @@ export const WSTranscriptPanel: React.FC<TranscriptPanelProps> = ({ messages, tr
                             {unreadCount}
                         </span>
                     )}
-                    {/* Live indicator when speaking/listening */}
-                    {(isSpeaking || isListening) && (
+                    {/* Live indicator when speaking/listening/thinking */}
+                    {(isSpeaking || isListening || isThinking) && (
                         <div className="flex gap-0.5 items-center ml-1">
                             {[1, 2, 3].map(i => (
                                 <motion.div
                                     key={i}
                                     animate={{ height: [2, 7, 2] }}
                                     transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.1 }}
-                                    className={`w-0.5 rounded-full ${isSpeaking ? 'bg-blue-400' : 'bg-orange-400'}`}
+                                    className={`w-0.5 rounded-full ${isSpeaking ? 'bg-blue-400' : isThinking ? 'bg-orange-400' : 'bg-emerald-400'}`}
                                 />
                             ))}
                         </div>

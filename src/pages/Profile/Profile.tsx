@@ -7,6 +7,7 @@ import Input from '@/components/ui/Input';
 import Button from '../../components/ui/button';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import Switch from '@/components/ui/Switch';
 import {
   sendEmailVerification,
 } from 'firebase/auth';
@@ -94,6 +95,9 @@ export default function Profile() {
   }, [user, params, setParams, refreshMe]);
 
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [isPushEnabled, setIsPushEnabled] = useState(
+    typeof Notification !== 'undefined' && Notification.permission === 'granted'
+  );
 
   useEffect(() => {
     SubscriptionApi.getTransactions().then(data => {
@@ -435,6 +439,45 @@ export default function Profile() {
                       {verifyingEmail ? '...' : 'Verify'}
                     </button>
                   )}
+                </div>
+                <div className="p-4 bg-gray-50/50 dark:bg-gray-800/20 rounded-[1.5rem] border border-gray-100 dark:border-gray-800/50 flex items-center justify-between group/verify hover:border-blue-500/30 transition-all mt-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${typeof Notification !== 'undefined' && Notification.permission === 'granted' ? 'bg-blue-500/10 text-blue-500' : 'bg-gray-500/10 text-gray-400'}`}>
+                      <Zap className={`w-4 h-4 ${typeof Notification !== 'undefined' && Notification.permission === 'granted' ? 'text-blue-500' : 'text-gray-400'}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-0.5">Desktop Alerts</p>
+                      <p className="text-[11px] font-bold text-gray-700 dark:text-gray-300 truncate">
+                        Instant Interview Feedback
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 opacity-60">
+                      {isPushEnabled ? 'ENABLED' : 'DISABLED'}
+                    </span>
+                    <Switch
+                      checked={isPushEnabled}
+                      onChange={async (checked) => {
+                        if (checked) {
+                          const result = await Notification.requestPermission();
+                          if (result === 'granted') {
+                            setIsPushEnabled(true);
+                            showSuccess('Notifications enabled! Welcome to the loop.');
+                          }
+                        } else {
+                          try {
+                            await UsersApi.deleteFcmTokens();
+                            setIsPushEnabled(false);
+                            showSuccess('Notifications disabled.');
+                          } catch (e) {
+                            setErr('Disable synchronization failed.');
+                          }
+                        }
+                      }}
+                      disabled={typeof Notification === 'undefined'}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

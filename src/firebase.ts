@@ -2,16 +2,21 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAGhjwshhAC0fDUqkbAz3jJq_iDHwFy88o",
-  authDomain: "ai-interview-7e471.firebaseapp.com",
-  projectId: "ai-interview-7e471",
-  storageBucket: "ai-interview-7e471.firebasestorage.app",
-  messagingSenderId: "388912433938",
-  appId: "1:388912433938:web:7f71f3ee65f81e4bbd81cb",
-  measurementId: "G-9GS2D4YBJB"
-}
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+};
+
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+export const messaging = getMessaging(app);
+
+export { getToken, onMessage };

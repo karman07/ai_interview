@@ -28,6 +28,20 @@ export const UsersApi = {
   },
 
   /**
+   * Register or update the user's FCM push notification token.
+   */
+  saveFcmToken: async (token: string): Promise<void> => {
+    await http.post('/users/me/fcm-token', { token });
+  },
+
+  /**
+   * Remove all FCM push notification tokens for the user.
+   */
+  deleteFcmTokens: async (): Promise<void> => {
+    await http.delete('/users/me/fcm-token');
+  },
+
+  /**
    * Update profile image specifically.
    */
   uploadProfileImage: async (file: File): Promise<User> => {

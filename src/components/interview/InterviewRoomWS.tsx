@@ -67,7 +67,7 @@ export default function InterviewRoomWS() {
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── Hooks ──
-    const { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding, error: wsError, isCodingQuestion } =
+    const { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding, error: wsError, isCodingQuestion, isWaitingForResponse } =
         useInterviewWebSocket(clientId, setupData);
     const { formattedTime } = useInterviewTimer();
     const { videoRef, isActive: webcamActive, startCamera, toggleCamera } = useInterviewWebcam();
@@ -145,7 +145,6 @@ export default function InterviewRoomWS() {
             setShowCodeEditor(true);
         }
     }, [messages, isStreamingResponse]);
-
     // ── Auto-open/close question box ──
     useEffect(() => {
         if (messages.length === 0) return;
@@ -198,7 +197,7 @@ export default function InterviewRoomWS() {
         }
     }, [isStreamingResponse, speak]);
 
-    // ── STT handler ──
+    // STT handler
     const handleFinalTranscript = useCallback((text: string) => {
         sendMessage(text);
     }, [sendMessage]);
@@ -401,10 +400,10 @@ export default function InterviewRoomWS() {
     }, [messages, cancel, speak]);
 
     // ── Derived states ──
-    const isThinking = messages.length > 0 &&
-        messages[messages.length - 1].role === 'user' &&
-        !isStreamingResponse &&
-        !isSpeaking;
+    const isThinking = isWaitingForResponse || (
+        messages.length > 0 &&
+        messages[messages.length - 1].role === 'user'
+    );
 
     // ── Loading/Error states ──
     const isActuallyLoading = (messages.length === 0 || !isConnected) && !interviewEnded;
@@ -561,7 +560,8 @@ export default function InterviewRoomWS() {
                         <div className={`shrink-0 bg-white dark:bg-slate-900 rounded-[2rem] border border-blue-50 dark:border-slate-800 shadow-sm overflow-hidden relative group transition-all duration-500 ${showCodeEditor ? 'h-[260px]' : 'h-[360px]'}`}>
                             <ThreeAvatar
                                 isSpeaking={isSpeaking}
-                                isListening={isListening}
+                                isListening={isListening || isTranscribing}
+                                isThinking={isThinking}
                             />
 
                             {/* User Webcam PIP */}
@@ -663,8 +663,9 @@ export default function InterviewRoomWS() {
                         <WSTranscriptPanel
                                 messages={messages}
                                 transcript={transcript}
-                                isListening={isListening}
+                                isListening={isListening || isTranscribing}
                                 isSpeaking={isSpeaking}
+                                isThinking={isThinking}
                                 isTranscribing={isTranscribing}
                             />
                     </motion.div>

@@ -16,6 +16,8 @@ import {
   type Job,
 } from '@/api/jobService';
 
+import NotificationPrompt from '@/components/common/NotificationPrompt';
+
 const JobSearch: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,6 +185,7 @@ const JobSearch: React.FC = () => {
           </div>
         )}
       </div>
+      <NotificationPrompt userId={user?._id} />
     </div>
   );
 };

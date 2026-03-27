@@ -29,6 +29,7 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
     const [isEnding, setIsEnding] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isCodingQuestion, setIsCodingQuestion] = useState(false);
+    const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
     const feedbackRef = useRef<any>(null);
 
     const isStreamingResponseRef = useRef(false);
@@ -72,6 +73,7 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
             initTimer = setTimeout(() => {
                 if (!initSentRef.current && ws.readyState === WebSocket.OPEN && initDataRef.current) {
                     initSentRef.current = true;
+                    setIsWaitingForResponse(true);
                     ws.send(JSON.stringify({
                         type: "init",
                         resume_text: initDataRef.current.resumeText,
@@ -137,6 +139,7 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
                     }
                 } else if (data.type === 'stream_start') {
                     setStreamingInfo(true);
+                    setIsWaitingForResponse(false);
                 } else if (data.type === 'stream_end') {
                     setStreamingInfo(false);
                 } else if (data.type === 'metadata') {
@@ -177,6 +180,7 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
                 } else if (data.type === 'error') {
                     console.error("[WS] Server Error:", data.content);
                     setError(data.content);
+                    setIsWaitingForResponse(false);
                 } else if (data.type === 'pong') {
                     // Heartbeat response
                 }
@@ -197,6 +201,7 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
     const sendMessage = useCallback((text: string) => {
         if (socket && socket.readyState === WebSocket.OPEN) {
             setMessages(prev => [...prev, { role: 'user', content: text }]);
+            setIsWaitingForResponse(true);
             socket.send(JSON.stringify({
                 type: 'message',
                 content: text
@@ -219,5 +224,5 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
         }
     }, [clientId, initData, connect, interviewEnded]);
 
-    return { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding, error, isCodingQuestion };
+    return { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding, error, isCodingQuestion, isWaitingForResponse };
 };

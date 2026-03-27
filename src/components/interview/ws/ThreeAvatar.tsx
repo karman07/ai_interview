@@ -3,6 +3,7 @@ import React from 'react';
 interface AvatarProps {
   isSpeaking: boolean;
   isListening: boolean;
+  isThinking?: boolean;
 }
 
 // Custom CSS animation for sound wave bars since custom tailwind arbitrary values aren't always parsed
@@ -17,12 +18,12 @@ const animationStyles = `
   }
 `;
 
-export const ThreeAvatar = ({ isSpeaking = false, isListening = false, label }: AvatarProps & { label?: string }) => {
+export const ThreeAvatar = ({ isSpeaking = false, isListening = false, isThinking = false, label }: AvatarProps & { label?: string }) => {
   const bars = [0.4, 0.7, 1.0, 0.7, 0.5, 0.9, 0.6, 1.0, 0.5, 0.8, 0.4, 0.7, 1.0, 0.6, 0.5];
-  const active = isSpeaking || isListening;
+  const active = isSpeaking || isListening || isThinking;
   
   // Theme variants
-  const activeColor = isListening ? 'emerald' : 'blue';
+  const activeColor = isSpeaking ? 'blue' : isListening ? 'emerald' : isThinking ? 'amber' : 'blue';
   
   return (
     <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 rounded-[2rem] relative overflow-hidden shadow-2xl border border-slate-800">
@@ -30,9 +31,9 @@ export const ThreeAvatar = ({ isSpeaking = false, isListening = false, label }: 
 
       {/* Top Left Status */}
       <div className="absolute top-5 left-5 z-20">
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all duration-500 bg-black/40 backdrop-blur-md border border-white/5 ${isSpeaking ? 'text-blue-400 border-blue-500/20' : isListening ? 'text-emerald-400 border-emerald-500/20' : 'text-slate-500'}`}>
-          <div className={`w-1.5 h-1.5 rounded-full ${isSpeaking ? 'bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]' : isListening ? 'bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-slate-700'}`} />
-          {isSpeaking ? 'AI Speaking' : isListening ? 'Listening' : 'AI Ready'}
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all duration-500 bg-black/40 backdrop-blur-md border border-white/5 ${isSpeaking ? 'text-blue-400 border-blue-500/20' : isListening ? 'text-emerald-400 border-emerald-500/20' : isThinking ? 'text-amber-400 border-amber-500/20' : 'text-slate-500'}`}>
+          <div className={`w-1.5 h-1.5 rounded-full ${isSpeaking ? 'bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]' : isListening ? 'bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]' : isThinking ? 'bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.8)]' : 'bg-slate-700'}`} />
+          {isSpeaking ? 'AI Speaking' : isListening ? 'Listening' : isThinking ? 'AI Thinking' : 'AI Ready'}
         </div>
       </div>
 
@@ -40,7 +41,7 @@ export const ThreeAvatar = ({ isSpeaking = false, isListening = false, label }: 
       <div 
         className="absolute inset-0 pointer-events-none transition-opacity duration-1000 ease-in-out"
         style={{ 
-          background: active ? `radial-gradient(circle at center, rgba(${isListening ? '16,185,129' : '59,130,246'}, 0.15) 0%, transparent 60%)` : 'none',
+          background: active ? `radial-gradient(circle at center, rgba(${isListening ? '16,185,129' : isThinking ? '245,158,11' : '59,130,246'}, 0.15) 0%, transparent 60%)` : 'none',
           opacity: active ? 1 : 0
         }}
       />
@@ -57,32 +58,47 @@ export const ThreeAvatar = ({ isSpeaking = false, isListening = false, label }: 
 
         {/* Bot Core */}
         <div className={`relative z-10 w-28 h-28 rounded-full border-2 flex flex-col items-center justify-center overflow-hidden transition-all duration-700 shadow-2xl ${
-          active 
-            ? `border-${activeColor}-500/60 bg-${activeColor}-950/40 shadow-${activeColor}-500/20` 
-            : 'border-slate-800 bg-slate-900/80 shadow-none'
+          isSpeaking 
+            ? 'border-blue-500/60 bg-blue-950/40 shadow-blue-500/20' 
+            : isListening 
+              ? 'border-emerald-500/60 bg-emerald-950/40 shadow-emerald-500/20'
+              : isThinking 
+                ? 'border-amber-500/60 bg-amber-950/40 shadow-amber-500/20'
+                : 'border-slate-800 bg-slate-900/80 shadow-none'
         }`}>
           
           {/* Eyes */}
           <div className="flex gap-4 items-center justify-center mt-[-10px] z-10">
             <div className={`w-3 h-3 rounded-full transition-all duration-500 ${
-              active ? `bg-${activeColor}-400 shadow-[0_0_12px_rgba(var(--tw-colors-${activeColor}-400),0.8)]` : 'bg-slate-700'
+              isSpeaking ? 'bg-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.8)]' : 
+              isListening ? 'bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]' : 
+              isThinking ? 'bg-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.8)]' : 
+              'bg-slate-700'
             }`} />
             <div className={`w-3 h-3 rounded-full transition-all duration-500 ${
-              active ? `bg-${activeColor}-400 shadow-[0_0_12px_rgba(var(--tw-colors-${activeColor}-400),0.8)]` : 'bg-slate-700'
+              isSpeaking ? 'bg-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.8)]' : 
+              isListening ? 'bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]' : 
+              isThinking ? 'bg-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.8)]' : 
+              'bg-slate-700'
             }`} />
           </div>
 
           {/* Internal Mouth Wave */}
           <div className="absolute bottom-5 flex items-end gap-[3px] opacity-80">
-            {(isSpeaking ? bars.slice(3, 12) : [0.2, 0.4, 0.2, 0.4, 0.2]).map((h, i) => (
+            {(isSpeaking ? bars.slice(3, 12) : (isListening || isThinking) ? [0.2, 0.4, 0.2, 0.4, 0.2] : [0.1, 0.2, 0.1, 0.2, 0.1]).map((h, i) => (
               <div 
                 key={i} 
-                className={`w-[4px] rounded-full transition-all duration-300 ${isSpeaking ? 'bg-blue-400' : isListening ? 'bg-emerald-400' : 'bg-slate-700'}`}
+                className={`w-[4px] rounded-full transition-all duration-300 ${isSpeaking ? 'bg-blue-400' : isListening ? 'bg-emerald-400' : isThinking ? 'bg-amber-400' : 'bg-slate-700'}`}
                 style={{ 
                   height: `${h * 16}px`, 
                   transformOrigin: 'bottom',
-                  animation: active ? `soundPulse ${500 + i * 50}ms ease-in-out infinite alternate` : 'none',
-                  animationDelay: `${i * 70}ms`
+                  animationName: 'soundPulse', // Always animate
+                  animationDuration: active ? `${500 + i * 50}ms` : `${1500 + i * 100}ms`,
+                  animationTimingFunction: 'ease-in-out',
+                  animationIterationCount: 'infinite',
+                  animationDirection: 'alternate',
+                  animationDelay: `${i * 70}ms`,
+                  opacity: active ? 1 : 0.3
                 }} 
               />
             ))}
@@ -92,9 +108,9 @@ export const ThreeAvatar = ({ isSpeaking = false, isListening = false, label }: 
         {/* Action Label */}
         <div className="mt-8 relative z-10">
           <p className={`text-xs font-black uppercase tracking-[0.3em] transition-colors duration-500 ${
-            isSpeaking ? 'text-blue-400' : isListening ? 'text-emerald-400' : 'text-slate-600'
+            isSpeaking ? 'text-blue-400' : isListening ? 'text-emerald-400' : isThinking ? 'text-amber-400' : 'text-slate-600'
           }`}>
-            {label ?? (isSpeaking ? 'AI Speaking' : isListening ? 'Listening…' : 'System Ready')}
+            {label ?? (isSpeaking ? 'AI Speaking' : isListening ? 'Listening…' : isThinking ? 'AI Thinking…' : 'System Ready')}
           </p>
         </div>
       </div>
@@ -104,12 +120,17 @@ export const ThreeAvatar = ({ isSpeaking = false, isListening = false, label }: 
         {bars.map((h, i) => (
           <div
             key={i}
-            className={`w-[4px] rounded-t-full rounded-b-[1px] ${isSpeaking ? 'bg-blue-500' : isListening ? 'bg-emerald-500' : 'bg-slate-700'}`}
+            className={`w-[4px] rounded-t-full rounded-b-[1px] ${isSpeaking ? 'bg-blue-500' : isListening ? 'bg-emerald-500' : isThinking ? 'bg-amber-500' : 'bg-slate-700'}`}
             style={{
-              height: `${h * (active ? 45 : 10)}px`,
+              height: `${h * (active ? (isThinking ? 25 : 45) : 10)}px`,
               transformOrigin: 'bottom',
-              animation: active ? `soundPulse ${800 + i * 40}ms ease-in-out infinite alternate` : 'none',
-              animationDelay: `${i * 100}ms`
+              animationName: 'soundPulse', // Always animate
+              animationDuration: active ? `${800 + i * 40}ms` : `${2000 + i * 100}ms`,
+              animationTimingFunction: 'ease-in-out',
+              animationIterationCount: 'infinite',
+              animationDirection: 'alternate',
+              animationDelay: `${i * 100}ms`,
+              opacity: active ? 1 : 0.4
             }}
           />
         ))}

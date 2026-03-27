@@ -8,6 +8,7 @@ import { InterviewProvider } from "@/contexts/InterviewContext";
 import { ResultsProvider } from "@/contexts/ResultsContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import NotificationToast from "@/components/common/NotificationToast";
+import NotificationPrompt from "@/components/common/NotificationPrompt";
 import routes from "@/constants/routes";
 import { PricingProvider } from "@/contexts/PricingContext";
 import Footer from "./components/layout/Footer";
@@ -73,10 +74,18 @@ const RedirectIfLoggedIn = ({ children }: { children: JSX.Element }) => {
   return children;
 };
 
+import { useNotifications } from "@/hooks/useNotifications";
+
+const NotificationHandler = () => {
+  const { user } = useAuth();
+  useNotifications(user?._id);
+  return null;
+};
+
 function App() {
   const location = useLocation();
   const { user } = useAuth();
-
+  
   // Pages where Navbar shouldn't show
   const hideNavbarRoutes = [
     routes.login,
@@ -112,6 +121,7 @@ function App() {
 
   return (
     <NotificationProvider>
+      <NotificationHandler />
       <AnalyticsProvider userId={user?._id} isAdmin={user?.role === 'admin'}>
         <PricingProvider>
           <InterviewProvider>
