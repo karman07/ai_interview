@@ -33,6 +33,13 @@ const routes = {
   cookies: '/cookies',
   blogs: '/blogs',
   blogDetail: (slug: string) => `/blogs/${slug}`,
+  studentFeedback: '/student/feedback',
+  studentAssignments: '/student/assignments',
+  studentClasses: '/student/classes',
+  studentClassDetail: (id: string) => `/student/classes/${id}`,
 };
+
+
+
 
 export default routes;

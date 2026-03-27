@@ -13,6 +13,9 @@ import {
   Briefcase,
   User,
   LogOut,
+  MessageSquare,
+  ClipboardList,
+  School,
 } from "lucide-react";
 
 import { cn } from "@/utils/cn";
@@ -21,63 +24,74 @@ import SidebarSection from "./SidebarSection";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 
-const sidebarRoutes = [
-  {
-    section: "Core Features",
-    items: [
-      {
-        label: "Dashboard",
-        icon: <Home size={18} />,
-        description: "Tells about your resume",
-        path: "/dashboard",
-      },
-      {
-        label: "AI Interview",
-        icon: <Zap size={18} />,
-        description: "Practice with AI interviewer",
-        path: "/interview_round",
-      },
-      // {
-      //   label: "Preparation Hub",
-      //   icon: <BookOpen size={18} />,
-      //   description: "Resources & study materials",
-      //   path: "/subjects",
-      // },
-      {
-        label: "Resources",
-        icon: <Layers size={18} />,
-        description: "Resources & study materials",
-        path: "/resources",
-      },
-      // {
-      //   label: "Docs",
-      //   icon: <BookOpen size={18} />,
-      //   description: "Technical Documentation",
-      //   path: "/docs",
-      // },
-      {
-        label: "Job Portal",
-        icon: <Briefcase size={18} />,
-        description: "Browse jobs & applications",
-        path: "/employee",
-      },
-      {
-        label: "Profile",
-        icon: <User size={18} />,
-        description: "Manage your account",
-        path: "/profile",
-      },
-    ],
-  },
-];
-
 export default function Sidebar() {
   const [_, setActiveItem] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const isUniversityStudent = !!user?.universityId;
+
+  const sidebarRoutes = [
+    {
+      section: "Core Features",
+      items: [
+        {
+          label: "Dashboard",
+          icon: <Home size={18} />,
+          description: "Tells about your resume",
+          path: "/dashboard",
+        },
+        {
+          label: "AI Interview",
+          icon: <Zap size={18} />,
+          description: "Practice with AI interviewer",
+          path: "/interview_round",
+        },
+        {
+          label: "Resources",
+          icon: <Layers size={18} />,
+          description: "Resources & study materials",
+          path: "/resources",
+        },
+        // University-only features
+        ...(isUniversityStudent ? [
+          {
+            label: "My Classes",
+            icon: <School size={18} />,
+            description: "Enrolled courses",
+            path: "/student/classes",
+          },
+          {
+            label: "My Assignments",
+            icon: <ClipboardList size={18} />,
+            description: "Tasks from your mentor",
+            path: "/student/assignments",
+          },
+          {
+            label: "Mentor Feedback",
+            icon: <MessageSquare size={18} />,
+            description: "Advice from your faculty",
+            path: "/student/feedback",
+          },
+        ] : []),
+        {
+          label: "Job Portal",
+          icon: <Briefcase size={18} />,
+          description: "Browse jobs & applications",
+          path: "/employee",
+        },
+        {
+          label: "Profile",
+          icon: <User size={18} />,
+          description: "Manage your account",
+          path: "/profile",
+        },
+      ],
+    },
+  ];
 
   const handleItemClick = (path: string) => {
     setActiveItem(path);
