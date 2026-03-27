@@ -107,7 +107,12 @@ export default function UniversityLogin() {
         const cred = await signInWithEmailAndPassword(auth, email, password);
         fbUser = cred.user;
       } catch (fbErr: any) {
-        if (fbErr.code === 'auth/user-not-found' || fbErr.code === 'auth/invalid-credential' || fbErr.code === 'auth/invalid-email') {
+        if (
+          fbErr.code === 'auth/user-not-found' ||
+          fbErr.code === 'auth/invalid-credential' ||
+          fbErr.code === 'auth/invalid-login-credentials' ||
+          fbErr.code === 'auth/invalid-email'
+        ) {
           // User may not exist in Firebase yet — create them so we can send verification
           try {
             const newCred = await createUserWithEmailAndPassword(auth, email, password);

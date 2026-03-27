@@ -46,4 +46,29 @@ export const UsersApi = {
     const { data } = await http.patch<User>('/users/me/verify-status', { field, status });
     return data;
   },
+
+  // ── Admin ──────────────────────────────────────────────────────────────
+
+  /**
+   * Fetch all users (admin only).
+   */
+  adminGetAllUsers: async (): Promise<User[]> => {
+    const { data } = await http.get<User[]>('/users/admin/all');
+    return data;
+  },
+
+  /**
+   * Change a user's role (admin only).
+   */
+  adminSetRole: async (userId: string, role: string): Promise<User> => {
+    const { data } = await http.patch<User>(`/users/admin/${userId}/role`, { role });
+    return data;
+  },
+
+  /**
+   * Hard-delete a user (admin only).
+   */
+  adminDeleteUser: async (userId: string): Promise<void> => {
+    await http.delete(`/users/admin/${userId}`);
+  },
 };
