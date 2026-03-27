@@ -154,4 +154,23 @@ export class UsersService {
     const result = await this.userModel.findByIdAndDelete(userId).exec();
     if (!result) throw new NotFoundException('User not found');
   }
+
+  async saveFcmToken(userId: string, token: string): Promise<void> {
+    if (!token) return;
+    await this.userModel.findByIdAndUpdate(userId, {
+      $addToSet: { fcmTokens: token }
+    }).exec();
+  }
+
+  async deleteFcmTokens(userId: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, {
+      $set: { fcmTokens: [] }
+    }).exec();
+  }
+
+  async getAllFcmTokens(): Promise<string[]> {
+    const users = await this.userModel.find({ fcmTokens: { $exists: true, $not: { $size: 0 } } }).select('fcmTokens').exec();
+    const tokens = users.flatMap(u => u.fcmTokens || []);
+    return [...new Set(tokens)]; // unique tokens
+  }
 }

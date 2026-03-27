@@ -7,8 +7,8 @@ import { ModelConfig, ModelConfigDocument } from './schemas/model-config.schema'
 // ── Static model catalogue (pricing from Google / Groq public docs) ─────────
 export const MODEL_CATALOG = {
   gemini: [
-    { id: 'gemini-2.5-flash',    label: 'Gemini 2.5 Flash',    tier: 'recommended', inputPer1M: 0.075, outputPer1M: 0.30,  note: 'Best price/performance — recommended default' },
-    { id: 'gemini-2.5-pro',      label: 'Gemini 2.5 Pro',      tier: 'premium',     inputPer1M: 1.25,  outputPer1M: 10.00, note: 'Highest quality, complex reasoning' },
+    { id: 'gemini-2.5-flash',    label: 'Gemini 2.5 Flash',    tier: 'recommended', inputPer1M: 0.10,  outputPer1M: 0.40,  note: 'Best price/performance — recommended default' },
+    { id: 'gemini-2.5-pro',      label: 'Gemini 2.5 Pro',      tier: 'premium',     inputPer1M: 1.25,  outputPer1M: 5.00,  note: 'Highest quality, complex reasoning' },
     { id: 'gemini-1.5-flash',    label: 'Gemini 1.5 Flash',    tier: 'budget',      inputPer1M: 0.075, outputPer1M: 0.30,  note: 'Stable legacy model' },
     { id: 'gemini-1.5-flash-8b', label: 'Gemini 1.5 Flash 8B', tier: 'budget',      inputPer1M: 0.0375,outputPer1M: 0.15,  note: 'Most affordable Gemini' },
   ],

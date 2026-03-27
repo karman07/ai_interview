@@ -24,4 +24,29 @@ export class FirebaseService implements OnModuleInit {
   async getUserByEmail(email: string) {
     return admin.auth().getUserByEmail(email);
   }
+
+  async sendPushNotification(token: string, title: string, body: string, data?: any) {
+    const message: admin.messaging.Message = {
+      token,
+      notification: {
+        title,
+        body,
+      },
+      data: data || {},
+    };
+    return admin.messaging().send(message);
+  }
+
+  async sendMulticastNotification(tokens: string[], title: string, body: string, data?: any) {
+    if (!tokens || tokens.length === 0) return;
+    const message: admin.messaging.MulticastMessage = {
+      tokens,
+      notification: {
+        title,
+        body,
+      },
+      data: data || {},
+    };
+    return admin.messaging().sendEachForMulticast(message);
+  }
 }

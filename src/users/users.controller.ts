@@ -145,6 +145,20 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('me/fcm-token')
+  async updateFcmToken(@CurrentUser() user: any, @Body() body: { token: string }) {
+    await this.usersService.saveFcmToken(user.sub, body.token);
+    return { ok: true };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('me/fcm-token')
+  async deleteFcmTokens(@CurrentUser() user: any) {
+    await this.usersService.deleteFcmTokens(user.sub);
+    return { ok: true };
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Patch('me/verify-status')
   async updateVerificationStatus(@CurrentUser() user: any, @Body() data: { field: 'email'; status: boolean }) {
     const update = { isEmailVerified: data.status };

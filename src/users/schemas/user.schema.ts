@@ -94,6 +94,9 @@ export class User {
   @Prop({ type: String })
   rollNumber?: string; // university roll / registration number
 
+  @Prop({ type: [String], default: [] })
+  fcmTokens?: string[];
+
   // Timestamps (automatically added by Mongoose)
   createdAt?: Date;
   updatedAt?: Date;

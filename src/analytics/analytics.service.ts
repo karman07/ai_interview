@@ -720,8 +720,9 @@ export class AnalyticsService {
 
     // Known pricing tables (USD per 1 million tokens) — mirrors streaming_session.py
     const MODEL_PRICING: Record<string, { input: number; output: number }> = {
-      'gemini-2.5-flash':    { input: 0.075,  output: 0.30  },
-      'gemini-2.5-pro':      { input: 1.25,   output: 10.00 },
+      'gemini-2.5-flash':    { input: 0.10,   output: 0.40  },
+      'gemini-2.5-pro':      { input: 1.25,   output: 5.00  },
+      'gemini-2.0-flash':    { input: 0.10,   output: 0.40  },
       'gemini-1.5-flash':    { input: 0.075,  output: 0.30  },
       'gemini-1.5-flash-8b': { input: 0.0375, output: 0.15  },
     };
@@ -733,7 +734,14 @@ export class AnalyticsService {
     ]);
 
     const totalCostData = await this.aiUsageModel.aggregate([
-      { $group: { _id: null, total: { $sum: '$costUsd' } } },
+      { 
+        $group: { 
+          _id: null, 
+          total: { $sum: '$costUsd' },
+          totalInput: { $sum: '$inputCostUsd' },
+          totalOutput: { $sum: '$outputCostUsd' }
+        } 
+      },
     ]);
 
     return {
@@ -744,6 +752,8 @@ export class AnalyticsService {
       activePricing,
       totalRevenue: (totalRevenueData[0]?.total || 0) / 100, // in INR/USD base unit
       totalAICost: totalCostData[0]?.total || 0,
+      totalInputCost: totalCostData[0]?.totalInput || 0,
+      totalOutputCost: totalCostData[0]?.totalOutput || 0,
       timestamp: new Date(),
     };
   }

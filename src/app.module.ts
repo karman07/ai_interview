@@ -50,6 +50,7 @@ import { AlertsModule } from './alerts/alerts.module';
 import { FeedbackModule } from './feedback/feedback.module';
 
 import { BlogsModule } from './blogs/blogs.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -102,6 +103,7 @@ import { BlogsModule } from './blogs/blogs.module';
     AssignmentsModule,
     AlertsModule,
     FeedbackModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
