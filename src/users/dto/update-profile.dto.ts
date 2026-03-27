@@ -52,4 +52,8 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   linkedinUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  rollNumber?: string;
 }

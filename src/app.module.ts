@@ -43,6 +43,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AiConfigModule } from './ai-config/ai-config.module';
 import { UniversitiesModule } from './universities/universities.module';
+import { BlogsModule } from './blogs/blogs.module';
 
 @Module({
   imports: [
@@ -88,6 +89,7 @@ import { UniversitiesModule } from './universities/universities.module';
     EmailModule,
     JobsModule,
     ReviewsModule,
+    BlogsModule,
     AiConfigModule,
     UniversitiesModule,
   ],

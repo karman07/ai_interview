@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import axios from 'axios';
 import * as fs from 'fs';
@@ -21,15 +21,59 @@ const IMAGES = [
 const AUTHORS = ['Karman Singh', 'Rahat Bhatia', 'Advitya Dua'];
 
 @Injectable()
-export class BlogsGeneratorService {
+export class BlogsGeneratorService implements OnModuleInit {
   private readonly logger = new Logger(BlogsGeneratorService.name);
   private readonly blogsDir = path.join(__dirname, '..', '..', '..', 'blogs_content');
+  private readonly DAILY_TARGET = 2;
 
   constructor(private readonly aiConfigService: AiConfigService) {}
 
+  async onModuleInit() {
+    try {
+      await this.ensureBlogCountForToday(this.DAILY_TARGET);
+    } catch (err) {
+      this.logger.error('Failed startup blog bootstrap:', err);
+    }
+  }
+
+  private getBlogCountForDate(date: string): number {
+    if (!fs.existsSync(this.blogsDir)) return 0;
+    const files = fs.readdirSync(this.blogsDir).filter((f) => f.endsWith('.md'));
+    let count = 0;
+    files.forEach((file) => {
+      const content = fs.readFileSync(path.join(this.blogsDir, file), 'utf-8');
+      const match = content.match(/^date:\s*"?(\d{4}-\d{2}-\d{2})"?\s*$/m);
+      if (match?.[1] === date) {
+        count += 1;
+      }
+    });
+    return count;
+  }
+
+  private async ensureBlogCountForToday(minCount: number) {
+    const today = new Date().toISOString().split('T')[0];
+    const existing = this.getBlogCountForDate(today);
+    if (existing >= minCount) {
+      this.logger.log(`Blog target already met for ${today} (${existing}/${minCount})`);
+      return;
+    }
+
+    const missing = minCount - existing;
+    this.logger.log(`Generating ${missing} blog(s) for ${today} to reach ${minCount}/day target...`);
+    for (let i = 0; i < missing; i += 1) {
+      await this.generateSingleBlog();
+    }
+  }
+
   @Cron('0 0 * * *') // Runs everyday at midnight
   async handleDailyBlog() {
-    this.logger.log('Starting daily blog generation via Groq...');
+    this.logger.log(`Starting daily blog generation via Groq (${this.DAILY_TARGET} blogs)...`);
+    for (let i = 0; i < this.DAILY_TARGET; i += 1) {
+      await this.generateSingleBlog();
+    }
+  }
+
+  private async generateSingleBlog() {
     const cat = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
     const randomImage = IMAGES[Math.floor(Math.random() * IMAGES.length)];
     const randomAuthor = AUTHORS[Math.floor(Math.random() * AUTHORS.length)];
@@ -77,7 +121,7 @@ coverImage: "Provide a real high-quality absolute Unsplash image URL that matche
 
       let content = res.data.choices[0].message.content;
       const slugMatch = content.match(/slug:\s*"([^"]+)"/);
-      const slug = slugMatch ? slugMatch[1] : `daily-blog-${Date.now()}`;
+      let slug = slugMatch ? slugMatch[1] : `daily-blog-${Date.now()}`;
       
       const coverImageMatch = content.match(/coverImage:\s*"([^"]+)"/);
       const coverImage = coverImageMatch ? coverImageMatch[1] : 'DEFAULT_IMAGE';
@@ -88,7 +132,11 @@ coverImage: "Provide a real high-quality absolute Unsplash image URL that matche
          content = content.replace(/coverImage:\s*"DEFAULT_IMAGE"/, `coverImage: "${fallback}"`);
       }
 
-      const filePath = path.join(this.blogsDir, `${slug}.md`);
+      let filePath = path.join(this.blogsDir, `${slug}.md`);
+      if (fs.existsSync(filePath)) {
+        slug = `${slug}-${Date.now()}`;
+        filePath = path.join(this.blogsDir, `${slug}.md`);
+      }
       
       // Ensure directory exists just in case
       if (!fs.existsSync(this.blogsDir)) {
@@ -100,5 +148,11 @@ coverImage: "Provide a real high-quality absolute Unsplash image URL that matche
     } catch (err) {
       this.logger.error('❌ Failed to generate daily blog:', err);
     }
+  }
+
+  // Safety check every 6 hours to guarantee at least two blogs for the current day.
+  @Cron('0 */6 * * *')
+  async ensureDailyBlogExists() {
+    await this.ensureBlogCountForToday(this.DAILY_TARGET);
   }
 }
