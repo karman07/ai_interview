@@ -33,80 +33,97 @@ const JobCard = forwardRef<HTMLDivElement, JobCardProps>(({
         <motion.div
             ref={ref}
             layout
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             onClick={() => handleJobClick(job)}
-            className="group bg-white dark:bg-slate-900 rounded-[20px] p-6 border border-slate-100 dark:border-slate-800 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 cursor-pointer flex flex-col h-full relative"
+            className="group bg-slate-900/40 dark:bg-slate-900/40 backdrop-blur-sm rounded-[1.5rem] p-6 border border-slate-200/40 dark:border-slate-800/40 hover:border-blue-500/30 dark:hover:border-blue-500/40 hover:bg-slate-900/60 dark:hover:bg-slate-800/40 transition-all duration-300 cursor-pointer flex flex-col h-[280px] w-full relative overflow-hidden"
         >
+            {/* Subtle Overlay on Hover */}
+            <div className="absolute inset-0 bg-blue-500/[0.02] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
             {/* Header: Badges & Actions */}
-            <div className="flex justify-between items-start mb-6">
+            <div className="flex justify-between items-start mb-5 relative z-10">
                 <div className="flex gap-2">
-                    <span className={cn("px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full",
-                        job.is_internship ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" : "bg-[#ecfdf5] text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+                    <span className={cn("px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg border",
+                        job.is_internship 
+                            ? "bg-blue-500/5 text-blue-500 border-blue-500/20" 
+                            : "bg-emerald-500/5 text-emerald-500 border-emerald-500/20"
                     )}>
-                        {job.is_internship ? 'Intern' : 'Full-time'}
+                        {job.is_internship ? 'Internship' : 'Full-time'}
                     </span>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-1">
                     <button
                         onClick={(e) => { e.stopPropagation(); toggleBookmark(jobId); }}
-                        className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
+                        className={cn(
+                            "p-2 rounded-xl transition-all duration-200",
+                            isBookmarked 
+                                ? "text-blue-500 bg-blue-500/10" 
+                                : "text-slate-500 hover:text-blue-500 hover:bg-slate-800"
+                        )}
                     >
-                        <Bookmark className={cn("w-4 h-4", isBookmarked && "fill-current text-blue-600")} />
+                        <Bookmark className={cn("w-4 h-4", isBookmarked && "fill-current")} />
                     </button>
                     <button
                         onClick={(e) => { e.stopPropagation(); toggleFavorite(jobId); }}
-                        className="p-2 text-slate-400 hover:text-rose-500 transition-colors"
+                        className={cn(
+                            "p-2 rounded-xl transition-all duration-200",
+                            isFavorited 
+                                ? "text-rose-500 bg-rose-500/10" 
+                                : "text-slate-500 hover:text-rose-500 hover:bg-slate-800"
+                        )}
                     >
-                        <Heart className={cn("w-4 h-4", isFavorited && "fill-current text-rose-500")} />
+                        <Heart className={cn("w-4 h-4", isFavorited && "fill-current")} />
                     </button>
                 </div>
             </div>
 
             {/* Content Body */}
-            <div className="flex items-center gap-5 mb-5 space-x-1">
-                <div className="w-[60px] h-[60px] bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center border border-slate-100 dark:border-slate-700 shrink-0 text-2xl font-black text-slate-700 dark:text-slate-300 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-colors">
+            <div className="flex items-center gap-5 mb-5 relative z-10">
+                <div className="w-14 h-14 bg-slate-950/40 rounded-xl flex items-center justify-center border border-slate-800/40 shrink-0 text-xl font-black text-slate-500 group-hover:text-blue-400 group-hover:border-blue-500/30 transition-all duration-300 shadow-sm">
                     {job.company?.charAt(0).toUpperCase() || 'J'}
                 </div>
-                <div className="flex flex-col">
-                    <h3 className="text-xl font-bold text-[#0B1426] dark:text-white leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">
-                        {job.title}
-                    </h3>
-                    <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1.5 uppercase tracking-widest">
+                <div className="flex flex-col min-w-0 flex-1">
+                    <div className="h-[44px]"> {/* Fixed height for 2 lines of title */}
+                        <h3 className="text-[17px] font-bold text-slate-100 group-hover:text-blue-400 transition-colors leading-snug line-clamp-2 overflow-hidden text-ellipsis" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                            {job.title}
+                        </h3>
+                    </div>
+                    <p className="text-[10px] font-black text-slate-500 mt-1 uppercase tracking-widest truncate w-full">
                         {job.company}
                     </p>
                 </div>
             </div>
 
             {/* Meta Details */}
-            <div className="flex flex-col gap-3 mb-5 px-1">
+            <div className="flex flex-col gap-2.5 mb-4 relative z-10 px-1">
                 {job.location && (
-                    <div className="flex items-center gap-3 text-[#4B5563] dark:text-slate-400 text-sm font-semibold">
-                        <MapPin className="w-4 h-4 text-slate-500 stroke-[1.5]" />
-                        {job.location}
+                    <div className="flex items-center gap-2.5 text-slate-400 text-xs font-bold truncate">
+                        <MapPin className="w-3.5 h-3.5 text-blue-500/70 shrink-0" />
+                        <span className="truncate">{job.location}</span>
                     </div>
                 )}
-                <div className="flex items-center gap-3 text-blue-600 dark:text-blue-400 text-sm font-bold">
-                    <DollarSign className="w-4 h-4 text-blue-600 stroke-[2]" />
+                <div className="flex items-center gap-2.5 text-emerald-500/80 text-xs font-bold">
+                    <DollarSign className="w-3.5 h-3.5 shrink-0" />
                     {formatSalary(job.salary_min, job.salary_max)}
                 </div>
             </div>
 
-            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium line-clamp-2 mt-2">
+            <p className="text-xs text-slate-500 leading-relaxed font-medium line-clamp-2 overflow-hidden text-ellipsis mb-6 relative z-10 px-1 h-[32px]" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                 {job.description || 'Join our innovative engineering team to solve complex problems and build state-of-the-art solutions.'}
             </p>
 
             {/* Footer Actions */}
-            <div className="mt-auto pt-6">
+            <div className="mt-auto relative z-10">
                 <button
                     onClick={(e) => { e.stopPropagation(); if (job.redirect_url) window.open(job.redirect_url, '_blank'); }}
                     disabled={!job.redirect_url}
-                    className="w-full py-3 bg-blue-600 text-white text-[11px] font-bold uppercase tracking-wider rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    className="w-full py-3 bg-blue-600/90 hover:bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all duration-200 shadow-lg shadow-blue-900/20 active:scale-[0.98] disabled:opacity-30"
                 >
-                    Apply Now
+                    View Details
                 </button>
             </div>
         </motion.div>

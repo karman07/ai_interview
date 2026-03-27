@@ -11,7 +11,7 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon, color, subtitle }) => (
-  <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300">
+  <div className="bg-white dark:bg-slate-900/70 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-slate-700/80 hover:shadow-md transition-all duration-300">
     <div className="flex items-start justify-between">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 sm:gap-3 mb-2">
@@ -19,8 +19,8 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon, color, 
             {icon}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{title}</p>
-            {subtitle && <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{subtitle}</p>}
+            <p className="text-sm font-medium text-gray-600 dark:text-slate-300 truncate">{title}</p>
+            {subtitle && <p className="text-xs text-gray-400 dark:text-slate-400 truncate">{subtitle}</p>}
           </div>
         </div>
         <div className="flex items-end gap-2">

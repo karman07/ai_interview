@@ -11,12 +11,12 @@ export default function SidebarSection({ title, children }: SidebarSectionProps)
       {title && (
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-[3px] h-3 rounded-full bg-blue-500 dark:bg-blue-400" />
-            <h3 className="text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-400">
+            <div className="w-[3px] h-3 rounded-full bg-blue-500 dark:bg-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-500">
               {title}
             </h3>
           </div>
-          <div className="h-px ml-3 bg-gray-300 dark:bg-gray-600 opacity-50" />
+          <div className="h-px ml-3 bg-slate-200 dark:bg-slate-800/50" />
         </div>
       )}
       <div className="space-y-1">

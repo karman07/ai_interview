@@ -396,7 +396,7 @@ const ResumeDashboard: React.FC = () => {
   // ...inline components removed - using imported `StatCard` and `DetailedResumeCard`
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       {/* Loading Progress Bar */}
       {isLoading && (
         <div className="fixed top-0 left-0 right-0 z-[100] h-1 bg-blue-100 overflow-hidden">
@@ -411,7 +411,7 @@ const ResumeDashboard: React.FC = () => {
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2">
                 Resume Analytics Dashboard
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base lg:text-lg">Transform your career with data-driven insights</p>
+              <p className="text-gray-600 dark:text-slate-300 text-sm sm:text-base lg:text-lg">Transform your career with data-driven insights</p>
               {/* University badge for students */}
               {user?.role === 'student' && universityLimits && (
                 <div className="mt-2 inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-full">
@@ -432,7 +432,7 @@ const ResumeDashboard: React.FC = () => {
                     {totalResumes} / {resumeLimit}
                   </span>
                 </div>
-                <div className="w-32 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="w-32 h-1 bg-gray-200 dark:bg-slate-700/80 rounded-full overflow-hidden">
                   <div
                     className={`h-full transition-all duration-500 ${isAtLimit ? 'bg-red-500' : 'bg-blue-600'}`}
                     style={{ width: `${Math.min((totalResumes / resumeLimit) * 100, 100)}%` }}
@@ -444,7 +444,7 @@ const ResumeDashboard: React.FC = () => {
                 <div className="relative">
                   <select
                     onChange={(e) => handleDownload(e.target.value)}
-                    className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="appearance-none bg-white dark:bg-slate-900/80 border border-gray-300 dark:border-slate-700 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800/80 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Download Data</option>
                     <option value="json">JSON Format</option>
@@ -504,7 +504,7 @@ const ResumeDashboard: React.FC = () => {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex flex-wrap sm:flex-nowrap space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl mb-6 sm:mb-8 w-full sm:w-fit overflow-x-auto">
+        <div className="flex flex-wrap sm:flex-nowrap space-x-1 bg-gray-100 dark:bg-slate-900/70 border border-transparent dark:border-slate-800 p-1 rounded-2xl mb-6 sm:mb-8 w-full sm:w-fit overflow-x-auto">
           {[
             { id: 'overview', label: 'Overview', icon: ChartBarIcon },
             { id: 'performance', label: 'Performance', icon: TrendingUpIcon },
@@ -514,8 +514,8 @@ const ResumeDashboard: React.FC = () => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-xl font-medium transition-all duration-300 whitespace-nowrap ${activeTab === tab.id
-                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-md'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-300 shadow-md'
+                : 'text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200'
                 }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -527,7 +527,7 @@ const ResumeDashboard: React.FC = () => {
 
         {/* Loader for empty state while fetching */}
         {isLoading && resumes.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-32 bg-white/50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700">
+          <div className="flex flex-col items-center justify-center py-32 bg-white/50 dark:bg-slate-900/60 rounded-3xl border border-gray-100 dark:border-slate-800">
             <div className="relative w-20 h-20 mb-8">
               <div className="absolute inset-0 border-4 border-blue-600/20 rounded-full"></div>
               <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -538,8 +538,8 @@ const ResumeDashboard: React.FC = () => {
 
         {/* Tab Content */}
         {!isLoading && resumes.length === 0 && activeTab !== 'details' && (
-          <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
-            <DocumentTextIcon className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+          <div className="text-center py-20 bg-white dark:bg-slate-900/70 rounded-3xl border border-dashed border-gray-200 dark:border-slate-700/80">
+            <DocumentTextIcon className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-slate-600" />
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 uppercase">No Data Found</h3>
             <p className="text-gray-500 mb-6">Upload your first resume to see performance insights.</p>
           </div>
@@ -549,13 +549,13 @@ const ResumeDashboard: React.FC = () => {
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8">
               {/* Performance Trends */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+              <div className="bg-white dark:bg-slate-900/70 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-slate-700/80">
                 <div className="flex items-center justify-between mb-4 sm:mb-6">
                   <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
                     <TrendingUpIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
                     Performance Trends
                   </h3>
-                  <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">Double-click a point to open resume</span>
+                  <span className="text-xs text-gray-400 dark:text-slate-400 font-medium">Double-click a point to open resume</span>
                 </div>
                 {performanceData.length > 0 ? (
                   <>
@@ -603,9 +603,9 @@ const ResumeDashboard: React.FC = () => {
                             if (!active || !payload?.length) return null;
                             const d = payload[0].payload;
                             return (
-                              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl p-3 text-xs min-w-[180px]">
+                              <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl p-3 text-xs min-w-[180px]">
                                 <p className="font-bold text-gray-900 dark:text-white mb-2 truncate max-w-[200px]">{d.fullName}</p>
-                                <p className="text-gray-400 dark:text-gray-500 mb-2">{d.date}</p>
+                                <p className="text-gray-400 dark:text-slate-400 mb-2">{d.date}</p>
                                 {payload.map((p: any) => (
                                   <div key={p.dataKey} className="flex items-center justify-between gap-4 mb-1">
                                     <span className="flex items-center gap-1.5" style={{ color: p.color }}>
@@ -615,7 +615,7 @@ const ResumeDashboard: React.FC = () => {
                                     <span className="font-bold text-gray-900 dark:text-white">{p.value}</span>
                                   </div>
                                 ))}
-                                <p className="text-gray-400 dark:text-gray-500 mt-2 border-t border-gray-100 dark:border-gray-700 pt-2">Double-click to open resume ↕</p>
+                                <p className="text-gray-400 dark:text-slate-400 mt-2 border-t border-gray-100 dark:border-slate-700 pt-2">Double-click to open resume ↕</p>
                               </div>
                             );
                           }}
@@ -694,13 +694,13 @@ const ResumeDashboard: React.FC = () => {
               </div>
 
               {/* Resume Leaderboard */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+              <div className="bg-white dark:bg-slate-900/70 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-slate-700/80 flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     <ChartBarIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     Resume Leaderboard
                   </h3>
-                  <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">CV Quality score</span>
+                  <span className="text-xs text-gray-400 dark:text-slate-400 font-medium">CV Quality score</span>
                 </div>
                 {pieData.length > 0 ? (
                   <div className="flex flex-col gap-2 overflow-y-auto max-h-[340px] pr-1">
@@ -713,18 +713,18 @@ const ResumeDashboard: React.FC = () => {
                           <button
                             key={entry.resumeIndex}
                             onClick={() => setSelectedResume(safeResumes[entry.resumeIndex])}
-                            className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left w-full"
+                            className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800/80 transition-colors text-left w-full"
                           >
                             {/* rank */}
-                            <span className="w-6 text-center text-xs font-bold text-gray-400 dark:text-gray-500 flex-shrink-0">
+                            <span className="w-6 text-center text-xs font-bold text-gray-400 dark:text-slate-500 flex-shrink-0">
                               {medal ?? `#${rank + 1}`}
                             </span>
                             {/* color dot */}
                             <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: entry.color }} />
                             {/* name */}
-                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate flex-1 min-w-0">{entry.name}</span>
+                            <span className="text-xs font-medium text-gray-700 dark:text-slate-200 truncate flex-1 min-w-0">{entry.name}</span>
                             {/* bar */}
-                            <div className="w-20 sm:w-28 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex-shrink-0">
+                            <div className="w-20 sm:w-28 h-1.5 bg-gray-100 dark:bg-slate-700/80 rounded-full overflow-hidden flex-shrink-0">
                               <div
                                 className="h-full rounded-full transition-all duration-700"
                                 style={{ width: `${pct}%`, background: entry.color }}
@@ -732,7 +732,7 @@ const ResumeDashboard: React.FC = () => {
                             </div>
                             {/* score */}
                             <span className="text-xs font-bold w-8 text-right flex-shrink-0" style={{ color: entry.color }}>{entry.value}</span>
-                            <ArrowRight className="w-3 h-3 text-gray-200 dark:text-gray-600 group-hover:text-blue-500 transition-colors flex-shrink-0" />
+                            <ArrowRight className="w-3 h-3 text-gray-200 dark:text-slate-600 group-hover:text-blue-500 transition-colors flex-shrink-0" />
                           </button>
                         );
                       })}
@@ -746,13 +746,13 @@ const ResumeDashboard: React.FC = () => {
             </div>
 
             {/* Time vs Improvement Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700 mb-6 sm:mb-8">
+            <div className="bg-white dark:bg-slate-900/70 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-slate-700/80 mb-6 sm:mb-8">
               <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
                   <ChartBarIcon className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />
                   Time vs. Improvement
                 </h3>
-                <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">Chronological progression</span>
+                <span className="text-xs text-gray-400 dark:text-slate-400 font-medium">Chronological progression</span>
               </div>
               {performanceData.length > 0 ? (
                 <div className="h-[250px] sm:h-[350px] w-full mt-4">
@@ -781,9 +781,9 @@ const ResumeDashboard: React.FC = () => {
                           if (!active || !payload?.length) return null;
                           const d = payload[0].payload;
                           return (
-                            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl p-3 text-xs w-48">
+                            <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl p-3 text-xs w-48">
                               <p className="font-bold text-gray-900 dark:text-white mb-2">{d.fullName}</p>
-                              <p className="text-gray-400 dark:text-gray-500 mb-2">{d.date}</p>
+                              <p className="text-gray-400 dark:text-slate-400 mb-2">{d.date}</p>
                               {payload.map((p: any) => (
                                 <div key={p.dataKey} className="flex justify-between gap-4 mb-1">
                                   <span style={{ color: p.color }} className="font-medium">{p.name}</span>
@@ -813,7 +813,7 @@ const ResumeDashboard: React.FC = () => {
             {/* Red Flags & Insights Section (New) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mt-8">
               {/* Red Flags Card */}
-              <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8 shadow-sm border border-rose-100 dark:border-rose-900/20">
+              <div className="bg-white dark:bg-slate-900/70 rounded-3xl p-6 sm:p-8 shadow-sm border border-rose-100 dark:border-rose-900/30">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
                     <div className="p-2 bg-rose-50 dark:bg-rose-900/20 rounded-xl">
@@ -829,7 +829,7 @@ const ResumeDashboard: React.FC = () => {
                 {safeResumes[0].analytics?.key_takeaways?.red_flags?.length > 0 ? (
                   <div className="space-y-4">
                     {safeResumes[0].analytics.key_takeaways.red_flags.map((flag: string, idx: number) => (
-                      <div key={idx} className="group p-4 bg-rose-50/30 dark:bg-rose-900/5 rounded-2xl border border-rose-50 dark:border-rose-900/10 hover:border-rose-200 dark:hover:border-rose-900/30 transition-all">
+                      <div key={idx} className="group p-4 bg-rose-50/30 dark:bg-rose-950/20 rounded-2xl border border-rose-50 dark:border-rose-900/20 hover:border-rose-200 dark:hover:border-rose-800/40 transition-all">
                         <div className="flex gap-3">
                           <XCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
                           <div>
@@ -894,41 +894,50 @@ const ResumeDashboard: React.FC = () => {
         {activeTab === 'performance' && radarData.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8">
             {/* Skills Radar */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+            <div className="bg-white dark:bg-slate-900/70 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-slate-700/80">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">CV Quality Breakdown</h3>
               <div className="h-[300px] sm:h-[400px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart data={radarData}>
-                    <PolarGrid strokeOpacity={0.5} />
-                    <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 10, fontWeight: 500 }} />
-                    <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 8 }} axisLine={false} />
+                    <PolarGrid stroke="rgba(148, 163, 184, 0.45)" strokeOpacity={0.6} />
+                    <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }} />
+                    <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 9, fill: '#64748b' }} axisLine={false} />
                     <Radar
                       name="Score"
                       dataKey="score"
                       stroke="#3B82F6"
                       fill="#3B82F6"
-                      fillOpacity={0.3}
-                      strokeWidth={2}
+                      fillOpacity={0.32}
+                      strokeWidth={2.5}
                     />
-                    <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px' }} />
+                    <Tooltip
+                      contentStyle={{
+                        fontSize: '12px',
+                        borderRadius: '10px',
+                        background: '#0f172a',
+                        border: '1px solid rgba(71, 85, 105, 0.7)',
+                        color: '#e2e8f0',
+                      }}
+                      labelStyle={{ color: '#cbd5e1', fontWeight: 700 }}
+                    />
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             {/* Detailed Scores */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+            <div className="bg-white dark:bg-slate-900/70 rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-slate-700/80">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">Detailed Breakdown</h3>
               <div className="space-y-4">
                 {radarData.map((item, index) => (
                   <div key={index} className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.dimension}</span>
+                      <span className="text-sm font-semibold text-gray-700 dark:text-slate-300">{item.dimension}</span>
                       <span className="text-sm font-bold text-gray-900 dark:text-white">{Math.round(item.score)}%</span>
                     </div>
-                    <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2">
+                    <div className="w-full bg-gray-100 dark:bg-slate-700/80 rounded-full h-2.5">
                       <div
-                        className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-1000"
+                        className="bg-gradient-to-r from-blue-500 to-blue-400 dark:from-blue-500 dark:to-blue-400 h-2.5 rounded-full transition-all duration-1000 shadow-[0_0_14px_rgba(59,130,246,0.35)]"
                         style={{ width: `${item.score}%` }}
                       />
                     </div>

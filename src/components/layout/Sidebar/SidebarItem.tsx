@@ -24,8 +24,8 @@ export default function SidebarItem({
       className={cn(
         "group relative rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-300",
         active
-          ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-          : "hover:bg-slate-100 dark:hover:bg-slate-800/50"
+          ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/25 ring-1 ring-white/10"
+          : "hover:bg-slate-100 dark:hover:bg-slate-800/40"
       )}
       onClick={onClick}
     >
@@ -34,7 +34,7 @@ export default function SidebarItem({
           <div
             className={cn(
               "flex-shrink-0 p-1 rounded-lg transition-transform duration-300 group-hover:scale-110",
-              active ? "text-white" : "text-slate-500 dark:text-slate-400"
+              active ? "text-white" : "text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200"
             )}
           >
             {icon}
@@ -45,7 +45,7 @@ export default function SidebarItem({
               <span
                 className={cn(
                   "text-[13px] font-bold tracking-tight transition-colors duration-300",
-                  active ? "text-white" : "text-slate-700 dark:text-slate-200"
+                  active ? "text-white" : "text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white"
                 )}
               >
                 {label}
@@ -58,7 +58,7 @@ export default function SidebarItem({
               )}
             </div>
             {description && !active && (
-              <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate font-medium mt-0.5 group-hover:text-slate-500 transition-colors">
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate font-medium mt-0.5 group-hover:text-slate-500 dark:group-hover:text-slate-400 transition-colors">
                 {description}
               </p>
             )}

@@ -20,6 +20,7 @@ import { LessonsProvider } from "./contexts/LessonsContext";
 import { AnalyticsProvider } from "./contexts/AnalyticsContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import UniversityRoute from "./routes/UniversityRoute";
+import RollNumberDialog from "@/components/common/RollNumberDialog";
 
 // ── Lazy-loaded pages (each becomes its own JS chunk) ─────────────────────
 const About                   = lazy(() => import("@/pages/About"));
@@ -56,6 +57,8 @@ const FeedbackInbox           = lazy(() => import("@/pages/Student/FeedbackInbox
 const StudentAssignments      = lazy(() => import("@/pages/Student/Assignments"));
 const StudentClasses          = lazy(() => import("@/pages/Student/Classes"));
 const StudentClassDetail      = lazy(() => import("@/pages/Student/ClassDetail"));
+const BlogsPage               = lazy(() => import("@/pages/Blogs/BlogsPage"));
+const BlogDetailPage          = lazy(() => import("@/pages/Blogs/BlogDetailPage"));
 
 // ── Minimal loading fallback (no layout shift) ────────────────────────────
 const PageLoader = () => (
@@ -123,6 +126,8 @@ function App() {
                 <Suspense fallback={<PageLoader />}>
                   {/* PricingDialog is lazy — rendered inside Suspense */}
                   <PricingDialog />
+                  {/* Roll number gate — only shows for students missing rollNumber */}
+                  <RollNumberDialog />
 
                   <div className="flex-grow">
                     <Routes>
@@ -132,6 +137,8 @@ function App() {
                     <Route path={routes.pricing} element={<PricingPage />} />
                     <Route path={routes.contact} element={<ContactPage />} />
                     <Route path={routes.jobsPublic} element={<JobsPublicPage />} />
+                    <Route path={routes.blogs} element={<BlogsPage />} />
+                    <Route path={routes.blogDetail(":slug")} element={<BlogDetailPage />} />
                     <Route path={routes.privacy} element={<PrivacyPolicy />} />
                     <Route path={routes.terms} element={<TermsOfService />} />
                     <Route path={routes.cookies} element={<CookiePolicy />} />

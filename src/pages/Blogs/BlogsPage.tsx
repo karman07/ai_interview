@@ -3,6 +3,7 @@ import { Search, ChevronDown, BookOpen, Calendar, User } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Helmet } from 'react-helmet-async';
+import { API_BASE_URL } from '@/api/http';
 
 interface BlogMeta {
   title: string;
@@ -21,14 +22,16 @@ export default function BlogsPage() {
   const categoryFromUrl = searchParams.get('category') || '';
   const [search, setSearch] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchBlogs = async () => {
       setLoading(true);
+      setError('');
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        const res = await axios.get(`${API_URL}/blogs`, {
+        const res = await axios.get(`${API_BASE_URL}/blogs`, {
+          timeout: 15000,
           params: {
             category: categoryFromUrl || undefined,
             search: search || undefined,
@@ -42,6 +45,8 @@ export default function BlogsPage() {
         }
       } catch (err) {
         console.error('Failed to fetch blogs:', err);
+        setError('Unable to fetch blogs from server. Please try again in a moment.');
+        setBlogs([]);
       } finally {
         setLoading(false);
       }
@@ -55,9 +60,14 @@ export default function BlogsPage() {
       <Helmet>
         <title>Knowledge Hub | AI for Job</title>
         <meta name="description" content="Expert insights, interview strategies, and career growth techniques to ace your AI interviews." />
+        <link rel="canonical" href={`${window.location.origin}/blogs`} />
         <meta property="og:title" content="Knowledge Hub | AI for Job" />
         <meta property="og:description" content="Expert insights, interview strategies, and career growth techniques." />
         <meta property="og:type" content="website" />
+        <meta property="og:url" content={`${window.location.origin}/blogs`} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Knowledge Hub | AI for Job" />
+        <meta name="twitter:description" content="Expert insights, interview strategies, and career growth techniques." />
       </Helmet>
 
       {/* Absolute Navbar Spacer */}
@@ -128,6 +138,18 @@ export default function BlogsPage() {
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : error ? (
+          <div className="text-center py-20 text-rose-500 dark:text-rose-400">
+            <BookOpen className="w-16 h-16 mx-auto mb-4 text-rose-300 dark:text-rose-700" />
+            <h3 className="text-lg font-semibold">Could not load blogs</h3>
+            <p className="text-sm mt-1">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 rounded-lg bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition-colors"
+            >
+              Retry
+            </button>
           </div>
         ) : blogs.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

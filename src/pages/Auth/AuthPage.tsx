@@ -209,14 +209,14 @@ export default function AuthPage() {
                         {/* Divider */}
                         <div className="mt-8 space-y-5">
                             <div className="relative flex items-center gap-3">
-                                <div className="flex-1 h-px bg-gray-200" />
-                                <span className="text-xs text-gray-500 font-medium shrink-0 uppercase tracking-wider">Or continue with</span>
-                                <div className="flex-1 h-px bg-gray-200" />
+                                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium shrink-0 uppercase tracking-wider">Or continue with</span>
+                                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
                             </div>
 
                             <button
                                 type="button"
-                                className="w-full py-3.5 flex items-center justify-center gap-3 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-semibold shadow-sm transition"
+                                className="w-full py-3.5 flex items-center justify-center gap-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-white font-semibold shadow-sm transition"
                                 onClick={handleGoogleLogin}
                                 disabled={loading}
                             >
@@ -225,26 +225,26 @@ export default function AuthPage() {
                             </button>
 
                             <div className="relative flex items-center gap-3 mt-8">
-                                <div className="flex-1 h-px bg-gray-200" />
-                                <span className="text-xs text-gray-500 font-medium shrink-0 uppercase tracking-wider">University Access</span>
-                                <div className="flex-1 h-px bg-gray-200" />
+                                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium shrink-0 uppercase tracking-wider">University Access</span>
+                                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
                             </div>
 
                             <Link
                                 to={routes.universityLogin}
-                                className="group w-full p-4 flex items-center gap-4 rounded-2xl border border-indigo-100 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-200 hover:shadow-sm transition-all text-left"
+                                className="group w-full p-4 flex items-center gap-4 rounded-2xl border border-indigo-100 dark:border-slate-700 bg-indigo-50/50 dark:bg-slate-800/50 hover:bg-indigo-50 dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-slate-600 hover:shadow-sm transition-all text-left"
                             >
-                                <div className="w-12 h-12 flex-shrink-0 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md">
+                                <div className="w-12 h-12 flex-shrink-0 bg-indigo-600 dark:bg-indigo-500 rounded-xl flex items-center justify-center text-white shadow-md">
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
                                     </svg>
                                 </div>
                                 <div className="flex-1">
-                                    <div className="font-bold text-gray-900 text-[15px] mb-0.5">Student Login</div>
-                                    <div className="text-sm text-gray-500">Sign in with your university credentials</div>
+                                    <div className="font-bold text-gray-900 dark:text-white text-[15px] mb-0.5">Student Login</div>
+                                    <div className="text-sm text-gray-500 dark:text-slate-400">Sign in with your university credentials</div>
                                 </div>
-                                <svg className="w-5 h-5 text-indigo-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5 text-indigo-400 dark:text-indigo-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                             </Link>

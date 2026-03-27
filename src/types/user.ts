@@ -28,6 +28,7 @@ export interface User {
   company?: string;
   industry?: string;
   universityId?: string;
+  rollNumber?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -60,4 +61,5 @@ export interface UpdateProfileDto {
   linkedinUrl?: string;
   company?: string;
   industry?: string;
+  rollNumber?: string;
 }

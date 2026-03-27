@@ -4,6 +4,7 @@ import { Calendar, User, ArrowLeft, Clock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
 import { Helmet } from 'react-helmet-async';
+import { API_BASE_URL } from '@/api/http';
 
 interface Blog {
   title: string;
@@ -19,17 +20,19 @@ export default function BlogDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const [blog, setBlog] = useState<Blog | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     const fetchBlog = async () => {
       if (!slug) return;
       setLoading(true);
+      setError('');
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        const res = await axios.get(`${API_URL}/blogs/${slug}`);
+        const res = await axios.get(`${API_BASE_URL}/blogs/${slug}`, { timeout: 15000 });
         setBlog(res.data);
       } catch (err) {
         console.error('Failed to fetch blog content:', err);
+        setError('Unable to load this article right now.');
       } finally {
         setLoading(false);
       }
@@ -50,6 +53,7 @@ export default function BlogDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-center py-20 text-gray-800 dark:text-white">
         <h2 className="text-2xl font-bold">Article Not Found</h2>
+        {error && <p className="text-sm text-rose-500 mt-2">{error}</p>}
         <Link to="/blogs" className="text-blue-500 hover:underline mt-4 inline-block">
           &larr; Back to articles
         </Link>
@@ -63,12 +67,30 @@ export default function BlogDetailPage() {
         <Helmet>
           <title>{blog.title} | AI for Job</title>
           <meta name="description" content={blog.excerpt} />
+          <link rel="canonical" href={`${window.location.origin}/blogs/${slug}`} />
           <meta property="og:title" content={blog.title} />
           <meta property="og:description" content={blog.excerpt} />
           <meta property="og:image" content={blog.coverImage || '/images/fallback_blog.jpg'} />
           <meta property="og:type" content="article" />
+          <meta property="og:url" content={`${window.location.origin}/blogs/${slug}`} />
           <meta property="article:author" content={blog.author} />
           <meta property="article:section" content={blog.category} />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={blog.title} />
+          <meta name="twitter:description" content={blog.excerpt} />
+          <meta name="twitter:image" content={blog.coverImage || '/images/fallback_blog.jpg'} />
+          <script type="application/ld+json">
+            {JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'BlogPosting',
+              headline: blog.title,
+              description: blog.excerpt,
+              datePublished: blog.date,
+              author: { '@type': 'Person', name: blog.author },
+              image: blog.coverImage || `${window.location.origin}/images/fallback_blog.jpg`,
+              mainEntityOfPage: `${window.location.origin}/blogs/${slug}`,
+            })}
+          </script>
         </Helmet>
       )}
 

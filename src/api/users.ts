@@ -20,6 +20,14 @@ export const UsersApi = {
   },
 
   /**
+   * Save roll number for a university student.
+   */
+  setRollNumber: async (rollNumber: string): Promise<User> => {
+    const { data } = await http.patch<User>('/users/me', { rollNumber });
+    return data;
+  },
+
+  /**
    * Update profile image specifically.
    */
   uploadProfileImage: async (file: File): Promise<User> => {

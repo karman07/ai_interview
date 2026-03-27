@@ -32,7 +32,7 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume, isPremi
   return (
     <div
       onClick={onViewDetails}
-      className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 flex flex-col overflow-hidden cursor-pointer"
+      className="bg-white dark:bg-slate-900/70 rounded-2xl border border-gray-100 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 flex flex-col overflow-hidden cursor-pointer"
     >
 
       {/* Thin blue top accent */}
@@ -53,7 +53,7 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume, isPremi
             <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate leading-snug">
               {resume?.filename}
             </h3>
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 flex items-center gap-1 mt-0.5">
+            <p className="text-[11px] text-gray-400 dark:text-slate-400 flex items-center gap-1 mt-0.5">
               <CalendarIcon className="w-3 h-3 flex-shrink-0" />
               {resume?.createdAt
                 ? new Date(resume.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
@@ -69,7 +69,7 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume, isPremi
         </div>
 
         {/* ── Metrics ── */}
-        <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-gray-700">
+        <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-slate-700/80">
           {[
             { label: "CV Quality",  value: cvScore,    band: cvBand  },
             { label: "JD Match",    value: jdScore,    band: jdBand  },
@@ -77,7 +77,7 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume, isPremi
           ].map((m, i) => (
             <div key={i} className={`text-center ${i === 0 ? "pr-3" : i === 1 ? "px-3" : "pl-3"}`}>
               <p className="text-xl font-bold text-gray-900 dark:text-white leading-none">{m.value}</p>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 mb-1">{m.label}</p>
+              <p className="text-[10px] text-gray-400 dark:text-slate-400 mt-0.5 mb-1">{m.label}</p>
               <span className={`text-[9px] font-bold uppercase tracking-wide ${getBandColor(m.band)}`}>
                 {m.band}
               </span>
@@ -88,10 +88,10 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume, isPremi
         {/* ── Progress bar ── */}
         <div>
           <div className="flex justify-between items-center mb-1.5">
-            <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">Overall</span>
+            <span className="text-[11px] text-gray-400 dark:text-slate-400 font-medium">Overall</span>
             <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">{overallScore}/100</span>
           </div>
-          <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-gray-100 dark:bg-slate-700/80 rounded-full overflow-hidden">
             <div
               className="h-full bg-blue-600 dark:bg-blue-500 rounded-full transition-all duration-1000"
               style={{ width: `${Math.min(overallScore, 100)}%` }}
@@ -101,7 +101,7 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume, isPremi
       </div>
 
       {/* ── Action footer ── */}
-      <div className="border-t border-gray-100 dark:border-gray-700 grid grid-cols-3 divide-x divide-gray-100 dark:divide-gray-700">
+      <div className="border-t border-gray-100 dark:border-slate-700/80 grid grid-cols-3 divide-x divide-gray-100 dark:divide-slate-700/80">
         {/* View */}
         <button
           onClick={(e) => { e.stopPropagation(); onViewDetails(); }}
@@ -150,21 +150,21 @@ const DetailedResumeCard: React.FC<DetailedResumeCardProps> = ({ resume, isPremi
         ) : (
           <button
             onClick={(e) => { e.stopPropagation(); onUpgrade?.(); }}
-            className="flex flex-col items-center gap-1.5 py-3.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group/btn"
+            className="flex flex-col items-center gap-1.5 py-3.5 hover:bg-gray-50 dark:hover:bg-slate-800/80 transition-colors group/btn"
             title="Upgrade to unlock AI Enhancement"
           >
             <div className="relative">
-              <svg className="w-4 h-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-gray-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
               </svg>
               {/* lock badge */}
-              <span className="absolute -top-1 -right-1.5 w-3 h-3 bg-gray-400 dark:bg-gray-500 rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1.5 w-3 h-3 bg-gray-400 dark:bg-slate-500 rounded-full flex items-center justify-center">
                 <svg className="w-1.5 h-1.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                 </svg>
               </span>
             </div>
-            <span className="text-[10px] font-semibold text-gray-300 dark:text-gray-600">Enhance</span>
+            <span className="text-[10px] font-semibold text-gray-300 dark:text-slate-500">Enhance</span>
           </button>
         )}
 
@@ -188,7 +188,7 @@ const getBandColor = (band?: string): string => {
     case "good":   return "text-blue-600 dark:text-blue-400";
     case "partial": return "text-amber-500 dark:text-amber-400";
     case "weak":   return "text-rose-500 dark:text-rose-400";
-    default:       return "text-gray-400 dark:text-gray-500";
+    default:       return "text-gray-400 dark:text-slate-400";
   }
 };
 
