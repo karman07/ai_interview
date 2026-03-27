@@ -19,7 +19,7 @@ export class JwtAccessStrategy extends PassportStrategy(Strategy, 'jwt-access') 
       throw new UnauthorizedException('User not found');
     }
     if (!user.isEmailVerified) {
-      throw new UnauthorizedException('Email not verified. Please verify your email via Firebase.');
+      throw new UnauthorizedException('Please verify your email to continue.');
     }
     // attach to req.user
     return payload; // e.g., { sub, email, role }

@@ -33,7 +33,7 @@ export class AuthService {
     const { passwordHash, refreshTokenHash, ...safe } = user.toObject();
 
     return {
-      message: 'User registered successfully. Please verify your email before logging in.',
+      message: 'Account created! Please check your email and verify your address to log in.',
       user: safe
     };
   }
@@ -56,11 +56,11 @@ export class AuthService {
           user.isEmailVerified = true;
           await user.save();
         } else {
-          throw new UnauthorizedException('Please verify your email address via Firebase before logging in.');
+          throw new UnauthorizedException('Please verify your email to log in.');
         }
       } catch (err) {
         if (err instanceof UnauthorizedException) throw err;
-        throw new UnauthorizedException('Please verify your email address via Firebase before logging in.');
+        throw new UnauthorizedException('Please verify your email to log in.');
       }
     }
 
@@ -139,11 +139,11 @@ export class AuthService {
           user.isEmailVerified = true;
           await user.save();
         } else {
-          throw new UnauthorizedException('Please verify your email address via Firebase.');
+          throw new UnauthorizedException('Please verify your email to continue.');
         }
       } catch (err) {
         if (err instanceof UnauthorizedException) throw err;
-        throw new UnauthorizedException('Please verify your email address via Firebase.');
+        throw new UnauthorizedException('Please verify your email to continue.');
       }
     }
 

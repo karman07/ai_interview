@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Param, Patch, Post, UseGuards, Body, Req,
+  Controller, Get, Param, Patch, Post, Delete, UseGuards, Body, Req,
   UploadedFile, UseInterceptors,
 } from '@nestjs/common';
 import { Request } from 'express';
@@ -56,6 +56,26 @@ export class UsersController {
     );
     const { passwordHash, refreshTokenHash, ...safe } = (updated as any).toObject();
     return safe;
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch('admin/:id/role')
+  async adminSetRole(
+    @Param('id') id: string,
+    @Body() body: { role: string },
+  ) {
+    const updated = await this.usersService.adminSetRole(id, body.role);
+    const { passwordHash, refreshTokenHash, ...safe } = (updated as any).toObject();
+    return safe;
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Delete('admin/:id')
+  async adminDeleteUser(@Param('id') id: string) {
+    await this.usersService.adminDeleteUser(id);
+    return { ok: true, message: 'User deleted successfully' };
   }
 
   @UseGuards(JwtAuthGuard)

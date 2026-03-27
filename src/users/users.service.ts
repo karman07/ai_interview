@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserDocument } from './schemas/user.schema';
+import { User, UserDocument, UserRole } from './schemas/user.schema';
 import { Subscription, SubscriptionDocument } from '../subscriptions/schemas/subscription.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
@@ -135,5 +135,23 @@ export class UsersService {
       .exec();
     if (!updated) throw new NotFoundException('User not found');
     return updated;
+  }
+
+  async adminSetRole(userId: string, role: string): Promise<UserDocument> {
+    const validRoles = Object.values(UserRole);
+    if (!validRoles.includes(role as UserRole)) {
+      throw new BadRequestException(`Invalid role. Must be one of: ${validRoles.join(', ')}`);
+    }
+    const updated = await this.userModel
+      .findByIdAndUpdate(userId, { role }, { new: true })
+      .populate('subscriptionPlan')
+      .exec();
+    if (!updated) throw new NotFoundException('User not found');
+    return updated;
+  }
+
+  async adminDeleteUser(userId: string): Promise<void> {
+    const result = await this.userModel.findByIdAndDelete(userId).exec();
+    if (!result) throw new NotFoundException('User not found');
   }
 }
