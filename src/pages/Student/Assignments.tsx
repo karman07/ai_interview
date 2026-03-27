@@ -72,18 +72,18 @@ export default function StudentAssignments() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-20 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white border-b border-gray-100 px-6 py-4 sticky top-0 z-10 flex items-center justify-between">
+      <header className="bg-white dark:bg-[#0B1120] border-b border-gray-100 dark:border-slate-800/60 px-6 py-4 sticky top-0 z-10 flex items-center justify-between transition-colors duration-300">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate(routes.studentDashboard)}
-            className="p-2 rounded-xl hover:bg-gray-50 text-gray-400 transition-colors"
+            className="p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-400 dark:text-slate-500 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <ClipboardList className="w-5 h-5 text-indigo-600" />
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 tracking-tight">
+            <ClipboardList className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             My Assignments
           </h1>
         </div>
@@ -91,12 +91,12 @@ export default function StudentAssignments() {
 
       <main className="max-w-3xl mx-auto px-4 mt-8">
         {/* Tabs */}
-        <div className="flex p-1.5 bg-gray-100 rounded-2xl mb-8 w-fit mx-auto sm:mx-0">
+        <div className="flex p-1.5 bg-gray-200 dark:bg-slate-800 rounded-2xl mb-8 w-fit mx-auto sm:mx-0 transition-colors duration-300">
           <button 
             onClick={() => setFilter("active")}
             className={clsx(
               "px-6 py-2 rounded-xl text-sm font-bold transition-all",
-              filter === "active" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              filter === "active" ? "bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300"
             )}
           >
             Pending
@@ -105,7 +105,7 @@ export default function StudentAssignments() {
             onClick={() => setFilter("completed")}
             className={clsx(
               "px-6 py-2 rounded-xl text-sm font-bold transition-all",
-              filter === "completed" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              filter === "completed" ? "bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300"
             )}
           >
             Completed
@@ -113,8 +113,8 @@ export default function StudentAssignments() {
         </div>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-            <Loader2 className="w-8 h-8 animate-spin mb-4 text-indigo-600" />
+          <div className="flex flex-col items-center justify-center py-20 text-gray-400 dark:text-slate-500">
+            <Loader2 className="w-8 h-8 animate-spin mb-4 text-indigo-600 dark:text-indigo-400" />
             <p className="text-sm font-medium">Fetching your tasks...</p>
           </div>
         ) : error ? (
@@ -124,12 +124,12 @@ export default function StudentAssignments() {
             <button onClick={load} className="text-indigo-600 font-bold hover:underline">Retry</button>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white border border-gray-100 rounded-3xl p-16 text-center shadow-sm">
-            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-200">
+          <div className="bg-white dark:bg-[#0B1120] border border-gray-100 dark:border-slate-800/60 rounded-3xl p-16 text-center shadow-sm dark:shadow-none transition-colors duration-300">
+            <div className="w-20 h-20 bg-gray-50 dark:bg-slate-900/50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-200 dark:text-slate-700">
               <ClipboardList className="w-10 h-10" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No {filter} assignments</h3>
-            <p className="text-gray-500 max-w-sm mx-auto">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No {filter} assignments</h3>
+            <p className="text-gray-500 dark:text-slate-400 max-w-sm mx-auto">
               {filter === 'active' 
                 ? "You're all caught up! Keep practicing on your own or wait for new tasks from your mentor." 
                 : "Complete your first assignment to see it here."}
@@ -140,7 +140,7 @@ export default function StudentAssignments() {
             {filtered.map((a) => (
               <div 
                 key={a._id}
-                className="bg-white rounded-3xl border border-gray-100 p-6 hover:shadow-lg hover:shadow-indigo-500/5 transition-all group"
+                className="bg-white dark:bg-[#0B1120] rounded-3xl border border-gray-100 dark:border-slate-800/40 p-6 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/5 transition-all group shadow-sm dark:shadow-none"
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
                   <div className="flex items-start gap-4">
@@ -151,14 +151,14 @@ export default function StudentAssignments() {
                       <ClipboardList className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-gray-900 text-lg group-hover:text-indigo-600 transition-colors uppercase tracking-tight">
+                      <h4 className="font-bold text-gray-900 dark:text-white text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors uppercase tracking-tight">
                         {a.title}
                       </h4>
                       <div className="flex flex-wrap items-center gap-3 mt-1.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 py-1 px-2 bg-gray-50 rounded-md">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-slate-500 py-1 px-2 bg-gray-50 dark:bg-slate-900 rounded-md">
                           {a.topic}
                         </span>
-                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
                           <Clock className="w-3.5 h-3.5" />
                           {getTimeRemaining(a.deadline)}
                         </div>
@@ -175,27 +175,27 @@ export default function StudentAssignments() {
                 </div>
 
                 {/* Progress */}
-                <div className="bg-gray-50/50 rounded-2xl p-5 mb-6 border border-gray-100">
+                <div className="bg-gray-50/50 dark:bg-slate-900/40 rounded-2xl p-5 mb-6 border border-gray-100 dark:border-slate-800/60 transition-colors duration-300">
                    <div className="flex justify-between items-end mb-2.5">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Training Progress</p>
-                      <span className="text-xs font-bold text-indigo-600">
+                      <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest">Training Progress</p>
+                      <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
                         {a.completedInterviews} / {a.numInterviews} Interviews
                       </span>
                    </div>
-                   <div className="h-2 bg-white rounded-full overflow-hidden border border-gray-100">
+                   <div className="h-2 bg-white dark:bg-slate-800 rounded-full overflow-hidden border border-gray-100 dark:border-slate-700/50">
                       <div 
-                        className="h-full bg-indigo-600 rounded-full transition-all duration-1000"
+                        className="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full transition-all duration-1000"
                         style={{ width: `${Math.min((a.completedInterviews / a.numInterviews) * 100, 100)}%` }}
                       />
                    </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+                <div className="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-slate-800/60">
                   <div className="flex items-center gap-4">
                     {a.avgScore > 0 && (
                       <div className="flex items-center gap-2">
-                        <BarChart3 className="w-4 h-4 text-emerald-500" />
-                        <span className="text-xs font-bold text-gray-700">Avg. Score: {a.avgScore}%</span>
+                        <BarChart3 className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                        <span className="text-xs font-bold text-gray-700 dark:text-slate-300">Avg. Score: {a.avgScore}%</span>
                       </div>
                     )}
                   </div>
@@ -206,7 +206,7 @@ export default function StudentAssignments() {
                       "flex items-center gap-2 px-6 py-2.5 rounded-2xl text-sm font-bold transition-all shadow-sm",
                       filter === "active" 
                         ? "bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-0.5" 
-                        : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                        : "bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50"
                     )}
                   >
                     {filter === "active" ? (

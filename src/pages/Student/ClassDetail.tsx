@@ -73,23 +73,23 @@ export default function StudentClassDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-        <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mb-4" />
-        <p className="text-gray-500 font-bold">Opening Class Portal...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
+        <Loader2 className="w-12 h-12 animate-spin text-indigo-600 dark:text-indigo-400 mb-4" />
+        <p className="text-gray-500 dark:text-slate-400 font-bold">Opening Class Portal...</p>
       </div>
     );
   }
 
   if (error || !cls) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-        <div className="bg-white rounded-3xl p-10 border border-rose-100 text-center max-w-md shadow-xl">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950 p-6 transition-colors duration-300">
+        <div className="bg-white dark:bg-[#0B1120] rounded-3xl p-10 border border-rose-100 dark:border-rose-900/30 text-center max-w-md shadow-xl dark:shadow-none">
           <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-          <h2 className="text-xl font-black text-gray-900 mb-2">Class Not Found</h2>
-          <p className="text-gray-500 mb-8">{error || "The class you are looking for does not exist or you are not enrolled."}</p>
+          <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">Class Not Found</h2>
+          <p className="text-gray-500 dark:text-slate-400 mb-8">{error || "The class you are looking for does not exist or you are not enrolled."}</p>
           <button 
             onClick={() => navigate(routes.studentClasses)}
-            className="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+            className="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none"
           >
             Back to My Classes
           </button>
@@ -99,16 +99,16 @@ export default function StudentClassDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 font-sans">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-20 font-sans transition-colors duration-300">
       {/* Dynamic Header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-[#0B1120] border-b border-gray-100 dark:border-slate-800/60 sticky top-0 z-20 shadow-sm dark:shadow-none overflow-hidden transition-colors duration-300">
         {/* Abstract Background Element */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
         
         <div className="max-w-6xl mx-auto px-8 py-8 relative">
           <button 
             onClick={() => navigate(routes.studentClasses)}
-            className="flex items-center gap-2 text-gray-400 hover:text-indigo-600 font-bold text-xs uppercase tracking-widest transition-colors mb-6 group"
+            className="flex items-center gap-2 text-gray-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold text-xs uppercase tracking-widest transition-colors mb-6 group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             Back to Classes
@@ -116,22 +116,22 @@ export default function StudentClassDetail() {
 
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="flex items-start gap-6">
-              <div className="w-20 h-20 bg-indigo-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-indigo-100 shrink-0">
+              <div className="w-20 h-20 bg-indigo-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-indigo-100 dark:shadow-none shrink-0">
                 <BookOpen className="w-10 h-10 text-white" />
               </div>
               <div className="pt-2">
                 <div className="flex items-center gap-3 mb-1">
-                   <h1 className="text-3xl font-black text-gray-900 tracking-tight uppercase">{cls.name}</h1>
-                   <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100">
+                   <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight uppercase transition-colors duration-300">{cls.name}</h1>
+                   <span className="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100 dark:border-indigo-900/30">
                     SEM {cls.semester}
                    </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                   <div className="flex items-center gap-2 text-sm text-gray-500 font-bold uppercase tracking-wider">
+                   <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400 font-bold uppercase tracking-wider">
                       <School className="w-4 h-4 text-indigo-400" />
                       {cls.department}
                    </div>
-                   <div className="flex items-center gap-2 text-sm text-gray-500 font-bold uppercase tracking-wider">
+                   <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400 font-bold uppercase tracking-wider">
                       <Calendar className="w-4 h-4 text-indigo-400" />
                       Enrolled {new Date(cls.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
                    </div>
@@ -146,22 +146,22 @@ export default function StudentClassDetail() {
         {/* Left Column: Assignments */}
         <div className="lg:col-span-2 space-y-8">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight flex items-center gap-3">
-              <ClipboardList className="w-6 h-6 text-indigo-600" />
+            <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight flex items-center gap-3 transition-colors duration-300">
+              <ClipboardList className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
               Course Assignments
             </h3>
-            <span className="bg-white border border-gray-100 px-4 py-1.5 rounded-full text-[10px] font-black text-gray-400 uppercase tracking-widest">
+            <span className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 px-4 py-1.5 rounded-full text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">
               {assignments.length} Total
             </span>
           </div>
 
           {assignments.length === 0 ? (
-            <div className="bg-white rounded-[2rem] p-20 text-center border-2 border-dashed border-gray-100">
-               <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-gray-200">
+            <div className="bg-white dark:bg-[#0B1120] rounded-[2rem] p-20 text-center border-2 border-dashed border-gray-100 dark:border-slate-800">
+               <div className="w-20 h-20 bg-gray-50 dark:bg-slate-900/50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-gray-200 dark:text-slate-700">
                   <ClipboardList className="w-10 h-10" />
                </div>
-               <h4 className="text-lg font-black text-gray-900 mb-2">No Active Assignments</h4>
-               <p className="text-gray-500 font-medium max-w-xs mx-auto">
+               <h4 className="text-lg font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tight">No Active Assignments</h4>
+               <p className="text-gray-500 dark:text-slate-400 font-medium max-w-xs mx-auto">
                  Your instructor hasn't posted any assignments for this class yet. Check back soon!
                </p>
             </div>
@@ -170,7 +170,7 @@ export default function StudentClassDetail() {
               {assignments.map((a) => (
                 <div 
                   key={a._id}
-                  className="bg-white rounded-[2rem] border border-gray-100 p-8 hover:shadow-xl hover:shadow-indigo-500/5 transition-all group overflow-hidden relative"
+                  className="bg-white dark:bg-[#0B1120] rounded-[2rem] border border-gray-100 dark:border-slate-800/60 p-8 hover:shadow-xl hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/5 transition-all group overflow-hidden relative shadow-sm dark:shadow-none"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 mb-8">
                     <div className="flex items-start gap-5">
@@ -181,14 +181,14 @@ export default function StudentClassDetail() {
                         <ClipboardList className="w-7 h-7" />
                       </div>
                       <div>
-                        <h4 className="font-black text-gray-900 text-lg group-hover:text-indigo-600 transition-colors uppercase tracking-tight">
+                        <h4 className="font-black text-gray-900 dark:text-white text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors uppercase tracking-tight">
                           {a.title}
                         </h4>
                         <div className="flex flex-wrap items-center gap-3 mt-1.5">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 py-1 px-2.5 bg-gray-50 rounded-md border border-gray-100">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500 py-1 px-2.5 bg-gray-50 dark:bg-slate-900 rounded-md border border-gray-100 dark:border-slate-800 transition-colors">
                             {a.topic}
                           </span>
-                          <div className="flex items-center gap-1.5 text-xs text-rose-500 font-bold uppercase tracking-wider">
+                          <div className="flex items-center gap-1.5 text-xs text-rose-500 dark:text-rose-400 font-bold uppercase tracking-wider">
                             <Clock className="w-3.5 h-3.5" />
                             {getTimeRemaining(a.deadline)}
                           </div>
@@ -205,21 +205,21 @@ export default function StudentClassDetail() {
                   </div>
 
                   {/* Enhanced Progress */}
-                  <div className="bg-gray-50/50 rounded-[1.5rem] p-6 mb-8 border border-gray-100">
+                  <div className="bg-gray-50/50 dark:bg-slate-900/40 rounded-[1.5rem] p-6 mb-8 border border-gray-100 dark:border-slate-800 transition-colors duration-300">
                     <div className="flex justify-between items-end mb-3">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Submission Progress</p>
-                      <span className="text-sm font-black text-indigo-600">
+                      <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.15em]">Submission Progress</p>
+                      <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">
                         {a.completedInterviews} / {a.numInterviews} Interviews
                       </span>
                     </div>
-                    <div className="h-2.5 bg-white rounded-full overflow-hidden border border-gray-100">
+                    <div className="h-2.5 bg-white dark:bg-slate-800 rounded-full overflow-hidden border border-gray-100 dark:border-slate-700/50">
                       <div 
-                        className="h-full bg-indigo-600 rounded-full transition-all duration-1000"
+                        className="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full transition-all duration-1000"
                         style={{ width: `${Math.min((a.completedInterviews / a.numInterviews) * 100, 100)}%` }}
                       />
                     </div>
                     {a.avgScore > 0 && (
-                      <div className="mt-4 flex items-center gap-2 text-emerald-600">
+                      <div className="mt-4 flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
                         <BarChart3 className="w-4 h-4" />
                         <span className="text-xs font-black uppercase tracking-wider">Performance Average: {a.avgScore}%</span>
                       </div>
@@ -230,9 +230,9 @@ export default function StudentClassDetail() {
                     <button 
                       onClick={() => navigate(routes.interviewHome)}
                       className={clsx(
-                        "flex items-center gap-2 px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md",
+                        "flex items-center gap-2 px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md dark:shadow-none",
                         a.status === StudentAssignmentStatus.COMPLETED || a.status === StudentAssignmentStatus.EVALUATED
-                          ? "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                          ? "bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50"
                           : "bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-0.5"
                       )}
                     >
@@ -251,28 +251,28 @@ export default function StudentClassDetail() {
 
         {/* Right Column: Class Info & Stats */}
         <div className="space-y-8">
-           <div className="bg-white rounded-[2.5rem] p-10 border border-gray-100 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50/50 rounded-bl-full opacity-50" />
-              <h3 className="text-md font-black text-gray-900 uppercase tracking-widest mb-8 flex items-center gap-3">
+           <div className="bg-white dark:bg-[#0B1120] rounded-[2.5rem] p-10 border border-gray-100 dark:border-slate-800 shadow-sm dark:shadow-none relative overflow-hidden transition-colors duration-300">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-bl-full opacity-50 transition-colors" />
+              <h3 className="text-md font-black text-gray-900 dark:text-white uppercase tracking-widest mb-8 flex items-center gap-3">
                  Course Info
               </h3>
               <div className="space-y-8">
                  <div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 pl-1">Unique Code</p>
-                    <div className="bg-gray-50 border border-gray-100 px-6 py-4 rounded-2xl flex items-center justify-between group">
-                       <span className="text-xl font-black text-indigo-600 tracking-widest font-mono">{cls.classCode}</span>
-                       <span className="text-[8px] font-black text-gray-400 uppercase opacity-0 group-hover:opacity-100 transition-opacity">Copy</span>
+                    <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5 pl-1">Unique Code</p>
+                    <div className="bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-800 px-6 py-4 rounded-2xl flex items-center justify-between group">
+                       <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 tracking-widest font-mono">{cls.classCode}</span>
+                       <span className="text-[8px] font-black text-gray-400 dark:text-slate-500 uppercase opacity-0 group-hover:opacity-100 transition-opacity">Copy</span>
                     </div>
                  </div>
                  
                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-indigo-50/30 rounded-2xl p-4 border border-indigo-50">
-                       <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Students</p>
-                       <p className="text-xl font-black text-gray-900">{cls.studentCount || 0}</p>
+                    <div className="bg-indigo-50/30 dark:bg-indigo-900/10 rounded-2xl p-4 border border-indigo-50 dark:border-indigo-900/20">
+                       <p className="text-[9px] font-black text-indigo-400 dark:text-indigo-500 uppercase tracking-widest mb-1">Students</p>
+                       <p className="text-xl font-black text-gray-900 dark:text-white">{cls.studentCount || 0}</p>
                     </div>
-                    <div className="bg-emerald-50/30 rounded-2xl p-4 border border-emerald-50">
-                       <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Active</p>
-                       <p className="text-xl font-black text-gray-900">{assignments.length}</p>
+                    <div className="bg-emerald-50/30 dark:bg-emerald-900/10 rounded-2xl p-4 border border-emerald-50 dark:border-emerald-900/20">
+                       <p className="text-[9px] font-black text-emerald-400 dark:text-emerald-500 uppercase tracking-widest mb-1">Active</p>
+                       <p className="text-xl font-black text-gray-900 dark:text-white">{assignments.length}</p>
                     </div>
                  </div>
               </div>
