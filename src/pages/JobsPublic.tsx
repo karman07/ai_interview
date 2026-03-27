@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Briefcase, MapPin, Clock, Building2, ExternalLink, Lock,
-  Sparkles, Target, Zap, CheckCircle2, ArrowRight, IndianRupee,
-  Search, TrendingUp, Star, ChevronRight
+  Sparkles, Target, Zap, CheckCircle2, ArrowRight,
+  Search, TrendingUp, Star, ChevronRight, LogIn,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,74 +12,18 @@ import Button from '@/components/ui/button';
 import { fetchJobs, type Job } from '@/api/jobService';
 import { SEO } from '@/components/SEO';
 
-/* ─── Static sample jobs ─────────────────────────────────────────────── */
-const SAMPLE_JOBS = [
-  {
-    id: "s1",
-    title: "SDE-2 — Backend",
-    company: "Zepto",
-    location: "Bengaluru, India",
-    employment_type: "Full-time",
-    salary: "₹25 – 35 LPA",
-    tags: ["Node.js", "Golang", "Kafka", "PostgreSQL"],
-    description: "Own the systems behind 10-minute grocery delivery — from order placement to the moment it's at someone's door. You'll design and ship micro-services end-to-end, at real scale.",
-    badge: "Hiring now",
-    badgeColor: "emerald",
-  },
-  {
-    id: "s2",
-    title: "Frontend Engineer",
-    company: "Razorpay",
-    location: "Remote · India",
-    employment_type: "Full-time",
-    salary: "₹18 – 28 LPA",
-    tags: ["React", "TypeScript", "GraphQL", "Design Systems"],
-    description: "Build the checkout and dashboard that 8M+ businesses rely on every day. You'll care deeply about performance, accessibility, and writing components that last.",
-    badge: "Remote-friendly",
-    badgeColor: "blue",
-  },
-  {
-    id: "s3",
-    title: "Data Engineer",
-    company: "PhonePe",
-    location: "Bengaluru, India",
-    employment_type: "Full-time",
-    salary: "₹20 – 28 LPA",
-    tags: ["Spark", "dbt", "Airflow", "BigQuery"],
-    description: "Keep the data flowing — reliably, on time, and in shape. You'll own pipelines that feed analytics and ML systems used by hundreds of millions of people.",
-    badge: "High growth",
-    badgeColor: "purple",
-  },
-  {
-    id: "s4",
-    title: "Backend Engineer — Platform",
-    company: "Swiggy",
-    location: "Bengaluru, India",
-    employment_type: "Full-time",
-    salary: "₹22 – 32 LPA",
-    tags: ["Java", "Spring Boot", "Redis", "AWS"],
-    description: "Work on the platform that handles millions of orders a day — and stays standing during 10× traffic spikes. Reliability and low latency are your north stars.",
-    badge: "Series I",
-    badgeColor: "orange",
-  },
-];
-
-const badgeStyle: Record<string, string> = {
-  emerald: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50",
-  blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50",
-  purple: "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50",
-  orange: "bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50",
-};
-
 /* ─── Component ───────────────────────────────────────────────────────── */
 const JobsPublicPage = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const isAuthenticated = !!user || !!localStorage.getItem('access_token');
 
+  // Only fetch real jobs for authenticated users
   useEffect(() => {
+    if (!isAuthenticated) return;
+    setLoading(true);
     (async () => {
       try {
         const resp = await fetchJobs({ limit: 10 });
@@ -90,7 +34,7 @@ const JobsPublicPage = () => {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleGate = (url?: string | null) => {
     if (!isAuthenticated) {
@@ -260,92 +204,7 @@ const JobsPublicPage = () => {
         </div>
       </section>
 
-      {/* ── Sample Jobs ───────────────────────────────────────────────── */}
-      <section className="py-20 bg-white dark:bg-slate-950">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-10">
-            <p className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">A Few Examples</p>
-            <h2 className="text-2xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-3">
-              Roles people are landing right now
-            </h2>
-            <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto text-sm">
-              These are the kinds of opportunities our users regularly walk into — prepared.
-              Sign up to see live listings and start prepping in one click.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {SAMPLE_JOBS.map((job, i) => (
-              <motion.div
-                key={job.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ duration: 0.45, delay: i * 0.08 }}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/8 transition-all duration-300 group"
-              >
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5">
-                  <div className="flex-1">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0 border border-blue-100 dark:border-blue-800">
-                        <Building2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                            {job.title}
-                          </h3>
-                          <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${badgeStyle[job.badgeColor]}`}>
-                            {job.badge}
-                          </span>
-                        </div>
-                        <p className="text-base font-semibold text-slate-700 dark:text-slate-300 mb-3">{job.company}</p>
-
-                        <div className="flex flex-wrap gap-3 text-sm mb-3">
-                          <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md text-xs">
-                            <MapPin className="w-3.5 h-3.5" />{job.location}
-                          </span>
-                          <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md text-xs">
-                            <Clock className="w-3.5 h-3.5" />{job.employment_type}
-                          </span>
-                          <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 px-2.5 py-1 rounded-md text-xs font-medium">
-                            <IndianRupee className="w-3.5 h-3.5" />{job.salary}
-                          </span>
-                        </div>
-
-                        <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-3">
-                          {job.description}
-                        </p>
-
-                        <div className="flex flex-wrap gap-1.5">
-                          {job.tags.map(tag => (
-                            <span key={tag} className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-md font-medium">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2 md:w-40 flex-shrink-0">
-                    <Button variant="primary" onClick={() => handleGate(null)} className="w-full justify-center text-sm">
-                      {!isAuthenticated && <Lock className="w-3.5 h-3.5 mr-1.5" />}
-                      Apply Now
-                    </Button>
-                    <Button variant="outline" className="w-full justify-center text-sm" onClick={() => navigate('/interview_round')}>
-                      Prepare
-                      <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Live Jobs from API ─────────────────────────────────────────── */}
+      {/* ── Jobs Section ───────────────────────────────────────────────────── */}
       <section className="py-16 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-800">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-10">
@@ -358,7 +217,54 @@ const JobsPublicPage = () => {
             </p>
           </div>
 
-          {loading ? (
+          {/* Unauthenticated: lock gate — no fake jobs shown */}
+          {!isAuthenticated ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="relative rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-700"
+            >
+              {/* Blurred fake rows for atmosphere */}
+              <div className="space-y-3 p-6 blur-sm pointer-events-none select-none" aria-hidden="true">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex-shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/5" />
+                      <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-1/4" />
+                      <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-3/5" />
+                    </div>
+                    <div className="w-24 h-9 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex-shrink-0" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Lock overlay */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/70 dark:bg-slate-950/80 backdrop-blur-[2px] px-6 py-10 text-center">
+                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/40 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-blue-200 dark:border-blue-700">
+                  <Lock className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">
+                  Sign in to see live job listings
+                </h3>
+                <p className="text-slate-500 dark:text-slate-400 text-sm mb-7 max-w-sm">
+                  Create a free account to browse hundreds of real, verified openings — curated daily from top companies.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button variant="primary" onClick={() => { localStorage.setItem('redirectAfterLogin', routes.jobListings); navigate(routes.signup); }} className="px-7 py-3 h-auto font-semibold">
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Create free account
+                  </Button>
+                  <Button variant="outline" onClick={() => { localStorage.setItem('redirectAfterLogin', routes.jobListings); navigate(routes.login); }} className="px-7 py-3 h-auto font-semibold">
+                    Sign in
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          ) : loading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto" />
               <p className="mt-4 text-slate-500 dark:text-slate-400 text-sm font-medium">Grabbing the latest roles…</p>
@@ -366,60 +272,67 @@ const JobsPublicPage = () => {
           ) : (
             <div className="space-y-4">
               {jobs.length > 0 ? (
-                jobs.map((job) => (
-                  <div
-                    key={job.job_id}
-                    className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 hover:border-blue-500/40 transition-all duration-300 group shadow-sm hover:shadow-md"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5">
-                      <div className="flex-1">
-                        <div className="flex items-start gap-4">
-                          <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0 border border-blue-100 dark:border-blue-800">
-                            <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-0.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                              {job.title}
-                            </h3>
-                            <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">{job.company}</p>
-                            <div className="flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400 mb-3">
-                              {job.location && (
-                                <span className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-                                  <MapPin className="w-3 h-3" />{job.location}
-                                </span>
-                              )}
-                              {job.employment_type && (
-                                <span className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-                                  <Clock className="w-3 h-3" />{job.employment_type}
-                                </span>
-                              )}
-                              {(job.salary_min > 0 || job.salary_max > 0) && (
-                                <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/40 px-2 py-0.5 rounded">
-                                  ${job.salary_min}–${job.salary_max}
-                                </span>
-                              )}
+                <>
+                  {jobs.map((job) => (
+                    <div
+                      key={job.job_id}
+                      className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 hover:border-blue-500/40 transition-all duration-300 group shadow-sm hover:shadow-md"
+                    >
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5">
+                        <div className="flex-1">
+                          <div className="flex items-start gap-4">
+                            <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0 border border-blue-100 dark:border-blue-800">
+                              <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                             </div>
-                            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed line-clamp-2">
-                              {job.description}
-                            </p>
+                            <div className="flex-1">
+                              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-0.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                {job.title}
+                              </h3>
+                              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">{job.company}</p>
+                              <div className="flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400 mb-3">
+                                {job.location && (
+                                  <span className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                                    <MapPin className="w-3 h-3" />{job.location}
+                                  </span>
+                                )}
+                                {job.employment_type && (
+                                  <span className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                                    <Clock className="w-3 h-3" />{job.employment_type}
+                                  </span>
+                                )}
+                                {(job.salary_min > 0 || job.salary_max > 0) && (
+                                  <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/40 px-2 py-0.5 rounded">
+                                    ${job.salary_min}–${job.salary_max}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed line-clamp-2">
+                                {job.description}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex flex-col gap-2 md:w-40 flex-shrink-0">
-                        <Button variant="primary" onClick={() => handleGate(null)} className="w-full justify-center text-sm">
-                          {!isAuthenticated && <Lock className="w-3.5 h-3.5 mr-1.5" />}
-                          Apply Now
-                        </Button>
-                        {job.redirect_url && (
-                          <Button variant="outline" className="w-full justify-center text-sm" onClick={() => handleGate(job.redirect_url)}>
-                            See Details
-                            <ExternalLink className="w-3.5 h-3.5 ml-1.5" />
+                        <div className="flex flex-col gap-2 md:w-40 flex-shrink-0">
+                          <Button variant="primary" onClick={() => handleGate(job.redirect_url)} className="w-full justify-center text-sm">
+                            Apply Now
                           </Button>
-                        )}
+                          {job.redirect_url && (
+                            <Button variant="outline" className="w-full justify-center text-sm" onClick={() => window.open(job.redirect_url!, '_blank')}>
+                              See Details
+                              <ExternalLink className="w-3.5 h-3.5 ml-1.5" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
+                  ))}
+                  <div className="text-center pt-4">
+                    <Button variant="outline" onClick={() => navigate(routes.jobListings)} className="px-8 py-3 h-auto font-semibold">
+                      Browse all listings
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
                   </div>
-                ))
+                </>
               ) : (
                 <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
                   <Briefcase className="w-10 h-10 text-slate-400 mx-auto mb-3" />
@@ -429,24 +342,6 @@ const JobsPublicPage = () => {
               )}
             </div>
           )}
-
-          {/* Login CTA */}
-          {!isAuthenticated && !loading && (
-            <div className="mt-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 md:p-12 text-center">
-              <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-5 text-blue-600 dark:text-blue-400">
-                <Lock className="w-7 h-7" />
-              </div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Want to see everything?</h2>
-              <p className="text-slate-600 dark:text-slate-400 mb-7 max-w-lg mx-auto text-sm">
-                Create a free account to browse hundreds of live listings, check your resume match,
-                and start prepping for the exact questions those roles ask.
-              </p>
-              <Button variant="primary" onClick={handleViewMore} className="px-8 py-3 h-auto text-base">
-                Get started — it's free
-                <ChevronRight className="w-5 h-5 ml-2" />
-              </Button>
-            </div>
-          )}
         </div>
       </section>
     </div>
@@ -454,3 +349,4 @@ const JobsPublicPage = () => {
 };
 
 export default JobsPublicPage;
+
