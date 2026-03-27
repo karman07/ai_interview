@@ -13,6 +13,7 @@ import { StartSessionDto } from './dto/start-session.dto';
 import { TrackPageViewDto } from './dto/track-pageview.dto';
 import { Subject } from 'rxjs';
 import { AIUsage, AIUsageDocument } from './schemas/ai-usage.schema';
+import { Class, ClassDocument } from '../classes/schemas/class.schema';
 
 @Injectable()
 export class AnalyticsService {
@@ -27,6 +28,7 @@ export class AnalyticsService {
     @InjectModel(Payment.name) private paymentModel: Model<PaymentDocument>,
     @InjectModel(Resume.name) private resumeModel: Model<ResumeDocument>,
     @InjectModel(AIUsage.name) private aiUsageModel: Model<AIUsageDocument>,
+    @InjectModel(Class.name) private classModel: Model<ClassDocument>,
   ) { }
 
   // Mark sessions that haven't been active in 30 minutes as inactive
@@ -864,5 +866,114 @@ export class AnalyticsService {
     this.aiUsageSubject.next(stats);
 
     return usage;
+  }
+
+  // ─── TEACHER INSIGHTS (PHASE 3) ──────────────────────────────────────────
+
+  async getTeacherInsights(teacherId: string) {
+    // 1. Get all students managed by this teacher
+    const classes = await this.classModel.find({ teacherId, isActive: true }).lean();
+    const studentIds = new Set<string>();
+    classes.forEach((c: any) => c.students?.forEach((s: any) => studentIds.add(s.toString())));
+    const studentIdsArr = Array.from(studentIds).map(id => new Types.ObjectId(id));
+
+    if (studentIdsArr.length === 0) {
+      return {
+        topWeaknesses: [],
+        atRiskStudents: [],
+        placementReadyStudents: []
+      };
+    }
+
+    // 2. Fetch all results for these students to determine weaknesses
+    const results = await this.resultModel.find({ owner: { $in: studentIdsArr } }).lean();
+
+    // Calculate weaknesses based on dimension scores
+    const dimensionStats: Record<string, { totalScore: number; count: number }> = {};
+    
+    // Group students' overall scores & interview counts
+    const studentStats: Record<string, { totalScore: number; count: number; name?: string; email?: string; avatar?: string; scoreHistory: number[] }> = {};
+    
+    studentIdsArr.forEach(id => {
+      studentStats[id.toString()] = { totalScore: 0, count: 0, scoreHistory: [] };
+    });
+
+    results.forEach((res: any) => {
+      const sId = res.owner.toString();
+      if (studentStats[sId]) {
+        studentStats[sId].count++;
+        studentStats[sId].totalScore += (res.summary?.overall_score || 0);
+        studentStats[sId].scoreHistory.push(res.summary?.overall_score || 0);
+      }
+
+      // Aggregate dimensions
+      if (res.summary?.dimension_scores) {
+        Object.entries(res.summary.dimension_scores).forEach(([dim, score]) => {
+          if (!dimensionStats[dim]) dimensionStats[dim] = { totalScore: 0, count: 0 };
+          dimensionStats[dim].count++;
+          dimensionStats[dim].totalScore += (Number(score) || 0);
+        });
+      }
+    });
+
+    // Populate student details
+    const users = await this.userModel.find({ _id: { $in: studentIdsArr } }).select('name email profileImageUrl').lean();
+    users.forEach((u: any) => {
+      const sId = u._id.toString();
+      if (studentStats[sId]) {
+        studentStats[sId].name = u.name;
+        studentStats[sId].email = u.email;
+        studentStats[sId].avatar = u.profileImageUrl;
+      }
+    });
+
+    // 3. Process Weaknesses
+    const weaknesses = Object.entries(dimensionStats)
+      .map(([dimension, stats]) => ({
+        topic: dimension,
+        averageScore: Math.round(stats.totalScore / stats.count),
+      }))
+      .sort((a, b) => a.averageScore - b.averageScore) // lowest first
+      .slice(0, 5); // top 5 weaknesses
+
+    // 4. Process At-Risk & Placement Ready
+    const atRiskStudents: any[] = [];
+    const placementReadyStudents: any[] = [];
+
+    Object.entries(studentStats).forEach(([id, stats]) => {
+      if (!stats.name) return; // Skip if user not found
+
+      const avgScore = stats.count > 0 ? Math.round(stats.totalScore / stats.count) : 0;
+      
+      const studentData = {
+        id,
+        name: stats.name,
+        email: stats.email,
+        avatar: stats.avatar,
+        interviewsCompleted: stats.count,
+        averageScore: avgScore,
+        scoreHistory: stats.scoreHistory
+      };
+
+      // Rules for categorization
+      if (stats.count > 0 && avgScore < 50) {
+        atRiskStudents.push(studentData);
+      } else if (stats.count === 0) {
+        // 0 interviews could also be at risk of falling behind
+        atRiskStudents.push(studentData);
+      } else if (stats.count >= 3 && avgScore >= 75) {
+        placementReadyStudents.push(studentData);
+      }
+    });
+
+    // Sort lists
+    atRiskStudents.sort((a, b) => a.averageScore - b.averageScore); // Lowest score first
+    placementReadyStudents.sort((a, b) => b.averageScore - a.averageScore); // Highest score first
+
+    return {
+      topWeaknesses: weaknesses,
+      atRiskStudents,
+      placementReadyStudents
+    };
   }
 }

@@ -5,9 +5,14 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 
+import { BlogsGeneratorService } from './blogs.generator';
+
 @Controller('blogs')
 export class BlogsController {
-  constructor(private readonly service: BlogsService) { }
+  constructor(
+    private readonly service: BlogsService,
+    private readonly generator: BlogsGeneratorService
+  ) { }
 
   /** Public list */
   @Get()
@@ -31,5 +36,13 @@ export class BlogsController {
   async create(@Req() req, @Body() body: { title: string; slug: string; category: string; content: string; excerpt: string; coverImage?: string }) {
     const author = req.user.email || 'Admin';
     return this.service.create(body, author);
+  }
+
+  /** Trigger Daily Generation (Admin Only) */
+  @Post('trigger-daily')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async triggerDaily() {
+    return this.generator.generateDailyBlog();
   }
 }

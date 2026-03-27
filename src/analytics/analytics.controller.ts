@@ -46,41 +46,57 @@ export class AnalyticsController {
   }
 
   @Get('visitors')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.UNIVERSITY_TEACHER)
   async getAllVisitors() {
     return this.analyticsService.getAllVisitors();
   }
 
   @Get('visitors/:visitorId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.UNIVERSITY_TEACHER)
   async getVisitorStats(@Param('visitorId') visitorId: string) {
     return this.analyticsService.getVisitorStats(visitorId);
   }
 
   @Get('sessions')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.UNIVERSITY_TEACHER)
   async getAllSessions(@Query('limit') limit?: number) {
     return this.analyticsService.getAllSessions(limit);
   }
 
   @Get('sessions/:sessionId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.UNIVERSITY_TEACHER)
   async getSessionDetails(@Param('sessionId') sessionId: string) {
     return this.analyticsService.getSessionDetails(sessionId);
   }
 
   @Get('pageviews')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.UNIVERSITY_TEACHER)
   async getAllPageViews(@Query('limit') limit?: number) {
     return this.analyticsService.getAllPageViews(limit);
   }
 
   @Get('summary')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.UNIVERSITY_TEACHER)
   async getAnalyticsSummary() {
     return this.analyticsService.getAnalyticsSummary();
   }
 
   @Get('admin/dashboard')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.UNIVERSITY_TEACHER)
   async getAdminDashboardStats() {
     return this.analyticsService.getAdminDashboardStats();
   }
 
   @Get('admin/recent-sessions')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.UNIVERSITY_TEACHER)
   async getRecentSessions(@Query('limit') limit?: number) {
     return this.analyticsService.getAllSessions(limit);
   }
@@ -92,9 +108,17 @@ export class AnalyticsController {
     return this.analyticsService.getAdminDashboardStats(userId);
   }
 
+  @Get('teacher-insights')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.UNIVERSITY_TEACHER, UserRole.ADMIN)
+  async getTeacherInsights(@Req() req) {
+    const teacherId = req.user?.sub;
+    return this.analyticsService.getTeacherInsights(teacherId);
+  }
+
   @Get('admin/popular-pages')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.UNIVERSITY_TEACHER)
   async getPopularPages(@Query('limit') limit = 10) {
     return this.analyticsService.getPopularPages(+limit);
   }
@@ -116,7 +140,7 @@ export class AnalyticsController {
 
   @Get('admin/ai-usage')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.UNIVERSITY_TEACHER)
   async getAdminAIUsageStats() {
     return this.analyticsService.getAdminAIUsageStats();
   }

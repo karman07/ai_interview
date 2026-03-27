@@ -5,6 +5,9 @@ import { University, UniversityDocument } from './schemas/university.schema';
 import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
 import { CreateUniversityDto, UpdateUniversityDto, CreateTeacherDto } from './dto/university.dto';
 import * as bcrypt from 'bcrypt';
+import { Result, ResultDocument } from '../results/schemas/result.schema';
+import { Resume, ResumeDocument } from '../resume/resume.schema';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class UniversitiesService {
@@ -13,7 +16,11 @@ export class UniversitiesService {
     private universityModel: Model<UniversityDocument>,
     @InjectModel(User.name)
     private userModel: Model<UserDocument>,
-  ) {}
+    @InjectModel(Result.name)
+    private resultModel: Model<ResultDocument>,
+    @InjectModel(Resume.name)
+    private resumeModel: Model<ResumeDocument>,
+  ) { }
 
   async create(dto: CreateUniversityDto): Promise<UniversityDocument> {
     const domain = dto.domain.toLowerCase().trim();
@@ -96,18 +103,101 @@ export class UniversitiesService {
   // ── University student analytics ─────────────────────────────────────────────
 
   async getUniversityStudents(universityId: string) {
-    const [uni, students] = await Promise.all([
-      this.universityModel.findById(universityId),
-      this.userModel
-        .find({ role: UserRole.STUDENT, universityId })
-        .select('-passwordHash -refreshTokenHash')
-        .sort({ createdAt: -1 }),
-    ]);
+    const uni = await this.universityModel.findById(universityId);
     if (!uni) throw new NotFoundException('University not found');
+
+    const students = await this.userModel.aggregate([
+      { $match: { role: UserRole.STUDENT, universityId } },
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: 'results',
+          localField: '_id',
+          foreignField: 'owner',
+          as: 'results'
+        }
+      },
+      // Try lookup with ObjectId
+      {
+        $lookup: {
+          from: 'resumes',
+          localField: '_id',
+          foreignField: 'user',
+          as: 'resumes_obj'
+        }
+      },
+      // Try lookup with String ID (in case they are stored as strings)
+      {
+        $addFields: { studentIdStr: { $toString: '$_id' } }
+      },
+      {
+        $lookup: {
+          from: 'resumes',
+          localField: 'studentIdStr',
+          foreignField: 'user',
+          as: 'resumes_str'
+        }
+      },
+      {
+        $addFields: {
+          resumes: { $setUnion: ['$resumes_obj', '$resumes_str'] }
+        }
+      },
+      {
+        $addFields: {
+          normalizedResults: {
+            $map: {
+              input: '$results',
+              as: 'r',
+              in: {
+                score: { $ifNull: ['$$r.summary.overall_score', '$$r.score', 0] },
+                date: '$$r.createdAt',
+                job: '$$r.jobDescription'
+              }
+            }
+          },
+          normalizedResumes: {
+            $map: {
+              input: '$resumes',
+              as: 'cv',
+              in: {
+                score: { $ifNull: ['$$cv.stats.cv_quality.overall_score', '$$cv.stats.score', 0] },
+                filename: '$$cv.filename',
+                date: '$$cv.createdAt'
+              }
+            }
+          }
+        }
+      },
+      {
+        $addFields: {
+          avgScore: { $avg: '$normalizedResults.score' },
+          bestInterviewScore: { $max: '$normalizedResults.score' },
+          allScores: '$normalizedResults',
+          avgCvScore: { $avg: '$normalizedResumes.score' },
+          bestCvScore: { $max: '$normalizedResumes.score' },
+          cvList: '$normalizedResumes'
+        }
+      },
+      {
+        $project: {
+          results: 0,
+          resumes: 0,
+          resumes_obj: 0,
+          resumes_str: 0,
+          studentIdStr: 0,
+          normalizedResults: 0,
+          normalizedResumes: 0,
+          passwordHash: 0,
+          refreshTokenHash: 0
+        }
+      }
+    ]);
+
     return {
       university: uni,
       students: students.map(s => ({
-        ...s.toObject(),
+        ...s,
         resumeUsage: { used: s.resumeCount, limit: uni.resumeLimit },
         interviewUsage: { used: s.interviewCount, limit: uni.interviewLimit },
       })),

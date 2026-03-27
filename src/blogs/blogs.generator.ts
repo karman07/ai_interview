@@ -8,14 +8,14 @@ import { AiConfigService } from '../ai-config/ai-config.service';
 const CATEGORIES = ['Interview Prep', 'Resume Building', 'Career Growth', 'Technical Skills', 'AI in Recruitment'];
 
 const IMAGES = [
-  "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=600",
-  "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=600",
-  "https://images.unsplash.com/photo-1586281380349-632531db7ed4?q=80&w=600",
-  "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=600",
-  "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=600",
-  "https://images.unsplash.com/photo-1507537295325-2df920f01de6?q=80&w=600",
-  "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=600",
-  "https://images.unsplash.com/photo-1677442136019-21780efad99a?q=80&w=600"
+  'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=600',
+  'https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=600',
+  'https://images.unsplash.com/photo-1586281380349-632531db7ed4?q=80&w=600',
+  'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=600',
+  'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=600',
+  'https://images.unsplash.com/photo-1507537295325-2df920f01de6?q=80&w=600',
+  'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=600',
+  'https://images.unsplash.com/photo-1677442136019-21780efad99a?q=80&w=600',
 ];
 
 const AUTHORS = ['Karman Singh', 'Rahat Bhatia', 'Advitya Dua'];
@@ -23,7 +23,7 @@ const AUTHORS = ['Karman Singh', 'Rahat Bhatia', 'Advitya Dua'];
 @Injectable()
 export class BlogsGeneratorService implements OnModuleInit {
   private readonly logger = new Logger(BlogsGeneratorService.name);
-  private readonly blogsDir = path.join(__dirname, '..', '..', '..', 'blogs_content');
+  private readonly blogsDir = path.join(process.cwd(), 'blogs_content');
   private readonly DAILY_TARGET = 2;
 
   constructor(private readonly aiConfigService: AiConfigService) {}
@@ -43,9 +43,7 @@ export class BlogsGeneratorService implements OnModuleInit {
     files.forEach((file) => {
       const content = fs.readFileSync(path.join(this.blogsDir, file), 'utf-8');
       const match = content.match(/^date:\s*"?(\d{4}-\d{2}-\d{2})"?\s*$/m);
-      if (match?.[1] === date) {
-        count += 1;
-      }
+      if (match?.[1] === date) count += 1;
     });
     return count;
   }
@@ -61,23 +59,33 @@ export class BlogsGeneratorService implements OnModuleInit {
     const missing = minCount - existing;
     this.logger.log(`Generating ${missing} blog(s) for ${today} to reach ${minCount}/day target...`);
     for (let i = 0; i < missing; i += 1) {
-      await this.generateSingleBlog();
+      const result = await this.generateDailyBlog();
+      if (result.success) {
+        this.logger.log(`✅ Daily blog generated and saved: ${result.slug}.md`);
+      } else {
+        this.logger.error(`❌ Failed to generate daily blog: ${result.error}`);
+      }
     }
   }
 
   @Cron('0 0 * * *') // Runs everyday at midnight
   async handleDailyBlog() {
-    this.logger.log(`Starting daily blog generation via Groq (${this.DAILY_TARGET} blogs)...`);
+    this.logger.log(`Starting daily blog generation (${this.DAILY_TARGET} blogs)...`);
     for (let i = 0; i < this.DAILY_TARGET; i += 1) {
-      await this.generateSingleBlog();
+      const result = await this.generateDailyBlog();
+      if (result.success) {
+        this.logger.log(`✅ Daily blog generated and saved: ${result.slug}.md`);
+      } else {
+        this.logger.error(`❌ Failed to generate daily blog: ${result.error}`);
+      }
     }
   }
 
-  private async generateSingleBlog() {
+  async generateDailyBlog() {
     const cat = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
     const randomImage = IMAGES[Math.floor(Math.random() * IMAGES.length)];
     const randomAuthor = AUTHORS[Math.floor(Math.random() * AUTHORS.length)];
-    
+
     const prompt = `
 You are an expert tech career writer.
 Pick a hot trending topic in the category: '${cat}'.
@@ -103,33 +111,38 @@ coverImage: "Provide a real high-quality absolute Unsplash image URL that matche
 `;
 
     try {
-      const groqKey = await this.aiConfigService.getActiveKey('groq');
+      const apiKey = await this.aiConfigService.getActiveKey('gemini');
+      const model = await this.aiConfigService.getActiveModel('gemini');
+
       const res = await axios.post(
-        'https://api.groq.com/openai/v1/chat/completions',
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.7,
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            topP: 0.95,
+            topK: 40,
+            maxOutputTokens: 2048,
+          },
         },
         {
-          headers: {
-            Authorization: `Bearer ${groqKey}`,
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
         },
       );
 
-      let content = res.data.choices[0].message.content;
+      let content = res.data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!content) throw new Error('No content returned from Gemini');
+
       const slugMatch = content.match(/slug:\s*"([^"]+)"/);
       let slug = slugMatch ? slugMatch[1] : `daily-blog-${Date.now()}`;
-      
+
       const coverImageMatch = content.match(/coverImage:\s*"([^"]+)"/);
       const coverImage = coverImageMatch ? coverImageMatch[1] : 'DEFAULT_IMAGE';
 
       if (coverImage === 'DEFAULT_IMAGE' || !coverImage.startsWith('http')) {
-         const fallback = IMAGES[Math.floor(Math.random() * IMAGES.length)];
-         content = content.replace(/coverImage:\s*"Provide a real high-quality absolute Unsplash[^"]+"/, `coverImage: "${fallback}"`);
-         content = content.replace(/coverImage:\s*"DEFAULT_IMAGE"/, `coverImage: "${fallback}"`);
+        const fallback = IMAGES[Math.floor(Math.random() * IMAGES.length)];
+        content = content.replace(/coverImage:\s*"Provide a real high-quality absolute Unsplash[^"]+"/, `coverImage: "${fallback}"`);
+        content = content.replace(/coverImage:\s*"DEFAULT_IMAGE"/, `coverImage: "${fallback}"`);
       }
 
       let filePath = path.join(this.blogsDir, `${slug}.md`);
@@ -137,16 +150,17 @@ coverImage: "Provide a real high-quality absolute Unsplash image URL that matche
         slug = `${slug}-${Date.now()}`;
         filePath = path.join(this.blogsDir, `${slug}.md`);
       }
-      
-      // Ensure directory exists just in case
+
       if (!fs.existsSync(this.blogsDir)) {
-          fs.mkdirSync(this.blogsDir, { recursive: true });
+        fs.mkdirSync(this.blogsDir, { recursive: true });
       }
 
       fs.writeFileSync(filePath, content);
-      this.logger.log(`✅ Daily blog generated and saved: ${slug}.md`);
+      return { success: true, slug };
     } catch (err) {
-      this.logger.error('❌ Failed to generate daily blog:', err);
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      this.logger.error('❌ Failed to generate daily blog:', errorMsg);
+      return { success: false, error: errorMsg };
     }
   }
 
