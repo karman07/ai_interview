@@ -331,38 +331,119 @@ export default function Profile() {
                 </div>
                 <p className="text-xs text-gray-400 text-center">Your access is managed by your university administrator.</p>
               </div>
-            ) : (
-              /* ── Subscription card (regular users) ── */
-              <div className="bg-white dark:bg-[#0D1117] rounded-[2.5rem] p-8 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden group">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
-                    <CreditCard className="w-5 h-5" />
-                  </div>
-                  <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight leading-none uppercase tracking-widest">Subscription</h3>
-                </div>
-                <div className="p-6 rounded-[2rem] bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-100/50 dark:border-blue-800/30 mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Current Plan</span>
-                    <div className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 ${user?.subscriptionStatus === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-gray-500/10 text-gray-500'}`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${user?.subscriptionStatus === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-500'}`} />
-                      <span className="text-[10px] font-black uppercase tracking-widest">{user?.subscriptionStatus || 'Free'}</span>
+            ) : (() => {
+              const isPayg = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go';
+              const interviewsUsed  = isPayg ? (user?.paygInterviewsUsed  ?? 0) : (user?.interviewCount ?? 0);
+              const interviewsLimit = isPayg ? (user?.paygInterviewsLimit ?? 0) : (user?.interviewLimit ?? 3);
+              const resumesUsed     = isPayg ? (user?.paygResumesUsed     ?? 0) : (user?.resumeCount    ?? 0);
+              const resumesLimit    = isPayg ? (user?.paygResumesLimit    ?? 0) : (user?.resumeLimit    ?? 5);
+              const budgetRupees    = isPayg ? ((user?.paygMonthlyBudget ?? 0) / 100) : null;
+              const cycleEnd        = isPayg && user?.paygBillingCycleEnd ? new Date(user.paygBillingCycleEnd) : null;
+
+              const interviewPct = interviewsLimit > 0 ? Math.min((interviewsUsed / interviewsLimit) * 100, 100) : 0;
+              const resumePct    = resumesLimit    > 0 ? Math.min((resumesUsed    / resumesLimit)    * 100, 100) : 0;
+              const barColor     = (pct: number) =>
+                pct >= 90 ? 'from-red-500 to-rose-400' :
+                pct >= 70 ? 'from-amber-500 to-yellow-400' :
+                            'from-blue-600 to-blue-400';
+
+              return (
+                <div className="bg-white dark:bg-[#0D1117] rounded-[2.5rem] p-8 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden group">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
+                      {isPayg ? <Zap className="w-5 h-5" /> : <CreditCard className="w-5 h-5" />}
                     </div>
+                    <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight leading-none uppercase tracking-widest">
+                      {isPayg ? 'Pay As You Go' : 'Subscription'}
+                    </h3>
                   </div>
-                  <h4 className="text-xl font-black text-gray-900 dark:text-white mb-4 flex items-center gap-3">
-                    {user?.subscriptionPlan && typeof user.subscriptionPlan === 'object' ? (user.subscriptionPlan as any).displayName : (user?.subscriptionPlan || 'Foundation Tier')}
-                    {user?.subscriptionStatus === 'active' && <Zap className="w-4 h-4 text-blue-600" />}
-                  </h4>
-                </div>
-                <Button
-                  variant="outline"
-                  className="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] border-gray-100 dark:border-gray-800 group-hover:border-blue-500/50 transition-all hover:bg-blue-50 dark:hover:bg-blue-900/10"
-                  onClick={() => setShowPricing(true)}
-                >
-                  Update Intelligence Tier
-                  <ChevronRight className="w-3 h-3 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </div>
-            )}
+
+                  {/* Plan header */}
+                  <div className="p-5 rounded-[2rem] bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-100/50 dark:border-blue-800/30 mb-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                        {isPayg ? 'Monthly Budget' : 'Current Plan'}
+                      </span>
+                      <div className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 ${user?.subscriptionStatus === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-gray-500/10 text-gray-500'}`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${user?.subscriptionStatus === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-500'}`} />
+                        <span className="text-[10px] font-black uppercase tracking-widest">{user?.subscriptionStatus || 'Free'}</span>
+                      </div>
+                    </div>
+                    <h4 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3">
+                      {isPayg
+                        ? `₹${budgetRupees?.toLocaleString('en-IN') ?? 0}/mo`
+                        : (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object'
+                            ? (user.subscriptionPlan as any).displayName
+                            : (user?.subscriptionPlan || 'Foundation Tier'))
+                      }
+                      {user?.subscriptionStatus === 'active' && <Zap className="w-4 h-4 text-blue-600" />}
+                    </h4>
+                    {isPayg && cycleEnd && (
+                      <p className="text-[10px] font-bold text-gray-400 mt-1">
+                        Renews {cycleEnd.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Usage bars — shown for active plans */}
+                  {(isPayg || user?.subscriptionStatus === 'active') && interviewsLimit > 0 && (
+                    <div className="space-y-4 mb-5">
+                      {/* Interviews */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400">Interviews</span>
+                          <span className="text-[11px] font-black text-gray-700 dark:text-gray-300">
+                            {interviewsUsed}<span className="text-gray-400 font-medium"> / {interviewsLimit}</span>
+                          </span>
+                        </div>
+                        <div className="h-2.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${interviewPct}%` }}
+                            transition={{ duration: 0.8, ease: 'easeOut' }}
+                            className={`h-full rounded-full bg-gradient-to-r ${barColor(interviewPct)}`}
+                          />
+                        </div>
+                        <p className="text-[9px] font-bold text-gray-400 mt-1 text-right">
+                          {interviewsLimit - interviewsUsed} remaining this month
+                        </p>
+                      </div>
+
+                      {/* Resumes */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400">Resume Scans</span>
+                          <span className="text-[11px] font-black text-gray-700 dark:text-gray-300">
+                            {resumesUsed}<span className="text-gray-400 font-medium"> / {resumesLimit}</span>
+                          </span>
+                        </div>
+                        <div className="h-2.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${resumePct}%` }}
+                            transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
+                            className={`h-full rounded-full bg-gradient-to-r ${barColor(resumePct)}`}
+                          />
+                        </div>
+                        <p className="text-[9px] font-bold text-gray-400 mt-1 text-right">
+                          {resumesLimit - resumesUsed} remaining this month
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {!isPayg && (
+                    <Button
+                      variant="outline"
+                      className="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] border-gray-100 dark:border-gray-800 group-hover:border-blue-500/50 transition-all hover:bg-blue-50 dark:hover:bg-blue-900/10"
+                      onClick={() => setShowPricing(true)}
+                    >
+                      Update Intelligence Tier
+                      <ChevronRight className="w-3 h-3 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  )}                </div>
+              );
+            })()}
 
             <div className="bg-white dark:bg-[#0D1117] rounded-[2.5rem] p-8 border border-gray-200 dark:border-gray-800/50 shadow-sm relative overflow-hidden group">
               <div className="flex items-center gap-4 mb-8">

@@ -227,6 +227,17 @@ const ResumeDashboard: React.FC = () => {
       return universityLimits?.resumeLimit ?? 5;
     }
 
+    // PAYG
+    if ((user?.subscriptionPlan as any)?.type === 'pay_as_you_go' && typeof user?.paygResumesLimit === 'number') {
+      return user.paygResumesLimit;
+    }
+
+    // Stamped at purchase
+    if (typeof user?.resumeLimit === 'number' && user.resumeLimit > 0) {
+      return user.resumeLimit;
+    }
+
+    // Plan features fallback
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
       const limitFeature = user.subscriptionPlan.features.find(f => f.name.toLowerCase().includes('resume upload limit'));
       if (limitFeature && typeof limitFeature.value === 'number') {
@@ -248,7 +259,9 @@ const ResumeDashboard: React.FC = () => {
     return 5; // Default free tier
   }, [user, universityLimits]);
 
-  const isAtLimit = totalResumes >= resumeLimit;
+  const isPayg = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go';
+  const currentResumeUsage = isPayg ? (user?.paygResumesUsed ?? 0) : (user?.resumeCount ?? safeResumes.length);
+  const isAtLimit = currentResumeUsage >= resumeLimit;
 
   // Determine if user is on a paid plan (students are treated as paid within their university limits)
   const isPaidUser = useMemo(() => {
@@ -436,13 +449,13 @@ const ResumeDashboard: React.FC = () => {
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Resume Limit</span>
                   <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isAtLimit ? 'bg-red-500 text-white' : 'bg-blue-600 text-white'}`}>
-                    {totalResumes} / {resumeLimit}
+                    {currentResumeUsage} / {resumeLimit}
                   </span>
                 </div>
                 <div className="w-32 h-1 bg-gray-200 dark:bg-slate-700/80 rounded-full overflow-hidden">
                   <div
                     className={`h-full transition-all duration-500 ${isAtLimit ? 'bg-red-500' : 'bg-blue-600'}`}
-                    style={{ width: `${Math.min((totalResumes / resumeLimit) * 100, 100)}%` }}
+                    style={{ width: `${Math.min((currentResumeUsage / resumeLimit) * 100, 100)}%` }}
                   />
                 </div>
               </div>

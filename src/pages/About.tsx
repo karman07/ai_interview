@@ -22,7 +22,7 @@ const AboutUs = () => {
       <SEO 
         title="About Us - AI for Job"
         description="Learn about AI for Job's mission to democratize interview preparation. Discover how we're helping candidates ace their job interviews with AI-powered practice and personalized feedback."
-        keywords="about AI for Job, interview preparation mission, AI interview platform, career development, job interview help"
+        keywords="about AI for Job, interview preparation mission, Ai for job, career development, job interview help"
         url="https://aiforjob.ai/about"
       />
 

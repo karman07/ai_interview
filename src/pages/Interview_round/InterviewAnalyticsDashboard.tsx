@@ -128,18 +128,37 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
 
   const interviewLimit = useMemo(() => {
     if ((user as any)?.role === 'student') return universityInterviewLimit ?? 20;
+
+    // PAYG: use paygInterviewsLimit
+    if ((user?.subscriptionPlan as any)?.type === 'pay_as_you_go' && typeof user?.paygInterviewsLimit === 'number') {
+      return user.paygInterviewsLimit;
+    }
+
+    // ✅ Stamped at purchase — always the source of truth
+    if (typeof user?.interviewLimit === 'number' && user.interviewLimit > 0) {
+      return user.interviewLimit;
+    }
+
+    // Fallback: analytics dashboard data plan features
     if (dashboardData?.overview?.plan?.features) {
       const f = dashboardData.overview.plan.features.find((f: any) => f.name.toLowerCase().includes('interview limit'));
       if (f && typeof (f.value ?? f.limit) === 'number') return f.value ?? f.limit;
     }
+
+    // Fallback: subscriptionPlan object
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
       const f = user.subscriptionPlan.features.find(f => f.name.toLowerCase().includes('interview limit'));
       if (f && typeof f.value === 'number') return f.value;
     }
+
     return user?.subscriptionStatus === 'active' ? 10 : 3;
   }, [user, dashboardData, universityInterviewLimit]);
 
-  const currentMonthlyUsage = Math.max(dashboardData?.overview?.monthlyInterviews || 0, sessions.length);
+  // PAYG usage comes from paygInterviewsUsed; regular from interviewCount (stamped at purchase)
+  const isPayg = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go';
+  const currentMonthlyUsage = isPayg
+    ? (user?.paygInterviewsUsed ?? 0)
+    : Math.max(user?.interviewCount ?? 0, dashboardData?.overview?.monthlyInterviews || 0, sessions.length);
   const totalInterviews = Math.max(dashboardData?.overview?.totalInterviews || 0, sessions.length);
   const isAtLimit = currentMonthlyUsage >= interviewLimit;
 

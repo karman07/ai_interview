@@ -24,6 +24,18 @@ export interface User {
   razorpaySubscriptionId?: string;
   resumeCount?: number;
   interviewCount?: number;
+  // ── Plan limits (stamped from plan at purchase time) ──────────────────
+  resumeLimit?: number;
+  interviewLimit?: number;
+  // ── PAYG fields ───────────────────────────────────────────────────────
+  paygMonthlyBudget?: number;
+  paygInterviewsUsed?: number;
+  paygResumesUsed?: number;
+  paygInterviewsLimit?: number;
+  paygResumesLimit?: number;
+  paygBillingCycleStart?: string | Date;
+  paygBillingCycleEnd?: string | Date;
+  paygRazorpaySubscriptionId?: string;
   googleId?: string;
   company?: string;
   industry?: string;

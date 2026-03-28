@@ -41,7 +41,9 @@ export const PricingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [showPricing, setShowPricing] = useState(false);
 
   const transformPlans = (apiPlans: SubscriptionPlan[]): PlanUI[] => {
-    return apiPlans.map(plan => ({
+    return apiPlans
+      .filter(plan => (plan as any).type !== 'pay_as_you_go')
+      .map(plan => ({
       id: (plan as any)._id || plan.id,
       name: plan.displayName,
       description: plan.description || "Unlock premium features to accelerate your growth.",

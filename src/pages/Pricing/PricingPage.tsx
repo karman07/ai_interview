@@ -9,6 +9,7 @@ import {
 import { usePricing } from "@/contexts/PricingContext";
 import { useAuth } from "@/contexts/AuthContext";
 import SEO from "@/components/SEO/SEO";
+import { PayAsYouGoCard } from "@/components/pricing/PayAsYouGoCard";
 
 /* ── helpers ─────────────────────────────────────────────────────────── */
 function Reveal({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
@@ -255,6 +256,30 @@ export default function PricingPage() {
               })}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* ── PAY-AS-YOU-GO SECTION */}
+      <section className="pb-24 px-6 border-t border-slate-100 dark:border-slate-800">
+        <div className="max-w-6xl mx-auto pt-16">
+          <Reveal className="text-center mb-10">
+            <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-blue-400/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 mb-4">
+              <Zap className="w-4 h-4 mr-2" />
+              <span className="text-sm font-semibold tracking-wide">FLEXIBLE OPTION</span>
+            </div>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white mb-3">
+              No plan fits? Build your own.
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xl mx-auto">
+              Set a monthly budget, get interview and resume credits calculated automatically.
+              Your budget auto-renews each month — change it any time.
+            </p>
+          </Reveal>
+          <div className="max-w-md mx-auto">
+            <Reveal delay={0.1}>
+              <PayAsYouGoCard />
+            </Reveal>
+          </div>
         </div>
       </section>
     </div>

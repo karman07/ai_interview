@@ -1,5 +1,5 @@
 /**
- * SEO Utilities for the AI Interview Platform
+ * SEO Utilities for the Ai for job
  */
 
 export const seoConfig = {
@@ -66,7 +66,7 @@ export const structuredData = {
   product: {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: 'AI Interview Platform',
+    name: 'Ai for job',
     description: seoConfig.defaultDescription,
     brand: {
       '@type': 'Brand',

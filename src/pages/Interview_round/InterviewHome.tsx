@@ -112,7 +112,19 @@ export default function InterviewHome() {
       return universityInterviewLimit ?? 20;
     }
 
-    // 1. Try fetching from analytics (direct from DB)
+    // PAYG users: use paygInterviewsLimit
+    const isPayg = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go'
+      || typeof user?.paygInterviewsLimit === 'number';
+    if (isPayg && typeof user?.paygInterviewsLimit === 'number') {
+      return user.paygInterviewsLimit;
+    }
+
+    // ✅ Use the limit stamped directly on the user at purchase time
+    if (typeof user?.interviewLimit === 'number' && user.interviewLimit > 0) {
+      return user.interviewLimit;
+    }
+
+    // Fallback: analytics plan features
     if (analytics?.plan?.features) {
       const limitFeature = analytics.plan.features.find((f: any) =>
         f.name.toLowerCase().includes('interview limit')
@@ -122,7 +134,7 @@ export default function InterviewHome() {
       }
     }
 
-    // 2. Fallback to auth context
+    // Fallback: subscriptionPlan object features
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
       const limitFeature = user.subscriptionPlan.features.find(f => f.name.toLowerCase().includes('interview limit'));
       if (limitFeature && typeof limitFeature.value === 'number') {
@@ -130,11 +142,15 @@ export default function InterviewHome() {
       }
     }
 
-    // 3. Absolute default
+    // Absolute default: 3 free / 10 paid
     return user?.subscriptionStatus === 'active' ? 10 : 3;
   }, [user, analytics, universityInterviewLimit]);
 
-  const currentInterviews = analytics?.overall?.monthlyInterviews ?? analytics?.overall?.totalInterviews ?? results?.length ?? 0;
+  // For PAYG track used from user directly; for regular track from analytics/results
+  const isPaygUser = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go';
+  const currentInterviews = isPaygUser
+    ? (user?.paygInterviewsUsed ?? 0)
+    : (user?.interviewCount ?? analytics?.overall?.monthlyInterviews ?? analytics?.overall?.totalInterviews ?? results?.length ?? 0);
   const isAtLimit = currentInterviews >= interviewLimit;
 
   const handleLimitExceeded = () => {

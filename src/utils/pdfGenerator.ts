@@ -784,13 +784,13 @@ export const generateResumeReport = (resume: Resume) => {
         doc.setPage(i);
         doc.setFontSize(8);
         doc.setTextColor(150);
-        doc.text('© 2026 AI Interview Coach™ | Confidential & Proprietary', 105, 290, { align: 'center' });
+        doc.text('© 2026 Ai for job™ | Confidential & Proprietary', 105, 290, { align: 'center' });
         doc.text(`Page ${i} of ${pageCount}`, 190, 290, { align: 'right' });
 
         // Add a small logo-like text or actual trademark
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(33, 150, 243);
-        doc.text('AI Interview Coach', 14, 290);
+        doc.text('Ai for job', 14, 290);
     }
 
     // Save the PDF

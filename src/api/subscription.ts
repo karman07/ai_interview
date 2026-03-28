@@ -130,4 +130,89 @@ export const SubscriptionApi = {
         const res = await http.post('/payments/create-order', data);
         return res.data;
     },
+
+    // ── Pay-as-you-go ────────────────────────────────────────────────────────
+
+    /**
+     * Set up / update the user's PAYG monthly budget (in ₹).
+     * Returns updated user object + derived limits.
+     */
+    paygSetup: async (monthlyBudget: number) => {
+        const res = await http.post('/users/me/payg/setup', { monthlyBudget });
+        return res.data as {
+            success: boolean;
+            user: Record<string, any>;
+        };
+    },
+
+    /**
+     * Get current PAYG usage, limits, spend breakdown, and billing cycle.
+     */
+    paygStatus: async () => {
+        const res = await http.get('/users/me/payg/status');
+        return res.data as {
+            monthlyBudgetRupees: number;
+            pricePerInterviewRupees: number;
+            pricePerResumeRupees: number;
+            interviews: { used: number; limit: number; remaining: number };
+            resumes:    { used: number; limit: number; remaining: number };
+            spending:   { totalPaisaSpent: number; totalPaisaBudget: number; remainingPaisa: number };
+            billingCycle: { start: string; end: string };
+        };
+    },
+
+    /**
+     * Cancel the PAYG plan and revert to free tier.
+     */
+    paygCancel: async () => {
+        const res = await http.post('/users/me/payg/cancel');
+        return res.data;
+    },
+
+    // ── PAYG Autopay (Razorpay subscription) ─────────────────────────────────
+
+    createPaygSubscription: async (budgetRupees: number): Promise<{
+        subscriptionId: string;
+        razorpayKey: string;
+        budgetRupees: number;
+    }> => {
+        const res = await http.post('/payments/create-payg-subscription', { budgetRupees });
+        return res.data;
+    },
+
+    verifyPaygSubscription: async (data: {
+        razorpaySubscriptionId: string;
+        razorpayPaymentId: string;
+        razorpaySignature: string;
+        budgetRupees: number;
+    }): Promise<{ success: boolean; interviewsLimit: number; resumesLimit: number }> => {
+        const res = await http.post('/payments/verify-payg-subscription', data);
+        return res.data;
+    },
+
+    // ── Admin PAYG config ─────────────────────────────────────────────────────
+
+    adminGetPaygConfig: async (country: string = 'IN') => {
+        const res = await http.get(`/subscriptions/payg/config?country=${country}`);
+        return res.data as {
+            id: string;
+            country: string;
+            status: string;
+            pricePerInterviewRupees: number;
+            pricePerResumeRupees: number;
+            minBudgetRupees: number;
+            maxBudgetRupees: number;
+        } | null;
+    },
+
+    adminUpdatePaygConfig: async (data: {
+        country?: string;
+        pricePerInterviewRupees?: number;
+        pricePerResumeRupees?: number;
+        minBudgetRupees?: number;
+        maxBudgetRupees?: number;
+    }) => {
+        const res = await http.patch('/subscriptions/payg/config', data);
+        return res.data;
+    },
 };

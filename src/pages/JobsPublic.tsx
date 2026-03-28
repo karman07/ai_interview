@@ -60,7 +60,7 @@ const JobsPublicPage = () => {
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 transition-colors duration-500">
       <SEO 
         title="Job Listings - AI for Job"
-        description="Browse curated job opportunities and AI-powered interview practice. Find your dream job and prepare with our AI interview platform. Practice coding, behavioral, and technical interviews."
+        description="Browse curated job opportunities and AI-powered interview practice. Find your dream job and prepare with our Ai for job. Practice coding, behavioral, and technical interviews."
         keywords="job listings, job search, career opportunities, AI interview practice, job preparation, tech jobs, software engineer jobs"
         url="https://aiforjob.ai/jobs"
       />

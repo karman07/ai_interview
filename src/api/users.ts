@@ -85,4 +85,12 @@ export const UsersApi = {
   adminDeleteUser: async (userId: string): Promise<void> => {
     await http.delete(`/users/admin/${userId}`);
   },
+
+  /**
+   * Update user limits (admin only).
+   */
+  adminUpdateLimits: async (userId: string, interviewLimit?: number, resumeLimit?: number): Promise<User> => {
+    const { data } = await http.patch<User>(`/users/admin/${userId}/limits`, { interviewLimit, resumeLimit });
+    return data;
+  },
 };

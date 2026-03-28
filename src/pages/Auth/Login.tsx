@@ -111,7 +111,7 @@ export default function Login() {
         <div className="absolute inset-0 bg-indigo-900/50 backdrop-blur-sm z-0" />
         <div className="relative z-10 flex flex-col items-center text-center px-6 pt-28">
           <h2 className="text-4xl font-extrabold mb-6 leading-snug">
-            Your AI Interview Coach
+            Your Ai for job
           </h2>
           <p className="text-base opacity-90 leading-relaxed max-w-md mb-10">
             Practice interviews with AI, track progress, and land your dream job

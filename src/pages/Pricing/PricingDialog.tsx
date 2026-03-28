@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check, X, Sparkles, ArrowRight, Tag, CheckCircle2,
   AlertCircle, Shield, ChevronLeft, CreditCard, Lock,
-  Zap, RefreshCw, User,
+  Zap, RefreshCw, User, ChevronDown,
 } from 'lucide-react';
 import { usePricing } from '@/contexts/PricingContext';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ import routes from '@/constants/routes';
 import { useAuth } from '@/contexts/AuthContext';
 import { SubscriptionApi } from '@/api/subscription';
 import { useState, useEffect } from 'react';
+import { PayAsYouGoDialog } from '@/components/pricing/PayAsYouGoDialog';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const fmtAmount = (lowestUnit: number, currency: string): string => {
@@ -26,12 +27,13 @@ interface CouponState {
 // ─────────────────────────────────────────────────────────────────────────────
 const PricingDialog = () => {
   const { showPricing, setShowPricing, pricingPlans, loading, error } = usePricing();
-  const { user } = useAuth();
+  const { user, refreshMe } = useAuth();
   const navigate = useNavigate();
 
   const [view, setView] = useState<'plans' | 'checkout'>('plans');
   const [selectedPlan, setSelected] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
+  const [showPayg, setShowPayg] = useState(false);
 
   const [couponInput, setCouponInput] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
@@ -41,6 +43,7 @@ const PricingDialog = () => {
     if (!showPricing) {
       setView('plans'); setSelected(null);
       setCouponInput(''); setCouponResult(null);
+      setShowPayg(false);
     }
   }, [showPricing]);
 
@@ -93,9 +96,12 @@ const PricingDialog = () => {
           name: 'AI for Job', description: `${selectedPlan.name} \u00b7 ${couponInput.toUpperCase()}`,
           handler: async (r: any) => {
             try {
-              await SubscriptionApi.verifyPayment({ razorpayOrderId: r.razorpay_order_id, razorpayPaymentId: r.razorpay_payment_id, razorpaySignature: r.razorpay_signature });
-              setShowPricing(false); window.location.reload();
-            } catch { alert('Payment verification failed. Contact support.'); }
+              const result = await SubscriptionApi.verifyPayment({ razorpayOrderId: r.razorpay_order_id, razorpayPaymentId: r.razorpay_payment_id, razorpaySignature: r.razorpay_signature });
+              console.log('[PricingDialog] Payment verified:', result);
+              await refreshMe(); // ✅ Refresh user context with new limits
+              setShowPricing(false);
+              window.location.reload();
+            } catch (err: any) { alert('Payment verification failed. Contact support.'); }
           },
           prefill: { name: user.name, email: user.email }, theme: { color: '#2563EB' },
         }).open();
@@ -106,9 +112,12 @@ const PricingDialog = () => {
           name: 'AI for Job', description: `${selectedPlan.name} \u2014 Monthly Recurring`,
           handler: async (r: any) => {
             try {
-              await SubscriptionApi.verifySubscription({ razorpaySubscriptionId: r.razorpay_subscription_id, razorpayPaymentId: r.razorpay_payment_id, razorpaySignature: r.razorpay_signature });
-              setShowPricing(false); window.location.reload();
-            } catch { alert('Subscription verification failed. Contact support.'); }
+              const result = await SubscriptionApi.verifySubscription({ razorpaySubscriptionId: r.razorpay_subscription_id, razorpayPaymentId: r.razorpay_payment_id, razorpaySignature: r.razorpay_signature });
+              console.log('[PricingDialog] Subscription verified:', result);
+              await refreshMe(); // ✅ Refresh user context with new limits
+              setShowPricing(false);
+              window.location.reload();
+            } catch (err: any) { alert('Subscription verification failed: ' + (err?.message || 'Contact support.')); }
           },
           prefill: { name: user.name, email: user.email }, theme: { color: '#2563EB' },
         }).open();
@@ -196,9 +205,13 @@ const PricingDialog = () => {
                     <motion.div
                       initial="hidden" animate="visible"
                       variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
-                      className={`grid grid-cols-1 sm:grid-cols-2 ${pricingPlans.length >= 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-8`}
+                      className={`grid grid-cols-1 sm:grid-cols-2 ${
+                        pricingPlans.filter(p => (p as any).type !== 'pay_as_you_go').length >= 4
+                          ? 'lg:grid-cols-4'
+                          : 'lg:grid-cols-3'
+                      } gap-8`}
                     >
-                      {pricingPlans.map(plan => {
+                      {pricingPlans.filter(p => (p as any).type !== 'pay_as_you_go').map(plan => {
                         const isCurrent = isCurrentPlan(plan);
                         const isFree = plan.numericPrice === 0;
                         const highlight = !isCurrent && plan.popular;
@@ -306,6 +319,42 @@ const PricingDialog = () => {
                     </motion.div>
                   )}
                 </div>
+
+                {/* ── PAYG trigger ── */}
+                <div className="px-8 md:px-10 pb-10">
+                  <button
+                    onClick={() => setShowPayg(true)}
+                    className="w-full flex items-center gap-5 px-6 py-5 rounded-2xl border-2 border-dashed border-blue-200 dark:border-blue-800/60 bg-gradient-to-r from-blue-50 to-indigo-50/60 dark:from-blue-950/30 dark:to-indigo-950/20 hover:border-blue-400 dark:hover:border-blue-600 hover:from-blue-100/80 hover:to-indigo-100/50 dark:hover:from-blue-950/50 transition-all duration-200 group text-left"
+                  >
+                    {/* Icon */}
+                    <div className="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform">
+                      <Zap className="w-5 h-5 text-white" />
+                    </div>
+
+                    {/* Text */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-sm font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest leading-none">Pay As You Go</p>
+                        <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 text-[9px] font-black uppercase tracking-wider">New</span>
+                      </div>
+                      <p className="text-[12px] text-blue-500/70 dark:text-blue-400/60 font-medium">
+                        Set your own budget &mdash; ₹49/interview &middot; ₹29/resume &middot; cancel anytime
+                      </p>
+                    </div>
+
+                    {/* Arrow */}
+                    <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                      <ChevronDown className="w-4 h-4 text-blue-500 group-hover:text-white -rotate-90" />
+                    </div>
+                  </button>
+                </div>
+
+                {/* PAYG dialog */}
+                <PayAsYouGoDialog
+                  open={showPayg}
+                  onClose={() => setShowPayg(false)}
+                  onSuccess={() => { setShowPayg(false); setShowPricing(false); }}
+                />
 
                 {/* footer */}
                 <div className="relative px-10 py-6 bg-gray-50 dark:bg-white/[0.02] border-t border-gray-200 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">

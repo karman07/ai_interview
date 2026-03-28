@@ -104,34 +104,34 @@ export default function InterviewStart() {
   }, [stats, analytics]);
 
   const interviewLimit = useMemo(() => {
-    if ((user as any)?.role === 'student') {
-      return universityLimits?.interviewLimit ?? 20;
-    }
+    if ((user as any)?.role === 'student') return universityLimits?.interviewLimit ?? 20;
+    if ((user?.subscriptionPlan as any)?.type === 'pay_as_you_go' && typeof user?.paygInterviewsLimit === 'number') return user.paygInterviewsLimit;
+    if (typeof user?.interviewLimit === 'number' && user.interviewLimit > 0) return user.interviewLimit;
+    
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
-      const limitFeature = (user.subscriptionPlan as any).features?.find?.(
-        (f: any) => f.name === 'Interview Limit'
-      );
-      if (limitFeature) return Number(limitFeature.value ?? limitFeature.limit ?? 3);
+      const f = (user.subscriptionPlan as any).features?.find?.((f: any) => f.name === 'Interview Limit');
+      if (f) return Number(f.value ?? f.limit ?? 3);
     }
-    return 3; // default free tier
+    return 3; 
   }, [user, universityLimits]);
 
   const resumeLimit = useMemo(() => {
-    if ((user as any)?.role === 'student') {
-      return universityLimits?.resumeLimit ?? 5;
-    }
+    if ((user as any)?.role === 'student') return universityLimits?.resumeLimit ?? 5;
+    if ((user?.subscriptionPlan as any)?.type === 'pay_as_you_go' && typeof user?.paygResumesLimit === 'number') return user.paygResumesLimit;
+    if (typeof user?.resumeLimit === 'number' && user.resumeLimit > 0) return user.resumeLimit;
+    
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
-      const limitFeature = (user.subscriptionPlan as any).features?.find?.(
-        (f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit'
-      );
-      if (limitFeature) return Number(limitFeature.value ?? limitFeature.limit ?? 5);
+      const f = (user.subscriptionPlan as any).features?.find?.((f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit');
+      if (f) return Number(f.value ?? f.limit ?? 5);
     }
-    return 5; // default free tier
+    return 5; 
   }, [user, universityLimits]);
 
-  const totalInterviewsTaken = analytics?.overall?.totalInterviews || 0;
+  const isPayg = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go';
+  const totalInterviewsTaken = isPayg ? (user?.paygInterviewsUsed ?? 0) : Math.max(user?.interviewCount ?? 0, analytics?.overall?.monthlyInterviews || 0, analytics?.overall?.totalInterviews || 0);
   const isAtLimit = totalInterviewsTaken >= interviewLimit;
-  const totalResumes = resumes.length;
+  
+  const totalResumes = isPayg ? (user?.paygResumesUsed ?? 0) : (user?.resumeCount ?? resumes.length);
   const isAtResumeLimit = totalResumes >= resumeLimit;
 
   const isPaidUser = useMemo(() => {

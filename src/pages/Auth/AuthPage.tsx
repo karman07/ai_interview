@@ -130,7 +130,7 @@ export default function AuthPage() {
                             transition={{ duration: 0.3, delay: 0.1 }}
                         >
                             {isLogin
-                                ? "Your AI Interview Coach is ready to help you ace your next interview."
+                                ? "Your Ai for job is ready to help you ace your next interview."
                                 : "Start your journey to interview mastery with personalized AI feedback."
                             }
                         </motion.p>

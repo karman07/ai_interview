@@ -271,7 +271,7 @@ const FeaturesSection = ({ navigate }: { navigate: (p: string) => void }) => {
   const features = [
     {
       icon: <Mic className="w-6 h-6" />, badge: "Core",
-      title: "AI Interview Coach",
+      title: "Ai for job",
       desc: "Practice rounds for behavioral (STAR format), technical, DSA, and system design. Our algorithm listens to your answer and gives it a score based on how clear, deep, and well-structured it is. Then it shows you exactly what a strong answer looks like.",
       cta: "Start Practicing", link: "/interview_round",
       bullets: ["Voice + text responses", "Real-time scoring", "Rewritten model answers"],
