@@ -1,8 +1,8 @@
 {
 	"info": {
 		"_postman_id": "b847a445-1f24-41d4-a851-39ed5f9672a4",
-		"name": "AI Interview Backend",
-		"description": "Postman collection for the AI Interview Backend (endpoints discovered in the repository). Base URL set as a collection variable.",
+		"name": "Ai for job Backend",
+		"description": "Postman collection for the Ai for job Backend (endpoints discovered in the repository). Base URL set as a collection variable.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "48109611",
 		"_collection_link": "https://ai-interview-backend-4566.postman.co/workspace/AI-Interview-Coach~05069667-d6c2-4373-82dd-59a04500657a/collection/28152615-b847a445-1f24-41d4-a851-39ed5f9672a4?action=share&source=collection_link&creator=48109611"

@@ -32,9 +32,16 @@ export class PaymentService {
     private emailService: EmailService,
     private discountsService: DiscountsService,
   ) {
+    const id = this.configService.get<string>('RAZORPAY_KEY_ID') || process.env.RAZORPAY_KEY_ID;
+    const secret = this.configService.get<string>('RAZORPAY_KEY_SECRET') || process.env.RAZORPAY_KEY_SECRET;
+
+    if (!id || !secret) {
+      this.logger.error('CRITICAL ERROR: Razorpay API keys are completely missing from environment context!');
+    }
+
     this.razorpay = new Razorpay({
-      key_id: this.configService.get<string>('RAZORPAY_KEY_ID'),
-      key_secret: this.configService.get<string>('RAZORPAY_KEY_SECRET'),
+      key_id: id || '',
+      key_secret: secret || '',
     });
   }
 
@@ -271,24 +278,39 @@ export class PaymentService {
    * Since every user can have a different amount, we create a fresh Razorpay plan
    * per-budget on the fly (or reuse an existing one with the same amount).
    */
-  async createPaygSubscription(userId: string, monthlyBudgetRupees: number): Promise<any> {
+  async createPaygSubscription(userId: string, monthlyBudgetRupees: number, couponCode?: string): Promise<any> {
     try {
-      const budgetInPaisa = Math.round(monthlyBudgetRupees * 100);
-      this.logger.log(`Creating PAYG subscription for user ${userId} budget=${budgetInPaisa} paisa`);
-
-      // Fetch PAYG plan template from DB to validate min/max bounds
-      const paygTemplate = await this.subscriptionService.findOneByAnyId('payg_in')
+      // 1. Validate pricing & budget bounds
+      const paygTemplate: any = await this.subscriptionService.findOneByAnyId('payg_in')
         ?? await this.subscriptionService.findOneByAnyId('payg_us');
       if (!paygTemplate) throw new BadRequestException('PAYG plan template not found. Contact support.');
 
-      const minBudget = (paygTemplate as any).paygMinBudget ?? 9900;
-      const maxBudget = (paygTemplate as any).paygMaxBudget ?? 500000;
-      if (budgetInPaisa < minBudget) throw new BadRequestException(`Minimum budget is ₹${minBudget / 100}`);
-      if (budgetInPaisa > maxBudget) throw new BadRequestException(`Maximum budget is ₹${maxBudget / 100}`);
+      const minBudget = (paygTemplate.paygMinBudget ?? 9900) / 100;
+      const maxBudget = (paygTemplate.paygMaxBudget ?? 500000) / 100;
+
+      if (monthlyBudgetRupees < minBudget) throw new BadRequestException(`Minimum budget is ₹${minBudget}`);
+      if (monthlyBudgetRupees > maxBudget) throw new BadRequestException(`Maximum budget is ₹${maxBudget}`);
+
+      let budgetInPaisa = Math.round(monthlyBudgetRupees * 100);
+      let originalBudgetInPaisa = budgetInPaisa;
+      let appliedCoupon: any = null;
+
+      // 2. Apply Coupon if any
+      if (couponCode) {
+        const couponResult = await this.discountsService.validateCoupon(userId, {
+          code: couponCode,
+          orderAmount: budgetInPaisa,
+          subscriptionId: paygTemplate._id.toString(),
+        });
+        if (couponResult.valid) {
+          budgetInPaisa = couponResult.finalAmount;
+          appliedCoupon = couponResult.coupon;
+        }
+      }
 
       // Create (or reuse) a Razorpay plan for this exact budget amount
       let razorpayPlanId: string;
-      const planLabel = `PAYG ₹${monthlyBudgetRupees}/mo`;
+      const planLabel = `PAYG ₹${Math.round(budgetInPaisa / 100)}/mo`;
       const existingPlans = await this.razorpay.plans.all({ count: 100 });
       const matching = (existingPlans as any).items?.find(
         (p: any) => p.item.amount === budgetInPaisa && p.item.currency === 'INR' && p.item.name === planLabel
@@ -312,7 +334,7 @@ export class PaymentService {
         customer_notify: 1,
         total_count: 120, // 10 years
         quantity: 1,
-        notes: { userId, budgetRupees: String(monthlyBudgetRupees), type: 'payg' },
+        notes: { userId, budgetRupees: String(monthlyBudgetRupees), type: 'payg', couponCode: couponCode || '' },
       } as any);
 
       // Record pending payment
@@ -334,6 +356,7 @@ export class PaymentService {
         subscriptionId: rzpSub.id,
         razorpayKey: this.configService.get<string>('RAZORPAY_KEY_ID'),
         budgetRupees: monthlyBudgetRupees,
+        finalBudgetRupees: Math.round(budgetInPaisa / 100),
         planId: razorpayPlanId,
       };
     } catch (error) {
@@ -353,8 +376,11 @@ export class PaymentService {
     razorpayPaymentId: string;
     razorpaySignature: string;
     budgetRupees: number;
+    interviews?: number;
+    resumes?: number;
+    couponCode?: string;
   }): Promise<any> {
-    const { razorpaySubscriptionId, razorpayPaymentId, razorpaySignature, budgetRupees } = dto;
+    const { razorpaySubscriptionId, razorpayPaymentId, razorpaySignature, budgetRupees, interviews, resumes, couponCode } = dto;
     const secret = this.configService.get<string>('RAZORPAY_KEY_SECRET');
 
     const generated = crypto
@@ -373,17 +399,41 @@ export class PaymentService {
       payment.razorpaySignature = razorpaySignature;
       payment.status = PaymentStatus.PAID;
       await payment.save();
+
+      // Record coupon usage if present
+      if (couponCode) {
+        try {
+          const couponResult = await this.discountsService.validateCoupon(userId, {
+            code: couponCode,
+            orderAmount: budgetRupees * 100, // Original amount
+            subscriptionId: payment.subscriptionId?.toString(),
+          });
+          if (couponResult.valid && couponResult.coupon) {
+            await this.discountsService.recordCouponUsage(
+              couponResult.coupon._id.toString(),
+              userId,
+              payment._id.toString(),
+              couponResult.discountAmount,
+              budgetRupees * 100,
+              couponResult.finalAmount,
+              'PAYG Plan',
+            );
+          }
+        } catch (couponErr) {
+          this.logger.error(`Failed to record PAYG coupon usage: ${couponErr.message}`);
+        }
+      }
     }
 
     // Activate the PAYG plan — sets limits + billing cycle + stores razorpaySubscriptionId on user
-    const user = await this.usersService.setupPayg(userId, budgetRupees);
+    const user = await this.usersService.setupPayg(userId, budgetRupees, interviews, resumes);
 
     // Also store the Razorpay subscription ID on the user so webhook resets work
     await this.usersService.updateProfile(userId, {
       razorpaySubscriptionId,
     } as any);
 
-    this.logger.log(`PAYG plan activated: ${razorpaySubscriptionId} for user ${userId} — ₹${budgetRupees}/mo`);
+    this.logger.log(`PAYG plan activated: ${razorpaySubscriptionId} for user ${userId} — ₹${budgetRupees}/mo (${interviews ?? '?'} int, ${resumes ?? '?'} res)`);
     return { success: true, budgetRupees, interviewsLimit: user.paygInterviewsLimit, resumesLimit: user.paygResumesLimit };
   }
 

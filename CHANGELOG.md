@@ -1,6 +1,6 @@
 # 📝 Backend Updates & Enhancements
 
-This document summarizes the recent architectural changes, feature additions, and system cleanups performed on the AI Interview backend.
+This document summarizes the recent architectural changes, feature additions, and system cleanups performed on the Ai for job backend.
 
 ---
 

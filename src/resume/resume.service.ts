@@ -200,7 +200,7 @@ export class ResumeService {
     const normalizedPath = file.path.replace(/\\/g, '/');
     const resumeUrl = this.buildFileUrl(normalizedPath);
 
-    // ✅ Extract text from file for future use in AI interview
+    // ✅ Extract text from file for future use in Ai for job
     let extractedText = stats?.cv_text || improvement_resume?.cv_text || '';
     if (!extractedText || extractedText.length < 50) {
       this.logger.log('📄 cv_text from AI service missing or short. Extracting text from file...');

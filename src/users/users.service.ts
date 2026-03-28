@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument, UserRole } from './schemas/user.schema';
-import { Subscription, SubscriptionDocument } from '../subscriptions/schemas/subscription.schema';
+import { Subscription, SubscriptionDocument, SubscriptionType } from '../subscriptions/schemas/subscription.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 
@@ -227,18 +227,17 @@ export class UsersService {
    * Called when a user sets up / updates their PAYG budget.
    * Derives interview & resume limits from the budget ÷ admin-configured unit prices.
    */
-  async setupPayg(userId: string, monthlyBudgetRupees: number): Promise<UserDocument> {
-    // Fetch the PAYG plan template to get admin-configured unit prices
+  async setupPayg(userId: string, monthlyBudgetRupees: number, interviews?: number, resumes?: number): Promise<UserDocument> {
     const paygPlan = await this.subscriptionModel
       .findOne({ type: 'pay_as_you_go', status: 'active' })
       .exec();
 
     if (!paygPlan) throw new BadRequestException('PAYG plan is not configured yet. Please contact support.');
 
-    const pricePerInterview = paygPlan.paygPricePerInterview ?? 4900; // default ₹49
-    const pricePerResume    = paygPlan.paygPricePerResume    ?? 2900; // default ₹29
-    const minBudget         = (paygPlan.paygMinBudget ?? 9900) / 100; // default ₹99 min
-    const maxBudget         = (paygPlan.paygMaxBudget ?? 500000) / 100; // default ₹5000 max
+    const pricePerInterview = paygPlan.paygPricePerInterview ?? 4900;
+    const pricePerResume    = paygPlan.paygPricePerResume    ?? 2900;
+    const minBudget         = (paygPlan.paygMinBudget ?? 9900) / 100;
+    const maxBudget         = (paygPlan.paygMaxBudget ?? 500000) / 100;
 
     if (monthlyBudgetRupees < minBudget) {
       throw new BadRequestException(`Minimum monthly budget is ₹${minBudget}`);
@@ -249,9 +248,9 @@ export class UsersService {
 
     const budgetInPaisa = Math.round(monthlyBudgetRupees * 100);
 
-    // Calculate limits: how many of each can the user afford?
-    const interviewsLimit = Math.floor(budgetInPaisa / pricePerInterview);
-    const resumesLimit    = Math.floor(budgetInPaisa / pricePerResume);
+    // Use provided counts or derive from budget
+    const interviewsLimit = interviews ?? Math.floor(budgetInPaisa / pricePerInterview);
+    const resumesLimit    = resumes    ?? Math.floor(budgetInPaisa / pricePerResume);
 
     const now      = new Date();
     const cycleEnd = new Date(now);
@@ -269,7 +268,6 @@ export class UsersService {
         paygBillingCycleEnd:    cycleEnd,
         subscriptionStatus:     'active',
         subscriptionPlan:       paygPlan._id,
-        // ✅ Reset the generic usage counters so limits refresh immediately
         resumeCount:            0,
         interviewCount:         0,
       },
@@ -288,7 +286,15 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
     if (!user.paygMonthlyBudget) throw new BadRequestException('User is not on a PAYG plan');
 
-    const paygPlan: any = await this.subscriptionModel.findOne({ type: 'pay_as_you_go', status: 'active' }).exec();
+    const userCountry = user.country?.toUpperCase() || 'IN';
+    const paygPlan: any = await this.subscriptionModel.findOne({ 
+      type: SubscriptionType.PAY_AS_YOU_GO, 
+      country: userCountry,
+      status: 'active' 
+    }).exec() || await this.subscriptionModel.findOne({ 
+      type: SubscriptionType.PAY_AS_YOU_GO, 
+      country: userCountry 
+    }).exec();
     const pricePerInterview = paygPlan?.paygPricePerInterview ?? 4900;
     const pricePerResume    = paygPlan?.paygPricePerResume    ?? 2900;
 

@@ -50,6 +50,9 @@ export class User {
   location?: string;
 
   @Prop()
+  country?: string; // ISO Country Code (e.g., 'IN', 'US')
+
+  @Prop()
   experienceLevel?: string;
 
   @Prop({ type: [String], default: [] })

@@ -97,7 +97,7 @@ export class SubscriptionService implements OnModuleInit {
         description: 'Perfect for starters to experience the platform.',
         features: [
           { name: 'Resume Limit', description: '5 Resume analysis reports', type: FeatureType.NUMERIC, value: 5, enabled: true, limit: 5, unit: 'resumes' },
-          { name: 'Interview Limit', description: '3 Professional AI interviews', type: FeatureType.NUMERIC, value: 3, enabled: true, limit: 3, unit: 'interviews' },
+          { name: 'Interview Limit', description: '3 Professional Ai for jobs', type: FeatureType.NUMERIC, value: 3, enabled: true, limit: 3, unit: 'interviews' },
           { name: 'AI Feedback', description: 'Basic qualitative feedback', type: FeatureType.BOOLEAN, value: true, enabled: true },
         ],
         order: 0
@@ -114,7 +114,7 @@ export class SubscriptionService implements OnModuleInit {
         description: 'Accelerate your job search with more resumes and interviews.',
         features: [
           { name: 'Resume Limit', description: '15 Resume analysis reports', type: FeatureType.NUMERIC, value: 15, enabled: true, limit: 15, unit: 'resumes' },
-          { name: 'Interview Limit', description: '10 Professional AI interviews', type: FeatureType.NUMERIC, value: 10, enabled: true, limit: 10, unit: 'interviews' },
+          { name: 'Interview Limit', description: '10 Professional Ai for jobs', type: FeatureType.NUMERIC, value: 10, enabled: true, limit: 10, unit: 'interviews' },
           { name: 'AI Feedback', description: 'Detailed qualitative analysis', type: FeatureType.BOOLEAN, value: true, enabled: true },
           { name: 'Priority Support', description: '24/7 Priority support access', type: FeatureType.BOOLEAN, value: true, enabled: true }
         ],
@@ -133,7 +133,7 @@ export class SubscriptionService implements OnModuleInit {
         description: 'For power users who want the maximum edge in their prep.',
         features: [
           { name: 'Resume Limit', description: '40 Resume analysis reports', type: FeatureType.NUMERIC, value: 40, enabled: true, limit: 40, unit: 'resumes' },
-          { name: 'Interview Limit', description: '20 Professional AI interviews', type: FeatureType.NUMERIC, value: 20, enabled: true, limit: 20, unit: 'interviews' },
+          { name: 'Interview Limit', description: '20 Professional Ai for jobs', type: FeatureType.NUMERIC, value: 20, enabled: true, limit: 20, unit: 'interviews' },
           { name: 'AI Feedback', description: 'Full deep-dive qualitative analysis', type: FeatureType.BOOLEAN, value: true, enabled: true },
           { name: 'Custom Roadmaps', description: 'Personalized career roadmaps', type: FeatureType.BOOLEAN, value: true, enabled: true }
         ],
@@ -459,7 +459,7 @@ export class SubscriptionService implements OnModuleInit {
           },
           {
             name: 'Interview Limit',
-            description: '3 Professional AI interviews',
+            description: '3 Professional Ai for jobs',
             type: FeatureType.NUMERIC,
             value: 3,
             enabled: true,
@@ -492,7 +492,7 @@ export class SubscriptionService implements OnModuleInit {
           },
           {
             name: 'Interview Limit',
-            description: '10 Professional AI interviews',
+            description: '10 Professional Ai for jobs',
             type: FeatureType.NUMERIC,
             value: 10,
             enabled: true,
@@ -527,7 +527,7 @@ export class SubscriptionService implements OnModuleInit {
           },
           {
             name: 'Interview Limit',
-            description: '20 Professional AI interviews',
+            description: '20 Professional Ai for jobs',
             type: FeatureType.NUMERIC,
             value: 20,
             enabled: true,

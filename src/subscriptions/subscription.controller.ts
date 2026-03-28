@@ -61,6 +61,18 @@ export class SubscriptionController {
     return this.subscriptionService.findByName(name);
   }
 
+  @Get('payg-settings')
+  async getPaygSettings(@Query('country') country: string = 'IN') {
+    return this.subscriptionService.getPaygConfig(country);
+  }
+
+  @Get('payg/config')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getPaygConfig(@Query('country') country: string = 'IN') {
+    return this.subscriptionService.getPaygConfig(country);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<SubscriptionResponseDto> {
     return this.subscriptionService.findById(id);
@@ -105,17 +117,40 @@ export class SubscriptionController {
   }
   // ── PAYG Admin Endpoints ──────────────────────────────────────────────
 
-  @Get('payg/config')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  async getPaygConfig(@Query('country') country: string = 'IN') {
-    return this.subscriptionService.getPaygConfig(country);
-  }
-
   @Patch('payg/config')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   async updatePaygConfig(
+    @Body() body: {
+      country?: string;
+      pricePerInterviewRupees?: number;
+      pricePerResumeRupees?: number;
+      minBudgetRupees?: number;
+      maxBudgetRupees?: number;
+    },
+  ) {
+    return this.subscriptionService.updatePaygConfig(body.country ?? 'IN', body);
+  }
+
+  @Patch('admin/payg-config')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async updatePaygConfigLegacyPatch(
+    @Body() body: {
+      country?: string;
+      pricePerInterviewRupees?: number;
+      pricePerResumeRupees?: number;
+      minBudgetRupees?: number;
+      maxBudgetRupees?: number;
+    },
+  ) {
+    return this.subscriptionService.updatePaygConfig(body.country ?? 'IN', body);
+  }
+
+  @Post('admin/payg-config')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async updatePaygConfigLegacyPost(
     @Body() body: {
       country?: string;
       pricePerInterviewRupees?: number;

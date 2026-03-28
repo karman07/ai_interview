@@ -28,7 +28,7 @@ This route now returns the user profile with the `subscriptionPlan` fully popula
     "type": "monthly",
     "features": [
       {
-        "name": "AI Interviews",
+        "name": "Ai for jobs",
         "type": "numeric",
         "value": -1,
         "enabled": true

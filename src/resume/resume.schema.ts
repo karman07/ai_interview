@@ -23,7 +23,7 @@ export class Resume {
   @Prop({ type: Object, required: false, default: {} })
   improvement_resume: Record<string, any>;
 
-  // ✅ Extracted resume text for future use (e.g. AI Interview without re-upload)
+  // ✅ Extracted resume text for future use (e.g. Ai for job without re-upload)
   @Prop({ required: false, default: "" })
   text: string;
 

@@ -49,9 +49,9 @@ export class PaymentController {
   @Post('create-payg-subscription')
   async createPaygSubscription(
     @CurrentUser() user: any,
-    @Body() body: { budgetRupees: number },
+    @Body() body: { budgetRupees: number; couponCode?: string },
   ) {
-    return this.paymentService.createPaygSubscription(user.sub, body.budgetRupees);
+    return this.paymentService.createPaygSubscription(user.sub, body.budgetRupees, body.couponCode);
   }
 
   @Post('verify-payg-subscription')
@@ -62,6 +62,8 @@ export class PaymentController {
       razorpayPaymentId: string;
       razorpaySignature: string;
       budgetRupees: number;
+      interviews?: number;
+      resumes?: number;
     },
   ) {
     return this.paymentService.verifyPaygSubscription(user.sub, body);
