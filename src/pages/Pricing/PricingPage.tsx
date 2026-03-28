@@ -55,7 +55,7 @@ export default function PricingPage() {
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50">      <SEO 
         title="Pricing Plans - AI for Job"
         description="Choose the perfect plan for your interview preparation. Flexible pricing options for AI-powered mock interviews, resume analysis, and career development tools. Start free today!"
-        keywords="interview preparation pricing, AI interview cost, mock interview plans, resume analysis pricing, career development subscription"
+        keywords="interview preparation pricing, Ai for job cost, mock interview plans, resume analysis pricing, career development subscription"
         url="https://aiforjob.ai/pricing"
       />
       {/* ── HERO ─────────────────────────────────────────────────── */}

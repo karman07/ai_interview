@@ -34,12 +34,23 @@ const PricingDialog = () => {
   const [selectedPlan, setSelected] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
   const [showPayg, setShowPayg] = useState(false);
+  const [paygSettings, setPaygSettings] = useState<{ pricePerInterviewRupees: number; pricePerResumeRupees: number } | null>(null);
 
   const [couponInput, setCouponInput] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponResult, setCouponResult] = useState<CouponState | null>(null);
 
   useEffect(() => {
+    const loadPayg = async () => {
+      try {
+        const settings = await SubscriptionApi.getPaygSettings('IN');
+        setPaygSettings(settings);
+      } catch (e) {
+        console.error('Failed to load PAYG settings:', e);
+      }
+    };
+    if (showPricing) loadPayg();
+
     if (!showPricing) {
       setView('plans'); setSelected(null);
       setCouponInput(''); setCouponResult(null);
@@ -338,7 +349,7 @@ const PricingDialog = () => {
                         <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 text-[9px] font-black uppercase tracking-wider">New</span>
                       </div>
                       <p className="text-[12px] text-blue-500/70 dark:text-blue-400/60 font-medium">
-                        Set your own budget &mdash; ₹49/interview &middot; ₹29/resume &middot; cancel anytime
+                        Set your own budget &mdash; ₹{paygSettings?.pricePerInterviewRupees ?? 49}/interview &middot; ₹{paygSettings?.pricePerResumeRupees ?? 29}/resume &middot; cancel anytime
                       </p>
                     </div>
 

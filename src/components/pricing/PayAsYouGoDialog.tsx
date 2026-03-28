@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Zap, Minus, Plus, CheckCircle2, Lock, ArrowRight,
   BarChart2, FileText, RefreshCw, AlertCircle, Clock,
-  TrendingUp, Sparkles, Shield, CreditCard,
+  TrendingUp, Sparkles, Shield, CreditCard, Ticket,
 } from 'lucide-react';
 import { SubscriptionApi } from '@/api/subscription';
 import { useAuth } from '@/contexts/AuthContext';
@@ -58,37 +58,94 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
   maxBudget = 5000,
 }) => {
   const { user } = useAuth();
-  const [budget, setBudget] = useState(299);
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<PaygStatus | null>(null);
+  const [interviews, setInterviews] = useState(5);
+  const [resumes, setResumes]       = useState(10);
+  const [budget, setBudget]         = useState(299);
+  const [loading, setLoading]       = useState(false);
+  const [status, setStatus]         = useState<PaygStatus | null>(null);
+  const [settings, setSettings] = useState<{
+    id: string;
+    pricePerInterviewRupees: number;
+    pricePerResumeRupees: number;
+    minBudgetRupees: number;
+    maxBudgetRupees: number;
+  } | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [step, setStep] = useState<'configure' | 'processing' | 'done'>('configure');
   const [cancelling, setCancelling] = useState(false);
 
-  const interviewPrice = status?.pricePerInterviewRupees ?? defaultInterviewPrice;
-  const resumePrice    = status?.pricePerResumeRupees    ?? defaultResumePrice;
-  const interviewsEstimate = Math.floor(budget / interviewPrice);
-  const resumesEstimate    = Math.floor(budget / resumePrice);
-  const clamp = (v: number) => Math.max(minBudget, Math.min(maxBudget, v));
-  const percent = Math.round((budget / maxBudget) * 100);
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('');
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [couponData, setCouponData] = useState<{
+    discountAmount: number;
+    finalAmount: number;
+    message: string;
+    couponId: string;
+  } | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+
+  // Derive active settings (dynamic from backend or fallbacks)
+  const interviewPrice = status?.pricePerInterviewRupees ?? settings?.pricePerInterviewRupees ?? defaultInterviewPrice;
+  const resumePrice    = status?.pricePerResumeRupees    ?? settings?.pricePerResumeRupees    ?? defaultResumePrice;
+  const activeMin      = settings?.minBudgetRupees ?? minBudget;
+  const activeMax      = settings?.maxBudgetRupees ?? maxBudget;
+
+  const finalBudget = couponData ? Math.round(couponData.finalAmount / 100) : budget;
+
+  // Sync budget based on counts
+  useEffect(() => {
+    const calc = (interviews * interviewPrice) + (resumes * resumePrice);
+    setBudget(Math.max(activeMin, Math.min(activeMax, calc)));
+    // Reset coupon if budget changes significantly? Or just re-validate?
+    // For now, let's just clear it to avoid stale discounts
+    setCouponData(null);
+  }, [interviews, resumes, interviewPrice, resumePrice, activeMin, activeMax]);
+
+  const interviewsEstimate = interviews;
+  const resumesEstimate    = resumes;
+  const clamp = (v: number) => Math.max(activeMin, Math.min(activeMax, v));
+  const percent = Math.round((budget / activeMax) * 100);
 
   const loadStatus = useCallback(async () => {
     if (!user) return;
     setLoadingStatus(true);
     try {
+      // 1. Load active subscription status if any
       const s = await SubscriptionApi.paygStatus();
       setStatus(s);
+      setInterviews(s.interviews.limit);
+      setResumes(s.resumes.limit);
       setBudget(s.monthlyBudgetRupees);
     } catch { /* not on PAYG */ }
-    finally { setLoadingStatus(false); }
-  }, [user]);
+    
+    try {
+      // 2. Load global PAYG settings (prices/bounds)
+      const config = await SubscriptionApi.getPaygSettings('IN'); 
+      setSettings(config);
+      
+      // If user isn't on PAYG, initialize defaults that make sense for the new settings
+      if (!status) {
+        const defaultInterviews = 5;
+        const defaultResumes = 10;
+        setInterviews(defaultInterviews);
+        setResumes(defaultResumes);
+        setBudget(Math.max(config.minBudgetRupees, (defaultInterviews * config.pricePerInterviewRupees) + (defaultResumes * config.pricePerResumeRupees)));
+      }
+    } catch (e) {
+      console.error('Failed to load PAYG settings', e);
+    } finally {
+      setLoadingStatus(false);
+    }
+  }, [user, status]);
 
   useEffect(() => {
     if (open) {
       loadStatus();
       setError(null); setSuccess(false); setStep('configure');
+      setCouponCode(''); setCouponData(null); setCouponError(null);
     }
   }, [open, loadStatus]);
 
@@ -96,6 +153,44 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
     document.body.style.overflow = open ? 'hidden' : 'unset';
     return () => { document.body.style.overflow = 'unset'; };
   }, [open]);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setValidatingCoupon(true);
+    setCouponError(null);
+    try {
+      const res = await SubscriptionApi.validateCoupon({
+        code: couponCode,
+        orderAmount: budget * 100, // in paisa
+        subscriptionId: settings?.id, // Use the PAYG plan ID
+      });
+      if (res.valid) {
+        setCouponData({
+          discountAmount: res.discountAmount,
+          finalAmount: res.finalAmount,
+          message: res.message,
+          couponId: res.coupon?._id || '',
+        });
+      } else {
+        setCouponError(res.message);
+      }
+    } catch (e: any) {
+      setCouponError(e?.response?.data?.message ?? 'Failed to validate coupon.');
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponData(null);
+    setCouponCode('');
+    setCouponError(null);
+  };
+
+  const handleBudgetChange = (val: number) => {
+    setBudget(clamp(val));
+    setCouponData(null); // Clear coupon on budget change
+  };
 
   /** Full Razorpay subscription checkout flow */
   const handleStartPayment = async () => {
@@ -107,7 +202,7 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
       if (!loaded) throw new Error('Failed to load Razorpay SDK. Please check your connection.');
 
       // 1. Create Razorpay subscription on backend
-      const { subscriptionId, razorpayKey } = await SubscriptionApi.createPaygSubscription(budget);
+      const { subscriptionId, razorpayKey, finalBudgetRupees } = await SubscriptionApi.createPaygSubscription(budget, couponCode || undefined);
 
       // 2. Open Razorpay checkout for autopay authorization
       await new Promise<void>((resolve, reject) => {
@@ -115,7 +210,7 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
           key: razorpayKey,
           subscription_id: subscriptionId,
           name: 'AI For Job',
-          description: `Pay As You Go — ${fmt(budget)}/month`,
+          description: `Pay As You Go — ${fmt(finalBudgetRupees ?? budget)}/month`,
           image: '/logo.png',
           prefill: {
             name:  (user as any).name  || '',
@@ -135,6 +230,9 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
                 razorpayPaymentId:      response.razorpay_payment_id,
                 razorpaySignature:      response.razorpay_signature,
                 budgetRupees:           budget,
+                interviews:             interviews,
+                resumes:                resumes,
+                couponCode:             couponCode || undefined,
               });
               resolve();
             } catch (e: any) {
@@ -248,7 +346,7 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
                 <p className="text-[9px] font-black text-blue-200/50 uppercase tracking-[0.25em] mb-4">With {fmt(budget)}/month</p>
                 <div className="space-y-4">
                   {[
-                    { icon: <BarChart2 className="w-4 h-4" />, label: 'AI Interviews', count: interviewsEstimate, price: interviewPrice },
+                    { icon: <BarChart2 className="w-4 h-4" />, label: 'Ai for jobs', count: interviewsEstimate, price: interviewPrice },
                     { icon: <FileText className="w-4 h-4" />,  label: 'Resume Scans',  count: resumesEstimate,    price: resumePrice },
                   ].map(item => (
                     <div key={item.label} className="flex items-center gap-4">
@@ -267,7 +365,7 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
                 </div>
                 <div className="mt-4">
                   <div className="flex justify-between text-[10px] text-blue-200/50 mb-1.5">
-                    <span>{fmt(minBudget)}</span><span>{fmt(maxBudget)}</span>
+                    <span>{fmt(activeMin)}</span><span>{fmt(activeMax)}</span>
                   </div>
                   <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                     <motion.div animate={{ width: `${percent}%` }} transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -393,58 +491,142 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
                     ))}
                   </div>
 
-                  {/* Budget slider */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Monthly Budget</span>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-black text-blue-600 dark:text-blue-400">{fmt(budget)}</span>
-                        <span className="text-xs text-gray-400 font-medium">/mo</span>
+                  {/* Count Selectors */}
+                  <div className="space-y-6">
+                    {/* Interviews Selection */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <BarChart2 className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Mock Interviews</span>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-black text-blue-600 dark:text-blue-400">{interviews}</span>
+                          <span className="text-xs text-gray-400 font-medium">/mo</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => setInterviews(v => Math.max(1, v - 1))}
+                          className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-500 hover:bg-blue-100 hover:text-blue-600 transition-all flex-shrink-0">
+                          <Minus className="w-5 h-5" />
+                        </button>
+                        <input type="range" min={1} max={50} step={1} value={interviews}
+                          onChange={e => setInterviews(Number(e.target.value))}
+                          className="flex-1 accent-blue-600 h-2 rounded-full cursor-pointer" />
+                        <button onClick={() => setInterviews(v => Math.min(100, v + 1))}
+                          className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-500 hover:bg-blue-100 hover:text-blue-600 transition-all flex-shrink-0">
+                          <Plus className="w-5 h-5" />
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <button onClick={() => setBudget(v => clamp(v - 50))}
-                        className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-500 hover:bg-blue-100 hover:text-blue-600 transition-all flex-shrink-0">
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <input type="range" min={minBudget} max={maxBudget} step={50} value={budget}
-                        onChange={e => setBudget(Number(e.target.value))}
-                        className="flex-1 accent-blue-600 h-2 rounded-full cursor-pointer" />
-                      <button onClick={() => setBudget(v => clamp(v + 50))}
-                        className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-500 hover:bg-blue-100 hover:text-blue-600 transition-all flex-shrink-0">
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      {PRESETS.map(p => (
-                        <button key={p} onClick={() => setBudget(p)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${budget === p
-                            ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
-                            : 'bg-white dark:bg-white/[0.03] text-gray-500 border-gray-200 dark:border-white/10 hover:border-blue-400 hover:text-blue-600'
-                          }`}>
-                          {fmt(p)}
+
+                    {/* Resumes Selection */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Resume Reports</span>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-black text-blue-600 dark:text-blue-400">{resumes}</span>
+                          <span className="text-xs text-gray-400 font-medium">/mo</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => setResumes(v => Math.max(1, v - 1))}
+                          className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-500 hover:bg-blue-100 hover:text-blue-600 transition-all flex-shrink-0">
+                          <Minus className="w-5 h-5" />
                         </button>
-                      ))}
+                        <input type="range" min={1} max={100} step={1} value={resumes}
+                          onChange={e => setResumes(Number(e.target.value))}
+                          className="flex-1 accent-blue-600 h-2 rounded-full cursor-pointer" />
+                        <button onClick={() => setResumes(v => Math.min(200, v + 1))}
+                          className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-500 hover:bg-blue-100 hover:text-blue-600 transition-all flex-shrink-0">
+                          <Plus className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  {/* What you get */}
-                  <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 rounded-2xl p-5">
-                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-3">You get each month</p>
-                    <div className="grid grid-cols-2 gap-4">
-                      {[
-                        { icon: <BarChart2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />, count: interviewsEstimate, label: 'AI Interviews' },
-                        { icon: <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />, count: resumesEstimate, label: 'Resume Scans' },
-                      ].map(item => (
-                        <div key={item.label} className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0">{item.icon}</div>
-                          <div>
-                            <p className="text-2xl font-black text-gray-900 dark:text-white leading-none">{item.count}</p>
-                            <p className="text-[11px] text-gray-500 mt-0.5">{item.label}</p>
-                          </div>
-                        </div>
-                      ))}
+                  {/* Coupon Code Section */}
+                  <div className="bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/5 rounded-3xl p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Ticket className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Have a coupon code?</span>
                     </div>
+                    
+                    <div className="flex gap-3">
+                      {couponData ? (
+                        <div className="flex-1 flex items-center justify-between bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/20 px-4 py-3 rounded-2xl">
+                          <div className="flex items-center gap-3">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                            <div>
+                              <p className="text-sm font-black text-emerald-600 dark:text-emerald-400 leading-none">{couponCode.toUpperCase()}</p>
+                              <p className="text-[10px] text-emerald-500 font-medium mt-1 uppercase tracking-wider">{couponData.message}</p>
+                            </div>
+                          </div>
+                          <button onClick={handleRemoveCoupon} className="text-emerald-600 hover:text-emerald-700 text-xs font-bold px-2 py-1">Remove</button>
+                        </div>
+                      ) : (
+                        <>
+                          <input
+                            type="text"
+                            placeholder="FALLBACK50"
+                            value={couponCode}
+                            onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                            className="flex-1 bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-2xl px-5 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <button
+                            onClick={handleApplyCoupon}
+                            disabled={!couponCode || validatingCoupon}
+                            className="px-6 py-3 rounded-2xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 disabled:opacity-50 transition-all"
+                          >
+                            {validatingCoupon ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Apply'}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                    {couponError && (
+                      <p className="text-xs text-red-500 font-medium mt-2 ml-1 flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5" /> {couponError}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Summary / Total Cost */}
+                  <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-3xl p-6 text-white shadow-xl shadow-blue-500/30">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest opacity-70">Total Monthly Commitment</p>
+                        <div className="flex items-baseline gap-2">
+                          <h4 className="text-3xl font-black">{fmt(finalBudget)}</h4>
+                          {couponData && (
+                            <span className="text-sm font-medium text-blue-200 line-through opacity-60">{fmt(budget)}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-md">
+                        <CreditCard className="w-6 h-6 text-blue-100" />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                      <div>
+                        <p className="text-[10px] font-bold text-blue-100/60 uppercase">Interviews</p>
+                        <p className="text-sm font-black">{interviews} <span className="text-[10px] opacity-60 font-medium">x {fmt(interviewPrice)}</span></p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-blue-100/60 uppercase">Resumes</p>
+                        <p className="text-sm font-black">{resumes} <span className="text-[10px] opacity-60 font-medium">x {fmt(resumePrice)}</span></p>
+                      </div>
+                    </div>
+
+                    {budget <= activeMin && (
+                      <div className="mt-4 flex items-center gap-2 text-[10px] font-bold bg-white/10 rounded-lg px-3 py-2">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        MINIMUM BUDGET APPLIED ({fmt(activeMin)})
+                      </div>
+                    )}
                   </div>
 
                   {/* Included */}

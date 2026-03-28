@@ -53,7 +53,7 @@ export const structuredData = {
   service: {
     '@context': 'https://schema.org',
     '@type': 'Service',
-    name: 'AI Interview Practice',
+    name: 'Ai for job Practice',
     provider: {
       '@type': 'Organization',
       name: seoConfig.companyName,

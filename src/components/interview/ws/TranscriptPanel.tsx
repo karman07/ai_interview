@@ -27,7 +27,7 @@ export const WSTranscriptPanel: React.FC<TranscriptPanelProps> = ({ messages, tr
     const handleDownload = (e: React.MouseEvent) => {
         e.stopPropagation();
         const text = messages
-            .map(m => `[${m.role === 'model' ? 'AI INTERVIEWER' : 'YOU'}]\n${m.content}\n`)
+            .map(m => `[${m.role === 'model' ? 'Ai for jobER' : 'YOU'}]\n${m.content}\n`)
             .join('\n');
         const blob = new Blob([text], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);

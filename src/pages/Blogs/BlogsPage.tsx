@@ -59,7 +59,7 @@ export default function BlogsPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-slate-100 p-6 sm:p-10 pt-10">
       <Helmet>
         <title>Knowledge Hub | AI for Job</title>
-        <meta name="description" content="Expert insights, interview strategies, and career growth techniques to ace your AI interviews." />
+        <meta name="description" content="Expert insights, interview strategies, and career growth techniques to ace your Ai for jobs." />
         <link rel="canonical" href={`${window.location.origin}/blogs`} />
         <meta property="og:title" content="Knowledge Hub | AI for Job" />
         <meta property="og:description" content="Expert insights, interview strategies, and career growth techniques." />

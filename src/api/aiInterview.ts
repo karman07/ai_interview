@@ -130,7 +130,7 @@ export interface InterviewReport {
 }
 
 /**
- * Start a new AI interview session with CV text
+ * Start a new Ai for job session with CV text
  */
 export const startInterview = async (
   data: StartInterviewRequest
@@ -150,7 +150,7 @@ export const startInterviewWithCVText = async (
 };
 
 /**
- * Start a new AI interview session with resume file upload
+ * Start a new Ai for job session with resume file upload
  */
 export const startInterviewWithResume = async (
   data: StartInterviewWithResumeRequest

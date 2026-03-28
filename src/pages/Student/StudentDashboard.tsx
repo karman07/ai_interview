@@ -130,7 +130,7 @@ export default function StudentDashboard() {
             <GraduationCap className="w-5 h-5 text-white" />
           </div>
           <div>
-            <span className="text-sm font-bold text-gray-900">AI Interview</span>
+            <span className="text-sm font-bold text-gray-900">Ai for job</span>
             <span className="ml-2 text-xs bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-full">Student</span>
           </div>
         </div>

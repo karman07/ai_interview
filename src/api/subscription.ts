@@ -171,12 +171,13 @@ export const SubscriptionApi = {
 
     // ── PAYG Autopay (Razorpay subscription) ─────────────────────────────────
 
-    createPaygSubscription: async (budgetRupees: number): Promise<{
+    createPaygSubscription: async (budgetRupees: number, couponCode?: string): Promise<{
         subscriptionId: string;
         razorpayKey: string;
         budgetRupees: number;
+        finalBudgetRupees?: number;
     }> => {
-        const res = await http.post('/payments/create-payg-subscription', { budgetRupees });
+        const res = await http.post('/payments/create-payg-subscription', { budgetRupees, couponCode });
         return res.data;
     },
 
@@ -185,6 +186,9 @@ export const SubscriptionApi = {
         razorpayPaymentId: string;
         razorpaySignature: string;
         budgetRupees: number;
+        interviews?: number;
+        resumes?: number;
+        couponCode?: string;
     }): Promise<{ success: boolean; interviewsLimit: number; resumesLimit: number }> => {
         const res = await http.post('/payments/verify-payg-subscription', data);
         return res.data;
@@ -214,5 +218,17 @@ export const SubscriptionApi = {
     }) => {
         const res = await http.patch('/subscriptions/payg/config', data);
         return res.data;
+    },
+
+    /** Publicly available PAYG settings for the given country */
+    getPaygSettings: async (country: string = 'IN') => {
+        const res = await http.get(`/subscriptions/payg-settings?country=${country}`);
+        return res.data as {
+            id: string;
+            pricePerInterviewRupees: number;
+            pricePerResumeRupees: number;
+            minBudgetRupees: number;
+            maxBudgetRupees: number;
+        };
     },
 };

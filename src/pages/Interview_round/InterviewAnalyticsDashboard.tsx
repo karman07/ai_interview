@@ -463,7 +463,7 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
               <Zap className="w-10 h-10 text-slate-300" />
             </div>
             <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">No Analytics Available</h3>
-            <p className="text-slate-500 max-w-md mx-auto">Complete your first interactive AI interview to unlock detailed performance metrics and career insights.</p>
+            <p className="text-slate-500 max-w-md mx-auto">Complete your first interactive Ai for job to unlock detailed performance metrics and career insights.</p>
           </motion.div>
         ) : (
           <>

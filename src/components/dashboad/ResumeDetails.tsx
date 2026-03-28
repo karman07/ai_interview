@@ -252,7 +252,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, autoOpenBuilder, 
 
           <ActionCard
             icon={<Play className="w-5 h-5 text-blue-600" />}
-            title="Start AI Interview"
+            title="Start Ai for job"
             subtitle={
               <span className="text-blue-600 text-sm font-medium">
                 Practice Interview →

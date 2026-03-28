@@ -357,7 +357,7 @@ export default function InterviewStart() {
             Prepare for Your <span className="text-blue-600">Interview</span>
           </h1>
           <p className="text-slate-500 dark:text-slate-400 font-medium max-w-2xl mx-auto">
-            Our AI interviewer will analyze your resume and the job description to provide a realistic, role-specific session.
+            Our Ai for jober will analyze your resume and the job description to provide a realistic, role-specific session.
           </p>
         </div>
       </div>
@@ -674,7 +674,7 @@ export default function InterviewStart() {
                       ) : (
                         <div className="flex items-center gap-3">
                           <CheckCircle className="w-5 h-5" />
-                          <span>Start AI Interview</span>
+                          <span>Start Ai for job</span>
                           <ArrowRight className="w-5 h-5 opacity-50 group-hover:translate-x-1 transition-transform" />
                         </div>
                       )}

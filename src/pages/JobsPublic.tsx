@@ -61,7 +61,7 @@ const JobsPublicPage = () => {
       <SEO 
         title="Job Listings - AI for Job"
         description="Browse curated job opportunities and AI-powered interview practice. Find your dream job and prepare with our Ai for job. Practice coding, behavioral, and technical interviews."
-        keywords="job listings, job search, career opportunities, AI interview practice, job preparation, tech jobs, software engineer jobs"
+        keywords="job listings, job search, career opportunities, Ai for job practice, job preparation, tech jobs, software engineer jobs"
         url="https://aiforjob.ai/jobs"
       />
 

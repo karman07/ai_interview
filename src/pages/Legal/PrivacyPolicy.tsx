@@ -13,7 +13,7 @@ const PrivacyPolicy = () => {
             icon: <Eye className="w-6 h-6 text-blue-500" />,
             content: (
                 <div className="space-y-4">
-                    <p>We collect personal information that you voluntarily provide to us when you register on the platform, upload a resume, participate in AI interviews, or contact us. This may include:</p>
+                    <p>We collect personal information that you voluntarily provide to us when you register on the platform, upload a resume, participate in Ai for jobs, or contact us. This may include:</p>
                     <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
                         <li className="flex items-center space-x-2 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-800">
                             <div className="w-2 h-2 rounded-full bg-blue-500" />
@@ -47,7 +47,7 @@ const PrivacyPolicy = () => {
                 <ul className="space-y-2">
                     <li className="flex items-start space-x-2">
                         <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />
-                        <span>To provide and maintain our AI interview services.</span>
+                        <span>To provide and maintain our Ai for job services.</span>
                     </li>
                     <li className="flex items-start space-x-2">
                         <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />

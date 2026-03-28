@@ -239,7 +239,7 @@ export default function VerifyPhone() {
         <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-200">
           <Phone className="w-4 h-4 text-white" />
         </div>
-        <span className="text-lg font-bold text-gray-800 tracking-tight">AI Interview</span>
+        <span className="text-lg font-bold text-gray-800 tracking-tight">Ai for job</span>
       </div>
 
       {/* Step progress */}

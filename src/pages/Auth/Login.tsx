@@ -119,7 +119,7 @@ export default function Login() {
           </p>
           <img
             src={BOTImage}
-            alt="AI Interview"
+            alt="Ai for job"
             className="w-3/5 max-w-sm drop-shadow-2xl animate-bounce-slow mt-4"
           />
         </div>
@@ -131,7 +131,7 @@ export default function Login() {
             Welcome back 👋
           </h1>
           <p className="mb-8 text-gray-600">
-            Sign in to continue to your AI Interview dashboard.
+            Sign in to continue to your Ai for job dashboard.
           </p>
 
           <form className="space-y-5" onSubmit={onSubmit}>

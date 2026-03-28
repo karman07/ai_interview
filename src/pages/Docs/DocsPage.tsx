@@ -327,7 +327,7 @@ export default function DocsPage() {
           
           {/* Watermark only visible in print */}
           <div className="hidden print:flex fixed inset-0 items-center justify-center opacity-[0.05] pointer-events-none rotate-[35deg] select-none z-0">
-             <span className="text-8xl font-black text-blue-600 tracking-widest border-4 border-blue-500 px-8 py-3 rounded-3xl">AI INTERVIEW</span>
+             <span className="text-8xl font-black text-blue-600 tracking-widest border-4 border-blue-500 px-8 py-3 rounded-3xl">Ai for job</span>
           </div>
 
           {loading ? (

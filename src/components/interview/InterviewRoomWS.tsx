@@ -17,7 +17,7 @@ import { Dialog } from '@/components/ui/Dialog';
 
 /**
  * InterviewRoomWS — Replaces InterviewRoomV2 at the route level.
- * Uses the Python WebSocket backend for real-time AI interview execution.
+ * Uses the Python WebSocket backend for real-time Ai for job execution.
  */
 export default function InterviewRoomWS() {
     const { type } = useParams<{ type: string }>();

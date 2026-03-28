@@ -17,7 +17,7 @@ interface SEOProps {
 const SEO = ({
   title = 'AI for Job | AI-Powered Interview Practice Platform',
   description = 'Master your job interviews with AI-powered mock interviews, resume analysis, and personalized feedback. Practice coding, behavioral, and technical interviews with real-time AI assistance.',
-  keywords = 'AI interview, mock interview, interview practice, resume analysis, job preparation, coding interview, technical interview, behavioral interview, career development',
+  keywords = 'Ai for job, mock interview, interview practice, resume analysis, job preparation, coding interview, technical interview, behavioral interview, career development',
   image = 'https://aiforjob.ai/og-image.png',
   url = 'https://aiforjob.ai',
   type = 'website',

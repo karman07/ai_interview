@@ -40,13 +40,14 @@ export const PayAsYouGoCard: React.FC<Props> = ({
   const [budget, setBudget]         = useState(299);
   const [loading, setLoading]       = useState(false);
   const [status, setStatus]         = useState<PaygStatus | null>(null);
+  const [settings, setSettings]     = useState<{ pricePerInterviewRupees: number; pricePerResumeRupees: number } | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [error, setError]           = useState<string | null>(null);
   const [success, setSuccess]       = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
-  const interviewPrice     = status?.pricePerInterviewRupees ?? defaultInterviewPrice;
-  const resumePrice        = status?.pricePerResumeRupees    ?? defaultResumePrice;
+  const interviewPrice     = status?.pricePerInterviewRupees ?? settings?.pricePerInterviewRupees ?? defaultInterviewPrice;
+  const resumePrice        = status?.pricePerResumeRupees    ?? settings?.pricePerResumeRupees    ?? defaultResumePrice;
   const interviewsEstimate = Math.floor(budget / interviewPrice);
   const resumesEstimate    = Math.floor(budget / resumePrice);
   const clampBudget        = (v: number) => Math.max(minBudget, Math.min(maxBudget, v));
@@ -59,7 +60,15 @@ export const PayAsYouGoCard: React.FC<Props> = ({
       setStatus(s);
       setBudget(s.monthlyBudgetRupees);
     } catch { /* not on PAYG yet */ }
-    finally { setLoadingStatus(false); }
+    
+    try {
+      const config = await SubscriptionApi.getPaygSettings('IN');
+      setSettings(config);
+    } catch (e) {
+      console.error('Failed to load PAYG settings', e);
+    } finally {
+      setLoadingStatus(false);
+    }
   }, [user]);
 
   useEffect(() => { loadStatus(); }, [loadStatus]);
