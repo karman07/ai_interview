@@ -7,6 +7,7 @@ import {
   UpdateSubscriptionDto,
   SubscriptionResponseDto,
 } from './dto';
+import { User, UserDocument } from '../users/schemas/user.schema';
 
 import Razorpay from 'razorpay';
 
@@ -16,6 +17,7 @@ export class SubscriptionService implements OnModuleInit {
 
   constructor(
     @InjectModel(Subscription.name) private subscriptionModel: Model<SubscriptionDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) { }
 
   async onModuleInit() {
@@ -162,7 +164,16 @@ export class SubscriptionService implements OnModuleInit {
     ];
 
     for (const planData of plans) {
-      await this.subscriptionModel.findOneAndUpdate({ name: planData.name }, planData, { upsert: true });
+      const existing = await this.subscriptionModel.findOne({ name: planData.name });
+      if (!existing) {
+        // Only seed if not present, preventing hardcoded overwrites of Admin-modified features
+        await this.subscriptionModel.create(planData);
+      } else {
+        // If razorpayPlanId was generated but is missing in DB, update just that
+        if (planData.razorpayPlanId && !existing.razorpayPlanId) {
+          await this.subscriptionModel.updateOne({ name: planData.name }, { $set: { razorpayPlanId: planData.razorpayPlanId } });
+        }
+      }
     }
   }
 
@@ -315,8 +326,35 @@ export class SubscriptionService implements OnModuleInit {
 
     const subscription = await this.subscriptionModel.findByIdAndUpdate(id, updateData, { new: true });
     if (!subscription) throw new NotFoundException('Subscription not found');
+    
+    // Auto sync updated limits horizontally to all users
+    await this.syncPlanLimitsToUsers(subscription);
+
     await this.autoGenerateRazorpayPlan(subscription);
     return this.toSubscriptionResponseDto(subscription);
+  }
+
+  private async syncPlanLimitsToUsers(subscription: SubscriptionDocument) {
+    try {
+      const features = (subscription as any).features || [];
+      const intF = features.find((f: any) => f.name === 'Interview Limit');
+      const resF = features.find((f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit');
+      const interviewLimit = intF ? (intF.value ?? intF.limit ?? 3) : 3;
+      const resumeLimit = resF ? (resF.value ?? resF.limit ?? 5) : 5;
+
+      const isFreeTier = subscription.name.toLowerCase().includes('free');
+      
+      const query = isFreeTier 
+        ? { $or: [{ subscriptionPlan: subscription._id }, { subscriptionStatus: 'free' }, { subscriptionPlan: { $exists: false } }] }
+        : { subscriptionPlan: subscription._id };
+
+      const result = await this.userModel.updateMany(query, {
+        $set: { interviewLimit, resumeLimit }
+      });
+      this.logger.log(`Synced updated limits to ${result.modifiedCount} users for plan ${subscription.name}`);
+    } catch (e) {
+      this.logger.error(`Failed to sync plan limits to users: ${e.message}`);
+    }
   }
 
   async remove(id: string): Promise<void> {
