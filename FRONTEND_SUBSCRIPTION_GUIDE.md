@@ -45,7 +45,7 @@ const openRazorpayCheckout = (subscriptionId) => {
   const options = {
     key: "YOUR_RAZORPAY_KEY_ID",
     subscription_id: subscriptionId, // CRITICAL: Use subscription_id for AutoPay
-    name: "AI Interview Coach",
+    name: "Ai for job",
     description: "Monthly Pro Plan Subscription",
     image: "https://your-logo-url.com/logo.png",
     handler: async function (response) {

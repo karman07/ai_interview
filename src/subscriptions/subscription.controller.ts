@@ -103,4 +103,28 @@ export class SubscriptionController {
   async remove(@Param('id') id: string): Promise<void> {
     return this.subscriptionService.remove(id);
   }
+  // ── PAYG Admin Endpoints ──────────────────────────────────────────────
+
+  @Get('payg/config')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getPaygConfig(@Query('country') country: string = 'IN') {
+    return this.subscriptionService.getPaygConfig(country);
+  }
+
+  @Patch('payg/config')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async updatePaygConfig(
+    @Body() body: {
+      country?: string;
+      pricePerInterviewRupees?: number;
+      pricePerResumeRupees?: number;
+      minBudgetRupees?: number;
+      maxBudgetRupees?: number;
+    },
+  ) {
+    return this.subscriptionService.updatePaygConfig(body.country ?? 'IN', body);
+  }
+
 }

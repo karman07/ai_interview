@@ -58,25 +58,34 @@ export class SessionsController {
     const userId = req.user.sub;
     const user = await this.userModel.findById(userId).populate('subscriptionPlan').exec();
 
-    // Use monthly counter on user object
-    const currentUsage = user?.interviewCount || 0;
+    const isPayg = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go';
 
-    let limit = 3; // Default free limit as requested (was 5)
-    if (user?.subscriptionPlan) {
-      const plan = user.subscriptionPlan as any;
-      const limitFeature = plan.features?.find(f => f.name === 'Interview Limit');
-      if (limitFeature) {
-        limit = limitFeature.value ?? limitFeature.limit ?? 3;
+    if (isPayg) {
+      // ── PAYG: check paygInterviewsUsed vs paygInterviewsLimit ────────────
+      const used  = user?.paygInterviewsUsed  ?? 0;
+      const limit = user?.paygInterviewsLimit ?? 0;
+      if (used >= limit) {
+        this.logger.warn(`🚫 PAYG user ${userId} reached interview limit of ${limit}`);
+        throw new BadRequestException(
+          `You have reached your PAYG monthly limit of ${limit} interview${limit !== 1 ? 's' : ''}. ` +
+          `Increase your budget in Pay As You Go settings.`
+        );
       }
+      await this.userModel.findByIdAndUpdate(userId, { $inc: { paygInterviewsUsed: 1, interviewCount: 1 } });
+    } else {
+      // ── Regular / Free plan: read limit stamped at purchase time ──────────
+      const currentUsage = user?.interviewCount ?? 0;
+      // user.interviewLimit is stamped at purchase; default 3 for free tier
+      const limit = user?.interviewLimit ?? 3;
+      if (currentUsage >= limit) {
+        this.logger.warn(`🚫 User ${userId} reached monthly interview limit of ${limit} (current: ${currentUsage})`);
+        throw new BadRequestException(
+          `You have reached your monthly limit of ${limit} interview${limit !== 1 ? 's' : ''}. ` +
+          `Upgrade your plan or wait for your limit to reset on the 1st of next month.`
+        );
+      }
+      await this.userModel.findByIdAndUpdate(userId, { $inc: { interviewCount: 1 } });
     }
-
-    if (currentUsage >= limit) {
-      this.logger.warn(`🚫 User ${userId} reached monthly interview limit of ${limit} (current: ${currentUsage})`);
-      throw new BadRequestException(`You have reached your monthly limit of ${limit} interviews. Your limit will reset on the 1st of next month.`);
-    }
-
-    // Increment monthly usage counter
-    await this.userModel.findByIdAndUpdate(userId, { $inc: { interviewCount: 1 } });
 
     return {
       id: 'session_' + Date.now(),

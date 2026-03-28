@@ -1,8 +1,8 @@
 {
   "info": {
-    "name": "AI Interview Platform - Complete API Collection",
+    "name": "Ai for job - Complete API Collection",
     "_postman_id": "ai-interview-platform-2026",
-    "description": "Complete API collection for AI Interview Platform including WebSocket events, REST endpoints, Authentication, Resume, and Interview Rounds",
+    "description": "Complete API collection for Ai for job including WebSocket events, REST endpoints, Authentication, Resume, and Interview Rounds",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {

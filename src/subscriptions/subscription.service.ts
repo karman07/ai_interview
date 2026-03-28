@@ -136,7 +136,29 @@ export class SubscriptionService implements OnModuleInit {
           { name: 'Custom Roadmaps', description: 'Personalized career roadmaps', type: FeatureType.BOOLEAN, value: true, enabled: true }
         ],
         order: 2
-      }
+      },
+      // ── Pay-as-you-go template (admin must activate + set unit prices) ──────
+      {
+        name: `payg_${countryCode.toLowerCase()}`,
+        displayName: 'Pay As You Go',
+        country: countryCode.toUpperCase(),
+        price: 0, // Variable — not a fixed price
+        currency: currency,
+        type: SubscriptionType.PAY_AS_YOU_GO,
+        status: SubscriptionStatus.ACTIVE, // Visible immediately
+        description: 'Set your own monthly budget. Only pay for what you use.',
+        features: [
+          { name: 'Interviews', description: 'Charged per interview session', type: FeatureType.NUMERIC, value: 0, enabled: true, unit: 'interviews' },
+          { name: 'Resume Scans', description: 'Charged per resume analysis', type: FeatureType.NUMERIC, value: 0, enabled: true, unit: 'resumes' },
+          { name: 'Flexible Budget', description: 'Set your own monthly budget', type: FeatureType.BOOLEAN, value: true, enabled: true },
+          { name: 'Cancel Anytime', description: 'Cancel or change budget anytime', type: FeatureType.BOOLEAN, value: true, enabled: true },
+        ],
+        paygPricePerInterview: isIndia ? 4900 : 99,   // ₹49 or $0.99
+        paygPricePerResume:    isIndia ? 2900 : 49,   // ₹29 or $0.49
+        paygMinBudget:         isIndia ? 9900 : 199,  // ₹99 or $1.99 min
+        paygMaxBudget:         isIndia ? 500000 : 9999, // ₹5000 or $99.99 max
+        order: 10
+      } as any,
     ];
 
     for (const planData of plans) {
@@ -319,6 +341,56 @@ export class SubscriptionService implements OnModuleInit {
     const subscription = await this.subscriptionModel.findByIdAndUpdate(id, { status: SubscriptionStatus.INACTIVE }, { new: true });
     if (!subscription) throw new NotFoundException('Subscription not found');
     return this.toSubscriptionResponseDto(subscription);
+  }
+
+
+  // ── PAYG Admin ──────────────────────────────────────────────────────
+
+  async getPaygConfig(country: string = 'IN') {
+    const plan = await this.subscriptionModel.findOne({
+      type: SubscriptionType.PAY_AS_YOU_GO,
+      country: country.toUpperCase(),
+    }).exec();
+    if (!plan) return null;
+    return {
+      id: plan._id.toString(),
+      country: plan.country,
+      status: plan.status,
+      pricePerInterviewPaisa:   (plan as any).paygPricePerInterview,
+      pricePerResumePaisa:      (plan as any).paygPricePerResume,
+      minBudgetPaisa:           (plan as any).paygMinBudget,
+      maxBudgetPaisa:           (plan as any).paygMaxBudget,
+      pricePerInterviewRupees:  ((plan as any).paygPricePerInterview ?? 0) / 100,
+      pricePerResumeRupees:     ((plan as any).paygPricePerResume ?? 0) / 100,
+      minBudgetRupees:          ((plan as any).paygMinBudget ?? 0) / 100,
+      maxBudgetRupees:          ((plan as any).paygMaxBudget ?? 0) / 100,
+    };
+  }
+
+  async updatePaygConfig(
+    country: string = 'IN',
+    data: {
+      pricePerInterviewRupees?: number;
+      pricePerResumeRupees?: number;
+      minBudgetRupees?: number;
+      maxBudgetRupees?: number;
+    },
+  ) {
+    const update: Record<string, number> = {};
+    if (data.pricePerInterviewRupees !== undefined) update['paygPricePerInterview'] = Math.round(data.pricePerInterviewRupees * 100);
+    if (data.pricePerResumeRupees    !== undefined) update['paygPricePerResume']    = Math.round(data.pricePerResumeRupees    * 100);
+    if (data.minBudgetRupees         !== undefined) update['paygMinBudget']         = Math.round(data.minBudgetRupees         * 100);
+    if (data.maxBudgetRupees         !== undefined) update['paygMaxBudget']         = Math.round(data.maxBudgetRupees         * 100);
+
+    const updated = await this.subscriptionModel.findOneAndUpdate(
+      { type: SubscriptionType.PAY_AS_YOU_GO, country: country.toUpperCase() },
+      update,
+      { new: true },
+    ).exec();
+
+    if (!updated) throw new Error('PAYG plan not found for country: ' + country);
+    this.logger.log(`PAYG config updated for ${country}: ${JSON.stringify(update)}`);
+    return this.getPaygConfig(country);
   }
 
   async seedCountryPlans(countryCode: string) {

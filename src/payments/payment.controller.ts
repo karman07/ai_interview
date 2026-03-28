@@ -46,6 +46,27 @@ export class PaymentController {
     return this.paymentService.createSubscription(userId, createSubscriptionDto);
   }
 
+  @Post('create-payg-subscription')
+  async createPaygSubscription(
+    @CurrentUser() user: any,
+    @Body() body: { budgetRupees: number },
+  ) {
+    return this.paymentService.createPaygSubscription(user.sub, body.budgetRupees);
+  }
+
+  @Post('verify-payg-subscription')
+  async verifyPaygSubscription(
+    @CurrentUser() user: any,
+    @Body() body: {
+      razorpaySubscriptionId: string;
+      razorpayPaymentId: string;
+      razorpaySignature: string;
+      budgetRupees: number;
+    },
+  ) {
+    return this.paymentService.verifyPaygSubscription(user.sub, body);
+  }
+
   @Post('verify-subscription')
   async verifySubscription(
     @CurrentUser() user: any,

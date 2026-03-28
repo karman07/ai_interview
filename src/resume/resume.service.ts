@@ -95,20 +95,30 @@ export class ResumeService {
     // ✅ ENFORCE LIMIT: Check user's subscription or free tier limit
     const user = await this.userModel.findById(userId).populate('subscriptionPlan').exec();
 
-    // Use the monthly counter on the user object
-    const currentUsage = user?.resumeCount || 0;
+    const isPayg = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go';
 
-    let limit = 5; // Default free limit
-    if (user?.subscriptionPlan) {
-      const plan = user.subscriptionPlan as any;
-      const limitFeature = plan.features?.find(f => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit');
-      if (limitFeature) {
-        limit = limitFeature.value ?? limitFeature.limit ?? 5;
+    if (isPayg) {
+      // ── PAYG: use paygResumesUsed / paygResumesLimit ─────────────────────
+      const used  = user?.paygResumesUsed  ?? 0;
+      const limit = user?.paygResumesLimit ?? 0;
+      if (used >= limit) {
+        throw new BadRequestException(
+          `You have reached your PAYG monthly limit of ${limit} resume scan${limit !== 1 ? 's' : ''}. ` +
+          `Increase your budget in Pay As You Go settings.`
+        );
       }
-    }
-
-    if (currentUsage >= limit) {
-      throw new BadRequestException(`You have reached your monthly limit of ${limit} resumes. Your limit will reset on the 1st of next month.`);
+      await this.userModel.findByIdAndUpdate(userId, { $inc: { paygResumesUsed: 1, resumeCount: 1 } });
+    } else {
+      // ── Regular / Free plan: read limit stamped at purchase time ──────────
+      const currentUsage = user?.resumeCount ?? 0;
+      // user.resumeLimit is set when plan is purchased; default 5 for free tier
+      const limit = user?.resumeLimit ?? 5;
+      if (currentUsage >= limit) {
+        throw new BadRequestException(
+          `You have reached your monthly limit of ${limit} resume${limit !== 1 ? 's' : ''}. ` +
+          `Upgrade your plan or wait for your limit to reset on the 1st of next month.`
+        );
+      }
     }
 
         // ✅ ENFORCE FILE-SIZE LIMIT based on subscription tier
@@ -249,8 +259,11 @@ export class ResumeService {
 
     try {
       await resume.save();
-      // Increment monthly usage counter
-      await this.userModel.findByIdAndUpdate(userId, { $inc: { resumeCount: 1 } });
+      // Increment monthly usage counter (PAYG users already incremented above in the limit check block)
+      const planType = (user?.subscriptionPlan as any)?.type;
+      if (planType !== 'pay_as_you_go') {
+        await this.userModel.findByIdAndUpdate(userId, { $inc: { resumeCount: 1 } });
+      }
     } catch (saveError) {
       this.logger.error('💥 Database save error:', saveError.message);
       throw saveError;

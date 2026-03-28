@@ -97,6 +97,38 @@ export class User {
   @Prop({ type: [String], default: [] })
   fcmTokens?: string[];
 
+  // ── Plan usage limits (stamped at purchase time) ───────────────────────────
+  @Prop({ default: 5 })
+  resumeLimit?: number;               // Max resumes per month for current plan
+
+  @Prop({ default: 3 })
+  interviewLimit?: number;            // Max interviews per month for current plan
+
+  // ── Pay-as-you-go plan fields ──────────────────────────────────────────────
+  @Prop()
+  paygMonthlyBudget?: number;         // User-set monthly budget in paisa (smallest unit)
+
+  @Prop({ default: 0 })
+  paygInterviewsUsed?: number;        // Interviews consumed this billing cycle
+
+  @Prop({ default: 0 })
+  paygResumesUsed?: number;           // Resume analyses consumed this billing cycle
+
+  @Prop()
+  paygInterviewsLimit?: number;       // Max interviews allowed (derived from budget ÷ price)
+
+  @Prop()
+  paygResumesLimit?: number;          // Max resumes allowed (derived from budget ÷ price)
+
+  @Prop()
+  paygBillingCycleStart?: Date;       // When the current billing period started
+
+  @Prop()
+  paygBillingCycleEnd?: Date;         // When the current billing period ends
+
+  @Prop()
+  paygRazorpaySubscriptionId?: string; // The recurring Razorpay subscription for PAYG billing
+
   // Timestamps (automatically added by Mongoose)
   createdAt?: Date;
   updatedAt?: Date;

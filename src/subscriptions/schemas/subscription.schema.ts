@@ -15,6 +15,7 @@ export enum SubscriptionType {
   YEARLY = 'yearly',
   LIFETIME = 'lifetime',
   TRIAL = 'trial',
+  PAY_AS_YOU_GO = 'pay_as_you_go',
 }
 
 export enum FeatureType {
@@ -104,6 +105,19 @@ export class Subscription {
 
   @Prop()
   razorpayPlanId?: string; // For auto-pay/recurring subscriptions
+
+  // ── PAYG-only fields (admin-set per-unit pricing) ──────────────────────────
+  @Prop()
+  paygPricePerInterview?: number;  // Cost per interview in paisa (e.g. 4900 = ₹49)
+
+  @Prop()
+  paygPricePerResume?: number;     // Cost per resume scan in paisa (e.g. 2900 = ₹29)
+
+  @Prop()
+  paygMinBudget?: number;          // Minimum monthly budget the user must set (in paisa)
+
+  @Prop()
+  paygMaxBudget?: number;          // Maximum monthly budget cap (in paisa)
 
   @Prop({ type: MongooseSchema.Types.Mixed })
   metadata: Record<string, any>; // Additional flexible data

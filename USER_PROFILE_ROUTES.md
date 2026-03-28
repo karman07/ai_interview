@@ -1,6 +1,6 @@
 # 👤 User Profile API Documentation (v2 - User/Admin Schema)
 
-This document details the user profile routes and the simplified role system for the AI Interview Platform.
+This document details the user profile routes and the simplified role system for the Ai for job.
 
 **Base URL**: `http://api.aiforjob.ai`
 **Authentication**: Required for protected routes (`Authorization: Bearer <JWT_ACCESS_TOKEN>`).

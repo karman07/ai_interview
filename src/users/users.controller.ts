@@ -1,6 +1,6 @@
 import {
   Controller, Get, Param, Patch, Post, Delete, UseGuards, Body, Req,
-  UploadedFile, UseInterceptors,
+  UploadedFile, UseInterceptors, BadRequestException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { UsersService } from './users.service';
@@ -38,6 +38,18 @@ export class UsersController {
       body.status,
       body.expiryDays,
     );
+    const { passwordHash, refreshTokenHash, ...safe } = (updated as any).toObject();
+    return safe;
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch('admin/:id/limits')
+  async adminUpdateLimits(
+    @Param('id') id: string,
+    @Body() body: { interviewLimit?: number; resumeLimit?: number },
+  ) {
+    const updated = await this.usersService.adminUpdateUserLimits(id, body.interviewLimit, body.resumeLimit);
     const { passwordHash, refreshTokenHash, ...safe } = (updated as any).toObject();
     return safe;
   }
@@ -168,22 +180,37 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch('me/profile-image')
-  @UseInterceptors(FileInterceptor('profileImage', {
-    storage: diskStorage({
-      destination: 'uploads/profile-images',
-      filename: (_req, file, cb) => {
-        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, unique + extname(file.originalname));
-      },
-    }),
-    limits: { fileSize: 5 * 1024 * 1024 },
-  }))
-  async uploadProfileImage(@CurrentUser() user: any, @UploadedFile() file?: Express.Multer.File) {
-    const appUrl = process.env.APP_URL ?? 'http://api.aiforjob.ai';
-    const profileImageUrl = `${appUrl}/uploads/profile-images/${file?.filename}`;
-    const updated: UserDocument = await this.usersService.updateProfile(user.sub, { profileImageUrl });
+  @Post('me/payg/setup')
+  async setupPayg(
+    @CurrentUser() user: any,
+    @Body() body: { monthlyBudget: number },
+  ) {
+    if (!body.monthlyBudget || body.monthlyBudget <= 0) {
+      throw new BadRequestException('monthlyBudget must be a positive number (in ₹)');
+    }
+    const updated = await this.usersService.setupPayg(user.sub, body.monthlyBudget);
     const { passwordHash, refreshTokenHash, ...safe } = updated.toObject();
-    return safe;
+    return { success: true, user: safe };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me/payg/status')
+  async getPaygStatus(@CurrentUser() user: any) {
+    return this.usersService.getPaygStatus(user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me/payg/cancel')
+  async cancelPayg(@CurrentUser() user: any) {
+    const updated = await this.usersService.updateProfile(user.sub, {
+      subscriptionStatus: 'free',
+      paygMonthlyBudget:  undefined,
+      paygInterviewsLimit: undefined,
+      paygResumesLimit: undefined,
+      paygInterviewsUsed: 0,
+      paygResumesUsed: 0,
+    } as any);
+    const { passwordHash, refreshTokenHash, ...safe } = updated.toObject();
+    return { success: true, user: safe };
   }
 }

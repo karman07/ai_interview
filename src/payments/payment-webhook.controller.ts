@@ -68,24 +68,35 @@ export class PaymentWebhookController {
         const subEntity = payload.subscription.entity;
         const paymentEntity = payload.payment.entity;
         const razorpaySubscriptionId = subEntity.id;
+        const isPayg = subEntity.notes?.type === 'payg';
 
-        this.logger.log(`Subscription charge success for Razorpay ID: ${razorpaySubscriptionId}`);
+        this.logger.log(`Subscription charge success for Razorpay ID: ${razorpaySubscriptionId} (PAYG: ${isPayg})`);
 
         const user = await this.usersService.findByRazorpaySubscriptionId(razorpaySubscriptionId);
-        if (user) {
-            await this.paymentService.recordWebhookPayment({
-                userId: user._id.toString(),
-                subscriptionId: user.subscriptionPlan?.toString(),
-                razorpaySubscriptionId: razorpaySubscriptionId,
-                razorpayPaymentId: paymentEntity.id,
-                amount: paymentEntity.amount,
-                currency: paymentEntity.currency,
-                status: PaymentStatus.PAID,
-                method: paymentEntity.method,
-                description: paymentEntity.description,
-            });
+        if (!user) {
+            this.logger.warn(`No user found for charged subscription ID: ${razorpaySubscriptionId}`);
+            return;
+        }
 
-            // Update user expiry date on recurring charge
+        // Record the payment regardless of plan type
+        await this.paymentService.recordWebhookPayment({
+            userId: user._id.toString(),
+            subscriptionId: user.subscriptionPlan?.toString(),
+            razorpaySubscriptionId,
+            razorpayPaymentId: paymentEntity.id,
+            amount: paymentEntity.amount,
+            currency: paymentEntity.currency,
+            status: PaymentStatus.PAID,
+            method: paymentEntity.method,
+            description: paymentEntity.description,
+        });
+
+        if (isPayg) {
+            // PAYG renewal: reset monthly usage limits
+            await this.usersService.resetPaygCycle(user._id.toString());
+            this.logger.log(`PAYG cycle reset for user: ${user.email} — new month begins`);
+        } else {
+            // Regular subscription renewal: push expiry by one billing period
             const sub = user.subscriptionPlan as any;
             if (sub) {
                 const newExpiry = new Date();
@@ -95,13 +106,13 @@ export class PaymentWebhookController {
 
                 await this.usersService.updateProfile(user._id.toString(), {
                     subscriptionStatus: 'active',
-                    subscriptionExpiry: newExpiry
-                });
+                    subscriptionExpiry: newExpiry,
+                    // ✅ Reset monthly usage on each billing renewal
+                    resumeCount: 0,
+                    interviewCount: 0,
+                } as any);
             }
-
-            this.logger.log(`Recurring payment recorded and user expiry updated for: ${user.email}`);
-        } else {
-            this.logger.warn(`No user found for charged subscription ID: ${razorpaySubscriptionId}`);
+            this.logger.log(`Recurring payment recorded, user expiry updated, usage reset for: ${user.email}`);
         }
     }
 }

@@ -264,6 +264,129 @@ export class PaymentService {
     }, {});
   }
 
+  // ── PAYG subscription autopay ─────────────────────────────────────────────
+
+  /**
+   * Creates a Razorpay subscription for a user-defined monthly budget.
+   * Since every user can have a different amount, we create a fresh Razorpay plan
+   * per-budget on the fly (or reuse an existing one with the same amount).
+   */
+  async createPaygSubscription(userId: string, monthlyBudgetRupees: number): Promise<any> {
+    try {
+      const budgetInPaisa = Math.round(monthlyBudgetRupees * 100);
+      this.logger.log(`Creating PAYG subscription for user ${userId} budget=${budgetInPaisa} paisa`);
+
+      // Fetch PAYG plan template from DB to validate min/max bounds
+      const paygTemplate = await this.subscriptionService.findOneByAnyId('payg_in')
+        ?? await this.subscriptionService.findOneByAnyId('payg_us');
+      if (!paygTemplate) throw new BadRequestException('PAYG plan template not found. Contact support.');
+
+      const minBudget = (paygTemplate as any).paygMinBudget ?? 9900;
+      const maxBudget = (paygTemplate as any).paygMaxBudget ?? 500000;
+      if (budgetInPaisa < minBudget) throw new BadRequestException(`Minimum budget is ₹${minBudget / 100}`);
+      if (budgetInPaisa > maxBudget) throw new BadRequestException(`Maximum budget is ₹${maxBudget / 100}`);
+
+      // Create (or reuse) a Razorpay plan for this exact budget amount
+      let razorpayPlanId: string;
+      const planLabel = `PAYG ₹${monthlyBudgetRupees}/mo`;
+      const existingPlans = await this.razorpay.plans.all({ count: 100 });
+      const matching = (existingPlans as any).items?.find(
+        (p: any) => p.item.amount === budgetInPaisa && p.item.currency === 'INR' && p.item.name === planLabel
+      );
+      if (matching) {
+        razorpayPlanId = matching.id;
+        this.logger.log(`Reusing existing Razorpay plan ${razorpayPlanId} for ${planLabel}`);
+      } else {
+        const newPlan = await (this.razorpay.plans.create as Function)({
+          period: 'monthly',
+          interval: 1,
+          item: { name: planLabel, amount: budgetInPaisa, currency: 'INR', description: 'Pay As You Go monthly budget' },
+        });
+        razorpayPlanId = newPlan.id;
+        this.logger.log(`Created Razorpay plan ${razorpayPlanId} for ${planLabel}`);
+      }
+
+      // Create the recurring subscription
+      const rzpSub = await this.razorpay.subscriptions.create({
+        plan_id: razorpayPlanId,
+        customer_notify: 1,
+        total_count: 120, // 10 years
+        quantity: 1,
+        notes: { userId, budgetRupees: String(monthlyBudgetRupees), type: 'payg' },
+      } as any);
+
+      // Record pending payment
+      const payment = new this.paymentModel({
+        userId: new Types.ObjectId(userId),
+        subscriptionId: paygTemplate._id,
+        amount: budgetInPaisa,
+        currency: 'INR',
+        status: PaymentStatus.CREATED,
+        razorpaySubscriptionId: rzpSub.id,
+        paymentType: 'subscription',
+        description: `PAYG monthly budget — ${planLabel}`,
+        notes: { budgetRupees: monthlyBudgetRupees },
+      });
+      await payment.save();
+
+      this.logger.log(`PAYG Razorpay subscription created: ${rzpSub.id}`);
+      return {
+        subscriptionId: rzpSub.id,
+        razorpayKey: this.configService.get<string>('RAZORPAY_KEY_ID'),
+        budgetRupees: monthlyBudgetRupees,
+        planId: razorpayPlanId,
+      };
+    } catch (error) {
+      const msg = error.error?.description || error.message || 'Unknown error';
+      this.logger.error(`Failed to create PAYG subscription: ${msg}`, error.stack);
+      if (error instanceof BadRequestException) throw error;
+      throw new BadRequestException(`Failed to create PAYG subscription: ${msg}`);
+    }
+  }
+
+  /**
+   * Verifies the Razorpay payment signature after PAYG checkout completes.
+   * On success: activates the PAYG plan (sets limits, billing cycle, subscription status).
+   */
+  async verifyPaygSubscription(userId: string, dto: {
+    razorpaySubscriptionId: string;
+    razorpayPaymentId: string;
+    razorpaySignature: string;
+    budgetRupees: number;
+  }): Promise<any> {
+    const { razorpaySubscriptionId, razorpayPaymentId, razorpaySignature, budgetRupees } = dto;
+    const secret = this.configService.get<string>('RAZORPAY_KEY_SECRET');
+
+    const generated = crypto
+      .createHmac('sha256', secret)
+      .update(razorpayPaymentId + '|' + razorpaySubscriptionId)
+      .digest('hex');
+
+    if (generated !== razorpaySignature) {
+      throw new BadRequestException('Invalid PAYG payment signature');
+    }
+
+    // Update payment record
+    const payment = await this.paymentModel.findOne({ razorpaySubscriptionId });
+    if (payment) {
+      payment.razorpayPaymentId = razorpayPaymentId;
+      payment.razorpaySignature = razorpaySignature;
+      payment.status = PaymentStatus.PAID;
+      await payment.save();
+    }
+
+    // Activate the PAYG plan — sets limits + billing cycle + stores razorpaySubscriptionId on user
+    const user = await this.usersService.setupPayg(userId, budgetRupees);
+
+    // Also store the Razorpay subscription ID on the user so webhook resets work
+    await this.usersService.updateProfile(userId, {
+      razorpaySubscriptionId,
+    } as any);
+
+    this.logger.log(`PAYG plan activated: ${razorpaySubscriptionId} for user ${userId} — ₹${budgetRupees}/mo`);
+    return { success: true, budgetRupees, interviewsLimit: user.paygInterviewsLimit, resumesLimit: user.paygResumesLimit };
+  }
+
   async createSubscription(userId: string, dto: CreateSubscriptionRequestDto): Promise<any> {
     try {
       this.logger.log(`Creating subscription for user ${userId} with input ID: ${dto.subscriptionId}`);
@@ -362,47 +485,106 @@ export class PaymentService {
   }
 
   async verifySubscription(userId: string, dto: VerifySubscriptionDto): Promise<any> {
-    try {
-      const { razorpaySubscriptionId, razorpayPaymentId, razorpaySignature } = dto;
+    const { razorpaySubscriptionId, razorpayPaymentId, razorpaySignature } = dto;
+    this.logger.log(`[verifySubscription] START userId=${userId} rzpSub=${razorpaySubscriptionId} rzpPay=${razorpayPaymentId}`);
 
+    try {
+      // ── 1. Verify HMAC signature ──────────────────────────────────────────
       const secret = this.configService.get<string>('RAZORPAY_KEY_SECRET');
-      const generated_signature = crypto
+      const generated = crypto
         .createHmac('sha256', secret)
         .update(razorpayPaymentId + '|' + razorpaySubscriptionId)
         .digest('hex');
 
-      if (generated_signature !== razorpaySignature) {
+      if (generated !== razorpaySignature) {
+        this.logger.error(`[verifySubscription] ❌ Signature mismatch`);
         throw new BadRequestException('Invalid subscription signature');
       }
+      this.logger.log(`[verifySubscription] ✅ Signature valid`);
 
-      // Update payment record
+      // ── 2. Update payment record if it exists ─────────────────────────────
       const payment = await this.paymentModel.findOne({ razorpaySubscriptionId });
+      this.logger.log(`[verifySubscription] Payment record: ${payment ? `found (${payment._id})` : 'NOT FOUND — will resolve plan from Razorpay'}`);
+
       if (payment) {
         payment.razorpayPaymentId = razorpayPaymentId;
         payment.razorpaySignature = razorpaySignature;
         payment.status = PaymentStatus.PAID;
         await payment.save();
+        this.logger.log(`[verifySubscription] ✅ Payment marked PAID`);
       }
 
-      // Update user subscription status
-      const sub = await this.subscriptionService.findById(payment.subscriptionId.toString());
+      // ── 3. Resolve plan (payment record → Razorpay API → user's plan) ─────
+      let sub: any = null;
 
+      if (payment?.subscriptionId) {
+        try {
+          sub = await this.subscriptionService.findById(payment.subscriptionId.toString());
+          this.logger.log(`[verifySubscription] Plan from payment record: ${sub?.displayName} id=${sub?.id}`);
+        } catch (e) { this.logger.warn(`[verifySubscription] findById from payment failed: ${e.message}`); }
+      }
+
+      if (!sub) {
+        try {
+          this.logger.log(`[verifySubscription] Fetching Razorpay subscription ${razorpaySubscriptionId}...`);
+          const rzpSub = await this.razorpay.subscriptions.fetch(razorpaySubscriptionId);
+          const rzpPlanId = (rzpSub as any).plan_id;
+          this.logger.log(`[verifySubscription] Razorpay plan_id=${rzpPlanId}`);
+          if (rzpPlanId) {
+            sub = await this.subscriptionService.findOneByAnyId(rzpPlanId);
+            this.logger.log(`[verifySubscription] Plan from Razorpay: ${sub?.displayName}`);
+          }
+        } catch (e) { this.logger.warn(`[verifySubscription] Razorpay fetch failed: ${e.message}`); }
+      }
+
+      if (!sub) {
+        try {
+          const userDoc = await this.usersService.findById(userId);
+          if (userDoc?.subscriptionPlan) {
+            sub = await this.subscriptionService.findById(userDoc.subscriptionPlan.toString());
+            this.logger.log(`[verifySubscription] Plan from user's existing plan: ${sub?.displayName}`);
+          }
+        } catch (e) { this.logger.warn(`[verifySubscription] User plan fallback failed: ${e.message}`); }
+      }
+
+      if (!sub) {
+        this.logger.error(`[verifySubscription] ❌ Could not resolve plan for user ${userId}`);
+        throw new BadRequestException('Could not resolve subscription plan. Contact support.');
+      }
+
+      // ── 4. Expiry ─────────────────────────────────────────────────────────
       const expiryDate = new Date();
       if (sub.type === SubscriptionType.MONTHLY) expiryDate.setMonth(expiryDate.getMonth() + 1);
       else if (sub.type === SubscriptionType.YEARLY) expiryDate.setFullYear(expiryDate.getFullYear() + 1);
       else expiryDate.setDate(expiryDate.getDate() + (sub.duration || 30));
 
+      // ── 5. Extract limits from plan features ──────────────────────────────
+      const features: any[] = (sub as any).features ?? [];
+      this.logger.log(`[verifySubscription] Plan "${sub.displayName}" features: ${JSON.stringify(features.map((f: any) => ({ name: f.name, value: f.value, limit: f.limit })))}`);
+
+      const interviewFeature = features.find((f: any) => f.name === 'Interview Limit');
+      const resumeFeature    = features.find((f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit');
+      const newInterviewLimit = interviewFeature ? Number(interviewFeature.limit ?? interviewFeature.value ?? 3) : 3;
+      const newResumeLimit    = resumeFeature    ? Number(resumeFeature.limit    ?? resumeFeature.value    ?? 5) : 5;
+
+      this.logger.log(`[verifySubscription] 📊 Stamping: interviews=${newInterviewLimit}, resumes=${newResumeLimit}`);
+
+      // ── 6. Update user ────────────────────────────────────────────────────
       await this.usersService.updateProfile(userId, {
-        subscriptionPlan: sub.id as any,
-        subscriptionStatus: 'active',
-        subscriptionExpiry: expiryDate,
+        subscriptionPlan:       (sub.id ?? sub._id) as any,
+        subscriptionStatus:     'active',
+        subscriptionExpiry:     expiryDate,
         razorpaySubscriptionId: razorpaySubscriptionId,
+        interviewLimit:         newInterviewLimit,
+        resumeLimit:            newResumeLimit,
+        resumeCount:            0,
+        interviewCount:         0,
       } as any);
 
-      this.logger.log(`Subscription verified and activated: ${razorpaySubscriptionId} for user: ${userId}`);
-      return { success: true, payment: this.toPaymentResponseDto(payment) };
+      this.logger.log(`[verifySubscription] ✅ DONE. User=${userId} Plan=${sub.displayName} interviews=${newInterviewLimit} resumes=${newResumeLimit} usage=0`);
+      return { success: true, plan: sub.displayName, interviewLimit: newInterviewLimit, resumeLimit: newResumeLimit, payment: payment ? this.toPaymentResponseDto(payment) : null };
     } catch (error) {
-      this.logger.error(`Subscription verification failed: ${error.message}`);
+      this.logger.error(`[verifySubscription] ❌ FAILED: ${error.message}`, error.stack);
       throw new BadRequestException(`Subscription verification failed: ${error.message}`);
     }
   }
@@ -511,11 +693,24 @@ export class PaymentService {
 
     if (user) {
       this.logger.log(`Degrading user ${user.email} to free plan due to subscription termination (${subscriptionEntity.status})`);
+      
+      const freePlan = await this.usersService.getFreeTierPlan();
+      const limits = this.usersService.extractLimitsFromPlan(freePlan);
 
       await this.usersService.updateProfile(user._id.toString(), {
         subscriptionStatus: 'free',
-        subscriptionPlan: null, // Reset to no plan
-        // We keep razorpaySubscriptionId for history/reference but status is free
+        subscriptionPlan: freePlan ? freePlan._id : null, 
+        // Reset usage count limits back to dynamic Free Tier logic
+        interviewLimit: limits.interviewLimit,
+        resumeLimit: limits.resumeLimit,
+        interviewCount: 0,
+        resumeCount: 0,
+        // Reset PAYG state
+        paygMonthlyBudget: 0,
+        paygInterviewsLimit: 0,
+        paygResumesLimit: 0,
+        paygInterviewsUsed: 0,
+        paygResumesUsed: 0,
       } as any);
 
       await this.emailService.sendSubscriptionCancelledEmail(user.email);
@@ -562,14 +757,26 @@ export class PaymentService {
       else if (sub.type === SubscriptionType.YEARLY) newExpiry.setFullYear(newExpiry.getFullYear() + 1);
       else newExpiry.setDate(newExpiry.getDate() + (sub.duration || 30));
 
+      // ✅ Re-stamp limits from plan features on every renewal (plan may have been updated by admin)
+      const features = (sub as any).features ?? [];
+      const interviewFeature  = features.find((f: any) => f.name === 'Interview Limit');
+      const resumeFeature     = features.find((f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit');
+      const newInterviewLimit = interviewFeature ? (interviewFeature.value ?? interviewFeature.limit ?? 3) : 3;
+      const newResumeLimit    = resumeFeature    ? (resumeFeature.value    ?? resumeFeature.limit    ?? 5) : 5;
+
       await this.usersService.updateProfile(user._id.toString(), {
         subscriptionStatus: 'active',
         subscriptionPlan: sub.id || sub._id,
         subscriptionExpiry: newExpiry,
-        razorpaySubscriptionId: razorpaySubscriptionId // Ensure it is stored
+        razorpaySubscriptionId: razorpaySubscriptionId,
+        // ✅ Stamp limits and reset usage on renewal
+        interviewLimit: newInterviewLimit,
+        resumeLimit:    newResumeLimit,
+        resumeCount:    0,
+        interviewCount: 0,
       } as any);
 
-      this.logger.log(`Subscription charged and activated for user: ${user.email}. Plan: ${sub.displayName}`);
+      this.logger.log(`Subscription renewed for user: ${user.email}. Plan: ${sub.displayName}. Limits: ${newInterviewLimit} interviews / ${newResumeLimit} resumes.`);
     }
   }
 
