@@ -5,23 +5,26 @@ import { ApiKey, ApiKeyDocument } from './schemas/api-key.schema';
 import { ModelConfig, ModelConfigDocument } from './schemas/model-config.schema';
 
 // ── Static model catalogue (pricing from Google / Groq public docs) ─────────
+// IMPORTANT: Only include models verified to support generateContent.
+// Run list_gemini_models.py in the fastapi backend to refresh this list.
 export const MODEL_CATALOG = {
   gemini: [
-    { id: 'gemini-2.5-flash',    label: 'Gemini 2.5 Flash',    tier: 'recommended', inputPer1M: 0.10,  outputPer1M: 0.40,  note: 'Best price/performance — recommended default' },
-    { id: 'gemini-2.5-pro',      label: 'Gemini 2.5 Pro',      tier: 'premium',     inputPer1M: 1.25,  outputPer1M: 5.00,  note: 'Highest quality, complex reasoning' },
-    { id: 'gemini-1.5-flash',    label: 'Gemini 1.5 Flash',    tier: 'budget',      inputPer1M: 0.075, outputPer1M: 0.30,  note: 'Stable legacy model' },
-    { id: 'gemini-1.5-flash-8b', label: 'Gemini 1.5 Flash 8B', tier: 'budget',      inputPer1M: 0.0375,outputPer1M: 0.15,  note: 'Most affordable Gemini' },
+    { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', tier: 'recommended', inputPer1M: 0.15, outputPer1M: 0.60, note: 'Latest & fastest — recommended default' },
+    { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', tier: 'premium', inputPer1M: 1.25, outputPer1M: 10.00, note: 'Highest quality, complex reasoning' },
+    { id: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite', tier: 'budget', inputPer1M: 0.075, outputPer1M: 0.30, note: 'Ultra-affordable 2.5 model' },
+    { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', tier: 'stable', inputPer1M: 0.10, outputPer1M: 0.40, note: 'Stable production model' },
+    { id: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash-Lite', tier: 'budget', inputPer1M: 0.075, outputPer1M: 0.30, note: 'Most affordable stable model' },
   ],
   groq: [
-    { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B',   tier: 'recommended', inputPer1M: 0.59,  outputPer1M: 0.79,  note: 'Best quality on Groq' },
-    { id: 'llama-3.1-8b-instant',    label: 'Llama 3.1 8B',    tier: 'budget',      inputPer1M: 0.05,  outputPer1M: 0.08,  note: 'Fastest & cheapest' },
-    { id: 'mixtral-8x7b-32768',      label: 'Mixtral 8x7B',    tier: 'balanced',    inputPer1M: 0.24,  outputPer1M: 0.24,  note: '32 K context window' },
+    { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B', tier: 'recommended', inputPer1M: 0.59, outputPer1M: 0.79, note: 'Best quality on Groq' },
+    { id: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B', tier: 'budget', inputPer1M: 0.05, outputPer1M: 0.08, note: 'Fastest & cheapest' },
+    { id: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B', tier: 'balanced', inputPer1M: 0.24, outputPer1M: 0.24, note: '32 K context window' },
   ],
 } as const;
 
 const DEFAULT_MODELS: Record<'gemini' | 'groq', string> = {
   gemini: 'gemini-2.5-flash',
-  groq:   'llama-3.1-8b-instant',
+  groq: 'llama-3.1-8b-instant',
 };
 
 @Injectable()
@@ -29,14 +32,30 @@ export class AiConfigService implements OnModuleInit {
   private readonly logger = new Logger(AiConfigService.name);
 
   constructor(
-    @InjectModel(ApiKey.name)     private apiKeyModel:     Model<ApiKeyDocument>,
+    @InjectModel(ApiKey.name) private apiKeyModel: Model<ApiKeyDocument>,
     @InjectModel(ModelConfig.name) private modelConfigModel: Model<ModelConfigDocument>,
-  ) {}
+  ) { }
 
-  /** On startup: seed default keys from env if not already present */
+  /** On startup: seed default keys and validate model configs */
   async onModuleInit() {
     await this.seedDefaultKey('gemini', process.env.GEMINI_API_KEY);
     await this.seedDefaultKey('groq', process.env.GROQ_API_KEY);
+    await this.validateModelConfigs();
+  }
+
+  /** Reset any model configs that reference models no longer in the catalogue */
+  private async validateModelConfigs() {
+    const configs = await this.modelConfigModel.find().lean();
+    for (const config of configs) {
+      const catalog = MODEL_CATALOG[config.provider as 'gemini' | 'groq'] as readonly { id: string }[];
+      if (!catalog?.find(m => m.id === config.modelId)) {
+        const defaultModel = DEFAULT_MODELS[config.provider as 'gemini' | 'groq'];
+        this.logger.warn(
+          `[ModelConfig] Stored model '${config.modelId}' for ${config.provider} is not in catalogue. Resetting to '${defaultModel}'.`,
+        );
+        await this.modelConfigModel.findByIdAndUpdate(config._id, { modelId: defaultModel });
+      }
+    }
   }
 
   private async seedDefaultKey(provider: 'gemini' | 'groq', envValue?: string) {
@@ -151,7 +170,7 @@ export class AiConfigService implements OnModuleInit {
         isActive: (activeMap['groq'] ?? DEFAULT_MODELS.groq) === m.id,
       })),
       activeGemini: activeMap['gemini'] ?? DEFAULT_MODELS.gemini,
-      activeGroq:   activeMap['groq']   ?? DEFAULT_MODELS.groq,
+      activeGroq: activeMap['groq'] ?? DEFAULT_MODELS.groq,
     };
   }
 
