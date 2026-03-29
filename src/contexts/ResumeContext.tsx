@@ -25,7 +25,7 @@ export const useResume = () => {
 };
 
 export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, refreshMe } = useAuth();
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -48,6 +48,7 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       const newResume = await resumeService.uploadResume(files, jdText);
       setResumes((prev) => [newResume, ...prev]);
+      await refreshMe(); // Ensure user.resumeCount is updated
       return newResume;
     } finally {
       setIsLoading(false);
