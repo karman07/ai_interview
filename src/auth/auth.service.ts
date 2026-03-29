@@ -21,12 +21,18 @@ export class AuthService {
   async signup(dto: CreateUserDto) {
     const uni = await this.getUniversityInfo(dto.email);
     // Use passed role or default to 'user'
-    const userData = {
+    const userData: any = {
       ...dto,
       role: uni ? UserRole.STUDENT : (dto.role || UserRole.USER),
       universityId: uni ? uni._id.toString() : dto.universityId,
       isEmailVerified: false,
     };
+
+    // If university detected, stamp its limits
+    if (uni) {
+      userData.interviewLimit = uni.interviewLimit;
+      userData.resumeLimit = uni.resumeLimit;
+    }
     const user = await this.usersService.create(userData);
 
     // Tokens are not issued upon signup; user must verify email first.
@@ -79,6 +85,8 @@ export class AuthService {
     if (uni && user.role === UserRole.USER) {
       user.role = UserRole.STUDENT;
       user.universityId = uni._id.toString();
+      user.interviewLimit = uni.interviewLimit;
+      user.resumeLimit = uni.resumeLimit;
       await user.save();
     }
 
@@ -103,6 +111,8 @@ export class AuthService {
           isEmailVerified: true,
           role: uni ? UserRole.STUDENT : UserRole.USER,
           universityId: uni ? uni._id.toString() : undefined,
+          interviewLimit: uni ? uni.interviewLimit : undefined,
+          resumeLimit: uni ? uni.resumeLimit : undefined,
         } as any);
 
         // New user from Google, send welcome email
@@ -114,6 +124,8 @@ export class AuthService {
         if (uni && user.role === UserRole.USER) {
           user.role = UserRole.STUDENT;
           user.universityId = uni._id.toString();
+          user.interviewLimit = uni.interviewLimit;
+          user.resumeLimit = uni.resumeLimit;
         }
         await user.save();
       }
@@ -152,6 +164,8 @@ export class AuthService {
     if (uni && user.role === UserRole.USER) {
       user.role = UserRole.STUDENT;
       user.universityId = uni._id.toString();
+      user.interviewLimit = uni.interviewLimit;
+      user.resumeLimit = uni.resumeLimit;
       await user.save();
     }
 
@@ -185,6 +199,8 @@ export class AuthService {
         isEmailVerified: false, // Must verify via Firebase first to login
         universityId: university._id.toString(),
         rollNumber: rollNumber || undefined,
+        interviewLimit: university.interviewLimit,
+        resumeLimit: university.resumeLimit,
         resumeCount: 0,
         interviewCount: 0,
       });
@@ -215,6 +231,8 @@ export class AuthService {
         isEmailVerified: true, // university email implicitly trusted
         universityId: university._id.toString(),
         rollNumber: rollNumber || undefined,
+        interviewLimit: university.interviewLimit,
+        resumeLimit: university.resumeLimit,
         resumeCount: 0,
         interviewCount: 0,
       });
@@ -227,6 +245,8 @@ export class AuthService {
         user.role = UserRole.STUDENT;
         user.universityId = university._id.toString();
         user.isEmailVerified = true; // They passed Firebase validation to reach here
+        user.interviewLimit = university.interviewLimit;
+        user.resumeLimit = university.resumeLimit;
         if (rollNumber) user.rollNumber = rollNumber;
         await user.save();
       }
@@ -267,6 +287,8 @@ export class AuthService {
           role: UserRole.STUDENT,
           universityId: university._id.toString(),
           rollNumber: rollNumber || undefined,
+          interviewLimit: university.interviewLimit,
+          resumeLimit: university.resumeLimit,
         } as any);
         await this.email.sendWelcomeEmail(user.email);
       } else {
@@ -274,6 +296,8 @@ export class AuthService {
         user.isEmailVerified = true;
         user.role = UserRole.STUDENT;
         user.universityId = university._id.toString();
+        user.interviewLimit = university.interviewLimit;
+        user.resumeLimit = university.resumeLimit;
         if (rollNumber) user.rollNumber = rollNumber;
         await user.save();
       }
@@ -282,6 +306,8 @@ export class AuthService {
       if (user.role !== UserRole.STUDENT || !user.universityId || (rollNumber && user.rollNumber !== rollNumber)) {
         user.role = UserRole.STUDENT;
         user.universityId = university._id.toString();
+        user.interviewLimit = university.interviewLimit;
+        user.resumeLimit = university.resumeLimit;
         if (rollNumber) user.rollNumber = rollNumber;
         await user.save();
       }

@@ -49,6 +49,9 @@ export class AIUsage {
 
     @Prop({ default: Date.now })
     timestamp: Date;
+
+    @Prop({ default: 'unknown' })
+    endReason: string;
 }
 
 export const AIUsageSchema = SchemaFactory.createForClass(AIUsage);

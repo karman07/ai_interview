@@ -42,4 +42,12 @@ export class CreateUserDto {
   @IsOptional()
   @IsNumber()
   interviewCount?: number;
+
+  @IsOptional()
+  @IsNumber()
+  resumeLimit?: number;
+
+  @IsOptional()
+  @IsNumber()
+  interviewLimit?: number;
 }

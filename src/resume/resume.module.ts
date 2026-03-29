@@ -8,6 +8,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
 
 import { HttpModule } from '@nestjs/axios';
 import { AiCvApiService } from './ai-cv-api.service';
+import { UniversitiesModule } from '../universities/universities.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AiCvApiService } from './ai-cv-api.service';
       { name: User.name, schema: UserSchema },
     ]),
     HttpModule, // For calling Python API
+    UniversitiesModule,
 
   ],
   controllers: [ResumeController, AiCvController],
