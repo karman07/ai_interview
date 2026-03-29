@@ -10,6 +10,7 @@ import {
   XCircle,
   AlertCircle,
   Download,
+  Lock,
   Home,
   BarChart3,
   Target,
@@ -176,16 +177,22 @@ export default function InterviewResultsV2() {
         </section>
 
         {/* ─── 3. Question-wise Analysis ─── */}
-        {report.question_wise_analysis?.length > 0 && (
-          <section>
-            <SectionHeading icon={<MessageSquare className="w-5 h-5" />} title="Question-wise Analysis" />
+        <section>
+          <SectionHeading icon={<MessageSquare className="w-5 h-5" />} title="Question-wise Analysis" />
+          {report.question_wise_analysis?.length > 0 ? (
             <div className="space-y-4">
               {report.question_wise_analysis.map((q) => (
                 <QuestionCard key={q.question_id} question={q} />
               ))}
             </div>
-          </section>
-        )}
+          ) : (
+            <LockedSection
+              title="Question-by-Question Breakdown"
+              message="Get detailed strengths and weaknesses for every answer you gave during the interview."
+              requiredPlan="Career Starter"
+            />
+          )}
+        </section>
 
         {/* ─── 4. Skill Gap Analysis ─── */}
         <section>
@@ -196,13 +203,29 @@ export default function InterviewResultsV2() {
         {/* ─── 5. Behavioral Insights ─── */}
         <section>
           <SectionHeading icon={<Brain className="w-5 h-5" />} title="Behavioral Insights" />
-          <BehavioralInsightsGrid insights={report.behavioral_insights} />
+          {report.behavioral_insights ? (
+            <BehavioralInsightsGrid insights={report.behavioral_insights} />
+          ) : (
+            <LockedSection
+              title="Behavioral Insights"
+              message="Discover your communication style, pressure handling, and psychological traits."
+              requiredPlan="Career Starter"
+            />
+          )}
         </section>
 
         {/* ─── 6. Improvement Plan ─── */}
         <section>
           <SectionHeading icon={<Rocket className="w-5 h-5" />} title="Improvement Plan" />
-          <ImprovementTimeline plan={report.improvement_plan} />
+          {report.improvement_plan ? (
+            <ImprovementTimeline plan={report.improvement_plan} />
+          ) : (
+            <LockedSection
+              title="Targeted Improvement Plan"
+              message="Unlock a customized 1-week and 1-month roadmap to ace your next interview."
+              requiredPlan="Professional"
+            />
+          )}
         </section>
 
         {/* ─── 7. Verdict ─── */}
@@ -458,19 +481,28 @@ function QuestionCard({ question }: { question: InterviewV2Report["question_wise
                 </div>
 
                 {/* Ideal Answer */}
-                <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-lg p-4 border border-blue-100 dark:border-blue-900/30">
-                  <h4 className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Lightbulb className="w-3.5 h-3.5" /> Ideal Answer Points
-                  </h4>
-                  <ul className="space-y-1.5">
-                    {question.evaluation?.ideal_answer_outline?.map((pt, i) => (
-                      <li key={i} className="text-xs text-blue-800 dark:text-blue-300 flex items-start gap-1.5">
-                        <ArrowRight className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                        <span>{pt}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {question.evaluation?.ideal_answer_outline?.length > 0 ? (
+                  <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-lg p-4 border border-blue-100 dark:border-blue-900/30">
+                    <h4 className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <Lightbulb className="w-3.5 h-3.5" /> Ideal Answer Points
+                    </h4>
+                    <ul className="space-y-1.5">
+                      {question.evaluation.ideal_answer_outline.map((pt, i) => (
+                        <li key={i} className="text-xs text-blue-800 dark:text-blue-300 flex items-start gap-1.5">
+                          <ArrowRight className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50/80 dark:bg-gray-800/80 rounded-lg p-5 border border-gray-200/60 dark:border-gray-700/60 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <Lock className="w-5 h-5 text-gray-400 dark:text-gray-500 mb-2" />
+                    <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1">Ideal Answer Points</h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Unlock with <span className="text-blue-600 dark:text-blue-400 font-semibold">Professional</span></p>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
@@ -639,6 +671,32 @@ function VerdictCard({ verdict }: { verdict: InterviewV2Report["verdict"] }) {
           </ul>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Locked Section ──
+
+export function LockedSection({ title, message, requiredPlan }: { title: string, message: string, requiredPlan: string }) {
+  const navigate = useNavigate();
+  return (
+    <div className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center flex flex-col items-center justify-center min-h-[250px] shadow-sm group">
+       <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px' }} />
+       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-50/50 dark:to-gray-900/50 pointer-events-none" />
+       
+       <div className="relative z-10 w-14 h-14 bg-gray-50 dark:bg-gray-900 rounded-2xl flex items-center justify-center mb-5 border border-gray-100 dark:border-gray-800 shadow-sm group-hover:scale-105 transition-transform duration-300">
+         <Lock className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+       </div>
+       <h3 className="relative z-10 text-lg font-bold text-gray-900 dark:text-white mb-2">{title} Locked</h3>
+       <p className="relative z-10 text-sm text-gray-500 dark:text-gray-400 max-w-md mb-6 leading-relaxed">
+         {message} Upgrade to the <strong className="text-blue-600 dark:text-blue-400 font-semibold">{requiredPlan}</strong> plan to access this feature.
+       </p>
+       <button
+         onClick={() => navigate("/pricing")}
+         className="relative z-10 inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-gray-900 to-gray-800 dark:from-white dark:to-gray-100 text-white dark:text-gray-900 text-sm font-semibold rounded-xl shadow-lg shadow-gray-200/50 dark:shadow-none hover:-translate-y-0.5 transition-all"
+       >
+         <Zap className="w-4 h-4 text-amber-500" /> Upgrade Plan
+       </button>
     </div>
   );
 }
