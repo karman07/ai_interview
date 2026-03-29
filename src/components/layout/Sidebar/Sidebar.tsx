@@ -16,6 +16,7 @@ import {
   MessageSquare,
   ClipboardList,
   School,
+  Building2,
 } from "lucide-react";
 
 import { cn } from "@/utils/cn";

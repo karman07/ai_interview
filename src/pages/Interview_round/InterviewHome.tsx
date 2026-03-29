@@ -5,6 +5,8 @@ import {
   Users,
   Lightbulb,
   MessageCircle,
+  Building2,
+  Search,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import InterviewAnalyticsDashboard from "./InterviewAnalyticsDashboard";
@@ -12,60 +14,97 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePricing } from "@/contexts/PricingContext";
 import { useResults } from "@/contexts/ResultsContext";
 import { InterviewAnalyticsApi } from "@/api/interviewAnalytics";
+import http, { baseURL } from "@/api/http";
 
 type InterviewCardProps = {
   type: string;
   description: string;
   icon: React.ReactNode;
   color: string;
-  navigate: ReturnType<typeof useNavigate>;
+  navigate: (path: string) => void | Promise<void>;
   isAtLimit: boolean;
   onLimitExceeded: () => void;
+  tags?: string[];
+  isFeatured?: boolean;
+  isPremium?: boolean;
 };
 
-function InterviewCard({ type, description, icon, color, navigate, isAtLimit, onLimitExceeded }: InterviewCardProps) {
-  // Extract text color from gradient prop (simplification)
-  const getTextColor = (gradientClass: string) => {
-    if (gradientClass.includes('blue')) return 'text-blue-600 dark:text-blue-400';
-    if (gradientClass.includes('blue') || gradientClass.includes('green')) return 'text-blue-600 dark:text-blue-400';
-    if (gradientClass.includes('blue') || gradientClass.includes('blue')) return 'text-blue-600 dark:text-blue-400';
-    if (gradientClass.includes('blue')) return 'text-blue-600 dark:text-blue-400';
-    if (gradientClass.includes('indigo')) return 'text-indigo-600 dark:text-indigo-400';
-    return 'text-gray-900 dark:text-white';
-  };
-
-  const getBgColor = (gradientClass: string) => {
-    if (gradientClass.includes('blue')) return 'bg-blue-50 dark:bg-blue-900/20';
-    if (gradientClass.includes('blue') || gradientClass.includes('green')) return 'bg-blue-50 dark:bg-blue-900/20';
-    if (gradientClass.includes('blue') || gradientClass.includes('blue')) return 'bg-blue-50 dark:bg-blue-900/20';
-    if (gradientClass.includes('blue')) return 'bg-blue-50 dark:bg-blue-900/20';
+function InterviewCard({ 
+  type, 
+  description, 
+  icon, 
+  color, 
+  navigate, 
+  isAtLimit, 
+  onLimitExceeded, 
+  tags, 
+  isFeatured, 
+  isPremium 
+}: InterviewCardProps) {
+  const getBGColor = (gradientClass: string) => {
     if (gradientClass.includes('indigo')) return 'bg-indigo-50 dark:bg-indigo-900/20';
-    return 'bg-gray-100 dark:bg-gray-800';
+    return 'bg-blue-50 dark:bg-blue-900/20';
   };
 
+  const getTextColor = (gradientClass: string) => {
+    if (gradientClass.includes('indigo')) return 'text-indigo-600 dark:text-indigo-400';
+    return 'text-blue-600 dark:text-blue-400';
+  };
+
+  const bgColor = getBGColor(color);
   const textColor = getTextColor(color);
-  const bgColor = getBgColor(color);
 
   return (
-    <div className="group relative bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full">
+    <div className="group relative bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full text-left">
       <div className="p-8 flex flex-col h-full">
         {/* Icon */}
         <div
-          className={`w-14 h-14 rounded-xl ${bgColor} flex items-center justify-center mb-6 transition-transform duration-300`}
+          className={`w-14 h-14 rounded-xl ${bgColor} flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110`}
         >
           <div className={textColor}>
-            {React.cloneElement(icon as React.ReactElement, { className: "w-7 h-7" })}
+            {React.isValidElement(icon) && (icon.type === 'svg' || (icon.type as any)?.displayName?.includes('Icon'))
+              ? React.cloneElement(icon as React.ReactElement, { className: "w-7 h-7" })
+              : <div className="w-10 h-10 flex items-center justify-center">{icon}</div>
+            }
           </div>
         </div>
 
         {/* Content */}
         <div className="space-y-3 flex-grow">
           <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-            {type} Round
+            {type.includes("Round") ? type : `${type} Round`}
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-sm">
+          <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-sm line-clamp-3">
             {description}
           </p>
+          
+          {isFeatured && (
+            <div className="absolute top-4 right-4 animate-pulse">
+               <span className="px-3 py-1 bg-yellow-400 text-black text-[10px] font-black uppercase tracking-tighter rounded-full shadow-lg border border-yellow-200">
+                ★ Featured
+               </span>
+            </div>
+          )}
+          {isPremium && !isFeatured && (
+            <div className="absolute top-4 right-4">
+               <span className="px-3 py-1 bg-purple-600 text-white text-[10px] font-black uppercase tracking-tighter rounded-full shadow-lg border border-purple-400">
+                ◆ Premium
+               </span>
+            </div>
+          )}
+
+          {tags && tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {tags.filter(t => t !== 'Featured' && t !== 'Premium').map((tag, idx) => (
+                <span 
+                  key={idx} 
+                  className="px-2.5 py-1 bg-gray-50 dark:bg-gray-700/50 text-[9px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 rounded-lg border border-gray-100 dark:border-gray-600"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Action button */}
@@ -76,7 +115,7 @@ function InterviewCard({ type, description, icon, color, navigate, isAtLimit, on
             : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
         >
-          {isAtLimit ? 'Limit Reached' : 'Start Interview'}
+          {isAtLimit ? 'Limit Reached' : 'Start Session'}
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
@@ -93,10 +132,19 @@ export default function InterviewHome() {
   const [showInterviewSelection, setShowInterviewSelection] = useState(false);
   const [analytics, setAnalytics] = useState<any>(null);
   const [universityInterviewLimit, setUniversityInterviewLimit] = useState<number | null>(null);
+  const [specializedTopics, setSpecializedTopics] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("All");
 
   React.useEffect(() => {
     fetchMine();
     InterviewAnalyticsApi.getAnalytics().then(setAnalytics).catch(console.error);
+    
+    // Fetch specialized company topics
+    http.get('/knowledge/topics')
+      .then(res => setSpecializedTopics(res.data))
+      .catch(console.warn);
+
     if ((user as any)?.role === 'student' && (user as any)?.universityId) {
       import('@/api/http').then(({ default: http }) => {
         http.get(`/universities/${(user as any).universityId}`)
@@ -160,6 +208,29 @@ export default function InterviewHome() {
     }
   };
 
+  const filteredTopics = useMemo(() => {
+    return specializedTopics.filter(topic => {
+      const matchesSearch = topic.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (topic.description && topic.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      if (activeFilter === "All") return matchesSearch;
+      if (activeFilter === "Featured") return matchesSearch && topic.tags?.includes("Featured");
+      if (activeFilter === "Premium") return matchesSearch && topic.tags?.includes("Premium");
+      
+      return matchesSearch && topic.tags?.includes(activeFilter);
+    });
+  }, [specializedTopics, searchQuery, activeFilter]);
+
+  const allTags = useMemo(() => {
+    const tags = new Set<string>(["All", "Featured", "Premium"]);
+    specializedTopics.forEach(t => {
+      if (t.tags) t.tags.forEach((tag: string) => {
+        if (tag !== 'Featured' && tag !== 'Premium') tags.add(tag);
+      });
+    });
+    return Array.from(tags);
+  }, [specializedTopics]);
+
   const rounds = [
     {
       type: "Technical",
@@ -200,7 +271,7 @@ export default function InterviewHome() {
       <div className="min-h-screen bg-white dark:bg-gray-900">
         {/* Header section */}
         <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b border-gray-100 dark:border-gray-700">
-          <div className="max-w-7xl mx-auto px-6 py-16">
+          <div className="max-w-7xl mx-auto px-6 py-10">
             <button
               onClick={() => setShowInterviewSelection(false)}
               className="mb-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
@@ -208,7 +279,7 @@ export default function InterviewHome() {
               <ArrowRight className="w-4 h-4 rotate-180" />
               Back to Dashboard
             </button>
-            <div className="text-center space-y-6">
+            <div className="text-center space-y-3">
               <div className="inline-flex items-center px-4 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-full text-sm font-medium mb-4 shadow-lg">
                 <span className="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></span>
                 Interview Process
@@ -228,6 +299,37 @@ export default function InterviewHome() {
           </div>
         </div>
 
+        {/* Global Search and Filter */}
+        <div className="max-w-7xl mx-auto px-6 -mt-8">
+           <div className="bg-white dark:bg-gray-800 p-4 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row gap-4 items-center">
+              <div className="relative flex-1 w-full">
+                 <Search className="absolute left-4 top-1/2 -transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                 <input 
+                    type="text"
+                    placeholder="Search by company or role..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 text-sm font-medium transition-all"
+                 />
+              </div>
+              <div className="flex flex-wrap gap-2 overflow-x-auto pb-1 max-w-full no-scrollbar">
+                 {allTags.map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => setActiveFilter(tag)}
+                      className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-tight transition-all border ${
+                        activeFilter === tag 
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/30' 
+                          : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-gray-700 hover:border-blue-300'
+                      }`}
+                    >
+                      {tag === 'Featured' ? '★ Featured' : tag === 'Premium' ? '◆ Premium' : tag}
+                    </button>
+                 ))}
+              </div>
+           </div>
+        </div>
+
         {/* Cards section */}
         <div className="max-w-7xl mx-auto px-6 py-16">
           <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
@@ -244,6 +346,51 @@ export default function InterviewHome() {
               />
             ))}
           </div>
+
+          {specializedTopics.length > 0 && (
+            <div className="mt-24 space-y-10">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div className="space-y-2">
+                  <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+                    Specialized <span className="text-blue-600">Company Rounds</span>
+                  </h2>
+                  <p className="text-gray-500 dark:text-gray-400 font-medium">
+                    Simulate real-world interviews for specific top-tier companies.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-sm font-bold text-blue-600 dark:text-blue-400">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full animate-ping" />
+                  Live Study Rounds
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
+                {filteredTopics.map((topic) => (
+                  <InterviewCard
+                    key={topic._id}
+                    type={topic.name}
+                    description={topic.description || `Specialized interview round focused on ${topic.name}'s specific hiring patterns and technical standards.`}
+                    icon={topic.logoUrl ? (
+                      <img 
+                        src={`${baseURL}${topic.logoUrl}`} 
+                        alt={topic.name} 
+                        className="w-12 h-12 object-contain" 
+                      />
+                    ) : (
+                      <Building2 className="w-8 h-8" />
+                    )}
+                    tags={topic.tags || []}
+                    isFeatured={topic.tags?.includes('Featured')}
+                    isPremium={topic.tags?.includes('Premium')}
+                    color="bg-gradient-to-br from-indigo-500 to-blue-700"
+                    navigate={(path) => navigate('/interview/start/technical', { state: { company: topic.name } })}
+                    isAtLimit={isAtLimit}
+                    onLimitExceeded={handleLimitExceeded}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Bottom info */}
           <div className="mt-16 text-center">

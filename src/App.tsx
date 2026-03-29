@@ -394,6 +394,7 @@ function App() {
 
 
 
+
                     {/* Catch-all: redirect unknown routes to home */}
                     <Route path="*" element={<Navigate to={routes.home} replace />} />
                   </Routes>
