@@ -57,7 +57,7 @@ export class ResumeController {
       storage,
       limits: { fileSize: 15 * 1024 * 1024 } // 15MB limit for 7+ pages and JD
     }),
-    new TimeoutInterceptor(300000) // 5 minutes timeout for processing
+    new TimeoutInterceptor(600000) // 10 minutes timeout for processing
   )
   async upload(
     @UploadedFiles() files: Express.Multer.File[],
@@ -228,7 +228,7 @@ export class ResumeController {
       storage,
       limits: { fileSize: 10 * 1024 * 1024 }
     }),
-    new TimeoutInterceptor(300000)
+    new TimeoutInterceptor(600000)
   )
   async improveResume(
     @Param('id') id: string,

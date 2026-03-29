@@ -33,7 +33,7 @@ export class AiCvApiService {
 
   constructor(private readonly configService: ConfigService) {
     this.baseUrl = this.configService.get<string>('AI_INTERVIEW_API_BASE_URL', 'http://localhost:8001');
-    this.timeout = this.configService.get<number>('AI_INTERVIEW_API_TIMEOUT', 60000);
+    this.timeout = this.configService.get<number>('AI_INTERVIEW_API_TIMEOUT', 300000);
 
     this.axiosInstance = axios.create({
       baseURL: this.baseUrl,
@@ -167,7 +167,7 @@ export class AiCvApiService {
         headers,
         maxBodyLength: Infinity,
         maxContentLength: Infinity,
-        timeout: 120000,
+        timeout: 300000,
       });
 
       return response.data;
@@ -232,7 +232,7 @@ export class AiCvApiService {
         headers,
         maxBodyLength: Infinity,
         maxContentLength: Infinity,
-        timeout: 120000,
+        timeout: 300000,
       });
 
       return response.data;
