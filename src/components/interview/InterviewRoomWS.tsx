@@ -268,21 +268,8 @@ export default function InterviewRoomWS() {
     const endingTimerRef = useRef<any>(null);
 
     useEffect(() => {
-        if (!isConnected || interviewEnded) {
-            clearTimeout(idleTimerRef.current);
-            clearTimeout(endingTimerRef.current);
-            setShowIdlePrompt(false);
-            return;
-        }
-
-        // ── Suppress idle timer when code editor is open and user is typing ──
-        if (showCodeEditor && isTypingInEditor) {
-            clearTimeout(idleTimerRef.current);
-            clearTimeout(endingTimerRef.current);
-            setShowIdlePrompt(false);
-            return;
-        }
-
+        // ── Idle Timer Logic (Disabled as per user request) ──
+        /*
         const isUserTurn = messages.length > 0 &&
             messages[messages.length - 1].role === 'model' &&
             !isStreamingResponse &&
@@ -309,6 +296,7 @@ export default function InterviewRoomWS() {
             clearTimeout(endingTimerRef.current);
             setShowIdlePrompt(false);
         }
+        */
 
         return () => {
             clearTimeout(idleTimerRef.current);
@@ -704,7 +692,12 @@ export default function InterviewRoomWS() {
                     </div>
 
                     {/* Primary Command: Smaller & Scaled */}
-                    <div className="absolute left-1/2 -translate-x-1/2 -top-10">
+                    <div className="absolute left-1/2 -translate-x-1/2 -top-14 flex flex-col items-center gap-2">
+                        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-full border border-blue-100 dark:border-slate-800 shadow-sm">
+                            <p className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tighter whitespace-nowrap">
+                                {isListening ? "Close mic to submit answer" : "Click to speak"}
+                            </p>
+                        </div>
                         <motion.button
                             whileHover={{ scale: 1.05, y: -2 }}
                             whileTap={{ scale: 0.95 }}
@@ -717,6 +710,9 @@ export default function InterviewRoomWS() {
                             {isListening ? <MicOff className="w-6 h-6 mb-1" /> : <Mic className="w-6 h-6 mb-1" />}
                             <span className="text-[9px] font-black uppercase tracking-widest">{isListening ? 'Stop' : 'Speak'}</span>
                         </motion.button>
+                        <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight animate-pulse">
+                            Audio sync may take a few seconds...
+                        </p>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -742,19 +738,7 @@ export default function InterviewRoomWS() {
 
             {/* Narrative State: Transitioning */}
             <AnimatePresence>
-                <Dialog
-                    isOpen={showIdlePrompt}
-                    onClose={() => setShowIdlePrompt(false)}
-                    onConfirm={() => {
-                        setShowIdlePrompt(false);
-                        handleToggleMic();
-                    }}
-                    variant="warning"
-                    title="Are you still there?"
-                    description="Please respond or interact to keep the interview active. Session will end automatically in a few seconds."
-                    confirmLabel="Yes, I'm here"
-                    cancelLabel="Dismiss"
-                />
+                {/* Idle Prompt Removed as per user request */}
 
                 {isEnding && (
                     <motion.div

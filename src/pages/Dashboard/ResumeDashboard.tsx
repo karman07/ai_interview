@@ -123,7 +123,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import NotificationPrompt from "@/components/common/NotificationPrompt";
 
 const ResumeDashboard: React.FC = () => {
-  const { resumes, uploadResume, isLoading } = useResume();
+  const { resumes, uploadResume, fetchResumes, isLoading } = useResume();
   const { user } = useAuth();
   
   // Initialize Push Notifications specifically for Dashboard entry
@@ -1181,6 +1181,10 @@ const ResumeDashboard: React.FC = () => {
                 onBuilderDataSaved={(data) =>
                   setSelectedResume(prev => prev ? { ...prev, builder_data: data } : prev)
                 }
+                onUpdated={(updated) => {
+                  setSelectedResume(updated);
+                  fetchResumes();
+                }}
               />
             )}
           </DialogContent>

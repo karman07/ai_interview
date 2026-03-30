@@ -28,8 +28,8 @@ export const useInterviewSTT = (sessionId: string, onFinalTranscript: (text: str
     const onFinalTranscriptRef = useRef(onFinalTranscript);
     onFinalTranscriptRef.current = onFinalTranscript;
 
-    const SILENCE_THRESHOLD = 0.015;
-    const SILENCE_DURATION_MS = 2500;
+    const SILENCE_THRESHOLD = 0.008; // More sensitive silence detection
+    const SILENCE_DURATION_MS = 3500; // Longer pause allowed for user thought
 
     const cleanup = useCallback((preserveTranscript = false) => {
         if (animFrameRef.current) {
@@ -131,9 +131,16 @@ export const useInterviewSTT = (sessionId: string, onFinalTranscript: (text: str
                 channelCount: 1,
                 echoCancellation: true,
                 noiseSuppression: true,
+                autoGainControl: true, // Let the browser try to normalize volume too
             }
-        }).then(stream => {
+        }).then(async (stream) => { // Make async
             streamRef.current = stream;
+
+            const audioContext = new AudioContext({ sampleRate: 16000 });
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+            audioContextRef.current = audioContext;
 
             const token = localStorage.getItem('access_token');
             const sttUrl = token
@@ -166,9 +173,6 @@ export const useInterviewSTT = (sessionId: string, onFinalTranscript: (text: str
                 // This catches late-arriving finals that came just before close
             };
 
-            const audioContext = new AudioContext({ sampleRate: 16000 });
-            audioContextRef.current = audioContext;
-
             const source = audioContext.createMediaStreamSource(stream);
 
             const processor = audioContext.createScriptProcessor(4096, 1, 1);
@@ -183,12 +187,16 @@ export const useInterviewSTT = (sessionId: string, onFinalTranscript: (text: str
                 }
             };
 
-            source.connect(processor);
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = 1.6; // Boost mic input by 60% — helps with low-volume captures
+
+            source.connect(gainNode);
+            gainNode.connect(processor);
             processor.connect(audioContext.destination);
 
             const analyser = audioContext.createAnalyser();
             analyser.fftSize = 512;
-            source.connect(analyser);
+            gainNode.connect(analyser); // Monitor post-gain volume
 
             setIsListening(true);
             setTranscript('');

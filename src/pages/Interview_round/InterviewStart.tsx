@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer
 } from "recharts";
+import { baseURL } from "@/api/http";
 
 interface InterviewDetails {
   role: string;
@@ -46,7 +47,7 @@ export default function InterviewStart() {
   } | undefined;
 
   const [details, setDetails] = useState<InterviewDetails>({
-    role: preFilledData?.role || "",
+    role: preFilledData?.role || (preFilledData?.company ? "Software Engineer" : ""),
     company: preFilledData?.company || "",
     jobDescription: preFilledData?.jobDescription || "",
     resumeText: "",
@@ -56,12 +57,14 @@ export default function InterviewStart() {
   const [selectedResumeId, setSelectedResumeId] = useState<string>("");
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [error, setError] = useState<string>("");
-  const [duration, setDuration] = useState<number>(30);
+  const [duration, setDuration] = useState<number>(15);
 
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [universityLimits, setUniversityLimits] = useState<{ resumeLimit: number; interviewLimit: number } | null>(null);
+  const [knowledgeDocId, setKnowledgeDocId] = useState<string | null>(null);
+  const [topicData, setTopicData] = useState<any | null>(null);
 
   useEffect(() => {
     InterviewAnalyticsApi.getAnalytics().then(setAnalytics).catch(console.error);
@@ -79,6 +82,29 @@ export default function InterviewStart() {
       });
     }
   }, [(user as any)?.universityId]);
+
+  useEffect(() => {
+    if (preFilledData?.company) {
+      import('@/api/http').then(({ default: http }) => {
+        http.get(`/knowledge/topics/find-by-name?name=${preFilledData.company}`)
+          .then(res => {
+            if (res.data?._id) {
+              setTopicData(res.data);
+              if (res.data.jdFileId) {
+                setKnowledgeDocId(res.data.jdFileId);
+              } else {
+                http.get(`/knowledge/topics/${res.data._id}/documents`)
+                  .then(resDoc => {
+                    if (resDoc.data?.length > 0) {
+                      setKnowledgeDocId(resDoc.data[0]._id);
+                    }
+                  });
+              }
+            }
+          });
+      });
+    }
+  }, [preFilledData?.company]);
 
   const types = {
     technical: { icon: <Code className="w-6 h-6" />, color: "from-blue-500 to-indigo-600", title: "Technical Round", accent: "blue" },
@@ -264,12 +290,12 @@ export default function InterviewStart() {
       return;
     }
 
-    if (!details.resumeFile && !details.resumeText && !selectedResumeId) {
+    if (!details.resumeFile && !details.resumeText && !selectedResumeId && !preFilledData?.company) {
       setError("Please provide your resume (upload file or choose from history or enter text)");
       return;
     }
 
-    if (!details.jdFile && !details.jobDescription) {
+    if (!details.jdFile && !details.jobDescription && !preFilledData?.company) {
       setError("Please provide job description (upload file or enter text)");
       return;
     }
@@ -310,10 +336,14 @@ export default function InterviewStart() {
       }
 
       const setupData = {
-        resumeText,
-        resumeUrl,
+        resumeText: preFilledData?.company 
+          ? `KNOWLEDGE-BASE ASSESSMENT: No personal resume provided. Context is derived strictly from the Job Description and specialized ${preFilledData.company} Knowledge Base. Evaluate based on technical expertise rather than personal history.`
+          : resumeText,
+        resumeUrl: details.resumeUrl || "",
         resumePath: details.resumePath || "",
-        jdText,
+        jdText: preFilledData?.company 
+          ? `Specialized ${preFilledData.company} Interview Round (Knowledge Base Guided)` 
+          : jdText,
         role: details.role,
         company: details.company,
         roundType: type || 'technical',
@@ -477,7 +507,12 @@ export default function InterviewStart() {
                       placeholder="e.g., Senior Fullstack Developer"
                       value={details.role}
                       onChange={(e) => setDetails({ ...details, role: e.target.value })}
-                      className="h-14 bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800 rounded-2xl px-6 font-semibold focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      disabled={!!preFilledData?.company}
+                      className={`h-14 border-slate-100 dark:border-slate-800 rounded-2xl px-6 font-semibold focus:ring-2 focus:ring-blue-500/20 transition-all ${
+                        !!preFilledData?.company 
+                        ? 'bg-blue-50/50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' 
+                        : 'bg-slate-50 dark:bg-slate-800/50'
+                      }`}
                     />
                   </div>
                   <div className="space-y-2">
@@ -488,7 +523,12 @@ export default function InterviewStart() {
                       placeholder="e.g., Google / Startup / Meta"
                       value={details.company}
                       onChange={(e) => setDetails({ ...details, company: e.target.value })}
-                      className="h-14 bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800 rounded-2xl px-6 font-semibold focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      disabled={!!preFilledData?.company}
+                      className={`h-14 border-slate-100 dark:border-slate-800 rounded-2xl px-6 font-semibold focus:ring-2 focus:ring-blue-500/20 transition-all ${
+                        !!preFilledData?.company 
+                        ? 'bg-blue-50/50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' 
+                        : 'bg-slate-50 dark:bg-slate-800/50'
+                      }`}
                     />
                   </div>
                 </div>
@@ -499,9 +539,30 @@ export default function InterviewStart() {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
                       <FileText className="w-3.5 h-3.5 text-blue-500" /> Resume / CV <span className="text-rose-500">*</span>
                     </label>
-                    <div className="group relative">
-                      {details.resumeFile ? (
-                        <div className="p-6 bg-blue-50/50 dark:bg-blue-900/20 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-3xl flex items-center justify-between">
+                      {preFilledData?.company ? (
+                        <div className="relative p-6 bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/30 rounded-3xl flex flex-col items-center justify-start text-center gap-3 transition-all hover:border-indigo-200 shadow-xl shadow-indigo-500/5 group/resume h-full min-h-[300px]">
+                          {/* Top accent line */}
+                          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-500/0 via-indigo-500/40 to-indigo-500/0 rounded-t-3xl" />
+                          
+                          <div className="relative pt-2">
+                            <div className="absolute -inset-4 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-full blur-2xl group-hover/resume:bg-indigo-500/20 transition-all duration-500 overflow-hidden" />
+                            <div className="relative w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/30 transform group-hover/resume:scale-105 transition-transform duration-500">
+                              <Users className="w-5 h-5 text-white" />
+                            </div>
+                          </div>
+                          
+                          <div className="h-10 flex items-center justify-center mt-1">
+                            <p className="text-sm font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                              Standardized Assessment
+                            </p>
+                          </div>
+                          
+                          <p className="text-[10px] text-slate-500 font-medium leading-relaxed max-w-[200px] mx-auto">
+                            Personal resume is bypassed for this session. The AI will evaluate based on {preFilledData.company}'s core technical requirements.
+                          </p>
+                        </div>
+                      ) : details.resumeFile ? (
+                        <div className="p-6 bg-blue-50/50 dark:bg-blue-900/20 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-3xl flex items-center justify-between min-h-[120px]">
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
                               <FileText className="w-6 h-6 text-white" />
@@ -516,7 +577,7 @@ export default function InterviewStart() {
                           </button>
                         </div>
                       ) : selectedResumeId ? (
-                        <div className="p-6 bg-indigo-50/50 dark:bg-indigo-900/20 border-2 border-dashed border-indigo-200 dark:border-indigo-800 rounded-3xl flex items-center justify-between">
+                        <div className="p-6 bg-indigo-50/50 dark:bg-indigo-900/20 border-2 border-dashed border-indigo-200 dark:border-indigo-800 rounded-3xl flex items-center justify-between min-h-[120px]">
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
                               <CheckCircle className="w-6 h-6 text-white" />
@@ -549,7 +610,6 @@ export default function InterviewStart() {
                           </div>
                         </div>
                       )}
-                    </div>
                   </div>
 
                   {/* JD Section */}
@@ -557,8 +617,60 @@ export default function InterviewStart() {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
                       <Layers className="w-3.5 h-3.5 text-blue-500" /> Job Description <span className="text-rose-500">*</span>
                     </label>
-                    <div className="group relative">
-                      {details.jdFile ? (
+                    <div className="group relative h-full">
+                      {preFilledData?.company ? (
+                        <div className="relative p-6 bg-white dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-3xl flex flex-col items-center justify-start text-center gap-3 transition-all hover:border-blue-200 shadow-xl shadow-blue-500/5 group/jd h-full min-h-[300px]">
+                          {/* Top accent line */}
+                          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500/0 via-blue-500/40 to-blue-500/0 rounded-t-3xl" />
+                          
+                          <div className="relative pt-2">
+                            <div className="absolute -inset-4 bg-blue-500/10 dark:bg-blue-500/20 rounded-full blur-2xl group-hover/jd:bg-blue-500/20 transition-all duration-500" />
+                            {topicData?.logoUrl ? (
+                              <div className="relative w-14 h-14 bg-white dark:bg-slate-900 rounded-2xl p-2.5 shadow-xl shadow-blue-500/10 border border-blue-50 dark:border-slate-800 flex items-center justify-center transform group-hover/jd:scale-105 transition-transform duration-500">
+                                <img 
+                                  src={`${baseURL}${topicData.logoUrl}`} 
+                                  alt={preFilledData.company} 
+                                  className="w-full h-full object-contain" 
+                                />
+                              </div>
+                            ) : (
+                              <div className="relative w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/30 transform group-hover/jd:scale-105 transition-transform duration-500">
+                                <Zap className="w-8 h-8 text-white" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="h-10 flex items-center justify-center mt-1">
+                            <p className="text-base font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                              {preFilledData.company} Round
+                            </p>
+                          </div>
+                          
+                          {topicData?.jdFileName && (
+                            <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                              <FileText className="w-3 h-3 text-blue-500" />
+                              <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 truncate max-w-[120px]">{topicData.jdFileName}</span>
+                            </div>
+                          )}
+
+                          <p className="text-[10px] text-slate-500 font-medium leading-relaxed max-w-[200px] mx-auto">
+                            Simulating the precise technical hiring patterns of {preFilledData.company}.
+                          </p>
+
+                          <div className="pt-1 flex flex-col gap-2 w-full mt-auto">
+                            {knowledgeDocId && (
+                              <Button 
+                                variant="outline" 
+                                className="rounded-xl border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold transition-all gap-2 px-3 py-1.5 h-9 text-[9px] uppercase tracking-widest"
+                                onClick={() => window.open(`${baseURL}/knowledge/documents/${knowledgeDocId}/view`, '_blank')}
+                              >
+                                <Eye className="w-3 h-3" />
+                                Review Source
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ) : details.jdFile ? (
                         <div className="p-6 bg-blue-50/50 dark:bg-blue-900/20 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-3xl flex items-center justify-between">
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">

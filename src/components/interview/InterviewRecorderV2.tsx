@@ -64,9 +64,14 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
     const audioContext = new AudioContext();
     const analyser = audioContext.createAnalyser();
     const microphone = audioContext.createMediaStreamSource(streamRef.current);
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    
+    // Software Gain: Increase input sensitivity
+    const gainNode = audioContext.createGain();
+    gainNode.gain.value = 1.6;
+    microphone.connect(gainNode);
+    gainNode.connect(analyser);
 
-    microphone.connect(analyser);
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
     analyser.fftSize = 512;
     audioContextRef.current = audioContext;
     analyserRef.current = analyser;
@@ -77,10 +82,10 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
       analyserRef.current.getByteFrequencyData(dataArray);
       const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
 
-      if (average < 10) {
+      if (average < 6) {
         setSilenceTimer(prev => {
           const newVal = prev + 1;
-          if (newVal >= 3) {
+          if (newVal >= 4) {
             stopRecordingAndSubmit();
           }
           return newVal;
@@ -217,7 +222,7 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
 
         {isRecording && silenceTimer > 0 && (
           <div className="absolute top-6 right-6 bg-yellow-500 text-white px-4 py-2 rounded-full shadow-lg">
-            <span className="text-sm font-medium">Auto-submit in {3 - silenceTimer}s</span>
+            <span className="text-sm font-medium">Auto-submit in {4 - silenceTimer}s</span>
           </div>
         )}
 
@@ -256,7 +261,7 @@ const InterviewRecorderV2: React.FC<InterviewRecorderProps> = ({ sessionId, onSu
 
       {isRecording && (
         <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-          💡 Your answer will auto-submit after 3 seconds of silence
+          💡 Your answer will auto-submit after 4 seconds of silence
         </p>
       )}
     </div>

@@ -35,12 +35,13 @@ interface ResumeDetailsProps {
   resume: any;
   autoOpenBuilder?: boolean;
   onBuilderDataSaved?: (builderData: any) => void;
+  onUpdated?: (updatedResume: any) => void;
 }
 
-const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, autoOpenBuilder, onBuilderDataSaved }) => {
+const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, autoOpenBuilder, onBuilderDataSaved, onUpdated }) => {
   const { setShowPricing } = usePricing();
   const { addNotification } = useNotification();
-  const { user } = useAuth();
+  const { user, refreshMe } = useAuth();
 
   // Only premium subscribers and university students can generate enhancements
   const canEnhance = user?.subscriptionStatus === 'active' || user?.role === 'student';
@@ -380,7 +381,8 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, autoOpenBuilder, 
                           setOpenJDDialog(false);
                           setJdFile(null);
                           setJdText('');
-                          window.location.reload();
+                          if (onUpdated) onUpdated(result.resume);
+                          await refreshMe();
                         } catch (error: any) {
                           const errorMsg = error?.response?.data?.message || error?.message || '';
 

@@ -37,7 +37,6 @@ const routes = {
   studentAssignments: '/student/assignments',
   studentClasses: '/student/classes',
   studentClassDetail: (id: string) => `/student/classes/${id}`,
-  adminUsers: '/admin/users',
 };
 
 
