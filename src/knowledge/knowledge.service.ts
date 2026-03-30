@@ -47,7 +47,7 @@ export class KnowledgeService {
   }
 
   async findByName(name: string) {
-    return this.topicModel.findOne({ name: new RegExp(`^${name}$`, 'i') }).exec();
+    return this.topicModel.findOne({ name: new RegExp(name, 'i') }).exec();
   }
 
   async deleteTopic(id: string) {
