@@ -52,6 +52,12 @@ export class AIUsage {
 
     @Prop({ default: 'unknown' })
     endReason: string;
+
+    @Prop({ default: false, index: true })
+    isVertex: boolean;
+
+    @Prop({ default: 0 })
+    ragTokens: number;
 }
 
 export const AIUsageSchema = SchemaFactory.createForClass(AIUsage);
