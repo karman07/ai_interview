@@ -57,7 +57,7 @@ export default function InterviewStart() {
   const [selectedResumeId, setSelectedResumeId] = useState<string>("");
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [error, setError] = useState<string>("");
-  const [duration, setDuration] = useState<number>(30);
+  const [duration, setDuration] = useState<number>(15);
 
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
@@ -337,12 +337,12 @@ export default function InterviewStart() {
 
       const setupData = {
         resumeText: preFilledData?.company 
-          ? `Standard Corporate Study Participant Enrolled for ${preFilledData.company} specialized assessment.` 
+          ? `KNOWLEDGE-BASE ASSESSMENT: No personal resume provided. Context is derived strictly from the Job Description and specialized ${preFilledData.company} Knowledge Base. Evaluate based on technical expertise rather than personal history.`
           : resumeText,
         resumeUrl: details.resumeUrl || "",
         resumePath: details.resumePath || "",
         jdText: preFilledData?.company 
-          ? `Specialized ${preFilledData.company} Interview Context (Powered by RAG)` 
+          ? `Specialized ${preFilledData.company} Interview Round (Knowledge Base Guided)` 
           : jdText,
         role: details.role,
         company: details.company,
@@ -540,20 +540,29 @@ export default function InterviewStart() {
                       <FileText className="w-3.5 h-3.5 text-blue-500" /> Resume / CV <span className="text-rose-500">*</span>
                     </label>
                       {preFilledData?.company ? (
-                        <div className="p-8 bg-indigo-50/50 dark:bg-indigo-900/20 border-2 border-dashed border-indigo-200 dark:border-indigo-800 rounded-3xl flex flex-col items-center justify-center text-center gap-3">
-                          <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                            <Users className="w-6 h-6 text-white" />
+                        <div className="relative p-6 bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/30 rounded-3xl flex flex-col items-center justify-start text-center gap-3 transition-all hover:border-indigo-200 shadow-xl shadow-indigo-500/5 group/resume h-full min-h-[300px]">
+                          {/* Top accent line */}
+                          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-500/0 via-indigo-500/40 to-indigo-500/0 rounded-t-3xl" />
+                          
+                          <div className="relative pt-2">
+                            <div className="absolute -inset-4 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-full blur-2xl group-hover/resume:bg-indigo-500/20 transition-all duration-500 overflow-hidden" />
+                            <div className="relative w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/30 transform group-hover/resume:scale-105 transition-transform duration-500">
+                              <Users className="w-5 h-5 text-white" />
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-black text-slate-900 dark:text-white">General Assessment Enrolled</p>
-                            <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mt-1">Standard Study Path Active</p>
+                          
+                          <div className="h-10 flex items-center justify-center mt-1">
+                            <p className="text-sm font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                              Standardized Assessment
+                            </p>
                           </div>
-                          <p className="text-[11px] text-slate-500 font-medium px-4">
-                            You are participating in a standardized {preFilledData.company} knowledge assessment. No personal resume is required for this study-based simulation.
+                          
+                          <p className="text-[10px] text-slate-500 font-medium leading-relaxed max-w-[200px] mx-auto">
+                            Personal resume is bypassed for this session. The AI will evaluate based on {preFilledData.company}'s core technical requirements.
                           </p>
                         </div>
                       ) : details.resumeFile ? (
-                        <div className="p-6 bg-blue-50/50 dark:bg-blue-900/20 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-3xl flex items-center justify-between">
+                        <div className="p-6 bg-blue-50/50 dark:bg-blue-900/20 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-3xl flex items-center justify-between min-h-[120px]">
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
                               <FileText className="w-6 h-6 text-white" />
@@ -568,7 +577,7 @@ export default function InterviewStart() {
                           </button>
                         </div>
                       ) : selectedResumeId ? (
-                        <div className="p-6 bg-indigo-50/50 dark:bg-indigo-900/20 border-2 border-dashed border-indigo-200 dark:border-indigo-800 rounded-3xl flex items-center justify-between">
+                        <div className="p-6 bg-indigo-50/50 dark:bg-indigo-900/20 border-2 border-dashed border-indigo-200 dark:border-indigo-800 rounded-3xl flex items-center justify-between min-h-[120px]">
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
                               <CheckCircle className="w-6 h-6 text-white" />
@@ -608,62 +617,55 @@ export default function InterviewStart() {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
                       <Layers className="w-3.5 h-3.5 text-blue-500" /> Job Description <span className="text-rose-500">*</span>
                     </label>
-                    <div className="group relative">
+                    <div className="group relative h-full">
                       {preFilledData?.company ? (
-                        <div className="relative p-10 bg-white dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-3xl flex flex-col items-center justify-center text-center gap-4 transition-all hover:border-blue-200 shadow-xl shadow-blue-500/5 group/jd h-full">
+                        <div className="relative p-6 bg-white dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-3xl flex flex-col items-center justify-start text-center gap-3 transition-all hover:border-blue-200 shadow-xl shadow-blue-500/5 group/jd h-full min-h-[300px]">
                           {/* Top accent line */}
                           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500/0 via-blue-500/40 to-blue-500/0 rounded-t-3xl" />
                           
-                          {topicData?.logoUrl ? (
-                            <div className="relative">
-                              <div className="absolute -inset-4 bg-blue-500/10 dark:bg-blue-500/20 rounded-full blur-2xl group-hover/jd:bg-blue-500/20 transition-all duration-500" />
-                              <div className="relative w-24 h-24 bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-2xl shadow-blue-500/10 border border-blue-50 dark:border-slate-800 flex items-center justify-center transform group-hover/jd:scale-105 transition-transform duration-500">
+                          <div className="relative pt-2">
+                            <div className="absolute -inset-4 bg-blue-500/10 dark:bg-blue-500/20 rounded-full blur-2xl group-hover/jd:bg-blue-500/20 transition-all duration-500" />
+                            {topicData?.logoUrl ? (
+                              <div className="relative w-14 h-14 bg-white dark:bg-slate-900 rounded-2xl p-2.5 shadow-xl shadow-blue-500/10 border border-blue-50 dark:border-slate-800 flex items-center justify-center transform group-hover/jd:scale-105 transition-transform duration-500">
                                 <img 
                                   src={`${baseURL}${topicData.logoUrl}`} 
                                   alt={preFilledData.company} 
                                   className="w-full h-full object-contain" 
                                 />
                               </div>
-                            </div>
-                          ) : (
-                            <div className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-500/30">
-                              <Zap className="w-10 h-10 text-white" />
-                            </div>
-                          )}
+                            ) : (
+                              <div className="relative w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/30 transform group-hover/jd:scale-105 transition-transform duration-500">
+                                <Zap className="w-8 h-8 text-white" />
+                              </div>
+                            )}
+                          </div>
                           
-                          <div className="space-y-2 mt-2">
-                            <p className="text-xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-                              Official {preFilledData.company} Technical<br />Interview Standard
+                          <div className="h-10 flex items-center justify-center mt-1">
+                            <p className="text-base font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                              {preFilledData.company} Round
                             </p>
-                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-full border border-blue-100 dark:border-blue-800">
-                              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                              <p className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">Authorized Simulation Engine</p>
-                            </div>
                           </div>
                           
                           {topicData?.jdFileName && (
-                            <div className="mt-2 text-center">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Benchmarked Against:</p>
-                              <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 inline-flex items-center gap-2">
-                                <FileText className="w-3.5 h-3.5 text-blue-500" />
-                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{topicData.jdFileName}</span>
-                              </div>
+                            <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                              <FileText className="w-3 h-3 text-blue-500" />
+                              <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 truncate max-w-[120px]">{topicData.jdFileName}</span>
                             </div>
                           )}
 
-                          <div className="pt-2 flex flex-col gap-3 w-full">
-                            <p className="text-[11px] text-slate-500 font-medium leading-relaxed max-w-[280px] mx-auto">
-                              This session uses proprietary knowledge grounding to match the specific technical bar of {preFilledData.company}.
-                            </p>
-                            
+                          <p className="text-[10px] text-slate-500 font-medium leading-relaxed max-w-[200px] mx-auto">
+                            Simulating the precise technical hiring patterns of {preFilledData.company}.
+                          </p>
+
+                          <div className="pt-1 flex flex-col gap-2 w-full mt-auto">
                             {knowledgeDocId && (
                               <Button 
                                 variant="outline" 
-                                className="rounded-xl border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold transition-all gap-2 px-4 py-2.5 text-[10px] uppercase tracking-widest mt-2"
+                                className="rounded-xl border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold transition-all gap-2 px-3 py-1.5 h-9 text-[9px] uppercase tracking-widest"
                                 onClick={() => window.open(`${baseURL}/knowledge/documents/${knowledgeDocId}/view`, '_blank')}
                               >
-                                <Eye className="w-3.5 h-3.5" />
-                                Review Source Reference
+                                <Eye className="w-3 h-3" />
+                                Review Source
                               </Button>
                             )}
                           </div>

@@ -27,6 +27,7 @@ type InterviewCardProps = {
   tags?: string[];
   isFeatured?: boolean;
   isPremium?: boolean;
+  isEndToEnd?: boolean;
 };
 
 function InterviewCard({ 
@@ -39,7 +40,8 @@ function InterviewCard({
   onLimitExceeded, 
   tags, 
   isFeatured, 
-  isPremium 
+  isPremium,
+  isEndToEnd
 }: InterviewCardProps) {
   const getBGColor = (gradientClass: string) => {
     if (gradientClass.includes('indigo')) return 'bg-indigo-50 dark:bg-indigo-900/20';
@@ -93,16 +95,12 @@ function InterviewCard({
             </div>
           )}
 
-          {tags && tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-2">
-              {tags.filter(t => t !== 'Featured' && t !== 'Premium').map((tag, idx) => (
-                <span 
-                  key={idx} 
-                  className="px-2.5 py-1 bg-gray-50 dark:bg-gray-700/50 text-[9px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 rounded-lg border border-gray-100 dark:border-gray-600"
-                >
-                  {tag}
-                </span>
-              ))}
+          {isEndToEnd && (
+            <div className="absolute top-4 right-4 animate-in fade-in slide-in-from-right-2 duration-500">
+               <span className="px-2.5 py-1 bg-green-500 text-white text-[8px] font-black uppercase tracking-[0.15em] rounded-full shadow-lg border border-green-400 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                End-To-End
+               </span>
             </div>
           )}
         </div>
@@ -239,6 +237,7 @@ export default function InterviewHome() {
       icon: <Code className="w-8 h-8" />,
       color: "bg-gradient-to-br from-blue-500 to-blue-600",
       key: "technical",
+      isEndToEnd: true,
     },
     {
       type: "Behavioral",
@@ -247,6 +246,7 @@ export default function InterviewHome() {
       icon: <Users className="w-8 h-8" />,
       color: "bg-gradient-to-br from-indigo-500 to-blue-600",
       key: "behavioral",
+      isEndToEnd: true,
     },
     {
       type: "Problem",
@@ -255,6 +255,7 @@ export default function InterviewHome() {
       icon: <Lightbulb className="w-8 h-8" />,
       color: "bg-gradient-to-br from-blue-500 to-indigo-600",
       key: "problemSolving",
+      isEndToEnd: true,
     },
     {
       type: "HR",
@@ -263,8 +264,23 @@ export default function InterviewHome() {
       icon: <MessageCircle className="w-8 h-8" />,
       color: "bg-gradient-to-br from-indigo-500 to-blue-600",
       key: "hr",
+      isEndToEnd: true,
     },
   ];
+
+  const filteredRounds = useMemo(() => {
+    return rounds.filter(round => {
+      const matchesSearch = round.type.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          round.description.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // If any tag filter (besides "All") or specialized search is active, we mostly hide generic rounds 
+      // unless they explicitly match the search term.
+      if (activeFilter !== "All") {
+        return matchesSearch && searchQuery.length > 0;
+      }
+      return matchesSearch;
+    });
+  }, [rounds, searchQuery, activeFilter]);
 
   if (showInterviewSelection) {
     return (
@@ -312,28 +328,38 @@ export default function InterviewHome() {
                     className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 text-sm font-medium transition-all"
                  />
               </div>
-              <div className="flex flex-wrap gap-2 overflow-x-auto pb-1 max-w-full no-scrollbar">
-                 {allTags.map(tag => (
-                    <button
-                      key={tag}
-                      onClick={() => setActiveFilter(tag)}
-                      className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-tight transition-all border ${
-                        activeFilter === tag 
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/30' 
-                          : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-gray-700 hover:border-blue-300'
-                      }`}
-                    >
-                      {tag === 'Featured' ? '★ Featured' : tag === 'Premium' ? '◆ Premium' : tag}
-                    </button>
-                 ))}
+              <div className="flex flex-wrap gap-2 overflow-x-auto pb-1 max-w-full no-scrollbar px-2">
+                 {allTags.map(tag => {
+                    const isActive = activeFilter === tag;
+                    const isPremium = tag === "Premium";
+                    const isFeatured = tag === "Featured";
+                    
+                    let activeStyles = 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/30 ring-2 ring-blue-500/20';
+                    if (isPremium) activeStyles = 'bg-purple-600 text-white border-purple-600 shadow-lg shadow-purple-500/30 ring-2 ring-purple-500/20';
+                    if (isFeatured) activeStyles = 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/30 ring-2 ring-amber-500/20';
+
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => setActiveFilter(tag)}
+                        className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 border h-10 flex items-center justify-center whitespace-nowrap ${
+                          isActive 
+                            ? activeStyles
+                            : 'bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-100 dark:border-gray-700 hover:border-blue-300 hover:text-blue-500 shadow-sm'
+                        }`}
+                      >
+                        {isFeatured ? '★ Featured' : isPremium ? '◆ Premium' : tag}
+                      </button>
+                    );
+                 })}
               </div>
            </div>
         </div>
 
         {/* Cards section */}
         <div className="max-w-7xl mx-auto px-6 py-16">
-          <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
-            {rounds.map((round) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
+            {filteredRounds.map((round) => (
               <InterviewCard
                 key={round.type}
                 type={round.type}
@@ -343,11 +369,12 @@ export default function InterviewHome() {
                 navigate={navigate}
                 isAtLimit={isAtLimit}
                 onLimitExceeded={handleLimitExceeded}
+                isEndToEnd={round.isEndToEnd}
               />
             ))}
           </div>
 
-          {specializedTopics.length > 0 && (
+          {filteredTopics.length > 0 && (
             <div className="mt-24 space-y-10">
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div className="space-y-2">
@@ -389,6 +416,22 @@ export default function InterviewHome() {
                   />
                 ))}
               </div>
+            </div>
+          )}
+
+          {filteredRounds.length === 0 && filteredTopics.length === 0 && (
+            <div className="mt-20 text-center py-20 bg-gray-50/50 dark:bg-gray-800/30 rounded-[3rem] border border-dashed border-gray-200 dark:border-gray-700">
+              <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No matching rounds found</h3>
+              <p className="text-gray-500 dark:text-gray-400">Try adjusting your search or filters to find what you're looking for.</p>
+              <button 
+                onClick={() => { setSearchQuery(""); setActiveFilter("All"); }}
+                className="mt-6 text-blue-600 font-bold hover:underline"
+              >
+                Clear all filters
+              </button>
             </div>
           )}
 
