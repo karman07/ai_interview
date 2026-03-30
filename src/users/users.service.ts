@@ -42,8 +42,8 @@ export class UsersService {
       passwordHash,
       subscriptionPlan: freePlan?._id,
       subscriptionStatus: 'free',
-      interviewLimit: limits.interviewLimit,
-      resumeLimit: limits.resumeLimit,
+      interviewLimit: dto.interviewLimit ?? limits.interviewLimit,
+      resumeLimit: dto.resumeLimit ?? limits.resumeLimit,
     });
     return created.save();
   }
@@ -57,8 +57,8 @@ export class UsersService {
       isEmailVerified: true,
       subscriptionPlan: freePlan?._id,
       subscriptionStatus: 'free',
-      interviewLimit: limits.interviewLimit,
-      resumeLimit: limits.resumeLimit,
+      interviewLimit: (data as any).interviewLimit ?? limits.interviewLimit,
+      resumeLimit: (data as any).resumeLimit ?? limits.resumeLimit,
     });
     return created.save();
   }

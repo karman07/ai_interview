@@ -146,6 +146,7 @@ export class ResultsService {
       improvement_plan: data.improvement_plan,
       verdict: data.verdict,
       tokenUsage,
+      endReason: data.end_reason || (tokenUsage ? (await this.aiUsageModel.findOne({ sessionId: data.session_id }).exec())?.endReason : 'unknown'),
       rawOutput: JSON.stringify(data),
     });
 

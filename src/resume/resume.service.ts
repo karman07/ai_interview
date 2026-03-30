@@ -7,8 +7,9 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Resume, ResumeDocument } from './resume.schema';
-import { User, UserDocument } from '../users/schemas/user.schema';
+import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
 import { AiCvApiService } from './ai-cv-api.service';
+import { UniversitiesService } from '../universities/universities.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PDFParse } from 'pdf-parse';
@@ -23,6 +24,7 @@ export class ResumeService {
     @InjectModel(Resume.name) private resumeModel: Model<ResumeDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private readonly aiCvApiService: AiCvApiService,
+    private readonly universitiesService: UniversitiesService,
   ) {
     this.appBaseUrl = process.env.APP_BASE_URL || process.env.APP_URL || 'http://api.aiforjob.ai';
   }
@@ -112,7 +114,21 @@ export class ResumeService {
       // ── Regular / Free plan: read limit stamped at purchase time ──────────
       const currentUsage = user?.resumeCount ?? 0;
       // user.resumeLimit is set when plan is purchased; default 5 for free tier
-      const limit = user?.resumeLimit ?? 5;
+      let limit = user?.resumeLimit ?? 5;
+
+      // ✅ Override for Students: Use University limits if linked
+      if (user?.role === UserRole.STUDENT && user?.universityId) {
+        try {
+          const uni = await this.universitiesService.findById(user.universityId);
+          if (uni) {
+            limit = uni.resumeLimit;
+            // For students, we always allow them to use their uni limits
+          }
+        } catch (err) {
+          this.logger.error(`Failed to fetch university for student limits: ${err.message}`);
+        }
+      }
+
       if (currentUsage >= limit) {
         throw new BadRequestException(
           `You have reached your monthly limit of ${limit} resume${limit !== 1 ? 's' : ''}. ` +

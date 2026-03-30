@@ -144,6 +144,9 @@ export class Result {
   @Prop({ type: String })
   rawOutput: string;
 
+  @Prop({ type: String, default: 'unknown' })
+  endReason: string;
+
   @Prop({
     type: {
       experienceRating: { type: Number, min: 1, max: 5 },

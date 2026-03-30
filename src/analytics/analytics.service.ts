@@ -848,6 +848,7 @@ export class AnalyticsService {
       inputCostUsd: (data as any).inputCostUsd ?? 0,
       outputCostUsd: (data as any).outputCostUsd ?? 0,
       timestamp: data.timestamp || new Date(),
+      endReason: (data as any).endReason || '',
     };
 
     // Only set userId when it's a real ObjectId (skip anonymous)

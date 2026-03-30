@@ -17,6 +17,8 @@ import { Model, Types } from 'mongoose';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { Result, ResultDocument } from '../results/schemas/result.schema';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { UniversitiesService } from '../universities/universities.service';
+import { UserRole } from '../users/schemas/user.schema';
 
 interface SessionCreate {
   role: string;
@@ -41,6 +43,7 @@ export class SessionsController {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Result.name) private resultModel: Model<ResultDocument>,
+    private readonly universitiesService: UniversitiesService,
   ) { }
 
   @Get()
@@ -76,7 +79,21 @@ export class SessionsController {
       // ── Regular / Free plan: read limit stamped at purchase time ──────────
       const currentUsage = user?.interviewCount ?? 0;
       // user.interviewLimit is stamped at purchase; default 3 for free tier
-      const limit = user?.interviewLimit ?? 3;
+      let limit = user?.interviewLimit ?? 3;
+
+      // ✅ Override for Students: Use University limits if linked
+      if (user?.role === UserRole.STUDENT && user?.universityId) {
+        try {
+          const uni = await this.universitiesService.findById(user.universityId);
+          if (uni) {
+            limit = uni.interviewLimit;
+            this.logger.log(`🎓 Applying university limit for student: ${limit}`);
+          }
+        } catch (err) {
+          this.logger.error(`Failed to fetch university ${user.universityId}: ${err.message}`);
+        }
+      }
+
       if (currentUsage >= limit) {
         this.logger.warn(`🚫 User ${userId} reached monthly interview limit of ${limit} (current: ${currentUsage})`);
         throw new BadRequestException(
