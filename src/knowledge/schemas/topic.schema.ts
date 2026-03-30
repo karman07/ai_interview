@@ -23,6 +23,9 @@ export class KnowledgeTopic extends MongooseDocument {
 
   @Prop()
   jdFileName: string;
+
+  @Prop({ default: false })
+  isPublished: boolean;
 }
 
 export const KnowledgeTopicSchema = SchemaFactory.createForClass(KnowledgeTopic);

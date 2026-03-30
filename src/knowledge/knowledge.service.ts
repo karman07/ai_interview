@@ -42,12 +42,15 @@ export class KnowledgeService {
     return this.topicModel.findByIdAndUpdate(id, data, { new: true });
   }
 
-  async getTopics() {
-    return this.topicModel.find().exec();
+  async getTopics(onlyPublished: boolean = false) {
+    const filter = onlyPublished ? { isPublished: true } : {};
+    return this.topicModel.find(filter).exec();
   }
 
-  async findByName(name: string) {
-    return this.topicModel.findOne({ name: new RegExp(name, 'i') }).exec();
+  async findByName(name: string, onlyPublished: boolean = false) {
+    const filter: any = { name: new RegExp(name, 'i') };
+    if (onlyPublished) filter.isPublished = true;
+    return this.topicModel.findOne(filter).exec();
   }
 
   async deleteTopic(id: string) {

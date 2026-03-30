@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Param, UploadedFile, UseInterceptors, Delete, Query, UseGuards, Res, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UploadedFile, UseInterceptors, Delete, Query, UseGuards, Res, Patch, Req } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { KnowledgeService } from './knowledge.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { UserRole } from '../users/schemas/user.schema';
+import { Request } from 'express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import * as fs from 'fs';
@@ -12,13 +14,18 @@ export class KnowledgeController {
 
   @Get('topics')
   @UseGuards(JwtAuthGuard)
-  async getTopics() {
-    return this.knowledgeService.getTopics();
+  async getTopics(@Req() req: Request) {
+    const user = (req as any).user;
+    // Admins see all topics, others only published ones
+    const onlyPublished = user?.role !== UserRole.ADMIN;
+    return this.knowledgeService.getTopics(onlyPublished);
   }
 
   @Get('topics/find-by-name')
-  async findByName(@Query('name') name: string) {
-    return this.knowledgeService.findByName(name);
+  async findByName(@Query('name') name: string, @Query('all') all: string) {
+    // Only published by default, unless explicitly requested for internal use (AI service lookup)
+    const onlyPublished = all !== 'true';
+    return this.knowledgeService.findByName(name, onlyPublished);
   }
 
   @Post('topics')
