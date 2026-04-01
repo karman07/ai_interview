@@ -97,8 +97,14 @@ export class KnowledgeService {
   }
 
   private async indexDocument(docId: string) {
-    const doc = await this.documentModel.findById(docId);
-    if (!doc) return;
+    // Small delay to ensure DB propagation (helps with DocumentNotFoundError on fast clusters)
+    await new Promise(r => setTimeout(r, 500));
+
+    let doc = await this.documentModel.findById(docId);
+    if (!doc) {
+      this.logger.warn(`IndexDocument: Document ${docId} not found in DB. It might have been deleted before indexing started.`);
+      return;
+    }
 
     try {
       const formData = new FormData();
@@ -115,16 +121,27 @@ export class KnowledgeService {
         headers: { ...formData.getHeaders() },
       });
 
-      doc.status = 'indexed';
-      doc.chunkCount = response.data.chunks || 0;
-      await doc.save();
-      
-      this.logger.log(`Successfully indexed document ${doc.originalName} for topic ${doc.topicId}`);
+      // Re-fetch to satisfy Mongoose's internal versioning/concurrency if needed
+      const latestDoc = await this.documentModel.findById(docId);
+      if (latestDoc) {
+        latestDoc.status = 'indexed';
+        latestDoc.chunkCount = response.data.chunks || 0;
+        await latestDoc.save();
+        this.logger.log(`Successfully indexed document ${latestDoc.originalName} for topic ${latestDoc.topicId}`);
+      }
     } catch (error) {
-      this.logger.error(`Failed to index document ${doc.originalName}: ${error.message}`);
-      doc.status = 'error';
-      doc.errorDetails = error.response?.data?.detail || error.message;
-      await doc.save();
+      this.logger.error(`Failed to index document ${docId}: ${error.message}`);
+      
+      try {
+        const latestDoc = await this.documentModel.findById(docId);
+        if (latestDoc) {
+          latestDoc.status = 'error';
+          latestDoc.errorDetails = error.response?.data?.detail || error.message;
+          await latestDoc.save();
+        }
+      } catch (saveError) {
+        this.logger.error(`Could not save error status for ${docId}: ${saveError.message}`);
+      }
     }
   }
 
