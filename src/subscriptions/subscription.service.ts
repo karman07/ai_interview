@@ -385,11 +385,27 @@ export class SubscriptionService implements OnModuleInit {
   // ── PAYG Admin ──────────────────────────────────────────────────────
 
   async getPaygConfig(country: string = 'IN') {
+    const normalizedCountry = country.toUpperCase();
     const plan = await this.subscriptionModel.findOne({
       type: SubscriptionType.PAY_AS_YOU_GO,
-      country: country.toUpperCase(),
+      country: normalizedCountry,
     }).exec();
-    if (!plan) return null;
+    if (!plan) {
+      const isUS = normalizedCountry === 'US';
+      return {
+        id: `default-payg-${normalizedCountry.toLowerCase()}`,
+        country: normalizedCountry,
+        status: SubscriptionStatus.ACTIVE,
+        pricePerInterviewPaisa: isUS ? 99 : 4900,
+        pricePerResumePaisa: isUS ? 49 : 2900,
+        minBudgetPaisa: isUS ? 199 : 9900,
+        maxBudgetPaisa: isUS ? 9999 : 500000,
+        pricePerInterviewRupees: isUS ? 0.99 : 49,
+        pricePerResumeRupees: isUS ? 0.49 : 29,
+        minBudgetRupees: isUS ? 1.99 : 99,
+        maxBudgetRupees: isUS ? 99.99 : 5000,
+      };
+    }
     return {
       id: plan._id.toString(),
       country: plan.country,
@@ -414,6 +430,8 @@ export class SubscriptionService implements OnModuleInit {
       maxBudgetRupees?: number;
     },
   ) {
+    const normalizedCountry = country.toUpperCase();
+    const isUS = normalizedCountry === 'US';
     const update: Record<string, number> = {};
     if (data.pricePerInterviewRupees !== undefined) update['paygPricePerInterview'] = Math.round(data.pricePerInterviewRupees * 100);
     if (data.pricePerResumeRupees    !== undefined) update['paygPricePerResume']    = Math.round(data.pricePerResumeRupees    * 100);
@@ -421,14 +439,27 @@ export class SubscriptionService implements OnModuleInit {
     if (data.maxBudgetRupees         !== undefined) update['paygMaxBudget']         = Math.round(data.maxBudgetRupees         * 100);
 
     const updated = await this.subscriptionModel.findOneAndUpdate(
-      { type: SubscriptionType.PAY_AS_YOU_GO, country: country.toUpperCase() },
-      update,
-      { new: true },
+      { type: SubscriptionType.PAY_AS_YOU_GO, country: normalizedCountry },
+      {
+        $set: update,
+        $setOnInsert: {
+          name: `payg_${normalizedCountry.toLowerCase()}`,
+          displayName: 'Pay As You Go',
+          description: 'Set your own monthly budget. Only pay for what you use.',
+          price: 0,
+          currency: isUS ? 'USD' : 'INR',
+          type: SubscriptionType.PAY_AS_YOU_GO,
+          status: SubscriptionStatus.ACTIVE,
+          country: normalizedCountry,
+          order: 10,
+        },
+      },
+      { new: true, upsert: true },
     ).exec();
 
-    if (!updated) throw new Error('PAYG plan not found for country: ' + country);
-    this.logger.log(`PAYG config updated for ${country}: ${JSON.stringify(update)}`);
-    return this.getPaygConfig(country);
+    if (!updated) throw new Error('PAYG plan not found for country: ' + normalizedCountry);
+    this.logger.log(`PAYG config updated for ${normalizedCountry}: ${JSON.stringify(update)}`);
+    return this.getPaygConfig(normalizedCountry);
   }
 
   async seedCountryPlans(countryCode: string) {

@@ -280,9 +280,15 @@ export class PaymentService {
    */
   async createPaygSubscription(userId: string, monthlyBudgetRupees: number, couponCode?: string): Promise<any> {
     try {
+      // Get user to determine country-specific PAYG pricing
+      const user = await this.usersService.findById(userId);
+      if (!user) throw new NotFoundException('User not found');
+      
+      const userCountry = user.country?.toUpperCase() || 'IN';
+      
       // 1. Validate pricing & budget bounds
-      const paygTemplate: any = await this.subscriptionService.findOneByAnyId('payg_in')
-        ?? await this.subscriptionService.findOneByAnyId('payg_us');
+      const paygTemplate: any = await this.subscriptionService.findOneByAnyId(`payg_${userCountry.toLowerCase()}`)
+        ?? await this.subscriptionService.getPaygConfig(userCountry);
       if (!paygTemplate) throw new BadRequestException('PAYG plan template not found. Contact support.');
 
       const minBudget = (paygTemplate.paygMinBudget ?? 9900) / 100;
