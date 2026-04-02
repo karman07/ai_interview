@@ -154,7 +154,8 @@ export default function InterviewStart() {
   }, [user, universityLimits]);
 
   const isPayg = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go';
-  const totalInterviewsTaken = isPayg ? (user?.paygInterviewsUsed ?? 0) : Math.max(user?.interviewCount ?? 0, analytics?.overall?.monthlyInterviews || 0, analytics?.overall?.totalInterviews || 0);
+  // Use the user profile counters as source of truth for limit enforcement/usage UI.
+  const totalInterviewsTaken = isPayg ? (user?.paygInterviewsUsed ?? 0) : (user?.interviewCount ?? 0);
   const isAtLimit = totalInterviewsTaken >= interviewLimit;
   
   const totalResumes = isPayg ? (user?.paygResumesUsed ?? 0) : (user?.resumeCount ?? resumes.length);
@@ -165,7 +166,9 @@ export default function InterviewStart() {
     const planName = (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object')
       ? (user.subscriptionPlan as any).name
       : user?.subscriptionPlan;
-    return user?.subscriptionStatus === 'active' || (planName && planName !== 'free_tier_in');
+    const normalizedPlanName = String(planName || '').toLowerCase();
+    const isFreeTier = normalizedPlanName.startsWith('free_tier') || normalizedPlanName === 'free';
+    return user?.subscriptionStatus === 'active' || (!!planName && !isFreeTier);
   }, [user]);
 
   // Free users are restricted to 15-minute sessions only

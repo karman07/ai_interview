@@ -49,6 +49,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     bootstrap();
   }, []);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const refreshProfile = async () => {
+      try {
+        const me = await UsersApi.me();
+        setUser(me);
+      } catch {
+        // Ignore transient refresh failures; user actions can still trigger explicit refresh.
+      }
+    };
+
+    const onFocus = () => {
+      refreshProfile();
+    };
+
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+
+    // Periodic sync so admin-side plan updates propagate during active sessions.
+    const interval = window.setInterval(refreshProfile, 60000);
+
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+      window.clearInterval(interval);
+    };
+  }, [user?._id]);
+
   const value = useMemo<AuthState>(
     () => ({
       user,

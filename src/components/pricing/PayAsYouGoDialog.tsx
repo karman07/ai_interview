@@ -9,7 +9,13 @@ import { SubscriptionApi } from '@/api/subscription';
 import { useAuth } from '@/contexts/AuthContext';
 
 /* ── helpers ────────────────────────────────────────────────────────── */
-const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+const fmt = (n: number, country: string = 'IN') => {
+  const symbol = country === 'US' ? '$' : '₹';
+  if (country === 'US') {
+    return `${symbol}${n.toFixed(2)}`;
+  }
+  return `${symbol}${n.toLocaleString('en-IN')}`;
+};
 
 declare global {
   interface Window { Razorpay: any; }
@@ -29,6 +35,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  countryCode?: string;
   defaultInterviewPrice?: number;
   defaultResumePrice?: number;
   minBudget?: number;
@@ -52,12 +59,19 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
   open,
   onClose,
   onSuccess,
+  countryCode,
   defaultInterviewPrice = 49,
   defaultResumePrice = 29,
   minBudget = 99,
   maxBudget = 5000,
 }) => {
   const { user } = useAuth();
+  const userCountry = (countryCode || user?.country || 'IN').toUpperCase();
+  const currencySymbol = userCountry === 'US' ? '$' : '₹';
+  const countryDefaults = userCountry === 'US'
+    ? { interview: 0.99, resume: 0.49, min: 1.99, max: 99.99 }
+    : { interview: defaultInterviewPrice, resume: defaultResumePrice, min: minBudget, max: maxBudget };
+  
   const [interviews, setInterviews] = useState(5);
   const [resumes, setResumes]       = useState(10);
   const [budget, setBudget]         = useState(299);
@@ -88,10 +102,10 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
   const [couponError, setCouponError] = useState<string | null>(null);
 
   // Derive active settings (dynamic from backend or fallbacks)
-  const interviewPrice = status?.pricePerInterviewRupees ?? settings?.pricePerInterviewRupees ?? defaultInterviewPrice;
-  const resumePrice    = status?.pricePerResumeRupees    ?? settings?.pricePerResumeRupees    ?? defaultResumePrice;
-  const activeMin      = settings?.minBudgetRupees ?? minBudget;
-  const activeMax      = settings?.maxBudgetRupees ?? maxBudget;
+  const interviewPrice = status?.pricePerInterviewRupees ?? settings?.pricePerInterviewRupees ?? countryDefaults.interview;
+  const resumePrice    = status?.pricePerResumeRupees    ?? settings?.pricePerResumeRupees    ?? countryDefaults.resume;
+  const activeMin      = settings?.minBudgetRupees ?? countryDefaults.min;
+  const activeMax      = settings?.maxBudgetRupees ?? countryDefaults.max;
 
   const finalBudget = couponData ? Math.round(couponData.finalAmount / 100) : budget;
 
@@ -112,6 +126,7 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
   const loadStatus = useCallback(async () => {
     if (!user) return;
     setLoadingStatus(true);
+    let hasActivePaygStatus = false;
     try {
       // 1. Load active subscription status if any
       const s = await SubscriptionApi.paygStatus();
@@ -119,15 +134,16 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
       setInterviews(s.interviews.limit);
       setResumes(s.resumes.limit);
       setBudget(s.monthlyBudgetRupees);
+      hasActivePaygStatus = true;
     } catch { /* not on PAYG */ }
     
     try {
       // 2. Load global PAYG settings (prices/bounds)
-      const config = await SubscriptionApi.getPaygSettings('IN'); 
+      const config = await SubscriptionApi.getPaygSettings(userCountry); 
       setSettings(config);
       
       // If user isn't on PAYG, initialize defaults that make sense for the new settings
-      if (!status) {
+      if (!hasActivePaygStatus) {
         const defaultInterviews = 5;
         const defaultResumes = 10;
         setInterviews(defaultInterviews);
@@ -139,7 +155,7 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
     } finally {
       setLoadingStatus(false);
     }
-  }, [user, status]);
+  }, [user, userCountry]);
 
   useEffect(() => {
     if (open) {
@@ -210,7 +226,7 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
           key: razorpayKey,
           subscription_id: subscriptionId,
           name: 'AI For Job',
-          description: `Pay As You Go — ${fmt(finalBudgetRupees ?? budget)}/month`,
+          description: `Pay As You Go — ${fmt(finalBudgetRupees ?? budget, userCountry)}/month`,
           image: '/logo.png',
           prefill: {
             name:  (user as any).name  || '',
@@ -343,7 +359,7 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
 
               {/* Live budget preview */}
               <div className="relative bg-black/20 backdrop-blur-xl rounded-2xl p-5 border border-white/10 shadow-xl">
-                <p className="text-[9px] font-black text-blue-200/50 uppercase tracking-[0.25em] mb-4">With {fmt(budget)}/month</p>
+                <p className="text-[9px] font-black text-blue-200/50 uppercase tracking-[0.25em] mb-4">With {fmt(budget, userCountry)}/month</p>
                 <div className="space-y-4">
                   {[
                     { icon: <BarChart2 className="w-4 h-4" />, label: 'Ai for jobs', count: interviewsEstimate, price: interviewPrice },
@@ -358,14 +374,14 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
                           <span className="text-3xl font-black text-white leading-none">{item.count}</span>
                           <span className="text-xs font-bold text-blue-200/70">{item.label}</span>
                         </div>
-                        <p className="text-[10px] text-blue-300/50 mt-0.5">{fmt(item.price)} each</p>
+                        <p className="text-[10px] text-blue-300/50 mt-0.5">{fmt(item.price, userCountry)} each</p>
                       </div>
                     </div>
                   ))}
                 </div>
                 <div className="mt-4">
                   <div className="flex justify-between text-[10px] text-blue-200/50 mb-1.5">
-                    <span>{fmt(activeMin)}</span><span>{fmt(activeMax)}</span>
+                    <span>{fmt(activeMin, userCountry)}</span><span>{fmt(activeMax, userCountry)}</span>
                   </div>
                   <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                     <motion.div animate={{ width: `${percent}%` }} transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -398,8 +414,8 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
                   </div>
                   <div>
                     <div className="flex justify-between text-[10px] text-blue-200/60 mb-1">
-                      <span>Spent: {fmt(Math.round(status.spending.totalPaisaSpent / 100))}</span>
-                      <span>Budget: {fmt(status.spending.totalPaisaBudget / 100)}</span>
+                      <span>Spent: {fmt(Math.round(status.spending.totalPaisaSpent / 100), userCountry)}</span>
+                      <span>Budget: {fmt(status.spending.totalPaisaBudget / 100, userCountry)}</span>
                     </div>
                     <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
                       <motion.div initial={{ width: 0 }} animate={{ width: `${spentPercent}%` }} transition={{ duration: 0.8 }}
@@ -430,7 +446,7 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
                   </h3>
                   <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
                     {step === 'done'
-                      ? `Your PAYG plan is active at ${fmt(budget)}/month`
+                      ? `Your PAYG plan is active at ${fmt(budget, userCountry)}/month`
                       : 'Set a budget. Razorpay handles monthly autopay — your limits reset automatically.'}
                   </p>
                 </div>
@@ -448,7 +464,7 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
                     <CheckCircle2 className="w-10 h-10 text-emerald-500" />
                   </motion.div>
                   <div className="text-center space-y-2">
-                    <p className="text-2xl font-black text-gray-900 dark:text-white">{fmt(budget)}/month</p>
+                    <p className="text-2xl font-black text-gray-900 dark:text-white">{fmt(budget, userCountry)}/month</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Your first charge has been processed. Limits have been set.</p>
                     <div className="flex items-center justify-center gap-6 mt-4">
                       <div className="text-center">
@@ -469,7 +485,7 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
                   <div className="w-14 h-14 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
                   <div className="text-center">
                     <p className="font-bold text-gray-900 dark:text-white">Opening Razorpay…</p>
-                    <p className="text-sm text-gray-400 mt-1">Authorize your monthly autopay of {fmt(budget)}</p>
+                    <p className="text-sm text-gray-400 mt-1">Authorize your monthly autopay of {fmt(budget, userCountry)}</p>
                   </div>
                 </div>
               ) : (
@@ -485,7 +501,7 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
                         <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">{item.icon}</div>
                         <div>
                           <p className="text-[10px] text-gray-400 font-semibold">{item.label}</p>
-                          <p className="text-lg font-extrabold text-gray-900 dark:text-white leading-none mt-0.5">{fmt(item.price)}</p>
+                          <p className="text-lg font-extrabold text-gray-900 dark:text-white leading-none mt-0.5">{fmt(item.price, userCountry)}</p>
                         </div>
                       </div>
                     ))}
@@ -599,9 +615,9 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
                       <div>
                         <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest opacity-70">Total Monthly Commitment</p>
                         <div className="flex items-baseline gap-2">
-                          <h4 className="text-3xl font-black">{fmt(finalBudget)}</h4>
+                          <h4 className="text-3xl font-black">{fmt(finalBudget, userCountry)}</h4>
                           {couponData && (
-                            <span className="text-sm font-medium text-blue-200 line-through opacity-60">{fmt(budget)}</span>
+                            <span className="text-sm font-medium text-blue-200 line-through opacity-60">{fmt(budget, userCountry)}</span>
                           )}
                         </div>
                       </div>
@@ -613,18 +629,18 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
                       <div>
                         <p className="text-[10px] font-bold text-blue-100/60 uppercase">Interviews</p>
-                        <p className="text-sm font-black">{interviews} <span className="text-[10px] opacity-60 font-medium">x {fmt(interviewPrice)}</span></p>
+                        <p className="text-sm font-black">{interviews} <span className="text-[10px] opacity-60 font-medium">x {fmt(interviewPrice, userCountry)}</span></p>
                       </div>
                       <div>
                         <p className="text-[10px] font-bold text-blue-100/60 uppercase">Resumes</p>
-                        <p className="text-sm font-black">{resumes} <span className="text-[10px] opacity-60 font-medium">x {fmt(resumePrice)}</span></p>
+                        <p className="text-sm font-black">{resumes} <span className="text-[10px] opacity-60 font-medium">x {fmt(resumePrice, userCountry)}</span></p>
                       </div>
                     </div>
 
                     {budget <= activeMin && (
                       <div className="mt-4 flex items-center gap-2 text-[10px] font-bold bg-white/10 rounded-lg px-3 py-2">
                         <AlertCircle className="w-3.5 h-3.5" />
-                        MINIMUM BUDGET APPLIED ({fmt(activeMin)})
+                        MINIMUM BUDGET APPLIED ({fmt(activeMin, userCountry)})
                       </div>
                     )}
                   </div>
@@ -665,9 +681,9 @@ export const PayAsYouGoDialog: React.FC<Props> = ({
                           {loading ? (
                             <><RefreshCw className="w-5 h-5 animate-spin" /> Processing…</>
                           ) : status ? (
-                            <><CreditCard className="w-5 h-5" /> Change Budget to {fmt(budget)}/mo</>
+                            <><CreditCard className="w-5 h-5" /> Change Budget to {fmt(budget, userCountry)}/mo</>
                           ) : (
-                            <><Zap className="w-5 h-5" /> Authorize Autopay — {fmt(budget)}/mo</>
+                            <><Zap className="w-5 h-5" /> Authorize Autopay — {fmt(budget, userCountry)}/mo</>
                           )}
                         </motion.button>
                         {status && (

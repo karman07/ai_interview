@@ -133,6 +133,7 @@ const ResumeDashboard: React.FC = () => {
   const { setShowPricing } = usePricing();
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [selectedResume, setSelectedResume] = useState<Resume | null>(null);
   const [autoOpenBuilder, setAutoOpenBuilder] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -229,7 +230,7 @@ const ResumeDashboard: React.FC = () => {
 
     // PAYG
     if ((user?.subscriptionPlan as any)?.type === 'pay_as_you_go' && typeof user?.paygResumesLimit === 'number') {
-      return user.paygResumesLimit;
+      return user.paygResumesLimit > 0 ? user.paygResumesLimit : 5;
     }
 
     // Stamped at purchase
@@ -239,9 +240,13 @@ const ResumeDashboard: React.FC = () => {
 
     // Plan features fallback
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
-      const limitFeature = user.subscriptionPlan.features.find(f => f.name.toLowerCase().includes('resume upload limit'));
-      if (limitFeature && typeof limitFeature.value === 'number') {
-        return limitFeature.value;
+      const limitFeature = user.subscriptionPlan.features.find((f: any) => {
+        const name = String(f?.name || '').toLowerCase();
+        return name.includes('resume limit') || name.includes('resume upload limit');
+      });
+      const featureLimit = Number((limitFeature as any)?.value ?? (limitFeature as any)?.limit);
+      if (Number.isFinite(featureLimit) && featureLimit > 0) {
+        return featureLimit;
       }
     }
 
@@ -250,7 +255,7 @@ const ResumeDashboard: React.FC = () => {
       ? (user.subscriptionPlan as any).name
       : user?.subscriptionPlan;
 
-    if (user?.subscriptionStatus === 'active' || (planName && planName !== 'free_tier_in')) {
+    if (user?.subscriptionStatus === 'active' || (planName && !String(planName).toLowerCase().startsWith('free_tier'))) {
       if (planName?.toString().includes('pro_tier_200')) return 40;
       if (planName?.toString().includes('pro_tier_100')) return 15;
       if (planName?.toString().includes('enterprise')) return 1000;
@@ -269,7 +274,11 @@ const ResumeDashboard: React.FC = () => {
     const planName = (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object')
       ? (user.subscriptionPlan as any).name
       : user?.subscriptionPlan;
-    return user?.subscriptionStatus === 'active' || (planName && planName !== 'free_tier_in');
+    const normalizedPlanName = String(planName || '').toLowerCase();
+    const isPaygPlan = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go' || normalizedPlanName.includes('payg_');
+    if (isPaygPlan) return true;
+    const isFreeTier = normalizedPlanName.startsWith('free_tier') || normalizedPlanName === 'free';
+    return user?.subscriptionStatus === 'active' || (!!planName && !isFreeTier);
   }, [user]);
 
   // Free users: 5 MB cap · Paid users: 15 MB cap
@@ -302,10 +311,16 @@ const ResumeDashboard: React.FC = () => {
   const handleUpload = async (): Promise<void> => {
     if (!resumeFile) return;
     setIsUploading(true);
+    setUploadProgress(10);
+    const uploadProgressInterval = setInterval(() => {
+      setUploadProgress((prev) => Math.min(prev + 10, 90));
+    }, 500);
     try {
       const files: File[] = [resumeFile];
       if (jdFile) files.push(jdFile);
       const uploadedResumeData = await uploadResume(files, jdText);
+      clearInterval(uploadProgressInterval);
+      setUploadProgress(100);
 
       // Show success notification
       addNotification({
@@ -323,6 +338,8 @@ const ResumeDashboard: React.FC = () => {
       // Show the detailed resume view (same as clicking eye button)
       setSelectedResume(uploadedResumeData);
     } catch (err: any) {
+      clearInterval(uploadProgressInterval);
+      setUploadProgress(0);
       console.error('Upload failed', err);
 
       // Check for page/size limit errors from backend or AI
@@ -358,6 +375,7 @@ const ResumeDashboard: React.FC = () => {
       });
     } finally {
       setIsUploading(false);
+      setTimeout(() => setUploadProgress(0), 400);
     }
   };
 
@@ -1142,7 +1160,7 @@ const ResumeDashboard: React.FC = () => {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Analyzing...
+                        Analyzing... {Math.round(uploadProgress)}%
                       </div>
                     ) : (
                       <>
@@ -1158,6 +1176,21 @@ const ResumeDashboard: React.FC = () => {
                     Cancel
                   </button>
                 </div>
+
+                {isUploading && (
+                  <div className="mt-4 space-y-2">
+                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>Uploading and analyzing resume</span>
+                      <span>{Math.round(uploadProgress)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-2 rounded-full bg-blue-600 transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
