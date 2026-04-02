@@ -750,6 +750,22 @@ export class AnalyticsService {
       },
     ]);
 
+    // Global RAG + Vertex AI aggregates
+    const ragVertexData = await this.aiUsageModel.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalRagTokens: { $sum: '$ragTokens' },
+          vertexSessions: {
+            $sum: { $cond: [{ $eq: ['$isVertex', true] }, 1, 0] },
+          },
+          directSessions: {
+            $sum: { $cond: [{ $eq: ['$isVertex', false] }, 1, 0] },
+          },
+        },
+      },
+    ]);
+
     return {
       tokensByPlan,
       usageOverTime,
@@ -760,6 +776,9 @@ export class AnalyticsService {
       totalAICost: totalCostData[0]?.total || 0,
       totalInputCost: totalCostData[0]?.totalInput || 0,
       totalOutputCost: totalCostData[0]?.totalOutput || 0,
+      totalRagTokens: ragVertexData[0]?.totalRagTokens || 0,
+      vertexSessions: ragVertexData[0]?.vertexSessions || 0,
+      directSessions: ragVertexData[0]?.directSessions || 0,
       timestamp: new Date(),
     };
   }
@@ -855,6 +874,9 @@ export class AnalyticsService {
       outputCostUsd: (data as any).outputCostUsd ?? 0,
       timestamp: data.timestamp || new Date(),
       endReason: (data as any).endReason || '',
+      // Vertex AI / RAG fields — must be explicitly saved, not defaulted by schema
+      isVertex: (data as any).isVertex ?? false,
+      ragTokens: (data as any).ragTokens ?? 0,
     };
 
     // Only set userId when it's a real ObjectId (skip anonymous)

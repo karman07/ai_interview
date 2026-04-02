@@ -17,6 +17,11 @@ export class UsersService {
     return this.subscriptionModel.findOne({ name: /free_tier/i }).exec();
   }
 
+  private normalizeLimit(value: any, fallback: number): number {
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+  }
+
   extractLimitsFromPlan(plan: SubscriptionDocument | null) {
     let interviewLimit = 3;
     let resumeLimit = 5;
@@ -25,8 +30,8 @@ export class UsersService {
       const features = (plan as any).features;
       const intF = features.find((f: any) => f.name === 'Interview Limit');
       const resF = features.find((f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit');
-      if (intF) interviewLimit = intF.value ?? intF.limit ?? 3;
-      if (resF) resumeLimit = resF.value ?? resF.limit ?? 5;
+      if (intF) interviewLimit = this.normalizeLimit(intF.value ?? intF.limit, 3);
+      if (resF) resumeLimit = this.normalizeLimit(resF.value ?? resF.limit, 5);
     }
 
     return { interviewLimit, resumeLimit };
@@ -36,14 +41,16 @@ export class UsersService {
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const freePlan = await this.getFreeTierPlan();
     const limits = this.extractLimitsFromPlan(freePlan);
+    const syncKey = `${freePlan?._id?.toString?.() ?? 'free'}:free`;
 
     const created = new this.userModel({
       ...dto,
       passwordHash,
       subscriptionPlan: freePlan?._id,
       subscriptionStatus: 'free',
-      interviewLimit: dto.interviewLimit ?? limits.interviewLimit,
-      resumeLimit: dto.resumeLimit ?? limits.resumeLimit,
+      interviewLimit: this.normalizeLimit(dto.interviewLimit, limits.interviewLimit),
+      resumeLimit: this.normalizeLimit(dto.resumeLimit, limits.resumeLimit),
+      limitsSyncKey: syncKey,
     });
     return created.save();
   }
@@ -51,14 +58,16 @@ export class UsersService {
   async createGoogleUser(data: { name: string; email: string; googleId: string; profileImageUrl?: string }): Promise<UserDocument> {
     const freePlan = await this.getFreeTierPlan();
     const limits = this.extractLimitsFromPlan(freePlan);
+    const syncKey = `${freePlan?._id?.toString?.() ?? 'free'}:free`;
 
     const created = new this.userModel({
       ...data,
       isEmailVerified: true,
       subscriptionPlan: freePlan?._id,
       subscriptionStatus: 'free',
-      interviewLimit: (data as any).interviewLimit ?? limits.interviewLimit,
-      resumeLimit: (data as any).resumeLimit ?? limits.resumeLimit,
+      interviewLimit: this.normalizeLimit((data as any).interviewLimit, limits.interviewLimit),
+      resumeLimit: this.normalizeLimit((data as any).resumeLimit, limits.resumeLimit),
+      limitsSyncKey: syncKey,
     });
     return created.save();
   }
@@ -91,7 +100,58 @@ export class UsersService {
   async findById(id: string): Promise<UserDocument> {
     const user = await this.userModel.findById(id).populate('subscriptionPlan').exec();
     if (!user) throw new NotFoundException('User not found');
-    return user;
+
+    const updatePayload: Record<string, any> = {};
+
+    // Keep effective limits in sync with plan features when stamped values are missing/invalid.
+    const planDoc: any = (user as any).subscriptionPlan ?? null;
+    const planLimits = this.extractLimitsFromPlan(planDoc);
+    if (!user.interviewLimit || user.interviewLimit <= 0) {
+      updatePayload.interviewLimit = this.normalizeLimit(planLimits.interviewLimit, 3);
+    }
+    if (!user.resumeLimit || user.resumeLimit <= 0) {
+      updatePayload.resumeLimit = this.normalizeLimit(planLimits.resumeLimit, 5);
+    }
+
+    // Repair inconsistent status (e.g., paid/PAYG plan but status is still "free").
+    const status = String(user.subscriptionStatus || '').toLowerCase();
+    const planName = String(planDoc?.name || '').toLowerCase();
+    const isPaygPlan = planDoc?.type === SubscriptionType.PAY_AS_YOU_GO || planName.includes('payg_');
+    const isFreePlan = planName.startsWith('free_tier') || planName === 'free';
+    const hasPaygBudget = Number(user.paygMonthlyBudget || 0) > 0;
+
+    if (status === 'free') {
+      if (isPaygPlan && hasPaygBudget) {
+        updatePayload.subscriptionStatus = 'active';
+      } else if (planDoc && !isFreePlan) {
+        updatePayload.subscriptionStatus = 'active';
+      }
+    }
+
+    // If plan/status changed since last sync, reset only usage counters.
+    const planId = planDoc?._id?.toString?.() ?? 'none';
+    const effectiveStatus = String(updatePayload.subscriptionStatus ?? status ?? 'free').toLowerCase();
+    const currentSyncKey = `${planId}:${effectiveStatus}`;
+    if (user.limitsSyncKey !== currentSyncKey) {
+      updatePayload.interviewCount = 0;
+      updatePayload.resumeCount = 0;
+      if (isPaygPlan) {
+        updatePayload.paygInterviewsUsed = 0;
+        updatePayload.paygResumesUsed = 0;
+      }
+      updatePayload.limitsSyncKey = currentSyncKey;
+    }
+
+    if (Object.keys(updatePayload).length === 0) {
+      return user;
+    }
+
+    const repaired = await this.userModel
+      .findByIdAndUpdate(id, { $set: updatePayload }, { new: true })
+      .populate('subscriptionPlan')
+      .exec();
+    if (!repaired) throw new NotFoundException('User not found');
+    return repaired;
   }
 
   async updateProfile(userId: string, partial: Partial<User>): Promise<UserDocument> {
@@ -128,22 +188,60 @@ export class UsersService {
       ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
       : undefined;
 
-    // ✅ Extract limits from plan features and stamp onto user
-    const features = (plan as any).features ?? [];
-    const interviewFeature  = features.find((f: any) => f.name === 'Interview Limit');
-    const resumeFeature     = features.find((f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit');
-    const newInterviewLimit = interviewFeature ? (interviewFeature.value ?? interviewFeature.limit ?? 3) : 3;
-    const newResumeLimit    = resumeFeature    ? (resumeFeature.value    ?? resumeFeature.limit    ?? 5) : 5;
+    const planName = String((plan as any).name || '').toLowerCase();
+    const isFreePlan = planName.startsWith('free_tier') || planName === 'free';
+    const isPaygPlan = (plan as any).type === SubscriptionType.PAY_AS_YOU_GO || planName.includes('payg_');
+    const effectiveStatus = (!isFreePlan && status === 'free') ? 'active' : status;
+
+    // Derive limits from the selected target plan.
+    const limits = this.extractLimitsFromPlan(plan);
+    let newInterviewLimit = this.normalizeLimit(limits.interviewLimit, 3);
+    let newResumeLimit = this.normalizeLimit(limits.resumeLimit, 5);
 
     const update: any = {
-      subscriptionPlan:   plan._id,
-      subscriptionStatus: status,
-      // Stamp limits and reset usage
-      interviewLimit:     newInterviewLimit,
-      resumeLimit:        newResumeLimit,
-      resumeCount:        0,
-      interviewCount:     0,
+      subscriptionPlan: plan._id,
+      subscriptionStatus: effectiveStatus,
+      // Reset usage counters on plan switch
+      resumeCount: 0,
+      interviewCount: 0,
+      limitsSyncKey: `${plan._id.toString()}:${effectiveStatus}`,
     };
+
+    if (isPaygPlan) {
+      // For PAYG, derive limits from budget/pricing so UI and enforcement stay aligned.
+      const monthlyBudget = Math.max(Number((plan as any).paygMinBudget ?? 9900), Number((plan as any).paygMinBudget ?? 9900));
+      const pricePerInterview = Number((plan as any).paygPricePerInterview ?? 4900);
+      const pricePerResume = Number((plan as any).paygPricePerResume ?? 2900);
+
+      const paygInterviewLimit = Math.max(1, Math.floor(monthlyBudget / Math.max(1, pricePerInterview)));
+      const paygResumeLimit = Math.max(1, Math.floor(monthlyBudget / Math.max(1, pricePerResume)));
+
+      newInterviewLimit = paygInterviewLimit;
+      newResumeLimit = paygResumeLimit;
+
+      update.paygMonthlyBudget = monthlyBudget;
+      update.paygInterviewsLimit = paygInterviewLimit;
+      update.paygResumesLimit = paygResumeLimit;
+      update.paygInterviewsUsed = 0;
+      update.paygResumesUsed = 0;
+      update.paygBillingCycleStart = new Date();
+      const cycleEnd = new Date();
+      cycleEnd.setMonth(cycleEnd.getMonth() + 1);
+      update.paygBillingCycleEnd = cycleEnd;
+    } else {
+      // Switching away from PAYG should clear PAYG-only state.
+      update.paygMonthlyBudget = undefined;
+      update.paygInterviewsLimit = undefined;
+      update.paygResumesLimit = undefined;
+      update.paygInterviewsUsed = 0;
+      update.paygResumesUsed = 0;
+      update.paygBillingCycleStart = undefined;
+      update.paygBillingCycleEnd = undefined;
+    }
+
+    // Stamp normalized limits used by dashboard cards/guards.
+    update.interviewLimit = newInterviewLimit;
+    update.resumeLimit = newResumeLimit;
     if (expiry) update.subscriptionExpiry = expiry;
 
     const updated = await this.userModel
@@ -156,8 +254,14 @@ export class UsersService {
 
   async adminUpdateUserLimits(userId: string, interviewLimit?: number, resumeLimit?: number): Promise<UserDocument> {
     const updatePayload: any = {};
-    if (typeof interviewLimit === 'number') updatePayload.interviewLimit = interviewLimit;
-    if (typeof resumeLimit === 'number') updatePayload.resumeLimit = resumeLimit;
+    if (typeof interviewLimit === 'number') {
+      if (interviewLimit <= 0) throw new BadRequestException('interviewLimit must be greater than 0');
+      updatePayload.interviewLimit = Math.floor(interviewLimit);
+    }
+    if (typeof resumeLimit === 'number') {
+      if (resumeLimit <= 0) throw new BadRequestException('resumeLimit must be greater than 0');
+      updatePayload.resumeLimit = Math.floor(resumeLimit);
+    }
     
     const updated = await this.userModel
       .findByIdAndUpdate(userId, { $set: updatePayload }, { new: true })
@@ -228,11 +332,16 @@ export class UsersService {
    * Derives interview & resume limits from the budget ÷ admin-configured unit prices.
    */
   async setupPayg(userId: string, monthlyBudgetRupees: number, interviews?: number, resumes?: number): Promise<UserDocument> {
+    // Get user to determine country-specific PAYG pricing
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) throw new NotFoundException('User not found');
+    
+    const userCountry = user.country?.toUpperCase() || 'IN';
     const paygPlan = await this.subscriptionModel
-      .findOne({ type: 'pay_as_you_go', status: 'active' })
+      .findOne({ type: 'pay_as_you_go', country: userCountry, status: 'active' })
       .exec();
 
-    if (!paygPlan) throw new BadRequestException('PAYG plan is not configured yet. Please contact support.');
+    if (!paygPlan) throw new BadRequestException(`PAYG plan is not configured for ${userCountry}. Please contact support.`);
 
     const pricePerInterview = paygPlan.paygPricePerInterview ?? 4900;
     const pricePerResume    = paygPlan.paygPricePerResume    ?? 2900;

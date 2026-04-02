@@ -89,6 +89,9 @@ export class User {
   interviewCount: number;
 
   @Prop()
+  limitsSyncKey?: string; // Tracks last plan/status key used to reset monthly usage counters
+
+  @Prop()
   googleId?: string;
 
   @Prop({ type: String })

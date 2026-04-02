@@ -98,6 +98,8 @@ export class ResumeController {
           url: this.buildFileUrl(resume.path),
           text: resume.text || "",
           createdAt: resume.createdAt,
+          builder_data: resume.builder_data || null,
+          is_platform_generated: resume.is_platform_generated || false,
           analytics: {
             cv_quality: stats.cv_quality || null,
             jd_match: stats.jd_match || null,
@@ -255,6 +257,8 @@ export class ResumeController {
           id: updatedResume._id,
           filename: updatedResume.filename,
           url: updatedResume.url,
+          builder_data: updatedResume.builder_data || null,
+          is_platform_generated: updatedResume.is_platform_generated || false,
           analytics: {
             cv_quality: stats.cv_quality || null,
             jd_match: stats.jd_match || null,
