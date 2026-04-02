@@ -290,13 +290,7 @@ export interface InterviewV2Report {
     key_strengths: string[];
     key_areas_for_improvement: string[];
   };
-  dimension_scores: {
-    technical_depth: number;
-    problem_solving: number;
-    system_design: number;
-    communication: number;
-    role_fit: number;
-  };
+  dimension_scores: Record<string, number>;
   question_wise_analysis: QuestionAnalysis[];
   skill_gap_analysis: {
     critical_gaps: string[];
