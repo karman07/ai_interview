@@ -43,6 +43,10 @@ export default function Profile() {
   const [universityInfo, setUniversityInfo] = useState<{ name: string; resumeLimit: number; interviewLimit: number; domain: string; allowedFeatures: string[] } | null>(null);
 
   useEffect(() => {
+    refreshMe();
+  }, [refreshMe]);
+
+  useEffect(() => {
     if ((user as any)?.role === 'student' && (user as any)?.universityId) {
       import('@/api/http').then(({ default: http }) => {
         http.get(`/universities/${(user as any).universityId}`)
@@ -405,7 +409,7 @@ export default function Profile() {
                           />
                         </div>
                         <p className="text-[9px] font-bold text-gray-400 mt-1 text-right">
-                          {interviewsLimit - interviewsUsed} remaining this month
+                          {Math.max(0, interviewsLimit - interviewsUsed)} remaining this month
                         </p>
                       </div>
 
@@ -426,7 +430,7 @@ export default function Profile() {
                           />
                         </div>
                         <p className="text-[9px] font-bold text-gray-400 mt-1 text-right">
-                          {resumesLimit - resumesUsed} remaining this month
+                          {Math.max(0, resumesLimit - resumesUsed)} remaining this month
                         </p>
                       </div>
                     </div>

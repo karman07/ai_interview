@@ -33,7 +33,9 @@ export const resumeService = {
     return {
       ...resumeData,
       analytics: resumeData.stats || resumeData.analytics,
-      enhancement: resumeData.improvement_resume || resumeData.enhancement
+      enhancement: resumeData.improvement_resume || resumeData.enhancement,
+      builder_data: resumeData.builder_data || null,
+      is_platform_generated: resumeData.is_platform_generated || false,
     } as Resume;
   },
 
@@ -60,11 +62,16 @@ export const resumeService = {
       });
       console.log('Improve resume response:', res.data);
 
-      const resumeData = res.data;
+      const resumeData = res.data.resume;
       return {
-        ...resumeData,
-        analytics: resumeData.stats || resumeData.analytics,
-        enhancement: resumeData.improvement_resume || resumeData.enhancement
+        message: res.data.message,
+        resume: {
+          ...resumeData,
+          analytics: resumeData.stats || resumeData.analytics,
+          enhancement: resumeData.improvement_resume || resumeData.enhancement,
+          builder_data: resumeData.builder_data || null,
+          is_platform_generated: resumeData.is_platform_generated || false,
+        },
       };
     } catch (error: any) {
       console.error('Improve resume error:', error.response?.data || error.message);

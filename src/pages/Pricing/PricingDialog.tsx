@@ -34,16 +34,22 @@ const PricingDialog = () => {
   const [selectedPlan, setSelected] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
   const [showPayg, setShowPayg] = useState(false);
-  const [paygSettings, setPaygSettings] = useState<{ pricePerInterviewRupees: number; pricePerResumeRupees: number } | null>(null);
+  const [paygSettings, setPaygSettings] = useState<{ pricePerInterviewRupees: number; pricePerResumeRupees: number; country?: string } | null>(null);
 
   const [couponInput, setCouponInput] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponResult, setCouponResult] = useState<CouponState | null>(null);
 
+  const userCountry = user?.country?.toUpperCase() || 'IN';
+  const plansCurrency = pricingPlans.find(p => p.numericPrice > 0)?.currency || pricingPlans[0]?.currency;
+  const pricingCountry = plansCurrency === 'USD' ? 'US' : 'IN';
+  const resolvedCountry = user?.country ? userCountry : pricingCountry;
+  const currencySymbol = resolvedCountry === 'US' ? '$' : '₹';
+
   useEffect(() => {
     const loadPayg = async () => {
       try {
-        const settings = await SubscriptionApi.getPaygSettings('IN');
+        const settings = await SubscriptionApi.getPaygSettings(resolvedCountry);
         setPaygSettings(settings);
       } catch (e) {
         console.error('Failed to load PAYG settings:', e);
@@ -56,7 +62,7 @@ const PricingDialog = () => {
       setCouponInput(''); setCouponResult(null);
       setShowPayg(false);
     }
-  }, [showPricing]);
+  }, [showPricing, resolvedCountry]);
 
   useEffect(() => {
     document.body.style.overflow = showPricing ? 'hidden' : 'unset';
@@ -349,7 +355,7 @@ const PricingDialog = () => {
                         <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 text-[9px] font-black uppercase tracking-wider">New</span>
                       </div>
                       <p className="text-[12px] text-blue-500/70 dark:text-blue-400/60 font-medium">
-                        Set your own budget &mdash; ₹{paygSettings?.pricePerInterviewRupees ?? 49}/interview &middot; ₹{paygSettings?.pricePerResumeRupees ?? 29}/resume &middot; cancel anytime
+                        Set your own budget &mdash; {currencySymbol}{paygSettings?.pricePerInterviewRupees ?? (resolvedCountry === 'US' ? 0.99 : 49)}/interview &middot; {currencySymbol}{paygSettings?.pricePerResumeRupees ?? (resolvedCountry === 'US' ? 0.49 : 29)}/resume &middot; cancel anytime
                       </p>
                     </div>
 
@@ -364,6 +370,7 @@ const PricingDialog = () => {
                 <PayAsYouGoDialog
                   open={showPayg}
                   onClose={() => setShowPayg(false)}
+                  countryCode={resolvedCountry}
                   onSuccess={() => { setShowPayg(false); setShowPricing(false); }}
                 />
 
