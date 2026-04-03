@@ -53,7 +53,7 @@ const AboutUs = () => {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { label: "Mock interviews completed", value: "100+", icon: Users },
+              { label: "Mock interviews completed", value: "1000+", icon: Users },
               { label: "Users who landed the role", value: "90%", icon: TrendingUp },
               { label: "Countries represented", value: "12+", icon: Globe },
             ].map((stat, idx) => (

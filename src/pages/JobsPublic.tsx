@@ -190,7 +190,7 @@ const JobsPublicPage = () => {
           {/* Social proof strip */}
           <div className="flex flex-wrap items-center justify-center gap-6 mt-12 pt-10 border-t border-slate-200 dark:border-slate-800">
             {[
-              { icon: <TrendingUp className="w-4 h-4" />, label: "100+ mock interviews completed" },
+              { icon: <TrendingUp className="w-4 h-4" />, label: "1000+ mock interviews completed" },
               { icon: <Briefcase className="w-4 h-4" />, label: "300+ resumes analyzed" },
               { icon: <Star className="w-4 h-4" />, label: "4.9 / 5 from candidates" },
               { icon: <Building2 className="w-4 h-4" />, label: "Roles from top Indian & global tech cos" },

@@ -155,16 +155,16 @@ const HeroSection = ({ onStart, onResume }: { onStart: () => void; onResume: () 
         >
           <div className="flex -space-x-2">
             {[
-              { url: "https://media.licdn.com/dms/image/v2/D5603AQExDIe-7STGWA/profile-displayphoto-scale_400_400/B56ZyFUCf2KgAg-/0/1771763150880?e=1775088000&v=beta&t=yymUWoQVpxkID74wX9x6Exxm0zdoBKWECrThJjaDG80", name: "Karman" },
-              { url: "https://media.licdn.com/dms/image/v2/D5635AQFDzXGekpeRgQ/profile-framedphoto-shrink_400_400/B56ZfMjNCUG0Ak-/0/1751483470343?e=1774792800&v=beta&t=68sAk2OnN0hKiz7fdklgk4BboV5O7uZQF0D-KXInAtA", name: "Rahat" },
-              { url: "https://media.licdn.com/dms/image/v2/D5603AQHCK_ANQCya4Q/profile-displayphoto-scale_400_400/B56ZyjXnt1HQAg-/0/1772267407833?e=1775088000&v=beta&t=5ZI6FkyIGfMJIKFEPBLdqtfFb9j2odZsQpMOXQQQr_o", name: "Advitya" },
+              { url: "/images/karman.png", name: "Karman" },
+              { url: "/images/rahat.png", name: "Rahat" },
+              { url: "/images/advitya.png", name: "Advitya" },
             ].map((p, i) => (
               <img key={i} src={p.url} alt={p.name} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-950 object-cover" />
             ))}
           </div>
           <div className="flex items-center gap-1">
             {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
-            <span className="ml-2 text-sm text-slate-600 dark:text-slate-400 font-medium">4.6 · Used by 100+ candidates</span>
+            <span className="ml-2 text-sm text-slate-600 dark:text-slate-400 font-medium">4.6 · Used by 1000+ candidates</span>
           </div>
         </motion.div>
 
@@ -363,19 +363,19 @@ const FeaturesSection = ({ navigate }: { navigate: (p: string) => void }) => {
 const testimonials = [
   {
     name: "Karman Singh", role: "Software Engineer at Intellinum", avatar: "K",
-    img: "https://media.licdn.com/dms/image/v2/D5603AQExDIe-7STGWA/profile-displayphoto-scale_400_400/B56ZyFUCf2KgAg-/0/1771763150880?e=1775088000&v=beta&t=yymUWoQVpxkID74wX9x6Exxm0zdoBKWECrThJjaDG80",
+    img: "/images/karman.png",
     text: "The practice sessions felt too real, but in a good way. You can't get away with unclear responses. The input on my system design showed me exactly where I was being vague, which is exactly what you need before the actual thing. I passed the design round on my next try.",
     stars: 5,
   },
   {
     name: "Rahat Bhatia", role: "Student at UCSD", avatar: "R",
-    img: "https://media.licdn.com/dms/image/v2/D5635AQFDzXGekpeRgQ/profile-framedphoto-shrink_400_400/B56ZfMjNCUG0Ak-/0/1751483470343?e=1774792800&v=beta&t=68sAk2OnN0hKiz7fdklgk4BboV5O7uZQF0D-KXInAtA",
+    img: "/images/rahat.png",
     text: "I wasn't receiving any calls back on my resume until I ran it through the ATS analyzer. The keyword gap report said that 38% of the roles I was interested in matched. Interviews started rolling in within two weeks of following the advice. That and mock prep cemented the deal.",
     stars: 5,
   },
   {
     name: "Advitya", role: "Software Developer at Ryntra Tech", avatar: "A",
-    img: "https://media.licdn.com/dms/image/v2/D5603AQHCK_ANQCya4Q/profile-displayphoto-scale_400_400/B56ZyjXnt1HQAg-/0/1772267407833?e=1775088000&v=beta&t=5ZI6FkyIGfMJIKFEPBLdqtfFb9j2odZsQpMOXQQQr_o",
+    img: "/images/advitya.png",
     text: "The question bank really does have a lot of questions. It covers things that other platforms don't, like designing ML systems, asking stats-based questions, and preparing for take-home walkthroughs. The intent context for each question helps you figure out what the interviewer is really looking for.",
     stars: 5,
   },
