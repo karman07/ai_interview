@@ -70,8 +70,8 @@ export class KnowledgeController {
         },
       }),
       fileFilter: (req, file, cb) => {
-        if (!file.originalname.match(/\.(pdf)$/)) {
-          return cb(new Error('Only PDF files are allowed!'), false);
+        if (!file.originalname.match(/\.(pdf|txt)$/i)) {
+          return cb(new Error('Only PDF and TXT files are allowed!'), false);
         }
         cb(null, true);
       },
@@ -102,8 +102,8 @@ export class KnowledgeController {
         },
       }),
       fileFilter: (req, file, cb) => {
-        if (!file.originalname.match(/\.(pdf)$/)) {
-          return cb(new Error('Only PDF files are allowed!'), false);
+        if (!file.originalname.match(/\.(pdf|txt)$/i)) {
+          return cb(new Error('Only PDF and TXT files are allowed!'), false);
         }
         cb(null, true);
       },
