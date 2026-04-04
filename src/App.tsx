@@ -60,6 +60,7 @@ const StudentClasses          = lazy(() => import("@/pages/Student/Classes"));
 const StudentClassDetail      = lazy(() => import("@/pages/Student/ClassDetail"));
 const BlogsPage               = lazy(() => import("@/pages/Blogs/BlogsPage"));
 const BlogDetailPage          = lazy(() => import("@/pages/Blogs/BlogDetailPage"));
+const CoverLetterGenerator    = lazy(() => import("@/pages/CoverLetter/CoverLetterGenerator"));
 
 // ── Minimal loading fallback (no layout shift) ────────────────────────────
 const PageLoader = () => (
@@ -108,6 +109,7 @@ function App() {
     routes.studentFeedback,
     routes.studentAssignments,
     routes.studentClasses,
+    routes.coverLetterGenerator,
   ];
   const shouldHideNavbar =
     hideNavbarRoutes.includes(location.pathname) ||
@@ -300,6 +302,7 @@ function App() {
                           </div>
                         </div>
                       } />
+                      <Route path={routes.coverLetterGenerator} element={<CoverLetterGenerator />} />
                       <Route path={routes.resumeBuilder} element={<ResumeBuilder />} />
 
                       {/* University-only Routes */}

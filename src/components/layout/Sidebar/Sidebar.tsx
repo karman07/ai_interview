@@ -12,6 +12,7 @@ import {
   Briefcase,
   User,
   LogOut,
+  FileText,
 } from "lucide-react";
 
 import { cn } from "@/utils/cn";
@@ -37,6 +38,12 @@ const sidebarRoutes = [
         description: "Practice interviews with AI",
         path: "/interview_round",
       },
+           {
+        label: "Cover Letter AI",
+        icon: <FileText size={18} />,
+        description: "Generate AI-powered cover letters",
+        path: "/cover-letter",
+      },
       // {
       //   label: "Preparation Hub",
       //   icon: <BookOpen size={18} />,
@@ -56,6 +63,7 @@ const sidebarRoutes = [
         description: "Browse jobs & applications",
         path: "/employee",
       },
+
       {
         label: "Profile",
         icon: <User size={18} />,

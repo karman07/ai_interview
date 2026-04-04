@@ -30,10 +30,9 @@ const JobTable = ({
         <div className="bg-white/80 dark:bg-slate-900/40 backdrop-blur-xl rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/40 shadow-xl shadow-slate-200/10 dark:shadow-none overflow-hidden overflow-x-auto no-scrollbar">
             <table className="w-full text-left border-collapse table-fixed min-w-[900px]">
                 <colgroup>
-                    <col className="w-[48%]" />
-                    <col className="w-[22%]" />
-                    <col className="w-[14%]" />
-                    <col className="w-[10%]" />
+                    <col className="w-[52%]" />
+                    <col className="w-[26%]" />
+                    <col className="w-[16%]" />
                     <col className="w-[6%]" />
                 </colgroup>
                 <thead>
@@ -41,7 +40,6 @@ const JobTable = ({
                         <th className="px-4 sm:px-8 py-4 sm:py-6 text-[8px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Opportunity</th>
                         <th className="px-4 sm:px-8 py-4 sm:py-6 text-[8px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Deployment</th>
                         <th className="px-4 sm:px-8 py-4 sm:py-6 text-[8px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Compensation</th>
-                        <th className="px-4 sm:px-8 py-4 sm:py-6 text-[8px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Branch</th>
                         <th className="px-4 sm:px-8 py-4 sm:py-6 text-[8px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Ops</th>
                     </tr>
                 </thead>
@@ -138,11 +136,6 @@ const JobTable = ({
                                         </div>
                                     </td>
                                     <td className="px-4 sm:px-8 py-5 sm:py-7 align-top">
-                                        <span className="inline-flex max-w-full truncate px-3 py-1 bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-slate-200 dark:border-slate-700/50">
-                                            {job.category || 'Engineering'}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 sm:px-8 py-5 sm:py-7 align-top">
                                         <div className="flex items-center gap-3 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 justify-end">
                                             <button
                                                 onClick={(e) => {
@@ -172,7 +165,7 @@ const JobTable = ({
                                 </tr>
                                 {expandedDesc.has(jobId) && (
                                     <tr className="bg-blue-500/[0.03] dark:bg-blue-400/[0.02]">
-                                        <td colSpan={5} className="px-12 py-8 sm:px-24">
+                                        <td colSpan={4} className="px-12 py-8 sm:px-24">
                                             <div className="text-[13px] text-slate-600 dark:text-slate-400 leading-relaxed max-w-4xl whitespace-pre-wrap font-medium">
                                                 {job.description}
                                             </div>
