@@ -16,7 +16,7 @@ import { ProgressModule } from './progress/progress.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { QuizzesModule } from './quizzes/quizzes.module';
 import { ResourcesModule } from './resources/resources.module';
-import { KnowledgeModule } from './knowledge/knowledge.module';
+import { CompanyRoundsModule } from './company-rounds/company-rounds.module';
 
 // Other modules
 import { DsaQuestionsModule } from './dsa-questions/dsa-questions.module';
@@ -64,7 +64,7 @@ import { CoverLetterModule } from './cover-letter/cover-letter.module';
     SubjectsModule,
     QuizzesModule,
     ResourcesModule,
-    KnowledgeModule,
+    CompanyRoundsModule,
     DsaQuestionsModule,
     PaymentModule,
     SubscriptionModule,
