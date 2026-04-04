@@ -88,8 +88,6 @@ function App() {
   
   // Pages where Navbar shouldn't show
   const hideNavbarRoutes = [
-    routes.login,
-    routes.signup,
     routes.verifyEmail,
     routes.verifyPhone,
     routes.universityLogin,

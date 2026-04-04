@@ -208,7 +208,7 @@ export default function Sidebar() {
           className="fixed top-0 left-0 w-64 h-screen border-r border-slate-100 dark:border-slate-800/40 bg-white dark:bg-[#0B1120] overflow-y-auto no-scrollbar shadow-sm"
         >
           <div className="p-6">
-            <div className="flex items-center mb-10 px-2 group cursor-pointer" onClick={() => navigate('/dashboard')}>
+            <div className="flex items-center justify-center mb-10 px-2 group cursor-pointer" onClick={() => navigate('/dashboard')}>
               <div className="h-20 transition-transform duration-300 group-hover:scale-105 drop-shadow-sm">
                 <img src="/logo.png" alt="ai for job" className="h-full w-auto object-contain dark:invert" />
               </div>
