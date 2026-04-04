@@ -40,6 +40,7 @@ import { AlertsModule } from './alerts/alerts.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { BlogsModule } from './blogs/blogs.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { CoverLetterModule } from './cover-letter/cover-letter.module';
 
 @Module({
   imports: [
@@ -84,6 +85,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     AlertsModule,
     FeedbackModule,
     NotificationsModule,
+    CoverLetterModule,
   ],
   controllers: [AppController],
   providers: [AppService],

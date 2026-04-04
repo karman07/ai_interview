@@ -20,6 +20,9 @@ export class University {
   @Prop({ default: 10 })
   interviewLimit: number;
 
+  @Prop({ default: 5 })
+  coverLetterLimit: number;
+
   @Prop({ type: [String], default: [] })
   allowedFeatures: string[]; // e.g. ['jobAlerts', 'matchResume']
 

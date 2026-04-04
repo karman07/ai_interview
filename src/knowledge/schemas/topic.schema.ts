@@ -25,6 +25,9 @@ export class KnowledgeTopic extends MongooseDocument {
   jdFileName: string;
 
   @Prop({ default: false })
+  hasQuestionBank: boolean;
+
+  @Prop({ default: false })
   isPublished: boolean;
 }
 

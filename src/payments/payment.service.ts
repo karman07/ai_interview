@@ -620,10 +620,12 @@ export class PaymentService {
 
       const interviewFeature = features.find((f: any) => f.name === 'Interview Limit');
       const resumeFeature    = features.find((f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit');
-      const newInterviewLimit = interviewFeature ? Number(interviewFeature.limit ?? interviewFeature.value ?? 3) : 3;
-      const newResumeLimit    = resumeFeature    ? Number(resumeFeature.limit    ?? resumeFeature.value    ?? 5) : 5;
+      const coverLetterFeature = features.find((f: any) => f.name === 'Cover Letter Limit');
+      const newInterviewLimit    = interviewFeature    ? Number(interviewFeature.limit    ?? interviewFeature.value    ?? 3) : 3;
+      const newResumeLimit       = resumeFeature       ? Number(resumeFeature.limit       ?? resumeFeature.value       ?? 5) : 5;
+      const newCoverLetterLimit  = coverLetterFeature  ? Number(coverLetterFeature.limit  ?? coverLetterFeature.value  ?? 5) : 5;
 
-      this.logger.log(`[verifySubscription] 📊 Stamping: interviews=${newInterviewLimit}, resumes=${newResumeLimit}`);
+      this.logger.log(`[verifySubscription] 📊 Stamping: interviews=${newInterviewLimit}, resumes=${newResumeLimit}, coverLetters=${newCoverLetterLimit}`);
 
       // ── 6. Update user ────────────────────────────────────────────────────
       await this.usersService.updateProfile(userId, {
@@ -633,12 +635,14 @@ export class PaymentService {
         razorpaySubscriptionId: razorpaySubscriptionId,
         interviewLimit:         newInterviewLimit,
         resumeLimit:            newResumeLimit,
+        coverLetterLimit:       newCoverLetterLimit,
         resumeCount:            0,
         interviewCount:         0,
+        coverLetterCount:       0,
       } as any);
 
-      this.logger.log(`[verifySubscription] ✅ DONE. User=${userId} Plan=${sub.displayName} interviews=${newInterviewLimit} resumes=${newResumeLimit} usage=0`);
-      return { success: true, plan: sub.displayName, interviewLimit: newInterviewLimit, resumeLimit: newResumeLimit, payment: payment ? this.toPaymentResponseDto(payment) : null };
+      this.logger.log(`[verifySubscription] ✅ DONE. User=${userId} Plan=${sub.displayName} interviews=${newInterviewLimit} resumes=${newResumeLimit} coverLetters=${newCoverLetterLimit} usage=0`);
+      return { success: true, plan: sub.displayName, interviewLimit: newInterviewLimit, resumeLimit: newResumeLimit, coverLetterLimit: newCoverLetterLimit, payment: payment ? this.toPaymentResponseDto(payment) : null };
     } catch (error) {
       this.logger.error(`[verifySubscription] ❌ FAILED: ${error.message}`, error.stack);
       throw new BadRequestException(`Subscription verification failed: ${error.message}`);
@@ -759,8 +763,10 @@ export class PaymentService {
         // Reset usage count limits back to dynamic Free Tier logic
         interviewLimit: limits.interviewLimit,
         resumeLimit: limits.resumeLimit,
+        coverLetterLimit: limits.coverLetterLimit,
         interviewCount: 0,
         resumeCount: 0,
+        coverLetterCount: 0,
         // Reset PAYG state
         paygMonthlyBudget: 0,
         paygInterviewsLimit: 0,
@@ -815,10 +821,12 @@ export class PaymentService {
 
       // ✅ Re-stamp limits from plan features on every renewal (plan may have been updated by admin)
       const features = (sub as any).features ?? [];
-      const interviewFeature  = features.find((f: any) => f.name === 'Interview Limit');
-      const resumeFeature     = features.find((f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit');
-      const newInterviewLimit = interviewFeature ? (interviewFeature.value ?? interviewFeature.limit ?? 3) : 3;
-      const newResumeLimit    = resumeFeature    ? (resumeFeature.value    ?? resumeFeature.limit    ?? 5) : 5;
+      const interviewFeature    = features.find((f: any) => f.name === 'Interview Limit');
+      const resumeFeature       = features.find((f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit');
+      const coverLetterFeature  = features.find((f: any) => f.name === 'Cover Letter Limit');
+      const newInterviewLimit   = interviewFeature   ? (interviewFeature.value   ?? interviewFeature.limit   ?? 3) : 3;
+      const newResumeLimit      = resumeFeature      ? (resumeFeature.value      ?? resumeFeature.limit      ?? 5) : 5;
+      const newCoverLetterLimit = coverLetterFeature ? (coverLetterFeature.value ?? coverLetterFeature.limit ?? 5) : 5;
 
       await this.usersService.updateProfile(user._id.toString(), {
         subscriptionStatus: 'active',
@@ -826,10 +834,12 @@ export class PaymentService {
         subscriptionExpiry: newExpiry,
         razorpaySubscriptionId: razorpaySubscriptionId,
         // ✅ Stamp limits and reset usage on renewal
-        interviewLimit: newInterviewLimit,
-        resumeLimit:    newResumeLimit,
-        resumeCount:    0,
-        interviewCount: 0,
+        interviewLimit:    newInterviewLimit,
+        resumeLimit:       newResumeLimit,
+        coverLetterLimit:  newCoverLetterLimit,
+        resumeCount:       0,
+        interviewCount:    0,
+        coverLetterCount:  0,
       } as any);
 
       this.logger.log(`Subscription renewed for user: ${user.email}. Plan: ${sub.displayName}. Limits: ${newInterviewLimit} interviews / ${newResumeLimit} resumes.`);

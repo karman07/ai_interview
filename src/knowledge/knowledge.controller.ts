@@ -116,6 +116,38 @@ export class KnowledgeController {
     return this.knowledgeService.addJdDocument(topicId, file);
   }
 
+  @Post('topics/:id/question-bank')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          const path = './uploads/knowledge';
+          if (!fs.existsSync(path)) {
+            fs.mkdirSync(path, { recursive: true });
+          }
+          cb(null, path);
+        },
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `qbank-${uniqueSuffix}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.originalname.match(/\.md$/i)) {
+          return cb(new Error('Only Markdown (.md) files are allowed for question banks!'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async uploadQuestionBank(
+    @Param('id') topicId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.knowledgeService.addQuestionBankFile(topicId, file);
+  }
+
   @Post('topics/:id/logo')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(

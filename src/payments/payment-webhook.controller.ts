@@ -110,6 +110,8 @@ export class PaymentWebhookController {
                     // ✅ Reset monthly usage on each billing renewal
                     resumeCount: 0,
                     interviewCount: 0,
+                    coverLetterCount: 0,
+                    coverLetterCount: 0,
                 } as any);
             }
             this.logger.log(`Recurring payment recorded, user expiry updated, usage reset for: ${user.email}`);

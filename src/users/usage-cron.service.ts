@@ -46,6 +46,7 @@ export class UsageCronService {
                     $set: {
                         resumeCount: 0,
                         interviewCount: 0,
+                        coverLetterCount: 0,
                     },
                 },
             );

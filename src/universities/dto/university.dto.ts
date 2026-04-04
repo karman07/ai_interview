@@ -22,6 +22,10 @@ export class CreateUniversityDto {
   interviewLimit?: number;
 
   @IsOptional()
+  @IsNumber()
+  coverLetterLimit?: number;
+
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   allowedFeatures?: string[];
@@ -59,6 +63,10 @@ export class UpdateUniversityDto {
   @IsOptional()
   @IsNumber()
   interviewLimit?: number;
+
+  @IsOptional()
+  @IsNumber()
+  coverLetterLimit?: number;
 
   @IsOptional()
   @IsArray()

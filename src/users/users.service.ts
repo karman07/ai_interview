@@ -25,16 +25,19 @@ export class UsersService {
   extractLimitsFromPlan(plan: SubscriptionDocument | null) {
     let interviewLimit = 3;
     let resumeLimit = 5;
+    let coverLetterLimit = 5;
 
     if (plan && (plan as any).features) {
       const features = (plan as any).features;
       const intF = features.find((f: any) => f.name === 'Interview Limit');
       const resF = features.find((f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit');
-      if (intF) interviewLimit = this.normalizeLimit(intF.value ?? intF.limit, 3);
-      if (resF) resumeLimit = this.normalizeLimit(resF.value ?? resF.limit, 5);
+      const clF  = features.find((f: any) => f.name === 'Cover Letter Limit');
+      if (intF) interviewLimit    = this.normalizeLimit(intF.value ?? intF.limit, 3);
+      if (resF) resumeLimit       = this.normalizeLimit(resF.value ?? resF.limit, 5);
+      if (clF)  coverLetterLimit  = this.normalizeLimit(clF.value  ?? clF.limit,  5);
     }
 
-    return { interviewLimit, resumeLimit };
+    return { interviewLimit, resumeLimit, coverLetterLimit };
   }
 
   async create(dto: CreateUserDto): Promise<UserDocument> {
@@ -50,6 +53,7 @@ export class UsersService {
       subscriptionStatus: 'free',
       interviewLimit: this.normalizeLimit(dto.interviewLimit, limits.interviewLimit),
       resumeLimit: this.normalizeLimit(dto.resumeLimit, limits.resumeLimit),
+      coverLetterLimit: this.normalizeLimit((dto as any).coverLetterLimit, limits.coverLetterLimit),
       limitsSyncKey: syncKey,
     });
     return created.save();
@@ -67,6 +71,7 @@ export class UsersService {
       subscriptionStatus: 'free',
       interviewLimit: this.normalizeLimit((data as any).interviewLimit, limits.interviewLimit),
       resumeLimit: this.normalizeLimit((data as any).resumeLimit, limits.resumeLimit),
+      coverLetterLimit: this.normalizeLimit((data as any).coverLetterLimit, limits.coverLetterLimit),
       limitsSyncKey: syncKey,
     });
     return created.save();
@@ -111,6 +116,9 @@ export class UsersService {
     }
     if (!user.resumeLimit || user.resumeLimit <= 0) {
       updatePayload.resumeLimit = this.normalizeLimit(planLimits.resumeLimit, 5);
+    }
+    if (!user.coverLetterLimit || user.coverLetterLimit <= 0) {
+      updatePayload.coverLetterLimit = this.normalizeLimit(planLimits.coverLetterLimit, 5);
     }
 
     // Repair inconsistent status (e.g., paid/PAYG plan but status is still "free").

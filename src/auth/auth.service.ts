@@ -32,6 +32,7 @@ export class AuthService {
     if (uni) {
       userData.interviewLimit = uni.interviewLimit;
       userData.resumeLimit = uni.resumeLimit;
+      userData.coverLetterLimit = (uni as any).coverLetterLimit ?? 5;
     }
     const user = await this.usersService.create(userData);
 
@@ -87,6 +88,7 @@ export class AuthService {
       user.universityId = uni._id.toString();
       user.interviewLimit = uni.interviewLimit;
       user.resumeLimit = uni.resumeLimit;
+      (user as any).coverLetterLimit = (uni as any).coverLetterLimit ?? 5;
       await user.save();
     }
 
@@ -113,6 +115,7 @@ export class AuthService {
           universityId: uni ? uni._id.toString() : undefined,
           interviewLimit: uni ? uni.interviewLimit : undefined,
           resumeLimit: uni ? uni.resumeLimit : undefined,
+          coverLetterLimit: uni ? ((uni as any).coverLetterLimit ?? 5) : undefined,
         } as any);
 
         // New user from Google, send welcome email
@@ -126,6 +129,7 @@ export class AuthService {
           user.universityId = uni._id.toString();
           user.interviewLimit = uni.interviewLimit;
           user.resumeLimit = uni.resumeLimit;
+          (user as any).coverLetterLimit = (uni as any).coverLetterLimit ?? 5;
         }
         await user.save();
       }
@@ -166,6 +170,7 @@ export class AuthService {
       user.universityId = uni._id.toString();
       user.interviewLimit = uni.interviewLimit;
       user.resumeLimit = uni.resumeLimit;
+      (user as any).coverLetterLimit = (uni as any).coverLetterLimit ?? 5;
       await user.save();
     }
 

@@ -96,6 +96,35 @@ export class KnowledgeService {
     return doc;
   }
 
+  async addQuestionBankFile(topicId: string, file: Express.Multer.File) {
+    const formData = new FormData();
+    formData.append('topic_id', topicId);
+    const fileBuffer = fs.readFileSync(file.path);
+    formData.append('file', fileBuffer, {
+      filename: file.originalname,
+      contentType: 'text/markdown',
+    });
+
+    try {
+      const response = await this.axiosInstance.post('/api/v1/question-bank/upload', formData, {
+        headers: { ...formData.getHeaders() },
+      });
+
+      await this.topicModel.findByIdAndUpdate(topicId, { hasQuestionBank: true });
+
+      // Clean up temp file
+      if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+
+      return response.data;
+    } catch (error) {
+      if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+      throw new HttpException(
+        error.response?.data?.detail || 'Failed to upload question bank to AI service',
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+  }
+
   private async indexDocument(docId: string) {
     // Small delay to ensure DB propagation (helps with DocumentNotFoundError on fast clusters)
     await new Promise(r => setTimeout(r, 500));

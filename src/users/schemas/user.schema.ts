@@ -110,6 +110,12 @@ export class User {
   @Prop({ default: 3 })
   interviewLimit?: number;            // Max interviews per month for current plan
 
+  @Prop({ default: 5 })
+  coverLetterLimit?: number;          // Max cover letters per month for current plan
+
+  @Prop({ default: 0 })
+  coverLetterCount?: number;          // Cover letters generated this billing cycle
+
   // ── Pay-as-you-go plan fields ──────────────────────────────────────────────
   @Prop()
   paygMonthlyBudget?: number;         // User-set monthly budget in paisa (smallest unit)
