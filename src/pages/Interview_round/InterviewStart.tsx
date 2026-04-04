@@ -86,21 +86,21 @@ export default function InterviewStart() {
   useEffect(() => {
     if (preFilledData?.company) {
       import('@/api/http').then(({ default: http }) => {
-        http.get(`/knowledge/topics/find-by-name?name=${preFilledData.company}`)
+        http.get('/company-rounds')
           .then(res => {
-            if (res.data?._id) {
-              setTopicData(res.data);
-              if (res.data.jdFileId) {
-                setKnowledgeDocId(res.data.jdFileId);
-              } else {
-                http.get(`/knowledge/topics/${res.data._id}/documents`)
-                  .then(resDoc => {
-                    if (resDoc.data?.length > 0) {
-                      setKnowledgeDocId(resDoc.data[0]._id);
-                    }
-                  });
-              }
+            const rounds = Array.isArray(res.data) ? res.data : [];
+            const match = rounds.find((item: any) => {
+              const company = (item.company || item.name || '').toLowerCase();
+              return company === preFilledData.company?.toLowerCase();
+            });
+            if (match) {
+              setTopicData(match);
+              setKnowledgeDocId(null);
             }
+          })
+          .catch(() => {
+            setTopicData(null);
+            setKnowledgeDocId(null);
           });
       });
     }
@@ -340,12 +340,12 @@ export default function InterviewStart() {
 
       const setupData = {
         resumeText: preFilledData?.company 
-          ? `KNOWLEDGE-BASE ASSESSMENT: No personal resume provided. Context is derived strictly from the Job Description and specialized ${preFilledData.company} Knowledge Base. Evaluate based on technical expertise rather than personal history.`
+          ? `SPECIALIZED COMPANY ASSESSMENT: No personal resume provided. Context is derived strictly from the Job Description and specialized ${preFilledData.company} round context. Evaluate based on technical expertise rather than personal history.`
           : resumeText,
         resumeUrl: details.resumeUrl || "",
         resumePath: details.resumePath || "",
         jdText: preFilledData?.company 
-          ? `Specialized ${preFilledData.company} Interview Round (Knowledge Base Guided)` 
+          ? `Specialized ${preFilledData.company} Interview Round` 
           : jdText,
         role: details.role,
         company: details.company,
