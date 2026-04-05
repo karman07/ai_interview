@@ -297,7 +297,7 @@ function ScoreIllustration() {
 }
 
 /* ══════════════════════ HERO ══════════════════════════════════════════ */
-const ROLES = ["Frontend Developer", "Backend Engineer", "Product Manager", "Data Scientist", "DevOps Engineer", "Full Stack Dev"];
+const ROLES = ["Frontend Dev", "Backend Engineer", "Product Manager", "Data Scientist", "DevOps Engineer", "Full Stack Dev"];
 
 const HeroSection = ({ onStart, onResume }: { onStart: () => void; onResume: () => void }) => {
   const typed = useTypewriter(ROLES, 75, 2000);
