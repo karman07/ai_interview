@@ -30,6 +30,7 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
     const [error, setError] = useState<string | null>(null);
     const [isCodingQuestion, setIsCodingQuestion] = useState(false);
     const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+    const [endReason, setEndReason] = useState<string>('');
     const feedbackRef = useRef<any>(null);
 
     const isStreamingResponseRef = useRef(false);
@@ -167,7 +168,7 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
                         initSentRef.current = true;
                     }
                 } else if (data.type === 'end_interview') {
-                    console.log("[WS] Interview Ended. feedback:", data.feedback ? "present" : "null", "error:", data.error);
+                    console.log("[WS] Interview Ended. feedback:", data.feedback ? "present" : "null", "error:", data.error, "end_reason:", data.end_reason);
                     if (!data.feedback || data.error === 'no_answers') {
                         // End requested with no answers should not trigger reconnect/init loops.
                         shouldReconnectRef.current = false;
@@ -180,6 +181,7 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
                         setInterviewEnded(false); // DO NOT treat as a successful completion
                         return;
                     }
+                    if (data.end_reason) setEndReason(data.end_reason);
                     feedbackRef.current = data.feedback;
                     setFeedback(data.feedback);
                     setInterviewEnded(true);
@@ -217,12 +219,13 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
         }
     }, [socket]);
 
-    const sendEndSession = useCallback(() => {
+    const sendEndSession = useCallback((reason: string = 'user_terminated') => {
         if (socket && socket.readyState === WebSocket.OPEN) {
             setIsEnding(true);
             // Deliberate session termination: do not auto-reconnect on close.
             shouldReconnectRef.current = false;
-            socket.send(JSON.stringify({ type: 'end_session' }));
+            setEndReason(reason);
+            socket.send(JSON.stringify({ type: 'end_session', reason }));
         }
     }, [socket]);
 
@@ -232,5 +235,5 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
         }
     }, [clientId, initData, connect, interviewEnded]);
 
-    return { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding, error, isCodingQuestion, isWaitingForResponse };
+    return { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding, error, isCodingQuestion, isWaitingForResponse, endReason };
 };

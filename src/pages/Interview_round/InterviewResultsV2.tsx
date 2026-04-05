@@ -24,17 +24,180 @@ import {
   Rocket,
   Shield,
   Eye,
-  Cpu,
   Users,
+  Heart,
+  Handshake,
+  Puzzle,
+  GraduationCap,
+  Cpu,
+  Activity,
+  Sparkles,
+  BookOpen,
+  ThumbsUp,
+  ThumbsDown,
+  Flame,
+  Code,
+  MessageCircle,
+  Briefcase,
 } from "lucide-react";
 import { InterviewV2Report } from "@/api/interviewV2";
 import { InterviewAnalyticsApi } from "@/api/interviewAnalytics";
 import FeedbackDialog from "@/components/interview/FeedbackDialog";
 import { generateInterviewReport } from "@/utils/pdfGenerator";
 
-// ────────────────────────────────────────────────────────────
-// Main Component
-// ────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// Round Config
+// ─────────────────────────────────────────────────────────────────
+
+type RoundKey = "technical" | "behavioral" | "hr" | "problem" | "general";
+
+interface RoundConfig {
+  label: string;
+  icon: React.ReactNode;
+  iconBg: string;
+  iconText: string;
+  badgeBg: string;
+  badgeText: string;
+  badgeBorder: string;
+  ringHex: string;
+  gradientFrom: string;
+  gradientTo: string;
+  sectionBg: string;
+  cardAccent: string;
+}
+
+const ROUND_CONFIG: Record<RoundKey, RoundConfig> = {
+  technical: {
+    label: "Technical",
+    icon: <Cpu className="w-4 h-4" />,
+    iconBg: "bg-blue-50 dark:bg-blue-950/60",
+    iconText: "text-blue-600 dark:text-blue-400",
+    badgeBg: "bg-blue-50 dark:bg-blue-900/30",
+    badgeText: "text-blue-700 dark:text-blue-300",
+    badgeBorder: "border-blue-200 dark:border-blue-700",
+    ringHex: "#2563EB",
+    gradientFrom: "from-blue-600",
+    gradientTo: "to-indigo-700",
+    sectionBg: "bg-blue-600",
+    cardAccent: "border-l-blue-500",
+  },
+  behavioral: {
+    label: "Behavioral",
+    icon: <Users className="w-4 h-4" />,
+    iconBg: "bg-emerald-50 dark:bg-emerald-950/60",
+    iconText: "text-emerald-600 dark:text-emerald-400",
+    badgeBg: "bg-emerald-50 dark:bg-emerald-900/30",
+    badgeText: "text-emerald-700 dark:text-emerald-300",
+    badgeBorder: "border-emerald-200 dark:border-emerald-700",
+    ringHex: "#059669",
+    gradientFrom: "from-emerald-600",
+    gradientTo: "to-teal-700",
+    sectionBg: "bg-emerald-600",
+    cardAccent: "border-l-emerald-500",
+  },
+  hr: {
+    label: "HR",
+    icon: <Handshake className="w-4 h-4" />,
+    iconBg: "bg-purple-50 dark:bg-purple-950/60",
+    iconText: "text-purple-600 dark:text-purple-400",
+    badgeBg: "bg-purple-50 dark:bg-purple-900/30",
+    badgeText: "text-purple-700 dark:text-purple-300",
+    badgeBorder: "border-purple-200 dark:border-purple-700",
+    ringHex: "#7C3AED",
+    gradientFrom: "from-purple-600",
+    gradientTo: "to-violet-700",
+    sectionBg: "bg-purple-600",
+    cardAccent: "border-l-purple-500",
+  },
+  problem: {
+    label: "Problem Solving",
+    icon: <Puzzle className="w-4 h-4" />,
+    iconBg: "bg-amber-50 dark:bg-amber-950/60",
+    iconText: "text-amber-600 dark:text-amber-400",
+    badgeBg: "bg-amber-50 dark:bg-amber-900/30",
+    badgeText: "text-amber-700 dark:text-amber-300",
+    badgeBorder: "border-amber-200 dark:border-amber-700",
+    ringHex: "#D97706",
+    gradientFrom: "from-amber-500",
+    gradientTo: "to-orange-600",
+    sectionBg: "bg-amber-500",
+    cardAccent: "border-l-amber-500",
+  },
+  general: {
+    label: "Interview",
+    icon: <Award className="w-4 h-4" />,
+    iconBg: "bg-blue-50 dark:bg-blue-950/60",
+    iconText: "text-blue-600 dark:text-blue-400",
+    badgeBg: "bg-blue-50 dark:bg-blue-900/30",
+    badgeText: "text-blue-700 dark:text-blue-300",
+    badgeBorder: "border-blue-200 dark:border-blue-700",
+    ringHex: "#2563EB",
+    gradientFrom: "from-blue-600",
+    gradientTo: "to-indigo-700",
+    sectionBg: "bg-blue-600",
+    cardAccent: "border-l-blue-500",
+  },
+};
+
+const DIMENSIONS: Record<string, { icon: React.ReactNode; label: string }> = {
+  technical_depth:     { icon: <Cpu className="w-3.5 h-3.5" />,          label: "Technical Depth"      },
+  problem_solving:     { icon: <Puzzle className="w-3.5 h-3.5" />,        label: "Problem Solving"      },
+  system_design:       { icon: <Activity className="w-3.5 h-3.5" />,      label: "System Design"        },
+  code_quality:        { icon: <Code className="w-3.5 h-3.5" />,           label: "Code Quality"         },
+  analytical_thinking: { icon: <Brain className="w-3.5 h-3.5" />,         label: "Analytical Thinking"  },
+  creativity:          { icon: <Sparkles className="w-3.5 h-3.5" />,       label: "Creativity"          },
+  cultural_fit:        { icon: <Heart className="w-3.5 h-3.5" />,          label: "Cultural Fit"         },
+  professionalism:     { icon: <GraduationCap className="w-3.5 h-3.5" />, label: "Professionalism"      },
+  career_clarity:      { icon: <Target className="w-3.5 h-3.5" />,         label: "Career Clarity"      },
+  motivation:          { icon: <Flame className="w-3.5 h-3.5" />,          label: "Motivation"          },
+  leadership:          { icon: <Star className="w-3.5 h-3.5" />,           label: "Leadership"          },
+  conflict_resolution: { icon: <Shield className="w-3.5 h-3.5" />,         label: "Conflict Resolution" },
+  teamwork:            { icon: <Users className="w-3.5 h-3.5" />,          label: "Teamwork"            },
+  adaptability:        { icon: <Zap className="w-3.5 h-3.5" />,            label: "Adaptability"        },
+  communication:       { icon: <MessageCircle className="w-3.5 h-3.5" />,  label: "Communication"       },
+  role_fit:            { icon: <Briefcase className="w-3.5 h-3.5" />,       label: "Role Fit"           },
+};
+
+const SECTION_LABELS: Record<
+  RoundKey,
+  { skillGap: string; behavioral: string; improvement: string }
+> = {
+  technical:  { skillGap: "Skill Gap Analysis",      behavioral: "Communication & Thinking",   improvement: "Technical Improvement Plan"  },
+  behavioral: { skillGap: "Behavioral Gap Analysis",  behavioral: "Behavioral Style Insights",  improvement: "Behavioral Development Plan" },
+  hr:         { skillGap: "Alignment Gap Analysis",   behavioral: "Communication & Presence",   improvement: "Interview Preparation Plan"  },
+  problem:    { skillGap: "Analytical Gap Analysis",  behavioral: "Problem-Solving Style",      improvement: "Analytical Improvement Plan" },
+  general:    { skillGap: "Gap Analysis",             behavioral: "Style Insights",             improvement: "Improvement Plan"            },
+};
+
+// ─────────────────────────────────────────────────────────────────
+// Score helpers
+// ─────────────────────────────────────────────────────────────────
+
+function scoreGrade(s: number) {
+  if (s >= 85) return { label: "Excellent",    cls: "text-emerald-600 dark:text-emerald-400" };
+  if (s >= 70) return { label: "Good",          cls: "text-green-600 dark:text-green-400"    };
+  if (s >= 55) return { label: "Average",       cls: "text-amber-600 dark:text-amber-400"    };
+  if (s >= 40) return { label: "Below Average", cls: "text-orange-600 dark:text-orange-400"  };
+  return              { label: "Needs Work",    cls: "text-rose-600 dark:text-rose-400"      };
+}
+
+function dimScoreColor(v: number) {
+  if (v >= 8) return { text: "text-emerald-600 dark:text-emerald-400", bar: "bg-emerald-500", track: "bg-emerald-100 dark:bg-emerald-900/30" };
+  if (v >= 6) return { text: "text-blue-600 dark:text-blue-400",       bar: "bg-blue-500",    track: "bg-blue-100 dark:bg-blue-900/30"      };
+  if (v >= 4) return { text: "text-amber-600 dark:text-amber-400",     bar: "bg-amber-500",   track: "bg-amber-100 dark:bg-amber-900/30"    };
+  return              { text: "text-rose-600 dark:text-rose-400",       bar: "bg-rose-500",    track: "bg-rose-100 dark:bg-rose-900/30"      };
+}
+
+function qScoreChip(v: number) {
+  if (v >= 8) return "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800";
+  if (v >= 6) return "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800";
+  if (v >= 4) return "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800";
+  return "bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800";
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Page
+// ─────────────────────────────────────────────────────────────────
 
 export default function InterviewResultsV2() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -42,267 +205,334 @@ export default function InterviewResultsV2() {
   const [report, setReport] = useState<InterviewV2Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [feedbackDone, setFeedbackDone] = useState(false);
+
+  const roundType: RoundKey = (
+    ((report as any)?.roundType ?? (report as any)?.round_type ?? "general") as string
+  ).toLowerCase() as RoundKey;
+  const rc = ROUND_CONFIG[roundType] ?? ROUND_CONFIG.general;
+  const sl = SECTION_LABELS[roundType] ?? SECTION_LABELS.general;
 
   useEffect(() => {
-    if (!loading && report && sessionId) {
-      if ((report as any).feedback || feedbackSubmitted) return; // Feedback already submitted
-      
-      const t = setTimeout(() => setShowFeedback(true), 3000);
+    if (!loading && report && sessionId && !((report as any).feedback || feedbackDone)) {
+      const t = setTimeout(() => setShowFeedback(true), 3500);
       return () => clearTimeout(t);
     }
-  }, [loading, report, sessionId]);
+  }, [loading, report, sessionId, feedbackDone]);
 
   useEffect(() => {
-    async function loadReport() {
+    async function load() {
       if (!sessionId) {
-        // No sessionId in URL — only then try localStorage (immediate post-interview fallback)
-        const storedReport = localStorage.getItem("v2_interview_report");
-        if (storedReport) {
+        const raw = localStorage.getItem("v2_interview_report");
+        if (raw) {
           try {
-            const parsed = JSON.parse(storedReport);
-            // Safety check: refuse to show report if it has no real data
-            if (parsed && parsed.summary && parsed.question_wise_analysis?.length > 0) {
-              setReport(parsed);
-            } else {
-              console.warn('[Results] Stored report has no question analysis — ignoring stale data.');
-            }
-          } catch {
-            console.error("Failed to parse stored interview report");
-          }
+            const p = JSON.parse(raw);
+            if (p?.summary && p.question_wise_analysis?.length > 0) setReport(p);
+          } catch { /**/ }
         }
         setLoading(false);
         return;
       }
-
       setLoading(true);
       try {
         const data = await InterviewAnalyticsApi.getInterviewReport(sessionId);
-        if (data && data.summary) {
-          setReport(data);
-        } else {
-          // API returned null/empty — DO NOT fall back to stale localStorage
-          console.warn('[Results] API returned no data for session:', sessionId);
-          setReport(null);
-        }
-      } catch (err) {
-        console.error("Failed to load report from API:", err);
-        // DO NOT load from localStorage when sessionId is present — that would show wrong data
-        setReport(null);
-      } finally {
-        setLoading(false);
-      }
+        setReport(data?.summary ? data : null);
+      } catch { setReport(null); }
+      finally { setLoading(false); }
     }
-
-    loadReport();
+    load();
   }, [sessionId]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-gray-400 font-medium">Loading interview results…</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!report) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <XCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">No Results Found</h2>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">Could not load interview results.</p>
-          <button
-            onClick={() => navigate("/interview_round")}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
-          >
-            Go to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-
+  if (loading) return <LoadingScreen />;
+  if (!report)  return <ErrorScreen onBack={() => navigate("/interview_round")} />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
-      {/* ─── Top Navigation ─── */}
-      <div className="sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/60 dark:border-gray-800">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white">Interview Report</h1>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      {/* Ambient bg blobs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className={`absolute -top-60 -right-60 w-[600px] h-[600px] rounded-full opacity-[0.06] bg-gradient-to-br ${rc.gradientFrom} ${rc.gradientTo} blur-3xl`} />
+        <div className={`absolute -bottom-60 -left-60 w-[600px] h-[600px] rounded-full opacity-[0.04] bg-gradient-to-tr ${rc.gradientFrom} ${rc.gradientTo} blur-3xl`} />
+      </div>
+
+      {/* Navbar */}
+      <nav className="sticky top-0 z-40 backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border-b border-slate-200/80 dark:border-slate-800/80 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/interview_round")}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-            >
-              <Home className="w-4 h-4" />
-              Dashboard
-            </button>
+            <div className={`p-2 rounded-xl ${rc.sectionBg} shadow-sm shadow-black/10`}>
+              <span className="text-white">{rc.icon}</span>
+            </div>
+            <div>
+              <h1 className="font-black text-slate-900 dark:text-white text-sm leading-tight">
+                {rc.label} Interview Report
+              </h1>
+              {(report as any).role && (
+                <p className="text-xs text-slate-500 dark:text-slate-400">{(report as any).role}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <NavBtn onClick={() => navigate("/interview_round")} icon={<Home className="w-4 h-4" />} label="Dashboard" />
             {sessionId && (
-              <button
+              <NavBtn
                 onClick={() => setShowFeedback(true)}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-              >
-                <MessageSquare className="w-4 h-4" />
-                {(report as any).feedback || feedbackSubmitted ? "Update Rating" : "Rate Session"}
-              </button>
+                icon={<MessageSquare className="w-4 h-4" />}
+                label={(report as any).feedback || feedbackDone ? "Update Rating" : "Rate Session"}
+              />
             )}
             <button
-              onClick={() => generateInterviewReport(
-                report,
-                (report as any).role ?? undefined,
-                (report as any).roundType ?? (report as any).round_type ?? undefined,
-              )}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm"
+              onClick={() => generateInterviewReport(report, (report as any).role, (report as any).roundType ?? (report as any).round_type)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 bg-gradient-to-r ${rc.gradientFrom} ${rc.gradientTo}`}
             >
-              <Download className="w-4 h-4" />
-              Download Report
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Download PDF</span>
             </button>
           </div>
         </div>
-      </div>
+      </nav>
 
-      <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
-        {/* ─── 1. Hero / Summary Card ─── */}
-        <HeroCard report={report} />
+      {/* Content */}
+      <main className="relative max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        <HeroSection report={report} rc={rc} />
 
-        {/* ─── 2. Dimension Scores ─── */}
-        <section>
-          <SectionHeading icon={<BarChart3 className="w-5 h-5" />} title="Dimension Scores" />
-          <DimensionScoresGrid scores={report.dimension_scores} />
-        </section>
+        <ReportSection title="Performance Dimensions" subtitle="Detailed scoring across evaluated competencies" icon={<BarChart3 className="w-5 h-5" />} rc={rc}>
+          <DimensionGrid scores={report.dimension_scores} rc={rc} />
+        </ReportSection>
 
-        {/* ─── 3. Question-wise Analysis ─── */}
         {report.question_wise_analysis?.length > 0 && (
-          <section>
-            <SectionHeading icon={<MessageSquare className="w-5 h-5" />} title="Question-wise Analysis" />
-            <div className="space-y-4">
-              {report.question_wise_analysis.map((q) => (
-                <QuestionCard key={q.question_id} question={q} />
+          <ReportSection title="Question Analysis" subtitle={`Breakdown of ${report.question_wise_analysis.length} interview questions`} icon={<MessageSquare className="w-5 h-5" />} rc={rc}>
+            <div className="space-y-3">
+              {report.question_wise_analysis.map((q, idx) => (
+                <QuestionCard key={q.question_id} q={q} idx={idx} roundType={roundType} rc={rc} />
               ))}
             </div>
-          </section>
+          </ReportSection>
         )}
 
-        {/* ─── 4. Skill Gap Analysis ─── */}
-        <section>
-          <SectionHeading icon={<Target className="w-5 h-5" />} title="Skill Gap Analysis" />
-          <SkillGapGrid gaps={report.skill_gap_analysis} />
-        </section>
+        <ReportSection title={sl.skillGap} subtitle="Areas requiring focus and targeted development" icon={<Target className="w-5 h-5" />} rc={rc}>
+          <GapAnalysis gaps={report.skill_gap_analysis} roundType={roundType} />
+        </ReportSection>
 
-        {/* ─── 5. Behavioral Insights ─── */}
-        <section>
-          <SectionHeading icon={<Brain className="w-5 h-5" />} title="Behavioral Insights" />
-          <BehavioralInsightsGrid insights={report.behavioral_insights} />
-        </section>
+        <ReportSection title={sl.behavioral} subtitle="Qualitative assessment of your interview style" icon={<Brain className="w-5 h-5" />} rc={rc}>
+          <InsightCards insights={report.behavioral_insights} roundType={roundType} rc={rc} />
+        </ReportSection>
 
-        {/* ─── 6. Improvement Plan ─── */}
-        <section>
-          <SectionHeading icon={<Rocket className="w-5 h-5" />} title="Improvement Plan" />
-          <ImprovementTimeline plan={report.improvement_plan} />
-        </section>
+        <ReportSection title={sl.improvement} subtitle="Structured roadmap to elevate your performance" icon={<Rocket className="w-5 h-5" />} rc={rc}>
+          <ImprovementRoadmap plan={report.improvement_plan} />
+        </ReportSection>
 
-        {/* ─── 7. Verdict ─── */}
-        <section>
-          <SectionHeading icon={<Award className="w-5 h-5" />} title="Final Verdict" />
-          <VerdictCard verdict={report.verdict} />
-        </section>
+        <ReportSection title="Final Assessment" subtitle="Comprehensive hiring recommendation and key takeaways" icon={<Award className="w-5 h-5" />} rc={rc}>
+          <FinalVerdict verdict={report.verdict} />
+        </ReportSection>
 
-        {/* ─── CTA ─── */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white text-center shadow-xl shadow-blue-200/30 dark:shadow-blue-900/20">
-          <h3 className="text-2xl font-bold mb-2">Ready for Your Next Interview?</h3>
-          <p className="text-blue-100 mb-6 max-w-xl mx-auto text-sm">
-            Practice makes perfect. Use the improvement plan above and start another session.
-          </p>
-          <button
-            onClick={() => navigate("/interview_round")}
-            className="inline-flex items-center gap-2 px-8 py-3 bg-white text-blue-700 font-semibold rounded-xl hover:bg-blue-50 transition-all shadow-sm"
-          >
-            Start New Interview
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+        <CTABanner rc={rc} onNext={() => navigate("/interview_round")} />
+      </main>
 
       {sessionId && (
-        <FeedbackDialog
-          sessionId={sessionId}
-          open={showFeedback}
-          onClose={() => setShowFeedback(false)}
-          onSuccess={() => setFeedbackSubmitted(true)}
-        />
+        <FeedbackDialog sessionId={sessionId} open={showFeedback}
+          onClose={() => { setShowFeedback(false); setFeedbackDone(true); }} />
       )}
     </div>
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// Sub-components
-// ────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// Utilities
+// ─────────────────────────────────────────────────────────────────
 
-const SectionHeading = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
-  <div className="flex items-center gap-2.5 mb-5">
-    <div className="text-blue-600 dark:text-blue-400">{icon}</div>
-    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
-  </div>
-);
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+      <div className="text-center">
+        <div className="relative w-20 h-20 mx-auto mb-6">
+          <div className="absolute inset-0 rounded-full border-[3px] border-slate-200 dark:border-slate-800" />
+          <div className="absolute inset-0 rounded-full border-[3px] border-t-blue-600 animate-spin" style={{ borderRightColor: "transparent", borderBottomColor: "transparent", borderLeftColor: "transparent" }} />
+          <div className="absolute inset-3 rounded-full border-[3px] border-blue-100 dark:border-blue-900/50" />
+          <div className="absolute inset-3 rounded-full border-[3px] border-t-indigo-500 animate-spin" style={{ borderRightColor: "transparent", borderBottomColor: "transparent", borderLeftColor: "transparent", animationDirection: "reverse", animationDuration: "0.8s" }} />
+        </div>
+        <h2 className="text-xl font-black text-slate-900 dark:text-white mb-2">Building Your Report</h2>
+        <p className="text-slate-500 dark:text-slate-400 text-sm">Analysing your interview performance…</p>
+      </div>
+    </div>
+  );
+}
 
-// ── Hero Card ──
+function ErrorScreen({ onBack }: { onBack: () => void }) {
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center px-4">
+      <div className="text-center max-w-sm w-full">
+        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center shadow-sm">
+          <XCircle className="w-10 h-10 text-rose-500" />
+        </div>
+        <h2 className="text-xl font-black text-slate-900 dark:text-white mb-2">No Results Found</h2>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">Could not load your interview results.</p>
+        <button onClick={onBack}
+          className="px-8 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm">
+          Back to Dashboard
+        </button>
+      </div>
+    </div>
+  );
+}
 
-function HeroCard({ report }: { report: InterviewV2Report }) {
-  const score = report.summary?.overall_score ?? 0;
-  const rec = report.summary?.hire_recommendation ?? "";
-  const seniority = report.summary?.seniority_assessment ?? "";
-  const confidence = report.summary?.confidence_assessment ?? "";
+function NavBtn({ onClick, icon, label }: { onClick: () => void; icon: React.ReactNode; label: string }) {
+  return (
+    <button onClick={onClick}
+      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm transition-all">
+      {icon}
+      <span className="hidden sm:inline">{label}</span>
+    </button>
+  );
+}
 
-  const scoreColor =
-    score >= 75 ? "text-emerald-600 dark:text-emerald-400" :
-      score >= 50 ? "text-amber-600 dark:text-amber-400" :
-        "text-rose-600 dark:text-rose-400";
+function ReportSection({ title, subtitle, icon, rc, children }: {
+  title: string; subtitle: string; icon: React.ReactNode; rc: RoundConfig; children: React.ReactNode;
+}) {
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.4 }}
+    >
+      <div className="flex items-start gap-3 mb-5">
+        <div className={`p-2.5 rounded-xl ${rc.iconBg} ${rc.iconText} flex-shrink-0 mt-0.5 shadow-sm`}>
+          {icon}
+        </div>
+        <div>
+          <h2 className="text-lg font-black text-slate-900 dark:text-white leading-tight">{title}</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>
+        </div>
+      </div>
+      {children}
+    </motion.section>
+  );
+}
 
-  const ringColor =
-    score >= 75 ? "stroke-emerald-500" :
-      score >= 50 ? "stroke-amber-500" :
-        "stroke-rose-500";
+// ─────────────────────────────────────────────────────────────────
+// Hero Section
+// ─────────────────────────────────────────────────────────────────
 
-  const circumference = 2 * Math.PI * 54;
-  const dashOffset = circumference - (score / 100) * circumference;
+function HeroSection({ report, rc }: { report: InterviewV2Report; rc: RoundConfig }) {
+  const score  = report.summary?.overall_score ?? 0;
+  const rec    = report.summary?.hire_recommendation ?? "";
+  const snr    = report.summary?.seniority_assessment ?? "";
+  const conf   = report.summary?.confidence_assessment ?? "";
+  const role   = (report as any).role ?? "";
+  const qCount = report.question_wise_analysis?.length ?? 0;
+
+  const grade  = scoreGrade(score);
+  const isHire = /(strong hire|hire)/i.test(rec) || score >= 70;
+  const C      = 2 * Math.PI * 52;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-lg shadow-gray-200/50 dark:shadow-black/20 border border-gray-200/60 dark:border-gray-700/60 p-8"
+      transition={{ duration: 0.5 }}
+      className="relative overflow-hidden rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50"
     >
-      <div className="flex flex-col md:flex-row items-center gap-8">
-        {/* Score Ring */}
-        <div className="relative flex-shrink-0">
-          <svg className="w-36 h-36 -rotate-90" viewBox="0 0 120 120">
-            <circle cx="60" cy="60" r="54" fill="none" strokeWidth="8" className="stroke-gray-100 dark:stroke-gray-700" />
-            <motion.circle
-              cx="60" cy="60" r="54" fill="none" strokeWidth="8" strokeLinecap="round"
-              className={ringColor}
-              strokeDasharray={circumference}
-              initial={{ strokeDashoffset: circumference }}
-              animate={{ strokeDashoffset: dashOffset }}
-              transition={{ duration: 1.2, ease: "easeOut" }}
-            />
+      {/* Gradient header */}
+      <div className={`relative bg-gradient-to-br ${rc.gradientFrom} ${rc.gradientTo} px-6 sm:px-10 pt-8 pb-20`}>
+        <div className="absolute inset-0 opacity-[0.12] bg-[radial-gradient(ellipse_at_20%_50%,white,transparent_65%)]" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 opacity-10">
+          <svg viewBox="0 0 200 200" className="w-full h-full">
+            <circle cx="150" cy="150" r="100" fill="none" stroke="white" strokeWidth="2" />
+            <circle cx="150" cy="150" r="70" fill="none" stroke="white" strokeWidth="1" />
+            <circle cx="150" cy="150" r="40" fill="none" stroke="white" strokeWidth="1" />
           </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className={`text-4xl font-extrabold ${scoreColor}`}>{score}</span>
-            <span className="text-xs text-gray-400 font-medium">/ 100</span>
-          </div>
         </div>
 
-        {/* Info */}
-        <div className="flex-1 text-center md:text-left">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{rec}</h2>
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-3">
-            <Badge color="blue" label={`Seniority: ${seniority}`} />
-            <Badge color="slate" label={`Confidence: ${confidence}`} />
+        <div className="relative flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/20 border border-white/30 text-white text-xs font-black uppercase tracking-widest mb-4">
+              {rc.icon} {rc.label} Round
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">
+              {role || `${rc.label} Interview`}
+            </h2>
+            <p className="text-white/55 text-sm mt-1.5">Performance & Feedback Report</p>
+          </div>
+          <div className={`self-start inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-bold backdrop-blur-sm ${
+            isHire
+              ? "bg-emerald-500/20 border-emerald-400/30 text-emerald-100"
+              : "bg-rose-500/20 border-rose-400/30 text-rose-100"
+          }`}>
+            {isHire ? <ThumbsUp className="w-4 h-4" /> : <ThumbsDown className="w-4 h-4" />}
+            {rec || "Evaluation Complete"}
+          </div>
+        </div>
+      </div>
+
+      {/* Floating white card */}
+      <div className="relative bg-white dark:bg-slate-900 -mt-12 mx-4 mb-0 rounded-2xl shadow-lg shadow-slate-200/50 dark:shadow-slate-950/50 border border-slate-100 dark:border-slate-800">
+        <div className="p-6 sm:p-8">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+
+            {/* Score ring */}
+            <div className="flex-shrink-0 flex flex-col items-center gap-3">
+              <div className="relative">
+                <svg className="w-36 h-36 -rotate-90" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="52" fill="none" strokeWidth="6" className="stroke-slate-100 dark:stroke-slate-800" />
+                  <circle cx="60" cy="60" r="52" fill="none" strokeWidth="6" stroke={rc.ringHex} opacity="0.15" strokeDasharray={C} strokeDashoffset="0" />
+                  <motion.circle
+                    cx="60" cy="60" r="52" fill="none" strokeWidth="6" strokeLinecap="round"
+                    stroke={rc.ringHex}
+                    strokeDasharray={C}
+                    initial={{ strokeDashoffset: C }}
+                    animate={{ strokeDashoffset: C - (score / 100) * C }}
+                    transition={{ duration: 1.8, ease: [0.34, 1.3, 0.64, 1] }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <motion.span
+                    className={`text-5xl font-black tabular-nums leading-none ${grade.cls}`}
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+                  >
+                    {score}
+                  </motion.span>
+                  <span className="text-xs text-slate-400 font-semibold mt-1">/ 100</span>
+                </div>
+              </div>
+              <span className={`text-sm font-black ${grade.cls}`}>{grade.label}</span>
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 w-full min-w-0">
+              {(snr || conf) && (
+                <div className="flex flex-wrap gap-2 mb-5">
+                  {snr && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold">
+                      <GraduationCap className="w-3.5 h-3.5" /> {snr}
+                    </span>
+                  )}
+                  {conf && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold">
+                      <Activity className="w-3.5 h-3.5" /> {conf} confidence
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "Overall Score", value: `${score}`, unit: "/100", sub: grade.label,     color: grade.cls    },
+                  { label: "Questions",     value: `${qCount}`, unit: "",    sub: "answered",      color: rc.iconText  },
+                  { label: "Round",         value: rc.label,    unit: "",    sub: "interview type", color: rc.iconText  },
+                ].map(({ label, value, unit, sub, color }) => (
+                  <div key={label}
+                    className="group relative rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/30 p-4 overflow-hidden hover:border-slate-200 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-800/60 transition-all">
+                    <div className={`absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r ${rc.gradientFrom} ${rc.gradientTo} scale-x-0 group-hover:scale-x-100 transition-transform origin-left`} />
+                    <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-1.5">{label}</p>
+                    <p className={`text-xl font-black leading-none ${color}`}>
+                      {value}<span className="text-xs font-semibold text-slate-400 ml-0.5">{unit}</span>
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-1.5 capitalize">{sub}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -310,64 +540,60 @@ function HeroCard({ report }: { report: InterviewV2Report }) {
   );
 }
 
-const Badge = ({ label, color }: { label: string; color: "blue" | "slate" | "emerald" | "rose" | "amber" }) => {
-  const styles: Record<string, string> = {
-    blue: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800",
-    slate: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700",
-    emerald: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
-    rose: "bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300 border-rose-200 dark:border-rose-800",
-    amber: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800",
-  };
-  return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border capitalize ${styles[color]}`}>
-      {label}
-    </span>
-  );
-};
+// ─────────────────────────────────────────────────────────────────
+// Dimension Grid
+// ─────────────────────────────────────────────────────────────────
 
-// ── Dimension Scores Grid ──
+function DimensionGrid({ scores, rc }: {
+  scores: InterviewV2Report["dimension_scores"];
+  rc: RoundConfig;
+}) {
+  if (!scores) return <NoData />;
+  const entries = (Object.entries(scores) as [string, number | null][])
+    .filter(([, v]) => v !== null && v !== undefined) as [string, number][];
+  if (!entries.length) return <NoData />;
 
-const DIMENSION_META: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
-  technical_depth: { icon: <Cpu className="w-5 h-5" />, label: "Technical Depth", color: "blue" },
-  problem_solving: { icon: <Zap className="w-5 h-5" />, label: "Problem Solving", color: "amber" },
-  system_design: { icon: <Lightbulb className="w-5 h-5" />, label: "System Design", color: "sky" },
-  communication: { icon: <MessageSquare className="w-5 h-5" />, label: "Communication", color: "sky" },
-  role_fit: { icon: <Users className="w-5 h-5" />, label: "Role Fit", color: "emerald" },
-};
-
-const COLOR_MAP: Record<string, { bar: string; bg: string; text: string; iconBg: string }> = {
-  blue: { bar: "bg-blue-500", bg: "bg-blue-50 dark:bg-blue-900/20", text: "text-blue-600 dark:text-blue-400", iconBg: "bg-blue-100 dark:bg-blue-900/40" },
-  amber: { bar: "bg-amber-500", bg: "bg-amber-50 dark:bg-amber-900/20", text: "text-amber-600 dark:text-amber-400", iconBg: "bg-amber-100 dark:bg-amber-900/40" },
-  sky: { bar: "bg-sky-500", bg: "bg-sky-50 dark:bg-sky-900/20", text: "text-sky-600 dark:text-sky-400", iconBg: "bg-sky-100 dark:bg-sky-900/40" },
-  emerald: { bar: "bg-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20", text: "text-emerald-600 dark:text-emerald-400", iconBg: "bg-emerald-100 dark:bg-emerald-900/40" },
-};
-
-function DimensionScoresGrid({ scores }: { scores: InterviewV2Report["dimension_scores"] }) {
-  if (!scores) return null;
-  const entries = Object.entries(scores) as [string, number][];
+  const colCls =
+    entries.length >= 5 ? "lg:grid-cols-4 xl:grid-cols-6" :
+    entries.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3";
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-      {entries.map(([key, value]) => {
-        const meta = DIMENSION_META[key] ?? { icon: <BarChart3 className="w-5 h-5" />, label: key.replace(/_/g, " "), color: "blue" };
-        const c = COLOR_MAP[meta.color] ?? COLOR_MAP.blue;
+    <div className={`grid grid-cols-2 sm:grid-cols-3 ${colCls} gap-3`}>
+      {entries.map(([key, value], i) => {
+        const dim = DIMENSIONS[key] ?? { icon: <BarChart3 className="w-3.5 h-3.5" />, label: key.replace(/_/g, " ") };
+        const sc  = dimScoreColor(value);
+
         return (
           <motion.div
             key={key}
             initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 * entries.indexOf([key, value] as any) }}
-            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col items-center text-center"
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.05, duration: 0.35 }}
+            className="group relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 flex flex-col items-center text-center hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 hover:-translate-y-1 transition-all duration-200 cursor-default"
           >
-            <div className={`p-2.5 rounded-xl mb-3 ${c.iconBg} ${c.text}`}>{meta.icon}</div>
-            <div className="text-3xl font-extrabold text-gray-900 dark:text-white mb-0.5">{value}<span className="text-sm font-normal text-gray-400">/10</span></div>
-            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 capitalize">{meta.label}</div>
-            <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
+            <div className={`absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl ${sc.bar} scale-x-0 group-hover:scale-x-100 transition-transform origin-center duration-300`} />
+
+            <div className={`p-2.5 rounded-xl mb-3 ${rc.iconBg} ${rc.iconText}`}>
+              {dim.icon}
+            </div>
+
+            <div className="flex items-baseline gap-0.5 mb-0.5">
+              <span className={`text-3xl font-black tabular-nums leading-none ${sc.text}`}>{value}</span>
+              <span className="text-xs font-bold text-slate-300 dark:text-slate-600">/10</span>
+            </div>
+
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 capitalize leading-snug mb-3 mt-1">
+              {dim.label}
+            </p>
+
+            <div className={`w-full h-1.5 rounded-full overflow-hidden ${sc.track}`}>
               <motion.div
+                className={`h-full rounded-full ${sc.bar}`}
                 initial={{ width: 0 }}
-                animate={{ width: `${value * 10}%` }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className={`h-1.5 rounded-full ${c.bar}`}
+                whileInView={{ width: `${value * 10}%` }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.9, delay: 0.05 + i * 0.04, ease: "easeOut" }}
               />
             </div>
           </motion.div>
@@ -377,96 +603,113 @@ function DimensionScoresGrid({ scores }: { scores: InterviewV2Report["dimension_
   );
 }
 
-// ── Question Card (expandable) ──
+// ─────────────────────────────────────────────────────────────────
+// Question Card
+// ─────────────────────────────────────────────────────────────────
 
-function QuestionCard({ question }: { question: InterviewV2Report["question_wise_analysis"][number] }) {
-  const [expanded, setExpanded] = useState(false);
-  const scoreColor =
-    question.score >= 8 ? "text-emerald-600 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-900/30 dark:border-emerald-800" :
-      question.score >= 5 ? "text-amber-600 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-900/30 dark:border-amber-800" :
-        "text-rose-600 bg-rose-50 border-rose-200 dark:text-rose-400 dark:bg-rose-900/30 dark:border-rose-800";
+function QuestionCard({ q, idx, roundType, rc }: {
+  q: InterviewV2Report["question_wise_analysis"][number];
+  idx: number;
+  roundType: RoundKey;
+  rc: RoundConfig;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const idealLabel =
+    roundType === "hr"         ? "What a Strong Answer Includes" :
+    roundType === "behavioral" ? "Ideal STAR-Structured Response" :
+    roundType === "problem"    ? "Ideal Approach & Framework" : "Model Answer Points";
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
-      {/* Header (always visible) */}
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: idx * 0.05 }}
+      className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-md hover:shadow-slate-200/40 dark:hover:shadow-slate-950/40 transition-all border-l-4 ${rc.cardAccent}`}
+    >
       <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-5 text-left hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-4 p-5 text-left hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors"
       >
-        <div className="flex items-center gap-4 flex-1 min-w-0">
-          <span className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold border ${scoreColor}`}>
-            {question.score}
+        <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black ${rc.iconBg} ${rc.iconText}`}>
+          {q.question_id}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-slate-800 dark:text-slate-100 line-clamp-2 leading-snug">
+            {q.question}
+          </p>
+          {!open && (
+            <p className="text-xs text-slate-400 mt-1 line-clamp-1">{q.user_answer_summary}</p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <span className={`px-3 py-1.5 rounded-xl border text-sm font-black tabular-nums ${qScoreChip(q.score)}`}>
+            {q.score}<span className="text-[10px] font-semibold opacity-70">/10</span>
           </span>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-              Q{question.question_id}. {question.question}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">
-              {question.user_answer_summary}
-            </p>
+          <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
+            {open
+              ? <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
+              : <ChevronDown className="w-3.5 h-3.5 text-slate-500" />}
           </div>
         </div>
-        {expanded ? <ChevronUp className="w-5 h-5 text-gray-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />}
       </button>
 
-      {/* Expanded body */}
       <AnimatePresence>
-        {expanded && (
+        {open && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="overflow-hidden"
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden border-t border-slate-100 dark:border-slate-800"
           >
-            <div className="px-5 pb-5 pt-0 border-t border-gray-100 dark:border-gray-700">
-              {/* Answer summary */}
-              <div className="mb-4 mt-4">
-                <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Your Answer</h4>
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{question.user_answer_summary}</p>
+            <div className="p-5 space-y-4">
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Your Answer</p>
+                <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{q.user_answer_summary}</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Strengths */}
-                <div className="bg-emerald-50/50 dark:bg-emerald-900/10 rounded-lg p-4 border border-emerald-100 dark:border-emerald-900/30">
-                  <h4 className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <TrendingUp className="w-3.5 h-3.5" /> Strengths
-                  </h4>
-                  <ul className="space-y-1.5">
-                    {question.evaluation?.strengths?.map((s, i) => (
-                      <li key={i} className="text-xs text-emerald-800 dark:text-emerald-300 flex items-start gap-1.5">
-                        <CheckCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                        <span>{s}</span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="rounded-xl p-4 bg-emerald-50/70 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/40">
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400">Strengths</span>
+                  </div>
+                  <ul className="space-y-2">
+                    {q.evaluation?.strengths?.map((s, i) => (
+                      <li key={i} className="flex gap-2 text-xs text-emerald-800 dark:text-emerald-300 leading-snug">
+                        <CheckCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-emerald-500" />{s}
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                {/* Weaknesses */}
-                <div className="bg-rose-50/50 dark:bg-rose-900/10 rounded-lg p-4 border border-rose-100 dark:border-rose-900/30">
-                  <h4 className="text-xs font-semibold text-rose-700 dark:text-rose-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <TrendingDown className="w-3.5 h-3.5" /> Weaknesses
-                  </h4>
-                  <ul className="space-y-1.5">
-                    {question.evaluation?.weaknesses?.map((w, i) => (
-                      <li key={i} className="text-xs text-rose-800 dark:text-rose-300 flex items-start gap-1.5">
-                        <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                        <span>{w}</span>
+                <div className="rounded-xl p-4 bg-rose-50/70 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/40">
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <TrendingDown className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-rose-700 dark:text-rose-400">Weaknesses</span>
+                  </div>
+                  <ul className="space-y-2">
+                    {q.evaluation?.weaknesses?.map((w, i) => (
+                      <li key={i} className="flex gap-2 text-xs text-rose-800 dark:text-rose-300 leading-snug">
+                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-rose-500" />{w}
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                {/* Ideal Answer */}
-                <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-lg p-4 border border-blue-100 dark:border-blue-900/30">
-                  <h4 className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Lightbulb className="w-3.5 h-3.5" /> Ideal Answer Points
-                  </h4>
-                  <ul className="space-y-1.5">
-                    {question.evaluation?.ideal_answer_outline?.map((pt, i) => (
-                      <li key={i} className="text-xs text-blue-800 dark:text-blue-300 flex items-start gap-1.5">
-                        <ArrowRight className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                        <span>{pt}</span>
+                <div className="rounded-xl p-4 bg-blue-50/70 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/40">
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <Lightbulb className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-400">{idealLabel}</span>
+                  </div>
+                  <ul className="space-y-2">
+                    {q.evaluation?.ideal_answer_outline?.map((pt, i) => (
+                      <li key={i} className="flex gap-2 text-xs text-blue-800 dark:text-blue-300 leading-snug">
+                        <ArrowRight className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-blue-500" />{pt}
                       </li>
                     ))}
                   </ul>
@@ -476,169 +719,280 @@ function QuestionCard({ question }: { question: InterviewV2Report["question_wise
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
 
-// ── Skill Gap Analysis ──
+// ─────────────────────────────────────────────────────────────────
+// Gap Analysis
+// ─────────────────────────────────────────────────────────────────
 
-function SkillGapGrid({ gaps }: { gaps: InterviewV2Report["skill_gap_analysis"] }) {
-  if (!gaps) return null;
+function GapAnalysis({ gaps, roundType }: {
+  gaps: InterviewV2Report["skill_gap_analysis"]; roundType: RoundKey;
+}) {
+  if (!gaps) return <NoData />;
 
-  const sections = [
-    { label: "Critical Gaps", items: gaps.critical_gaps, color: "rose", icon: <XCircle className="w-4 h-4" /> },
-    { label: "Moderate Gaps", items: gaps.moderate_gaps, color: "amber", icon: <AlertCircle className="w-4 h-4" /> },
-    { label: "Minor Gaps", items: gaps.minor_gaps, color: "sky", icon: <Eye className="w-4 h-4" /> },
-  ] as const;
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {sections.map(({ label, items, color, icon }) => {
-        const c = {
-          rose: "bg-rose-50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-900/40 text-rose-700 dark:text-rose-300",
-          amber: "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-900/40 text-amber-700 dark:text-amber-300",
-          sky: "bg-sky-50 dark:bg-sky-900/10 border-sky-200 dark:border-sky-900/40 text-sky-700 dark:text-sky-300",
-        }[color];
-
-        return (
-          <div key={label} className={`rounded-xl p-5 border ${c}`}>
-            <h4 className="text-sm font-bold flex items-center gap-2 mb-3">{icon} {label}</h4>
-            {items?.length ? (
-              <ul className="space-y-2">
-                {items.map((item, i) => (
-                  <li key={i} className="text-sm flex items-start gap-2">
-                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm opacity-60 italic">None identified</p>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ── Behavioral Insights ──
-
-function BehavioralInsightsGrid({ insights }: { insights: InterviewV2Report["behavioral_insights"] }) {
-  if (!insights) return null;
-
-  const cards = [
-    { label: "Communication Style", value: insights.communication_style, icon: <MessageSquare className="w-5 h-5" />, color: "blue" },
-    { label: "Thinking Pattern", value: insights.thinking_pattern, icon: <Brain className="w-5 h-5" />, color: "sky" },
-    { label: "Pressure Handling", value: insights.pressure_handling, icon: <Shield className="w-5 h-5" />, color: "emerald" },
+  const cols = [
+    {
+      label:  roundType === "hr" ? "Critical Alignment Issues" : roundType === "behavioral" ? "Critical Behavioral Gaps" : roundType === "problem" ? "Critical Reasoning Gaps" : "Critical Gaps",
+      items:  gaps.critical_gaps,
+      bg:     "bg-rose-50 dark:bg-rose-900/10",
+      border: "border-rose-200 dark:border-rose-900/40",
+      head:   "text-rose-700 dark:text-rose-400",
+      dot:    "bg-rose-500",
+      icon:   <XCircle className="w-4 h-4" />,
+    },
+    {
+      label:  roundType === "hr" ? "Areas of Concern" : roundType === "behavioral" ? "Moderate Soft Skill Gaps" : roundType === "problem" ? "Moderate Analytical Gaps" : "Moderate Gaps",
+      items:  gaps.moderate_gaps,
+      bg:     "bg-amber-50 dark:bg-amber-900/10",
+      border: "border-amber-200 dark:border-amber-900/40",
+      head:   "text-amber-700 dark:text-amber-400",
+      dot:    "bg-amber-500",
+      icon:   <AlertCircle className="w-4 h-4" />,
+    },
+    {
+      label:  "Minor Observations",
+      items:  gaps.minor_gaps,
+      bg:     "bg-sky-50 dark:bg-sky-900/10",
+      border: "border-sky-200 dark:border-sky-900/40",
+      head:   "text-sky-700 dark:text-sky-400",
+      dot:    "bg-sky-400",
+      icon:   <Eye className="w-4 h-4" />,
+    },
   ];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {cards.map(({ label, value, icon, color }) => {
-        const c = COLOR_MAP[color] ?? COLOR_MAP.blue;
-        return (
-          <div key={label} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-            <div className={`inline-flex p-2.5 rounded-xl mb-3 ${c.iconBg} ${c.text}`}>{icon}</div>
-            <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-1.5">{label}</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{value || "N/A"}</p>
+      {cols.map(({ label, items, bg, border, head, dot, icon }) => (
+        <div key={label} className={`rounded-2xl border p-6 ${bg} ${border}`}>
+          <div className={`flex items-center gap-2 mb-4 ${head}`}>
+            {icon}
+            <h3 className="text-xs font-black uppercase tracking-widest">{label}</h3>
           </div>
-        );
-      })}
+          {items?.length ? (
+            <ul className="space-y-3">
+              {items.map((item, i) => (
+                <li key={i} className={`flex items-start gap-3 text-sm ${head} leading-snug`}>
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-2 ${dot}`} />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-slate-400 italic">None identified — great job!</p>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
 
-// ── Improvement Plan Timeline ──
+// ─────────────────────────────────────────────────────────────────
+// Insight Cards
+// ─────────────────────────────────────────────────────────────────
 
-function ImprovementTimeline({ plan }: { plan: InterviewV2Report["improvement_plan"] }) {
-  if (!plan) return null;
+function InsightCards({ insights, roundType, rc }: {
+  insights: InterviewV2Report["behavioral_insights"]; roundType: RoundKey; rc: RoundConfig;
+}) {
+  if (!insights) return <NoData />;
+
+  const cards = [
+    {
+      label: roundType === "hr" ? "Communication & Presence" : roundType === "problem" ? "Explanation Style" : "Communication Style",
+      value: insights.communication_style,
+      icon: <MessageCircle className="w-5 h-5" />,
+    },
+    {
+      label: roundType === "behavioral" ? "Thinking & Structuring" : roundType === "problem" ? "Problem Decomposition" : roundType === "hr" ? "Professional Reasoning" : "Thinking Pattern",
+      value: insights.thinking_pattern,
+      icon: <Brain className="w-5 h-5" />,
+    },
+    {
+      label: roundType === "behavioral" ? "Pressure & Conflict Handling" : roundType === "hr" ? "Composure & Professionalism" : roundType === "problem" ? "Handling Ambiguity" : "Pressure Handling",
+      value: insights.pressure_handling,
+      icon: <Shield className="w-5 h-5" />,
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {cards.map(({ label, value, icon }, i) => (
+        <motion.div
+          key={label}
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: i * 0.08 }}
+          className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-6 shadow-sm hover:shadow-md transition-shadow"
+        >
+          <div className={`inline-flex p-3 rounded-xl mb-4 ${rc.iconBg} ${rc.iconText}`}>{icon}</div>
+          <h4 className="text-sm font-black text-slate-900 dark:text-white mb-3 leading-snug">{label}</h4>
+          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{value || "—"}</p>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Improvement Roadmap
+// ─────────────────────────────────────────────────────────────────
+
+function ImprovementRoadmap({ plan }: { plan: InterviewV2Report["improvement_plan"] }) {
+  if (!plan) return <NoData />;
 
   const phases = [
-    { label: "Immediate Actions", items: plan.immediate_actions, icon: <Zap className="w-4 h-4" />, accent: "blue" },
-    { label: "1-Week Plan", items: plan.plan_1_week || (plan as any)['1_week_plan'], icon: <Calendar className="w-4 h-4" />, accent: "sky" },
-    { label: "1-Month Plan", items: plan.plan_1_month || (plan as any)['1_month_plan'], icon: <Rocket className="w-4 h-4" />, accent: "emerald" },
+    {
+      phase: "01", label: "Immediate Actions", sub: "Start within 24–48 hours",
+      items: plan.immediate_actions, icon: <Zap className="w-4 h-4" />,
+      phBg: "bg-blue-600", cardBg: "bg-blue-50/60 dark:bg-blue-900/10",
+      border: "border-blue-200 dark:border-blue-800/50", check: "text-blue-500",
+    },
+    {
+      phase: "02", label: "1-Week Sprint", sub: "Focused daily practice",
+      items: (plan as any).plan_1_week ?? (plan as any)["1_week_plan"],
+      icon: <Calendar className="w-4 h-4" />,
+      phBg: "bg-purple-600", cardBg: "bg-purple-50/60 dark:bg-purple-900/10",
+      border: "border-purple-200 dark:border-purple-800/50", check: "text-purple-500",
+    },
+    {
+      phase: "03", label: "30-Day Growth Plan", sub: "Sustained skill building",
+      items: (plan as any).plan_1_month ?? (plan as any)["1_month_plan"],
+      icon: <Rocket className="w-4 h-4" />,
+      phBg: "bg-emerald-600", cardBg: "bg-emerald-50/60 dark:bg-emerald-900/10",
+      border: "border-emerald-200 dark:border-emerald-800/50", check: "text-emerald-500",
+    },
   ] as const;
 
   return (
-    <div className="relative">
-      {/* Connecting line */}
-      <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-blue-300 via-sky-300 to-emerald-300 dark:from-blue-700 dark:via-sky-700 dark:to-emerald-700" />
-
-      <div className="space-y-6 md:space-y-0 md:grid md:grid-cols-3 md:gap-6">
-        {phases.map(({ label, items, icon, accent }) => {
-          const c = COLOR_MAP[accent] ?? COLOR_MAP.blue;
-          return (
-            <div key={label} className="relative">
-              {/* Dot on timeline */}
-              <div className="hidden md:flex absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full border-2 border-white dark:border-gray-900 z-10" style={{ backgroundColor: accent === "blue" ? "#3b82f6" : accent === "sky" ? "#0ea5e9" : "#10b981" }} />
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className={`p-1.5 rounded-lg ${c.iconBg} ${c.text}`}>{icon}</div>
-                  <h4 className="text-sm font-bold text-gray-900 dark:text-white">{label}</h4>
-                </div>
-                <ul className="space-y-2.5">
-                  {items?.map((item, i) => (
-                    <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300">
-                      <CheckCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${c.text}`} />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {phases.map(({ phase, label, sub, items, icon, phBg, cardBg, border, check }, i) => (
+        <motion.div
+          key={phase}
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: i * 0.1 }}
+          className={`rounded-2xl border p-6 ${cardBg} ${border}`}
+        >
+          <div className="flex items-center gap-3 mb-5">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white text-xs font-black shadow-sm ${phBg}`}>
+              {phase}
             </div>
-          );
-        })}
+            <div>
+              <h4 className="text-sm font-black text-slate-900 dark:text-white leading-tight">{label}</h4>
+              <p className="text-[11px] text-slate-400 font-medium mt-0.5">{sub}</p>
+            </div>
+          </div>
+          <ul className="space-y-3">
+            {(items as string[] | undefined)?.map((item, j) => (
+              <li key={j} className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300 leading-snug">
+                <CheckCircle className={`w-4 h-4 flex-shrink-0 mt-0.5 ${check}`} />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Final Verdict
+// ─────────────────────────────────────────────────────────────────
+
+function FinalVerdict({ verdict }: { verdict: InterviewV2Report["verdict"] }) {
+  if (!verdict) return <NoData />;
+
+  return (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
+      <div className="p-6 sm:p-8 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-800/40 dark:to-blue-900/5">
+        <div className="flex gap-4">
+          <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400">
+            <BookOpen className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 mb-2">Final Recommendation</p>
+            <p className="text-slate-800 dark:text-slate-200 font-medium leading-relaxed sm:text-[15px]">
+              {verdict.final_recommendation_text}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-slate-800">
+        <div className="p-6 sm:p-8">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <h4 className="text-xs font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400">Strengths to Highlight</h4>
+          </div>
+          <ul className="space-y-3">
+            {verdict.strengths_to_highlight?.map((s, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300 leading-snug">
+                <Star className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />{s}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="p-6 sm:p-8">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center">
+              <TrendingDown className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+            </div>
+            <h4 className="text-xs font-black uppercase tracking-widest text-rose-700 dark:text-rose-400">Fix Before Next Interview</h4>
+          </div>
+          <ul className="space-y-3">
+            {verdict.areas_to_fix_before_next_interview?.map((a, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300 leading-snug">
+                <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />{a}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );
 }
 
-// ── Verdict Card ──
+// ─────────────────────────────────────────────────────────────────
+// CTA Banner
+// ─────────────────────────────────────────────────────────────────
 
-function VerdictCard({ verdict }: { verdict: InterviewV2Report["verdict"] }) {
-  if (!verdict) return null;
-
+function CTABanner({ rc, onNext }: { rc: RoundConfig; onNext: () => void }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
-      {/* Final recommendation */}
-      <div className="p-6 bg-gradient-to-r from-blue-50 to-sky-50 dark:from-blue-900/20 dark:to-sky-900/20 border-b border-gray-200 dark:border-gray-700">
-        <p className="text-gray-800 dark:text-gray-200 leading-relaxed font-medium">
-          {verdict.final_recommendation_text}
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${rc.gradientFrom} ${rc.gradientTo} p-10 text-white text-center shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50`}
+    >
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-white/5 blur-3xl" />
+      </div>
+      <div className="relative max-w-md mx-auto">
+        <div className="inline-flex w-14 h-14 rounded-2xl bg-white/15 border border-white/25 items-center justify-center mx-auto mb-5">
+          <Rocket className="w-7 h-7" />
+        </div>
+        <h3 className="text-2xl font-black mb-2">Keep pushing forward</h3>
+        <p className="text-white/70 text-sm leading-relaxed mb-7">
+          Every interview is a learning opportunity. Apply this feedback and watch your performance improve.
         </p>
+        <button onClick={onNext}
+          className="inline-flex items-center gap-2 px-8 py-3 bg-white text-slate-800 font-black rounded-xl text-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">
+          Start New Interview <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100 dark:divide-gray-700">
-        {/* Strengths */}
-        <div className="p-6">
-          <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-2 mb-3 uppercase tracking-wider">
-            <TrendingUp className="w-4 h-4" /> Strengths to Highlight
-          </h4>
-          <ul className="space-y-2.5">
-            {verdict.strengths_to_highlight?.map((s, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300">
-                <Star className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                <span>{s}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Areas to fix */}
-        <div className="p-6">
-          <h4 className="text-sm font-bold text-rose-700 dark:text-rose-400 flex items-center gap-2 mb-3 uppercase tracking-wider">
-            <TrendingDown className="w-4 h-4" /> Fix Before Next Interview
-          </h4>
-          <ul className="space-y-2.5">
-            {verdict.areas_to_fix_before_next_interview?.map((a, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300">
-                <AlertCircle className="w-4 h-4 text-rose-500 mt-0.5 flex-shrink-0" />
-                <span>{a}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </div>
+    </motion.div>
   );
+}
+
+function NoData() {
+  return <p className="text-sm text-slate-400 italic py-3">No data available for this section.</p>;
 }

@@ -11,7 +11,7 @@ import { WSTranscriptPanel } from './ws/TranscriptPanel';
 import { WSCodeEditor } from './ws/CodeEditor';
 import { WSInterviewTimer } from './ws/InterviewTimer';
 import { ThreeAvatar } from './ws/ThreeAvatar';
-import { Loader2, Mic, MicOff, Video, VideoOff, LogOut, ShieldCheck, Zap, Code, AlertCircle } from 'lucide-react';
+import { Loader2, Mic, MicOff, Video, VideoOff, LogOut, ShieldCheck, Zap, Code, AlertCircle, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog } from '@/components/ui/Dialog';
 
@@ -67,9 +67,9 @@ export default function InterviewRoomWS() {
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── Hooks ──
-    const { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding, error: wsError, isCodingQuestion, isWaitingForResponse } =
+    const { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding, error: wsError, isCodingQuestion, isWaitingForResponse, endReason } =
         useInterviewWebSocket(clientId, setupData);
-    const { formattedTime } = useInterviewTimer();
+    const { formattedTime, isTimeUp } = useInterviewTimer(setupData?.duration || 0);
     const { videoRef, isActive: webcamActive, startCamera, toggleCamera } = useInterviewWebcam();
     const { isSpeaking, speak, cancel } = useInterviewTTS();
 
@@ -80,6 +80,49 @@ export default function InterviewRoomWS() {
     const [initProgress, setInitProgress] = useState(0);
     const [initStatus, setInitStatus] = useState('Establishing secure connection...');
     const [isEndDialogOpen, setIsEndDialogOpen] = useState(false);
+    const [showTimeUpBanner, setShowTimeUpBanner] = useState(false);
+    const timeUpHandledRef = useRef(false);
+
+    // ── Time-up handling: when frontend timer crosses the duration limit ──
+    useEffect(() => {
+        if (isTimeUp && !timeUpHandledRef.current && !interviewEnded && !isEnding && messages.length > 0) {
+            timeUpHandledRef.current = true;
+            setShowTimeUpBanner(true);
+            // Wait 3 seconds to show the banner, then auto-end the session
+            const timer = setTimeout(() => {
+                cancel();
+                bufferRef.current = '';
+                processedTextLengthRef.current = 0;
+                lastModelMsgIdRef.current = null;
+                sendEndSession('time_expired');
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [isTimeUp, interviewEnded, isEnding, messages.length, sendEndSession, cancel]);
+
+    // ── Browser/tab close handler ──
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            // If session is active and user has answered at least 1 question, warn them
+            if (!interviewEnded && messages.filter(m => m.role === 'user').length > 0) {
+                // Best-effort send of browser_closed reason
+                if (isConnected) {
+                    const token = localStorage.getItem('access_token');
+                    const wsUrl = (import.meta.env.VITE_INTERVIEW_WS_URL || 'ws://localhost:9000/ws/stream') + `/${clientId}?token=${encodeURIComponent(token || '')}`;
+                    // Use sendBeacon is not available for WebSocket; just mark in localStorage
+                    localStorage.setItem('ws_interview_terminated_reason', JSON.stringify({
+                        clientId,
+                        reason: 'browser_closed',
+                        timestamp: Date.now(),
+                    }));
+                }
+                e.preventDefault();
+                e.returnValue = 'Your interview is still in progress. Are you sure you want to leave?';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [interviewEnded, isConnected, messages, clientId]);
 
     // Code explanation workflow: after user submits code, listen for voice explanation
     const [awaitingCodeExplanation, setAwaitingCodeExplanation] = useState(false);
@@ -263,7 +306,7 @@ export default function InterviewRoomWS() {
             bufferRef.current = '';
             processedTextLengthRef.current = 0;
             lastModelMsgIdRef.current = null;
-            sendEndSession();
+            sendEndSession('user_terminated');
             return;
         }
         setIsEndDialogOpen(true);
@@ -369,7 +412,8 @@ export default function InterviewRoomWS() {
                     role: setupData?.role || 'Software Engineer',
                     company: setupData?.company || '',
                     round: setupData?.interviewType || 'technical',
-                    session_id: clientId
+                    session_id: clientId,
+                    end_reason: endReason || 'user_terminated',
                 };
 
                 http.post('/enhanced-interview/external-analytics', externalPayload).then(res => {
@@ -756,6 +800,21 @@ export default function InterviewRoomWS() {
                     </div>
                 </div>
             </footer>
+
+            {/* Time-Up Banner */}
+            <AnimatePresence>
+                {showTimeUpBanner && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] bg-amber-500 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-sm"
+                    >
+                        <Clock className="w-5 h-5 flex-shrink-0" />
+                        <span>⏰ Time is up! Your interview is ending and generating your report…</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Narrative State: Transitioning */}
             <AnimatePresence>

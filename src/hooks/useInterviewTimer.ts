@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-export const useInterviewTimer = () => {
+export const useInterviewTimer = (durationMinutes?: number) => {
     const [seconds, setSeconds] = useState(0);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -18,5 +18,9 @@ export const useInterviewTimer = () => {
     const secs = String(seconds % 60).padStart(2, '0');
     const formattedTime = `${hours}:${mins}:${secs}`;
 
-    return { formattedTime, seconds };
+    // isTimeUp = true once elapsed exceeds durationMinutes (with 30s grace)
+    const limitSeconds = durationMinutes ? durationMinutes * 60 + 30 : null;
+    const isTimeUp = limitSeconds !== null && seconds >= limitSeconds;
+
+    return { formattedTime, seconds, isTimeUp };
 };

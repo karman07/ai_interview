@@ -3,14 +3,13 @@ import { useState, useEffect } from "react";
 import routes from "@/constants/routes";
 import Button from "../ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Moon, Sun, ChevronDown } from "lucide-react";
+import { Moon, Sun, Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeLink, setActiveLink] = useState(routes.home);
   const [scrolled, setScrolled] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [blogsDropdown, setBlogsDropdown] = useState(false);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isAuthenticated = !!user || !!localStorage.getItem('access_token');
@@ -60,18 +59,21 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`w-full fixed top-0 z-50 border-b transition-all duration-300 ${scrolled ? 'bg-white dark:bg-gray-900 shadow-sm' : 'bg-white dark:bg-gray-900'
-        } border-gray-200 dark:border-gray-800`}
+      className={`w-full fixed top-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? 'bg-white/90 dark:bg-slate-950/90 backdrop-blur-md shadow-sm border-b border-slate-200/70 dark:border-slate-800/70'
+          : 'bg-transparent border-b border-transparent'
+      }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-24">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link
             to={routes.home}
             className="flex items-center group"
             onClick={() => setActiveLink(routes.home)}
           >
-            <div className="h-20 transition-transform duration-300 group-hover:scale-105 drop-shadow-md">
+            <div className="h-10 transition-transform duration-300 group-hover:scale-105">
               <img
                 src="/logo.png"
                 alt="ai for job"
@@ -82,89 +84,33 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
-            {navLinks.map((link) => {
-              const isActive = activeLink === link.to || (link.to === routes.blogs && activeLink.startsWith(routes.blogs));
-              
-              if (link.to === routes.blogs) {
-                return (
-                  <div 
-                    key={link.to} 
-                    className="relative"
-                    onMouseEnter={() => setBlogsDropdown(true)}
-                    onMouseLeave={() => setBlogsDropdown(false)}
-                  >
-                    <button
-                      className={`relative flex items-center gap-1 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${isActive
-                        ? 'text-primary dark:text-primary bg-primary/10 dark:bg-primary/20'
-                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
-                      }`}
-                    >
-                      {link.label}
-                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${blogsDropdown ? 'rotate-180' : ''}`} />
-                    </button>
-                    
-                    {blogsDropdown && (
-                      <div className="absolute left-0 mt-1 w-48 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xl z-50">
-                        <ul className="p-1.5 text-sm">
-                          {['Interview Prep', 'Resume Building', 'Career Growth', 'Technical Skills', 'AI in Recruitment'].map((cat, i) => (
-                            <li key={i}>
-                              <Link 
-                                to={`${routes.blogs}?category=${encodeURIComponent(cat)}`}
-                                onClick={() => { setBlogsDropdown(false); setActiveLink(routes.blogs); }}
-                                className="block px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-primary dark:hover:text-primary transition-colors"
-                              >
-                                {cat}
-                              </Link>
-                            </li>
-                          ))}
-                          <li className="border-t border-gray-100 dark:border-gray-800 mt-1 pt-1">
-                            <Link 
-                              to={routes.blogs}
-                              onClick={() => { setBlogsDropdown(false); setActiveLink(routes.blogs); }}
-                              className="block px-4 py-2 rounded-lg text-primary text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                            >
-                              All Articles
-                            </Link>
-                          </li>
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-
-              return (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  onClick={(e) => handleNavLinkClick(link.to, e)}
-                  className={`relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${isActive
-                    ? 'text-primary dark:text-primary bg-primary/10 dark:bg-primary/20'
-                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
-                    }`}
-                >
-                  {link.label}
-                  {isActive && (
-                    <span
-                      className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary dark:bg-primary"
-                    />
-                  )}
-                </Link>
-              );
-            })}
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={(e) => handleNavLinkClick(link.to, e)}
+                className={`relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  activeLink === link.to
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                  }`}
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
 
           {/* Desktop Auth Buttons + Theme Toggle */}
-          <div className="hidden md:flex items-center space-x-3">
+          <div className="hidden md:flex items-center gap-2">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 group"
+              className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
               aria-label="Toggle theme"
             >
               {theme === 'light' ? (
-                <Moon className="w-5 h-5 text-gray-600 group-hover:text-primary transition-colors" />
+                <Moon className="w-4 h-4" />
               ) : (
-                <Sun className="w-5 h-5 text-gray-400 group-hover:text-yellow-500 transition-colors" />
+                <Sun className="w-4 h-4" />
               )}
             </button>
 
@@ -173,14 +119,14 @@ export default function Navbar() {
                 <Button
                   variant="ghost"
                   onClick={() => navigate(routes.dashboard)}
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400"
                 >
                   Dashboard
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleLogout}
-                  className="text-sm font-medium border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 dark:hover:border-red-500 transition-all"
+                  className="text-sm font-medium border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 dark:hover:border-red-700 transition-all"
                 >
                   Logout
                 </Button>
@@ -189,7 +135,7 @@ export default function Navbar() {
               <>
                 <Button
                   variant="ghost"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400"
                   onClick={() => navigate('/login')}
                 >
                   Login
@@ -208,23 +154,13 @@ export default function Navbar() {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="md:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
             aria-label="Toggle menu"
           >
-            <div className="w-5 h-5 flex flex-col justify-center items-center space-y-1">
-              <span
-                className={`block w-5 h-0.5 bg-gray-600 dark:bg-gray-300 rounded-full transition-all duration-200 ${isMenuOpen ? 'rotate-45 translate-y-1.5' : ''
-                  }`}
-              />
-              <span
-                className={`block w-5 h-0.5 bg-gray-600 dark:bg-gray-300 rounded-full transition-all duration-200 ${isMenuOpen ? 'opacity-0' : ''
-                  }`}
-              />
-              <span
-                className={`block w-5 h-0.5 bg-gray-600 dark:bg-gray-300 rounded-full transition-all duration-200 ${isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''
-                  }`}
-              />
-            </div>
+            {isMenuOpen
+              ? <X className="w-5 h-5" />
+              : <Menu className="w-5 h-5" />
+            }
           </button>
         </div>
 
@@ -233,15 +169,15 @@ export default function Navbar() {
           className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
             }`}
         >
-          <div className="py-4 space-y-1 border-t border-gray-100 dark:border-gray-700">
+          <div className="py-4 space-y-1 border-t border-slate-100 dark:border-slate-800">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
                 onClick={(e) => handleNavLinkClick(link.to, e)}
                 className={`block px-4 py-2.5 rounded-lg font-medium text-sm transition-colors ${activeLink === link.to
-                  ? 'text-primary dark:text-primary bg-primary/10 dark:bg-primary/20'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
                   }`}
               >
                 {link.label}

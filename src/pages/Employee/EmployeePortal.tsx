@@ -106,7 +106,9 @@ const EmployeePortal = () => {
     const planName = (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object')
       ? (user.subscriptionPlan as any).name
       : user?.subscriptionPlan;
-    return user?.subscriptionStatus === 'active' || (planName && planName !== 'free_tier_in');
+    const normalizedPlanName = String(planName || '').toLowerCase();
+    const isFreeTier = normalizedPlanName.startsWith('free_tier') || normalizedPlanName === 'free';
+    return user?.subscriptionStatus === 'active' || (!!planName && !isFreeTier);
   }, [user, universityFeatures]);
 
   const resumeLimit = React.useMemo(() => {

@@ -73,9 +73,9 @@ const CookiePolicy = () => {
             <section className="relative pt-32 pb-20 overflow-hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[400px] bg-blue-500/5 blur-[120px] rounded-full opacity-50 pointer-events-none" />
                 <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-                    <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 mb-6 backdrop-blur-sm">
-                        <Cookie className="w-4 h-4 mr-2 text-blue-500" />
-                        <span className="text-xs font-bold tracking-widest uppercase">Cookie Policy</span>
+                    <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 mb-6 shadow-sm">
+                        <Cookie className="w-3.5 h-3.5 mr-2 text-blue-500" />
+                        <span className="text-sm font-semibold tracking-wide">COOKIE POLICY</span>
                     </div>
                     <h1 className="text-4xl md:text-6xl font-black text-gray-900 dark:text-white mb-6 tracking-tight">
                         Cookie <span className="text-blue-600">Policy</span>

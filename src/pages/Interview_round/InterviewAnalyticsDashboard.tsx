@@ -158,7 +158,7 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
   const isPayg = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go';
   const currentMonthlyUsage = isPayg
     ? (user?.paygInterviewsUsed ?? 0)
-    : Math.max(user?.interviewCount ?? 0, dashboardData?.overview?.monthlyInterviews || 0, sessions.length);
+    : (user?.interviewCount ?? 0);
   const totalInterviews = Math.max(dashboardData?.overview?.totalInterviews || 0, sessions.length);
   const isAtLimit = currentMonthlyUsage >= interviewLimit;
 

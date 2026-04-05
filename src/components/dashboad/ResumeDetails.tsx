@@ -54,6 +54,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, autoOpenBuilder, 
   const [isDownloadingResume, setIsDownloadingResume] = useState(false);
   const [showProgressDialog, setShowProgressDialog] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [jdProgress, setJdProgress] = useState(0);
   const [showBuilderModal, setShowBuilderModal] = useState(false);
 
   // Auto-open builder when navigated here from "Open Enhanced" shortcut
@@ -76,6 +77,15 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, autoOpenBuilder, 
 
 
   const handleViewEnhancedResume = async () => {
+    if (isPlatformGenerated) {
+      addNotification({
+        type: 'info',
+        title: 'Already AI-enhanced',
+        message: 'This resume was built by AIForJob and cannot be enhanced again.',
+      });
+      return;
+    }
+
     // DB has it — open immediately, no AI call
     if (resume?.builder_data) {
       setShowBuilderModal(true);
@@ -88,8 +98,11 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, autoOpenBuilder, 
     setProgress(0);
 
     const progressInterval = setInterval(() => {
-      setProgress(prev => prev >= 90 ? prev : prev + Math.random() * 15);
-    }, 500);
+      setProgress((prev) => {
+        const next = Math.min(prev + 10, 90);
+        return next;
+      });
+    }, 450);
 
     try {
       const response = await aiHttp.post('/api/v1/resume/final-enhanced', resume);
@@ -231,9 +244,9 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, autoOpenBuilder, 
             subtitle={
               <a
                 href={
-                  resume?.url || 
-                  resume?.file_url || 
-                  (resume?.path ? `${import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'https://api.aiforjob.ai'}/${resume.path}` : '#')
+                  resume?.url ||
+                  resume?.file_url ||
+                  (resume?.path ? `${import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/${resume.path}` : '#')
                 }
                 target="_blank"
                 rel="noopener noreferrer"
@@ -356,10 +369,19 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, autoOpenBuilder, 
                       <div className="space-y-3">
                         <div className="flex items-center gap-3">
                           <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                          <span className="text-sm text-gray-600">Processing your request...</span>
+                          <span className="text-sm text-gray-600">Processing your request... {Math.round(jdProgress)}%</span>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                          <span>Analyzing JD + resume match</span>
+                          <span>{Math.round(jdProgress)}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+                          <motion.div
+                            className="bg-blue-600 h-2 rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${jdProgress}%` }}
+                            transition={{ duration: 0.3 }}
+                          />
                         </div>
                       </div>
                     )}
@@ -369,7 +391,11 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, autoOpenBuilder, 
                         if (!jdFile && !jdText.trim()) return;
 
                         setIsUploading(true);
+                        setJdProgress(10);
                         setUploadError('');
+                        const jdProgressInterval = setInterval(() => {
+                          setJdProgress((prev) => Math.min(prev + 10, 90));
+                        }, 500);
 
                         try {
                           const result = await resumeService.improveResume(
@@ -378,12 +404,17 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, autoOpenBuilder, 
                             jdFile || undefined
                           );
 
+                          clearInterval(jdProgressInterval);
+                          setJdProgress(100);
+
                           setOpenJDDialog(false);
                           setJdFile(null);
                           setJdText('');
                           if (onUpdated) onUpdated(result.resume);
                           await refreshMe();
                         } catch (error: any) {
+                          clearInterval(jdProgressInterval);
+                          setJdProgress(0);
                           const errorMsg = error?.response?.data?.message || error?.message || '';
 
                           if ((error?.response?.status === 400 || error?.status === 400) && (errorMsg.toLowerCase().includes('limit') || errorMsg.toLowerCase().includes('plan'))) {
@@ -399,6 +430,7 @@ const ResumeDetails: React.FC<ResumeDetailsProps> = ({ resume, autoOpenBuilder, 
                           }
                         } finally {
                           setIsUploading(false);
+                          setTimeout(() => setJdProgress(0), 400);
                         }
                       }}
                       disabled={(!jdFile && !jdText.trim()) || isUploading}
