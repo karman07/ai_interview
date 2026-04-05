@@ -69,9 +69,9 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 mb-6"
+            className="inline-flex items-center px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 mb-6 shadow-sm"
           >
-            <Sparkles className="w-4 h-4 mr-2" />
+            <Sparkles className="w-3.5 h-3.5 mr-2 text-blue-500" />
             <span className="text-sm font-semibold tracking-wide">PRICING</span>
           </motion.div>
 
@@ -263,8 +263,8 @@ export default function PricingPage() {
       <section className="pb-24 px-6 border-t border-slate-100 dark:border-slate-800">
         <div className="max-w-6xl mx-auto pt-16">
           <Reveal className="text-center mb-10">
-            <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-blue-400/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 mb-4">
-              <Zap className="w-4 h-4 mr-2" />
+            <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 mb-4 shadow-sm">
+              <Zap className="w-3.5 h-3.5 mr-2 text-blue-500" />
               <span className="text-sm font-semibold tracking-wide">FLEXIBLE OPTION</span>
             </div>
             <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white mb-3">

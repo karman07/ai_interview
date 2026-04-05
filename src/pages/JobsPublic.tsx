@@ -75,9 +75,9 @@ const JobsPublicPage = () => {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 mb-8 backdrop-blur-sm"
+            className="inline-flex items-center px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 mb-8 shadow-sm"
           >
-            <Sparkles className="w-4 h-4 mr-2 text-blue-500" />
+            <Sparkles className="w-3.5 h-3.5 mr-2 text-blue-500" />
             <span className="text-sm font-semibold tracking-wide">FIND ROLES WORTH YOUR TIME</span>
           </motion.div>
 
@@ -125,7 +125,7 @@ const JobsPublicPage = () => {
       <section className="py-20 bg-slate-50 dark:bg-slate-900/50 border-y border-slate-200 dark:border-slate-800">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
-            <p className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">More Than a Job Board</p>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">More Than a Job Board</p>
             <h2 className="text-2xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-4">
               We help you show up prepared
             </h2>
@@ -208,7 +208,7 @@ const JobsPublicPage = () => {
       <section className="py-16 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-800">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-10">
-            <p className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">Fresh Listings</p>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">Fresh Listings</p>
             <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white mb-3">
               What's open right now
             </h2>

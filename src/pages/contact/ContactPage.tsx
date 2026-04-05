@@ -38,9 +38,9 @@ const ContactPage = () => {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-blue-500/5 blur-[120px] rounded-full opacity-50 pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-          <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 mb-8 backdrop-blur-sm">
-            <MessageCircle className="w-4 h-4 mr-2 text-blue-500" />
-            <span className="text-sm font-medium tracking-wide">GET IN TOUCH</span>
+          <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 mb-8 shadow-sm">
+            <MessageCircle className="w-3.5 h-3.5 mr-2 text-blue-500" />
+            <span className="text-sm font-semibold tracking-wide">GET IN TOUCH</span>
           </div>
 
           <h1 className="text-4xl md:text-6xl font-bold text-slate-900 dark:text-white leading-tight tracking-tight mb-6">

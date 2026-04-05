@@ -28,6 +28,10 @@ const AboutUs = () => {
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden bg-white dark:bg-slate-950">
         <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
+          <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 mb-7 shadow-sm">
+            <Heart className="w-3.5 h-3.5 mr-2 text-blue-500" />
+            <span className="text-sm font-semibold tracking-wide">OUR MISSION</span>
+          </div>
           <h1 className="text-5xl md:text-7xl font-bold text-slate-900 dark:text-white leading-tight tracking-tight mb-6">
             Everyone deserves a <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-600 dark:from-blue-400 dark:to-blue-400">
