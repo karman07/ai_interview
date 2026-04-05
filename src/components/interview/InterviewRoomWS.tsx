@@ -124,6 +124,10 @@ export default function InterviewRoomWS() {
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [interviewEnded, isConnected, messages, clientId]);
 
+    // Code explanation workflow: after user submits code, listen for voice explanation
+    const [awaitingCodeExplanation, setAwaitingCodeExplanation] = useState(false);
+    const [pendingCodeSubmission, setPendingCodeSubmission] = useState<{ code: string; language: { id: string; name: string } } | null>(null);
+
     // Simulate progress while waiting for connection and first question
     useEffect(() => {
         if (error) return;
@@ -242,8 +246,18 @@ export default function InterviewRoomWS() {
 
     // STT handler
     const handleFinalTranscript = useCallback((text: string) => {
-        sendMessage(text);
-    }, [sendMessage]);
+        // If we're waiting for code explanation, combine with code and send
+        if (awaitingCodeExplanation && pendingCodeSubmission) {
+            const codeMessage = `Here is my ${pendingCodeSubmission.language.name} solution:\n\n\`\`\`${pendingCodeSubmission.language.id}\n${pendingCodeSubmission.code}\n\`\`\`\n\nExplanation: ${text}`;
+            sendMessage(codeMessage);
+            setAwaitingCodeExplanation(false);
+            setPendingCodeSubmission(null);
+            setShowCodeEditor(false);
+        } else {
+            // Normal flow: just send the transcribed text
+            sendMessage(text);
+        }
+    }, [sendMessage, awaitingCodeExplanation, pendingCodeSubmission]);
 
     const { isListening, transcript, startListening, stopListening, isTranscribing } =
         useInterviewSTT(clientId, handleFinalTranscript);
@@ -257,13 +271,20 @@ export default function InterviewRoomWS() {
 
     // ── Code submission ──
     const handleSubmitCode = useCallback((code: string, language: { id: string; name: string }) => {
-        if (sendMessage && code.trim()) {
-            const codeMessage = `Here is my ${language.name} solution:\n\n\`\`\`${language.id}\n${code}\n\`\`\`\n\nI'd like you to review this code.`;
-            sendMessage(codeMessage);
-            setShowCodeEditor(false);   // auto-close editor after submit
-            setIsTypingInEditor(false);
-        }
-    }, [sendMessage]);
+        if (!code.trim()) return;
+        
+        // Store the code submission and mark that we're waiting for explanation
+        setPendingCodeSubmission({ code, language });
+        setAwaitingCodeExplanation(true);
+        
+        // Cancel any ongoing AI voice playback
+        cancel();
+        
+        // Auto-start listening for the user's code explanation after a brief delay
+        setTimeout(() => {
+            startListening();
+        }, 200);
+    }, [cancel, startListening]);
 
     // ── Track typing in code editor to suppress idle dialog ──
     const handleEditorTyping = useCallback(() => {
@@ -293,14 +314,14 @@ export default function InterviewRoomWS() {
 
     const confirmEndSession = () => {
         setIsEndDialogOpen(false);
-        if (userMessageCount > 0) {
-            cancel();
-            bufferRef.current = '';
-            processedTextLengthRef.current = 0;
-            lastModelMsgIdRef.current = null;
-            sendEndSession('user_terminated');
-        } else {
-            // Early exit - just go back
+        cancel();
+        bufferRef.current = '';
+        processedTextLengthRef.current = 0;
+        lastModelMsgIdRef.current = null;
+        // Always signal backend so session is cleaned up and no fake report is generated.
+        sendEndSession();
+        if (userMessageCount === 0) {
+            // For early exits with no answers, move user out immediately.
             navigate('/interview_round', { replace: true });
         }
     };
