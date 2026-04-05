@@ -766,6 +766,31 @@ export class AnalyticsService {
       },
     ]);
 
+    // Cover letter token breakdown (source = 'cover_letter')
+    const coverLetterData = await this.aiUsageModel.aggregate([
+      { $match: { source: 'cover_letter' } },
+      {
+        $group: {
+          _id: null,
+          totalTokens: { $sum: '$totalTokens' },
+          totalInputTokens: { $sum: '$inputTokens' },
+          totalOutputTokens: { $sum: '$outputTokens' },
+          totalCost: { $sum: '$costUsd' },
+          sessions: { $addToSet: '$sessionId' },
+        },
+      },
+      {
+        $project: {
+          totalTokens: 1,
+          totalInputTokens: 1,
+          totalOutputTokens: 1,
+          totalCost: 1,
+          sessionCount: { $size: '$sessions' },
+          _id: 0,
+        },
+      },
+    ]);
+
     return {
       tokensByPlan,
       usageOverTime,
@@ -779,6 +804,7 @@ export class AnalyticsService {
       totalRagTokens: ragVertexData[0]?.totalRagTokens || 0,
       vertexSessions: ragVertexData[0]?.vertexSessions || 0,
       directSessions: ragVertexData[0]?.directSessions || 0,
+      coverLetterStats: coverLetterData[0] || null,
       timestamp: new Date(),
     };
   }
