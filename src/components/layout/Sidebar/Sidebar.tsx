@@ -173,21 +173,21 @@ export default function Sidebar() {
                   setIsMobileMenuOpen(false);
                   setShowPricing(true);
                 }}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 px-4 py-3 flex items-center gap-3 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/70 dark:hover:bg-blue-900/20 transition-all"
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-transparent hover:border-blue-100 dark:hover:border-blue-800 transition-all duration-200 group"
               >
-                <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
-                  <Target size={16} />
+                <div className="flex-shrink-0 p-1.5 rounded-md text-blue-500 dark:text-blue-400">
+                  <Target size={18} />
                 </div>
                 <div className="flex-1 min-w-0 text-left">
-                  <p className="text-[15px] font-extrabold text-slate-800 dark:text-slate-100 leading-none">
+                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                     {shouldShowUpgrade ? "Upgrade Plan" : "View Plans"}
-                  </p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
-                    {shouldShowUpgrade ? "Unlock paid plans and higher limits" : "Compare plans and billing options"}
+                  </span>
+                  <p className="text-xs text-slate-400 dark:text-slate-500">
+                    {shouldShowUpgrade ? "Unlock higher limits" : "Compare plans & billing"}
                   </p>
                 </div>
                 {shouldShowUpgrade && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-500 text-white uppercase tracking-tight">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 uppercase tracking-wide">
                     Pro
                   </span>
                 )}
@@ -271,21 +271,21 @@ export default function Sidebar() {
                 </p>
                 <button
                   onClick={() => setShowPricing(true)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 px-4 py-3 flex items-center gap-3 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/70 dark:hover:bg-blue-900/20 transition-all"
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-transparent hover:border-blue-100 dark:hover:border-blue-800 transition-all duration-200 group"
                 >
-                  <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
-                    <Target size={16} />
+                  <div className="flex-shrink-0 p-1.5 rounded-md text-blue-500 dark:text-blue-400">
+                    <Target size={18} />
                   </div>
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-[15px] font-extrabold text-slate-800 dark:text-slate-100 leading-none">
+                    <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                       {shouldShowUpgrade ? "Upgrade Plan" : "View Plans"}
-                    </p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
-                      {shouldShowUpgrade ? "Unlock paid plans and higher limits" : "Compare plans and billing options"}
+                    </span>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                      {shouldShowUpgrade ? "Unlock higher limits" : "Compare plans & billing"}
                     </p>
                   </div>
                   {shouldShowUpgrade && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-500 text-white uppercase tracking-tight">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 uppercase tracking-wide">
                       Pro
                     </span>
                   )}

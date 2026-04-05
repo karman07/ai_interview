@@ -6,7 +6,6 @@ import {
   Zap,
   Globe,
   Award,
-  Sparkles,
   ArrowRight,
   TrendingUp,
   Heart
@@ -29,11 +28,6 @@ const AboutUs = () => {
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden bg-white dark:bg-slate-950">
         <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-          <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 mb-8 backdrop-blur-sm">
-            <Sparkles className="w-4 h-4 mr-2 text-blue-500" />
-            <span className="text-sm font-medium tracking-wide">OUR STORY</span>
-          </div>
-
           <h1 className="text-5xl md:text-7xl font-bold text-slate-900 dark:text-white leading-tight tracking-tight mb-6">
             Everyone deserves a <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-600 dark:from-blue-400 dark:to-blue-400">
