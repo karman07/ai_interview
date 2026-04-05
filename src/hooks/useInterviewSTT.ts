@@ -24,17 +24,12 @@ export const useInterviewSTT = (sessionId: string, onFinalTranscript: (text: str
     const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isStoppedRef = useRef(false);
     const finalTranscriptRef = useRef('');
-    const speechStartedRef = useRef(false);
-    const lastSpeechAtRef = useRef(0);
-    const recordingStartedAtRef = useRef(0);
 
     const onFinalTranscriptRef = useRef(onFinalTranscript);
     onFinalTranscriptRef.current = onFinalTranscript;
 
-    // Keep silence auto-stop conservative to avoid truncating long answers.
-    const SILENCE_THRESHOLD = 0.004;
-    const SILENCE_DURATION_MS = 7000;
-    const MIN_RECORDING_BEFORE_AUTOSTOP_MS = 5000;
+    const SILENCE_THRESHOLD = 0.008; // More sensitive silence detection
+    const SILENCE_DURATION_MS = 3500; // Longer pause allowed for user thought
 
     const cleanup = useCallback((preserveTranscript = false) => {
         if (animFrameRef.current) {
@@ -89,6 +84,7 @@ export const useInterviewSTT = (sessionId: string, onFinalTranscript: (text: str
 
     const monitorSilence = useCallback((analyser: AnalyserNode) => {
         const dataArray = new Float32Array(analyser.fftSize);
+        let isSilent = false;
 
         const checkVolume = () => {
             if (isStoppedRef.current) return;
@@ -99,29 +95,25 @@ export const useInterviewSTT = (sessionId: string, onFinalTranscript: (text: str
             for (let i = 0; i < dataArray.length; i++) sum += dataArray[i] * dataArray[i];
             const rms = Math.sqrt(sum / dataArray.length);
 
-            const now = Date.now();
-            if (rms >= SILENCE_THRESHOLD) {
-                speechStartedRef.current = true;
-                lastSpeechAtRef.current = now;
+            if (rms < SILENCE_THRESHOLD) {
+                if (!isSilent) {
+                    isSilent = true;
+                    silenceTimerRef.current = setTimeout(() => {
+                        // Use the latest finalTranscriptRef value
+                        const text = finalTranscriptRef.current?.trim();
+                        if (text) {
+                            console.log("[STT] Silence detected, sending:", text.substring(0, 60));
+                            onFinalTranscriptRef.current(text);
+                        }
+                        finalizeAndStop();
+                    }, SILENCE_DURATION_MS);
+                }
+            } else {
+                isSilent = false;
                 if (silenceTimerRef.current) {
                     clearTimeout(silenceTimerRef.current);
                     silenceTimerRef.current = null;
                 }
-            } else if (
-                speechStartedRef.current &&
-                now - recordingStartedAtRef.current >= MIN_RECORDING_BEFORE_AUTOSTOP_MS &&
-                now - lastSpeechAtRef.current >= SILENCE_DURATION_MS &&
-                !silenceTimerRef.current
-            ) {
-                // Defer finalization slightly so we don't cut on short quiet gaps.
-                silenceTimerRef.current = setTimeout(() => {
-                    const text = finalTranscriptRef.current?.trim();
-                    if (text) {
-                        console.log("[STT] Sustained silence detected, sending:", text.substring(0, 60));
-                        onFinalTranscriptRef.current(text);
-                    }
-                    finalizeAndStop();
-                }, 300);
             }
 
             animFrameRef.current = requestAnimationFrame(checkVolume);
@@ -132,10 +124,6 @@ export const useInterviewSTT = (sessionId: string, onFinalTranscript: (text: str
     const startListening = useCallback(() => {
         isStoppedRef.current = false;
         finalTranscriptRef.current = '';
-        speechStartedRef.current = false;
-        const now = Date.now();
-        recordingStartedAtRef.current = now;
-        lastSpeechAtRef.current = now;
 
         navigator.mediaDevices.getUserMedia({
             audio: {
@@ -181,10 +169,8 @@ export const useInterviewSTT = (sessionId: string, onFinalTranscript: (text: str
             sttWs.onerror = (err) => console.error("[STT WS] Error:", err);
             sttWs.onclose = () => {
                 console.log("[STT WS] Disconnected");
-                if (!isStoppedRef.current) {
-                    // Unexpected close while recording: keep UI state consistent.
-                    cleanup(true);
-                }
+                // When WS closes, use whatever finalTranscriptRef has as the definitive text
+                // This catches late-arriving finals that came just before close
             };
 
             const source = audioContext.createMediaStreamSource(stream);

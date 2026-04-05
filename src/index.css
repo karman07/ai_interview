@@ -1,139 +1,102 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
+@layer base {
+  :root {
+    /* Background: Soft White #F9FAFB -> 210 20% 98% */
+    --background: 210 20% 98%;
+    /* Primary Text: Dark Slate #111827 -> 221 39% 11% */
+    --foreground: 221 39% 11%;
 
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
+    /* Card Background: Pure White #FFFFFF -> 0 0% 100% */
+    --card: 0 0% 100%;
+    --card-foreground: 221 39% 11%;
 
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
+    --popover: 0 0% 100%;
+    --popover-foreground: 221 39% 11%;
 
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-primary-hover: hsl(var(--primary-hover));
+    /* Primary Brand: Deep AI Blue #2563EB -> 221 83% 53% */
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
 
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
+    /* Primary Hover: Bright Blue #1D4ED8 -> 224 76% 48% */
+    --primary-hover: 224 76% 48%;
 
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
+    /* Secondary: AI Purple #7C3AED -> 262 83% 58% */
+    --secondary: 262 83% 58%;
+    --secondary-foreground: 210 40% 98%;
 
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
+    /* Secondary Text / Muted: Muted Gray #6B7280 -> 220 9% 46% */
+    --muted: 210 40% 96.1%;
+    /* Keeping a light gray for backgrounds if needed */
+    --muted-foreground: 220 9% 46%;
 
-  --color-cta: hsl(var(--cta));
-  --color-cta-foreground: hsl(var(--cta-foreground));
+    /* Accent: Emerald #10B981 -> 160 84% 39% */
+    --accent: 160 84% 39%;
+    --accent-foreground: 210 40% 98%;
 
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
+    /* CTA Highlight: Soft Orange #F59E0B -> 38 92% 50% */
+    --cta: 38 92% 50%;
+    --cta-foreground: 221 39% 11%;
 
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
-}
+    /* Border: Light Gray #E5E7EB -> 220 13% 91% */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 221 83% 53%;
+    /* Using primary for ring */
 
-@variant dark (&:where(.dark, .dark *));
+    --radius: 0.5rem;
+  }
 
-:root {
-  color-scheme: light dark;
-  /* Background: Soft White #F9FAFB -> 210 20% 98% */
-  --background: 210 20% 98%;
-  /* Primary Text: Dark Slate #111827 -> 221 39% 11% */
-  --foreground: 221 39% 11%;
+  .dark {
+    /* Background: Deep Navy #0F172A -> 222 47% 11% */
+    --background: 222 47% 11%;
+    /* Primary Text: Soft White #F1F5F9 -> 210 40% 96% */
+    --foreground: 210 40% 96%;
 
-  /* Card Background: Pure White #FFFFFF -> 0 0% 100% */
-  --card: 0 0% 100%;
-  --card-foreground: 221 39% 11%;
+    /* Card Background: Dark Slate #1E293B -> 215 28% 17% */
+    --card: 215 28% 17%;
+    --card-foreground: 210 40% 96%;
 
-  --popover: 0 0% 100%;
-  --popover-foreground: 221 39% 11%;
+    --popover: 215 28% 17%;
+    --popover-foreground: 210 40% 96%;
 
-  /* Primary Brand: Deep AI Blue #2563EB -> 221 83% 53% */
-  --primary: 221 83% 53%;
-  --primary-foreground: 210 40% 98%;
+    /* Primary Brand: Electric Blue #3B82F6 -> 217 91% 60% */
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+    /* Dark text on bright blue */
 
-  /* Primary Hover: Bright Blue #1D4ED8 -> 224 76% 48% */
-  --primary-hover: 224 76% 48%;
+    /* Primary Hover: Bright Cyan-Blue #60A5FA -> 213 94% 68% */
+    --primary-hover: 213 94% 68%;
 
-  /* Secondary: AI Purple #7C3AED -> 262 83% 58% */
-  --secondary: 262 83% 58%;
-  --secondary-foreground: 210 40% 98%;
+    /* Secondary: Neon Purple #A78BFA -> 255 92% 76% */
+    --secondary: 255 92% 76%;
+    --secondary-foreground: 222 47% 11%;
 
-  /* Secondary Text / Muted: Muted Gray #6B7280 -> 220 9% 46% */
-  --muted: 210 40% 96.1%;
-  /* Keeping a light gray for backgrounds if needed */
-  --muted-foreground: 220 9% 46%;
+    /* Secondary Text / Muted: Cool Gray #94A3B8 -> 215 16% 47% */
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 16% 47%;
 
-  /* Accent: Emerald #10B981 -> 160 84% 39% */
-  --accent: 160 84% 39%;
-  --accent-foreground: 210 40% 98%;
+    /* Accent: Mint Emerald #34D399 -> 158 64% 52% */
+    --accent: 158 64% 52%;
+    --accent-foreground: 222 47% 11%;
 
-  /* CTA Highlight: Soft Orange #F59E0B -> 38 92% 50% */
-  --cta: 38 92% 50%;
-  --cta-foreground: 221 39% 11%;
+    /* CTA Highlight: Warm Amber #FBBF24 -> 43 96% 56% */
+    --cta: 43 96% 56%;
+    --cta-foreground: 222 47% 11%;
 
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
 
-  /* Border: Light Gray #E5E7EB -> 220 13% 91% */
-  --border: 220 13% 91%;
-  --input: 220 13% 91%;
-  --ring: 221 83% 53%;
-  /* Using primary for ring */
-
-  --radius: 0.5rem;
-}
-
-.dark {
-  /* Background: Deep Navy #0F172A -> 222 47% 11% */
-  --background: 222 47% 11%;
-  /* Primary Text: Soft White #F1F5F9 -> 210 40% 96% */
-  --foreground: 210 40% 96%;
-
-  /* Card Background: Dark Slate #1E293B -> 215 28% 17% */
-  --card: 215 28% 17%;
-  --card-foreground: 210 40% 96%;
-
-  --popover: 215 28% 17%;
-  --popover-foreground: 210 40% 96%;
-
-  /* Primary Brand: Electric Blue #3B82F6 -> 217 91% 60% */
-  --primary: 217 91% 60%;
-  --primary-foreground: 222 47% 11%;
-  /* Dark text on bright blue */
-
-  /* Primary Hover: Bright Cyan-Blue #60A5FA -> 213 94% 68% */
-  --primary-hover: 213 94% 68%;
-
-  /* Secondary: Neon Purple #A78BFA -> 255 92% 76% */
-  --secondary: 255 92% 76%;
-  --secondary-foreground: 222 47% 11%;
-
-  /* Secondary Text / Muted: Cool Gray #94A3B8 -> 215 16% 47% */
-  --muted: 217 33% 17%;
-  --muted-foreground: 215 16% 47%;
-
-  /* Accent: Mint Emerald #34D399 -> 158 64% 52% */
-  --accent: 158 64% 52%;
-  --accent-foreground: 222 47% 11%;
-
-  /* CTA Highlight: Warm Amber #FBBF24 -> 43 96% 56% */
-  --cta: 43 96% 56%;
-  --cta-foreground: 222 47% 11%;
-
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-
-  /* Border: Muted Dark Gray #475569 -> 215 14% 34% */
-  --border: 215 14% 34%;
-  --input: 215 14% 34%;
-  --ring: 217 91% 60%;
+    /* Border: Muted Dark Gray #475569 -> 215 14% 34% */
+    --border: 215 14% 34%;
+    --input: 215 14% 34%;
+    --ring: 217 91% 60%;
+  }
 }
 
 @layer base {
@@ -219,12 +182,10 @@
       width: 0%;
       transform: translateX(-100%);
     }
-
     50% {
       width: 100%;
       transform: translateX(0%);
     }
-
     100% {
       width: 0%;
       transform: translateX(100%);

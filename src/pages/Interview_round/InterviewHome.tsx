@@ -21,8 +21,6 @@ type InterviewCardProps = {
   description: string;
   icon: React.ReactNode;
   color: string;
-  routeKey?: string;
-  ctaLabel?: string;
   navigate: (path: string) => void | Promise<void>;
   isAtLimit: boolean;
   onLimitExceeded: () => void;
@@ -37,8 +35,6 @@ function InterviewCard({
   description, 
   icon, 
   color, 
-  routeKey,
-  ctaLabel,
   navigate, 
   isAtLimit, 
   onLimitExceeded, 
@@ -111,13 +107,13 @@ function InterviewCard({
 
         {/* Action button */}
         <button
-          onClick={() => isAtLimit ? onLimitExceeded() : navigate(`/interview/start/${routeKey || type.toLowerCase()}`)}
+          onClick={() => isAtLimit ? onLimitExceeded() : navigate(`/interview/start/${type.toLowerCase()}`)}
           className={`mt-8 w-full flex items-center justify-center gap-2 border px-4 py-3 rounded-lg transition-all duration-300 font-medium text-sm group-hover:border-gray-300 dark:group-hover:border-gray-600 ${isAtLimit
             ? 'bg-gray-50 dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed'
             : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
         >
-          {isAtLimit ? 'Limit Reached' : (ctaLabel || 'Start Session')}
+          {isAtLimit ? 'Limit Reached' : 'Start Session'}
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
@@ -272,33 +268,6 @@ export default function InterviewHome() {
     },
   ];
 
-  const comingSoonSimulations = [
-    {
-      id: 'google-swe1',
-      title: 'Google SWE-1 Hiring Process',
-      description: 'Full-cycle simulation: OA, technical screen, onsite coding + Googliness, and hiring committee style wrap-up.',
-      badge: 'Coming Soon',
-    },
-    {
-      id: 'amazon-sde1',
-      title: 'Amazon SDE-1 Hiring Process',
-      description: 'End-to-end loop with OA, LP-focused behavioral checks, and bar-raiser style technical depth.',
-      badge: 'Coming Soon',
-    },
-    {
-      id: 'microsoft-swe',
-      title: 'Microsoft SWE Hiring Process',
-      description: 'Structured pipeline simulation with coding, system design for level, and collaboration evaluation.',
-      badge: 'Coming Soon',
-    },
-    {
-      id: 'meta-e3',
-      title: 'Meta E3 Interview Simulation',
-      description: 'Signal-driven interview flow covering DSA rounds, product thinking, and communication under pressure.',
-      badge: 'Coming Soon',
-    },
-  ];
-
   const filteredRounds = useMemo(() => {
     return rounds.filter(round => {
       const matchesSearch = round.type.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -321,7 +290,7 @@ export default function InterviewHome() {
           <div className="max-w-7xl mx-auto px-6 py-10">
             <button
               onClick={() => setShowInterviewSelection(false)}
-              className="mb-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-500/60 hover:text-blue-600 dark:hover:text-blue-300 transition-all duration-200"
+              className="mb-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
               <ArrowRight className="w-4 h-4 rotate-180" />
               Back to Dashboard
@@ -397,7 +366,6 @@ export default function InterviewHome() {
                 description={round.description}
                 icon={round.icon}
                 color={round.color}
-                routeKey={round.key}
                 navigate={navigate}
                 isAtLimit={isAtLimit}
                 onLimitExceeded={handleLimitExceeded}
@@ -447,54 +415,6 @@ export default function InterviewHome() {
                     onLimitExceeded={handleLimitExceeded}
                   />
                 ))}
-              </div>
-
-              <div className="mt-14 space-y-8">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                  <div className="space-y-2">
-                    <h3 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
-                      Full Simulation <span className="text-indigo-600">Hiring Processes</span>
-                    </h3>
-                    <p className="text-gray-500 dark:text-gray-400 font-medium">
-                      Company-specific end-to-end flows like Google SWE-1 and more are rolling out next.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400">
-                    <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
-                    Coming Soon
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
-                  {comingSoonSimulations.map((item) => (
-                    <div
-                      key={item.id}
-                      className="relative bg-gradient-to-br from-white to-slate-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl border border-dashed border-indigo-200 dark:border-indigo-800/60 p-7 shadow-sm"
-                    >
-                      <div className="absolute top-4 right-4">
-                        <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700/60">
-                          {item.badge}
-                        </span>
-                      </div>
-                      <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/40 flex items-center justify-center mb-5">
-                        <Building2 className="w-6 h-6 text-indigo-600 dark:text-indigo-300" />
-                      </div>
-                      <h4 className="text-lg font-bold text-gray-900 dark:text-white leading-snug mb-3">
-                        {item.title}
-                      </h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-6 min-h-[88px]">
-                        {item.description}
-                      </p>
-                      <button
-                        type="button"
-                        disabled
-                        className="w-full px-4 py-3 rounded-lg text-sm font-semibold border border-indigo-200 dark:border-indigo-700/60 text-indigo-600 dark:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-900/20 cursor-not-allowed"
-                      >
-                        Notify Me
-                      </button>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           )}

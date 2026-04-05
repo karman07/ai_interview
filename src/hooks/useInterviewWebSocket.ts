@@ -36,7 +36,6 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
     const isStreamingResponseRef = useRef(false);
     const reconnectAttempts = useRef(0);
     const maxReconnectAttempts = 5;
-    const shouldReconnectRef = useRef(true);
 
     const setStreamingInfo = (val: boolean) => {
         setIsStreamingResponse(val);
@@ -70,7 +69,6 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
             setError(null);
             reconnectAttempts.current = 0;
             initSentRef.current = false;
-            shouldReconnectRef.current = true;
 
             // Send init after 1 second to allow for 'restored' signal
             initTimer = setTimeout(() => {
@@ -105,7 +103,7 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
             console.log(`[WS] Disconnected (Code: ${event.code})`);
             clearInterval(heartbeatInterval);
 
-            if (!feedbackRef.current && !interviewEnded && shouldReconnectRef.current) {
+            if (!feedbackRef.current && !interviewEnded) {
                 setIsConnected(false);
                 // Attempt reconnect if not a clean close and not at limit
                 if (reconnectAttempts.current < maxReconnectAttempts) {
@@ -118,8 +116,6 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
                 } else {
                     setError('Connection lost. Please refresh the page to try again.');
                 }
-            } else {
-                setIsConnected(false);
             }
             setStreamingInfo(false);
         };
@@ -170,8 +166,6 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
                 } else if (data.type === 'end_interview') {
                     console.log("[WS] Interview Ended. feedback:", data.feedback ? "present" : "null", "error:", data.error, "end_reason:", data.end_reason);
                     if (!data.feedback || data.error === 'no_answers') {
-                        // End requested with no answers should not trigger reconnect/init loops.
-                        shouldReconnectRef.current = false;
                         // No answers given — do NOT navigate to results, show an error instead
                         const msg = data.error === 'no_answers'
                             ? 'No answers were recorded. The interview session has ended without generating a report.'
@@ -222,8 +216,6 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
     const sendEndSession = useCallback((reason: string = 'user_terminated') => {
         if (socket && socket.readyState === WebSocket.OPEN) {
             setIsEnding(true);
-            // Deliberate session termination: do not auto-reconnect on close.
-            shouldReconnectRef.current = false;
             setEndReason(reason);
             socket.send(JSON.stringify({ type: 'end_session', reason }));
         }

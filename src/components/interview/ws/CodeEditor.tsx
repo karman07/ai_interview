@@ -228,7 +228,6 @@ export const WSCodeEditor: React.FC<WSCodeEditorProps> = ({ onSubmitCode, onKeyP
                             ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
                             : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500'
                             }`}
-                        title="Submit code and explain via voice"
                     >
                         {submitted ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
                         {submitted ? 'Verified!' : 'Submit'}
