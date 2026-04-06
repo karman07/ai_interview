@@ -46,6 +46,9 @@ export class UsersService {
     const limits = this.extractLimitsFromPlan(freePlan);
     const syncKey = `${freePlan?._id?.toString?.() ?? 'free'}:free`;
 
+    const now = new Date();
+    const limitsNextReset = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+
     const created = new this.userModel({
       ...dto,
       passwordHash,
@@ -55,6 +58,7 @@ export class UsersService {
       resumeLimit: this.normalizeLimit(dto.resumeLimit, limits.resumeLimit),
       coverLetterLimit: this.normalizeLimit((dto as any).coverLetterLimit, limits.coverLetterLimit),
       limitsSyncKey: syncKey,
+      limitsNextReset,
     });
     return created.save();
   }
@@ -63,6 +67,9 @@ export class UsersService {
     const freePlan = await this.getFreeTierPlan();
     const limits = this.extractLimitsFromPlan(freePlan);
     const syncKey = `${freePlan?._id?.toString?.() ?? 'free'}:free`;
+
+    const now = new Date();
+    const limitsNextReset = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
 
     const created = new this.userModel({
       ...data,
@@ -73,6 +80,7 @@ export class UsersService {
       resumeLimit: this.normalizeLimit((data as any).resumeLimit, limits.resumeLimit),
       coverLetterLimit: this.normalizeLimit((data as any).coverLetterLimit, limits.coverLetterLimit),
       limitsSyncKey: syncKey,
+      limitsNextReset,
     });
     return created.save();
   }

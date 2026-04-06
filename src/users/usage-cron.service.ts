@@ -32,6 +32,12 @@ export class UsageCronService {
                 ? { $expr: { $gte: [{ $dayOfMonth: "$createdAt" }, currentDay] } }
                 : { $expr: { $eq: [{ $dayOfMonth: "$createdAt" }, currentDay] } };
 
+            // Compute the next reset date: same day of month, one month from today.
+            // new Date(year, month + 1, day) handles end-of-month overflow automatically
+            // (e.g., Jan 31 → Mar 3 in non-leap years), which is intentional so late-month
+            // joiners get a fair window.
+            const nextReset = new Date(year, month + 1, currentDay);
+
             const result = await this.userModel.updateMany(
                 {
                     // Paid active plans get reset automatically by the Razorpay webhook on payment
@@ -47,6 +53,7 @@ export class UsageCronService {
                         resumeCount: 0,
                         interviewCount: 0,
                         coverLetterCount: 0,
+                        limitsNextReset: nextReset,
                     },
                 },
             );

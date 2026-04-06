@@ -92,6 +92,9 @@ export class User {
   limitsSyncKey?: string; // Tracks last plan/status key used to reset monthly usage counters
 
   @Prop()
+  limitsNextReset?: Date; // When usage counts will next be reset (monthly, on createdAt day anniversary)
+
+  @Prop()
   googleId?: string;
 
   @Prop({ type: String })
