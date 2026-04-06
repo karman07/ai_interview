@@ -43,6 +43,7 @@ export interface User {
   rollNumber?: string;
   createdAt?: string;
   updatedAt?: string;
+  limitsNextReset?: string;
 }
 
 export interface AuthPayload {

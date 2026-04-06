@@ -45,8 +45,10 @@ async function refreshAccessToken() {
     { userId: u._id, email: u.email },
     { withCredentials: true }
   );
-  tokenStore.set(res.data.accessToken);
-  return res.data.accessToken;
+  const newToken = res.data.accessToken;
+  tokenStore.set(newToken);
+  localStorage.setItem('access_token', newToken);
+  return newToken;
 }
 
 http.interceptors.response.use(
@@ -81,6 +83,8 @@ http.interceptors.response.use(
         queue = [];
         tokenStore.set(null);
         userStore.set(null);
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
         return Promise.reject(e);
       } finally {
         isRefreshing = false;

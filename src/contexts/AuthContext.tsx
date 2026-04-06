@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         tokenStore.set(accessToken);
         const me = await UsersApi.me();
         setUser(me);
+        userStore.set({ _id: me._id, email: me.email });
       } else {
         // No token – ensure in-memory state is clean too
         tokenStore.set(null);
@@ -121,6 +122,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
         const me = await UsersApi.me();
         setUser(me);
+        userStore.set({ _id: me._id, email: me.email });
         return res.data;
       },
     }),
