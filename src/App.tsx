@@ -22,7 +22,7 @@ import { AnalyticsProvider } from "./contexts/AnalyticsContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import UniversityRoute from "./routes/UniversityRoute";
 import RollNumberDialog from "@/components/common/RollNumberDialog";
-
+//
 // ── Lazy-loaded pages (each becomes its own JS chunk) ─────────────────────
 const About                   = lazy(() => import("@/pages/About"));
 const PricingPage             = lazy(() => import("@/pages/Pricing/PricingPage"));
