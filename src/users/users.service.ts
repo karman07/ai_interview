@@ -126,7 +126,7 @@ export class UsersService {
       updatePayload.resumeLimit = this.normalizeLimit(planLimits.resumeLimit, 5);
     }
     if (!user.coverLetterLimit || user.coverLetterLimit <= 0) {
-      updatePayload.coverLetterLimit = this.normalizeLimit(planLimits.coverLetterLimit, 5);
+        updatePayload.coverLetterLimit = planLimits.coverLetterLimit;
     }
 
     // Repair inconsistent status (e.g., paid/PAYG plan but status is still "free").

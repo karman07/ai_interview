@@ -98,6 +98,7 @@ export class SubscriptionService implements OnModuleInit {
         features: [
           { name: 'Resume Limit', description: '5 Resume analysis reports', type: FeatureType.NUMERIC, value: 5, enabled: true, limit: 5, unit: 'resumes' },
           { name: 'Interview Limit', description: '3 Professional Ai for jobs', type: FeatureType.NUMERIC, value: 3, enabled: true, limit: 3, unit: 'interviews' },
+          { name: 'Cover Letter Limit', description: '5 AI cover letters per month', type: FeatureType.NUMERIC, value: 5, enabled: true, limit: 5, unit: 'cover_letters' },
           { name: 'AI Feedback', description: 'Basic qualitative feedback', type: FeatureType.BOOLEAN, value: true, enabled: true },
         ],
         order: 0
@@ -115,6 +116,7 @@ export class SubscriptionService implements OnModuleInit {
         features: [
           { name: 'Resume Limit', description: '15 Resume analysis reports', type: FeatureType.NUMERIC, value: 15, enabled: true, limit: 15, unit: 'resumes' },
           { name: 'Interview Limit', description: '10 Professional Ai for jobs', type: FeatureType.NUMERIC, value: 10, enabled: true, limit: 10, unit: 'interviews' },
+          { name: 'Cover Letter Limit', description: '15 AI cover letters per month', type: FeatureType.NUMERIC, value: 15, enabled: true, limit: 15, unit: 'cover_letters' },
           { name: 'AI Feedback', description: 'Detailed qualitative analysis', type: FeatureType.BOOLEAN, value: true, enabled: true },
           { name: 'Priority Support', description: '24/7 Priority support access', type: FeatureType.BOOLEAN, value: true, enabled: true }
         ],
@@ -134,6 +136,7 @@ export class SubscriptionService implements OnModuleInit {
         features: [
           { name: 'Resume Limit', description: '40 Resume analysis reports', type: FeatureType.NUMERIC, value: 40, enabled: true, limit: 40, unit: 'resumes' },
           { name: 'Interview Limit', description: '20 Professional Ai for jobs', type: FeatureType.NUMERIC, value: 20, enabled: true, limit: 20, unit: 'interviews' },
+          { name: 'Cover Letter Limit', description: '30 AI cover letters per month', type: FeatureType.NUMERIC, value: 30, enabled: true, limit: 30, unit: 'cover_letters' },
           { name: 'AI Feedback', description: 'Full deep-dive qualitative analysis', type: FeatureType.BOOLEAN, value: true, enabled: true },
           { name: 'Custom Roadmaps', description: 'Personalized career roadmaps', type: FeatureType.BOOLEAN, value: true, enabled: true }
         ],
@@ -339,8 +342,10 @@ export class SubscriptionService implements OnModuleInit {
       const features = (subscription as any).features || [];
       const intF = features.find((f: any) => f.name === 'Interview Limit');
       const resF = features.find((f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit');
-      const interviewLimit = intF ? (intF.value ?? intF.limit ?? 3) : 3;
-      const resumeLimit = resF ? (resF.value ?? resF.limit ?? 5) : 5;
+      const clF  = features.find((f: any) => f.name === 'Cover Letter Limit');
+      const interviewLimit    = intF ? (intF.value ?? intF.limit ?? 3) : 3;
+      const resumeLimit       = resF ? (resF.value ?? resF.limit ?? 5) : 5;
+      const coverLetterLimit  = clF  ? (clF.value  ?? clF.limit  ?? 5) : 5;
 
       const isFreeTier = subscription.name.toLowerCase().includes('free');
       
@@ -349,7 +354,7 @@ export class SubscriptionService implements OnModuleInit {
         : { subscriptionPlan: subscription._id };
 
       const result = await this.userModel.updateMany(query, {
-        $set: { interviewLimit, resumeLimit }
+        $set: { interviewLimit, resumeLimit, coverLetterLimit }
       });
       this.logger.log(`Synced updated limits to ${result.modifiedCount} users for plan ${subscription.name}`);
     } catch (e) {
