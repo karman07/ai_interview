@@ -102,6 +102,7 @@ export interface StartInterviewResponse {
   state: InterviewState;
 }
 
+
 export interface SubmitAnswerResponse {
   evaluation: Evaluation;
   next_question: string | null;

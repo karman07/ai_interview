@@ -48,6 +48,9 @@ export default function InterviewRoomWS() {
                 resumePath: parsed.resumePath || '',
                 jdText: parsed.jdText || '',
                 interviewType: parsed.roundType || type || 'technical',
+                interviewMode: parsed.interviewMode || 'general',
+                topicId: parsed.topicId || '',
+                topicName: parsed.topicName || '',
                 role: parsed.role || '',
                 company: parsed.company || '',
                 duration: parsed.duration || 0,
@@ -67,7 +70,7 @@ export default function InterviewRoomWS() {
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── Hooks ──
-    const { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding, error: wsError, isCodingQuestion, isWaitingForResponse, endReason } =
+    const { isConnected, messages, sendMessage, sendEndSession, disconnect, isStreamingResponse, feedback, interviewEnded, isEnding, error: wsError, isCodingQuestion, isWaitingForResponse, endReason } =
         useInterviewWebSocket(clientId, setupData);
     const { formattedTime, isTimeUp } = useInterviewTimer(setupData?.duration || 0);
     const { videoRef, isActive: webcamActive, startCamera, toggleCamera } = useInterviewWebcam();
@@ -300,7 +303,10 @@ export default function InterviewRoomWS() {
             lastModelMsgIdRef.current = null;
             sendEndSession('user_terminated');
         } else {
-            // Early exit - just go back
+            // Early exit: force close socket and clear setup cache, no report flow.
+            disconnect('user_terminated_no_answers');
+            localStorage.removeItem('ws_interview_setup');
+            localStorage.removeItem('ws_interview_client_id');
             navigate('/interview_round', { replace: true });
         }
     };

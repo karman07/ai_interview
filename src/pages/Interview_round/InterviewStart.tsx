@@ -17,11 +17,11 @@ import { usePricing } from "@/contexts/PricingContext";
 import { useResume } from "@/contexts/ResumeContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInterviewLimits } from "@/hooks/useInterviewLimits";
+import http, { baseURL } from "@/api/http";
 
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer
 } from "recharts";
-import { baseURL } from "@/api/http";
 
 interface InterviewDetails {
   role: string;
@@ -44,12 +44,17 @@ export default function InterviewStart() {
   const preFilledData = location.state as {
     role?: string;
     company?: string;
+    topicId?: string;
+    topicName?: string;
     jobDescription?: string;
   } | undefined;
 
+  const isSpecializedFlow = Boolean(preFilledData?.company || preFilledData?.topicId);
+  const specializedName = preFilledData?.topicName || preFilledData?.company || "Specialized";
+
   const [details, setDetails] = useState<InterviewDetails>({
-    role: preFilledData?.role || (preFilledData?.company ? "Software Engineer" : ""),
-    company: preFilledData?.company || "",
+    role: preFilledData?.role || (isSpecializedFlow ? "Software Engineer" : ""),
+    company: preFilledData?.topicName || preFilledData?.company || "",
     jobDescription: preFilledData?.jobDescription || "",
     resumeText: "",
   });
@@ -65,6 +70,7 @@ export default function InterviewStart() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [knowledgeDocId, setKnowledgeDocId] = useState<string | null>(null);
   const [topicData, setTopicData] = useState<any | null>(null);
+  const [universityLimits, setUniversityLimits] = useState<{ resumeLimit: number; interviewLimit: number } | null>(null);
 
   const { interviewLimit, currentInterviews: totalInterviewsTaken, isAtLimit, isPayg, universityResumeLimit } = useInterviewLimits();
 
@@ -73,6 +79,35 @@ export default function InterviewStart() {
   }, []);
 
   useEffect(() => {
+    if ((user as any)?.role !== 'student' || !(user as any)?.universityId) {
+      return;
+    }
+
+    http.get(`/universities/${(user as any).universityId}`)
+      .then((res) => {
+        setUniversityLimits({
+          resumeLimit: Number(res.data?.resumeLimit ?? 5),
+          interviewLimit: Number(res.data?.interviewLimit ?? 20),
+        });
+      })
+      .catch(() => {
+        setUniversityLimits(null);
+      });
+  }, [(user as any)?.role, (user as any)?.universityId]);
+
+  useEffect(() => {
+    if (preFilledData?.topicId) {
+      http.get(`/topic-interviews/${preFilledData.topicId}`)
+        .then((res) => {
+          setTopicData(res.data || null);
+          setKnowledgeDocId(null);
+        })
+        .catch(() => {
+          setTopicData(null);
+          setKnowledgeDocId(null);
+        });
+      return;
+    }
     if (preFilledData?.company) {
       import('@/api/http').then(({ default: http }) => {
         http.get('/company-rounds')
@@ -93,7 +128,7 @@ export default function InterviewStart() {
           });
       });
     }
-  }, [preFilledData?.company]);
+  }, [preFilledData?.company, preFilledData?.topicId]);
 
   const types = {
     technical: { icon: <Code className="w-6 h-6" />, color: "from-blue-500 to-indigo-600", title: "Technical Round", accent: "blue" },
@@ -119,7 +154,7 @@ export default function InterviewStart() {
   }, [stats, analytics]);
 
   const resumeLimit = useMemo((): number | null => {
-    if ((user as any)?.role === 'student') return universityResumeLimit;
+    if ((user as any)?.role === 'student') return universityLimits?.resumeLimit ?? universityResumeLimit;
     if ((user?.subscriptionPlan as any)?.type === 'pay_as_you_go' && typeof user?.paygResumesLimit === 'number') return user.paygResumesLimit;
     if (typeof user?.resumeLimit === 'number' && user.resumeLimit > 0) return user.resumeLimit;
 
@@ -128,7 +163,14 @@ export default function InterviewStart() {
       if (f != null) { const v = f.value ?? f.limit; if (v != null) return Number(v); }
     }
     return null;
-  }, [user, universityResumeLimit]);
+  }, [user, universityResumeLimit, universityLimits]);
+
+  const effectiveInterviewLimit = useMemo(() => {
+    if ((user as any)?.role === 'student') {
+      return universityLimits?.interviewLimit ?? interviewLimit;
+    }
+    return interviewLimit;
+  }, [user, universityLimits, interviewLimit]);
 
   // isPayg, totalInterviewsTaken, isAtLimit come from useInterviewLimits above.
   
@@ -267,12 +309,12 @@ export default function InterviewStart() {
       return;
     }
 
-    if (!details.resumeFile && !details.resumeText && !selectedResumeId && !preFilledData?.company) {
+    if (!details.resumeFile && !details.resumeText && !selectedResumeId && !isSpecializedFlow) {
       setError("Please provide your resume (upload file or choose from history or enter text)");
       return;
     }
 
-    if (!details.jdFile && !details.jobDescription && !preFilledData?.company) {
+    if (!details.jdFile && !details.jobDescription && !isSpecializedFlow) {
       setError("Please provide job description (upload file or enter text)");
       return;
     }
@@ -312,18 +354,25 @@ export default function InterviewStart() {
         }
       }
 
+      const topicLinksText = Array.isArray(topicData?.links) && topicData.links.length > 0
+        ? `Reference links:\n${topicData.links.map((link: string, index: number) => `${index + 1}. ${link}`).join('\n')}`
+        : '';
+
       const setupData = {
-        resumeText: preFilledData?.company 
-          ? `SPECIALIZED COMPANY ASSESSMENT: No personal resume provided. Context is derived strictly from the Job Description and specialized ${preFilledData.company} round context. Evaluate based on technical expertise rather than personal history.`
+        resumeText: isSpecializedFlow
+          ? `SPECIALIZED TOPIC ASSESSMENT: No personal resume provided. Evaluate based on ${specializedName} interview context and technical depth.`
           : resumeText,
         resumeUrl: details.resumeUrl || "",
         resumePath: details.resumePath || "",
-        jdText: preFilledData?.company 
-          ? `Specialized ${preFilledData.company} Interview Round` 
+        jdText: isSpecializedFlow
+          ? `Specialized ${specializedName} Interview Round\n\n${topicLinksText}`
           : jdText,
         role: details.role,
-        company: details.company,
-        roundType: type || 'technical',
+        company: preFilledData?.topicId ? '' : details.company,
+        roundType: preFilledData?.topicId ? 'topic-specific' : (type || 'technical'),
+        interviewMode: preFilledData?.topicId ? 'topic' : (preFilledData?.company ? 'company' : 'general'),
+        topicId: preFilledData?.topicId || '',
+        topicName: preFilledData?.topicName || '',
         userId: user._id,
         candidateName: "", // Leave empty so AI extracts name from resume itself
         duration,
@@ -414,13 +463,13 @@ export default function InterviewStart() {
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Session Capacity</span>
                         <span className={`text-[10px] font-black ${isAtLimit ? 'text-rose-500' : 'text-blue-600'}`}>
-                          {totalInterviewsTaken} / {interviewLimit ?? '—'}
+                          {totalInterviewsTaken} / {effectiveInterviewLimit ?? '—'}
                         </span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
-                          animate={{ width: `${interviewLimit ? Math.min((totalInterviewsTaken / interviewLimit) * 100, 100) : 0}%` }}
+                          animate={{ width: `${effectiveInterviewLimit ? Math.min((totalInterviewsTaken / effectiveInterviewLimit) * 100, 100) : 0}%` }}
                           className={`h-full transition-all duration-500 ${isAtLimit ? 'bg-rose-500' : 'bg-blue-600'}`}
                         />
                       </div>
@@ -484,9 +533,9 @@ export default function InterviewStart() {
                       placeholder="e.g., Senior Fullstack Developer"
                       value={details.role}
                       onChange={(e) => setDetails({ ...details, role: e.target.value })}
-                      disabled={!!preFilledData?.company}
+                      disabled={isSpecializedFlow}
                       className={`h-14 border-slate-100 dark:border-slate-800 rounded-2xl px-6 font-semibold focus:ring-2 focus:ring-blue-500/20 transition-all ${
-                        !!preFilledData?.company 
+                        isSpecializedFlow
                         ? 'bg-blue-50/50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' 
                         : 'bg-slate-50 dark:bg-slate-800/50'
                       }`}
@@ -500,9 +549,9 @@ export default function InterviewStart() {
                       placeholder="e.g., Google / Startup / Meta"
                       value={details.company}
                       onChange={(e) => setDetails({ ...details, company: e.target.value })}
-                      disabled={!!preFilledData?.company}
+                      disabled={isSpecializedFlow}
                       className={`h-14 border-slate-100 dark:border-slate-800 rounded-2xl px-6 font-semibold focus:ring-2 focus:ring-blue-500/20 transition-all ${
-                        !!preFilledData?.company 
+                        isSpecializedFlow
                         ? 'bg-blue-50/50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' 
                         : 'bg-slate-50 dark:bg-slate-800/50'
                       }`}
@@ -516,7 +565,7 @@ export default function InterviewStart() {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
                       <FileText className="w-3.5 h-3.5 text-blue-500" /> Resume / CV <span className="text-rose-500">*</span>
                     </label>
-                      {preFilledData?.company ? (
+                      {isSpecializedFlow ? (
                         <div className="relative p-6 bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/30 rounded-3xl flex flex-col items-center justify-start text-center gap-3 transition-all hover:border-indigo-200 shadow-xl shadow-indigo-500/5 group/resume h-full min-h-[300px]">
                           {/* Top accent line */}
                           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-500/0 via-indigo-500/40 to-indigo-500/0 rounded-t-3xl" />
@@ -535,7 +584,7 @@ export default function InterviewStart() {
                           </div>
                           
                           <p className="text-[10px] text-slate-500 font-medium leading-relaxed max-w-[200px] mx-auto">
-                            Personal resume is bypassed for this session. The AI will evaluate based on {preFilledData.company}'s core technical requirements.
+                            Personal resume is bypassed for this session. The AI will evaluate based on {specializedName}'s core technical requirements.
                           </p>
                         </div>
                       ) : details.resumeFile ? (
@@ -595,7 +644,7 @@ export default function InterviewStart() {
                       <Layers className="w-3.5 h-3.5 text-blue-500" /> Job Description <span className="text-rose-500">*</span>
                     </label>
                     <div className="group relative h-full">
-                      {preFilledData?.company ? (
+                      {isSpecializedFlow ? (
                         <div className="relative p-6 bg-white dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-3xl flex flex-col items-center justify-start text-center gap-3 transition-all hover:border-blue-200 shadow-xl shadow-blue-500/5 group/jd h-full min-h-[300px]">
                           {/* Top accent line */}
                           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500/0 via-blue-500/40 to-blue-500/0 rounded-t-3xl" />
@@ -606,7 +655,7 @@ export default function InterviewStart() {
                               <div className="relative w-14 h-14 bg-white dark:bg-slate-900 rounded-2xl p-2.5 shadow-xl shadow-blue-500/10 border border-blue-50 dark:border-slate-800 flex items-center justify-center transform group-hover/jd:scale-105 transition-transform duration-500">
                                 <img 
                                   src={`${baseURL}${topicData.logoUrl}`} 
-                                  alt={preFilledData.company} 
+                                  alt={specializedName}
                                   className="w-full h-full object-contain" 
                                 />
                               </div>
@@ -619,7 +668,7 @@ export default function InterviewStart() {
                           
                           <div className="h-10 flex items-center justify-center mt-1">
                             <p className="text-base font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-                              {preFilledData.company} Round
+                              {specializedName} Round
                             </p>
                           </div>
                           
@@ -631,7 +680,7 @@ export default function InterviewStart() {
                           )}
 
                           <p className="text-[10px] text-slate-500 font-medium leading-relaxed max-w-[200px] mx-auto">
-                            Simulating the precise technical hiring patterns of {preFilledData.company}.
+                            Simulating the precise technical patterns of {specializedName}.
                           </p>
 
                           <div className="pt-1 flex flex-col gap-2 w-full mt-auto">

@@ -134,6 +134,7 @@ export default function InterviewHome() {
   const { results, fetchMine } = useResults();
   const [showInterviewSelection, setShowInterviewSelection] = useState(false);
   const [analytics, setAnalytics] = useState<any>(null);
+  const [specializedCompanies, setSpecializedCompanies] = useState<any[]>([]);
   const [specializedTopics, setSpecializedTopics] = useState<any[]>([]);
   const { interviewLimit, currentInterviews, isAtLimit } = useInterviewLimits();
   const [searchQuery, setSearchQuery] = useState("");
@@ -143,15 +144,22 @@ export default function InterviewHome() {
     fetchMine();
     InterviewAnalyticsApi.getAnalytics().then(setAnalytics).catch(console.error);
     
-    // Fetch specialized company rounds
+    // Fetch specialized company rounds from Nest.
     http.get('/company-rounds')
-      .then(res => {
-        const mapped = (res.data || []).map((item: any) => ({
+      .then((res) => {
+        const companies = (Array.isArray(res.data) ? res.data : []).map((item: any) => ({
           ...item,
-          // Backward-compatible shape for existing UI rendering.
           name: item.company || item.name,
         }));
-        setSpecializedTopics(mapped);
+        setSpecializedCompanies(companies);
+      })
+      .catch(console.warn);
+
+    // Fetch specialized topic rounds from Nest.
+    http.get('/topic-interviews')
+      .then((res) => {
+        const topics = Array.isArray(res.data) ? res.data : [];
+        setSpecializedTopics(topics);
       })
       .catch(console.warn);
   }, []);
@@ -163,28 +171,27 @@ export default function InterviewHome() {
     }
   };
 
-  const filteredTopics = useMemo(() => {
-    return specializedTopics.filter(topic => {
-      const matchesSearch = topic.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (topic.description && topic.description.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredCompanies = useMemo(() => {
+    return specializedCompanies.filter((company) => {
+      const matchesSearch = company.name.toLowerCase().includes(searchQuery.toLowerCase());
       
       if (activeFilter === "All") return matchesSearch;
-      if (activeFilter === "Featured") return matchesSearch && topic.tags?.includes("Featured");
-      if (activeFilter === "Premium") return matchesSearch && topic.tags?.includes("Premium");
-      
-      return matchesSearch && topic.tags?.includes(activeFilter);
+      return false;
+    });
+  }, [specializedCompanies, searchQuery, activeFilter]);
+
+  const filteredTopics = useMemo(() => {
+    return specializedTopics.filter((topic) => {
+      const matchesSearch = topic.name.toLowerCase().includes(searchQuery.toLowerCase());
+
+      if (activeFilter === "All") return matchesSearch;
+      return false;
     });
   }, [specializedTopics, searchQuery, activeFilter]);
 
   const allTags = useMemo(() => {
-    const tags = new Set<string>(["All", "Featured", "Premium"]);
-    specializedTopics.forEach(t => {
-      if (t.tags) t.tags.forEach((tag: string) => {
-        if (tag !== 'Featured' && tag !== 'Premium') tags.add(tag);
-      });
-    });
-    return Array.from(tags);
-  }, [specializedTopics]);
+    return ["All"];
+  }, []);
 
   const rounds = [
     {
@@ -279,7 +286,7 @@ export default function InterviewHome() {
               className="mb-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-500/60 hover:text-blue-600 dark:hover:text-blue-300 transition-all duration-200"
             >
               <ArrowRight className="w-4 h-4 rotate-180" />
-              Back to Dashboard
+              Back
             </button>
             <div className="text-center space-y-3">
               <div className="inline-flex items-center px-4 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-full text-sm font-medium mb-4 shadow-lg">
@@ -308,7 +315,7 @@ export default function InterviewHome() {
                  <Search className="absolute left-4 top-1/2 -transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                  <input 
                     type="text"
-                    placeholder="Search by company or role..."
+                    placeholder="Search by company, topic or round..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 text-sm font-medium transition-all"
@@ -317,12 +324,10 @@ export default function InterviewHome() {
               <div className="flex flex-wrap gap-2 overflow-x-auto pb-1 max-w-full no-scrollbar px-2">
                  {allTags.map(tag => {
                     const isActive = activeFilter === tag;
-                    const isPremium = tag === "Premium";
-                    const isFeatured = tag === "Featured";
+                    const isPremium = false;
+                    const isFeatured = false;
                     
                     let activeStyles = 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/30 ring-2 ring-blue-500/20';
-                    if (isPremium) activeStyles = 'bg-purple-600 text-white border-purple-600 shadow-lg shadow-purple-500/30 ring-2 ring-purple-500/20';
-                    if (isFeatured) activeStyles = 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/30 ring-2 ring-amber-500/20';
 
                     return (
                       <button
@@ -334,7 +339,7 @@ export default function InterviewHome() {
                             : 'bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-100 dark:border-gray-700 hover:border-blue-300 hover:text-blue-500 shadow-sm'
                         }`}
                       >
-                        {isFeatured ? '★ Featured' : isPremium ? '◆ Premium' : tag}
+                        {tag}
                       </button>
                     );
                  })}
@@ -343,26 +348,9 @@ export default function InterviewHome() {
         </div>
 
         {/* Cards section */}
-        <div className="max-w-7xl mx-auto px-6 py-16">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
-            {filteredRounds.map((round) => (
-              <InterviewCard
-                key={round.type}
-                type={round.type}
-                description={round.description}
-                icon={round.icon}
-                color={round.color}
-                routeKey={round.key}
-                navigate={navigate}
-                isAtLimit={isAtLimit}
-                onLimitExceeded={handleLimitExceeded}
-                isEndToEnd={round.isEndToEnd}
-              />
-            ))}
-          </div>
-
-          {filteredTopics.length > 0 && (
-            <div className="mt-24 space-y-10">
+        <div className="max-w-7xl mx-auto px-6 pb-10">
+          {filteredCompanies.length > 0 && (
+            <div className="mt-10 space-y-10">
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div className="space-y-2">
                   <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
@@ -374,30 +362,27 @@ export default function InterviewHome() {
                 </div>
                 <div className="flex items-center gap-2 text-sm font-bold text-blue-600 dark:text-blue-400">
                   <span className="w-2 h-2 bg-blue-500 rounded-full animate-ping" />
-                  Live Study Rounds
+                  Live Company Rounds
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
-                {filteredTopics.map((topic) => (
+                {filteredCompanies.map((topic) => (
                   <InterviewCard
-                    key={topic._id}
+                      key={topic._id}
                     type={topic.name}
-                    description={topic.description || `Specialized interview round focused on ${topic.name}'s specific hiring patterns and technical standards.`}
+                    description={`Specialized interview round focused on ${topic.name}.`}
                     icon={topic.logoUrl ? (
                       <img 
-                        src={`${baseURL}${topic.logoUrl}`} 
+                        src={String(topic.logoUrl).startsWith('http') ? topic.logoUrl : `${baseURL}${topic.logoUrl}`} 
                         alt={topic.name} 
                         className="w-12 h-12 object-contain" 
                       />
                     ) : (
                       <Building2 className="w-8 h-8" />
                     )}
-                    tags={topic.tags || []}
-                    isFeatured={topic.tags?.includes('Featured')}
-                    isPremium={topic.tags?.includes('Premium')}
                     color="bg-gradient-to-br from-indigo-500 to-blue-700"
-                    navigate={(path) => navigate('/interview/start/technical', { state: { company: topic.name } })}
+                      navigate={() => navigate('/interview/start/technical', { state: { company: topic.name } })}
                     isAtLimit={isAtLimit}
                     onLimitExceeded={handleLimitExceeded}
                   />
@@ -406,8 +391,86 @@ export default function InterviewHome() {
             </div>
           )}
 
+          {filteredTopics.length > 0 && (
+            <div className={`${filteredCompanies.length > 0 ? 'mt-14' : 'mt-24'} space-y-10`}>
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div className="space-y-2">
+                  <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+                    Specialized <span className="text-blue-600">Topic Rounds</span>
+                  </h2>
+                  <p className="text-gray-500 dark:text-gray-400 font-medium">
+                    Practice targeted interviews based on admin-curated topics.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-sm font-bold text-blue-600 dark:text-blue-400">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full animate-ping" />
+                  Live Topic Rounds
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
+                {filteredTopics.map((topic) => (
+                  <InterviewCard
+                    key={topic._id}
+                    type={topic.name}
+                    description={`Specialized interview round focused on ${topic.name}.`}
+                    icon={topic.logoUrl ? (
+                      <img
+                        src={String(topic.logoUrl).startsWith('http') ? topic.logoUrl : `${baseURL}${topic.logoUrl}`}
+                        alt={topic.name}
+                        className="w-12 h-12 object-contain"
+                      />
+                    ) : (
+                      <Building2 className="w-8 h-8" />
+                    )}
+                    color="bg-gradient-to-br from-blue-500 to-indigo-700"
+                    navigate={() => navigate('/interview/start/technical', { state: { topicId: topic._id, topicName: topic.name } })}
+                    isAtLimit={isAtLimit}
+                    onLimitExceeded={handleLimitExceeded}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {filteredRounds.length > 0 && (
+            <div className={`${filteredCompanies.length > 0 || filteredTopics.length > 0 ? 'mt-14' : 'mt-24'} space-y-10`}>
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div className="space-y-2">
+                  <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+                    General <span className="text-blue-600">Interview Rounds</span>
+                  </h2>
+                  <p className="text-gray-500 dark:text-gray-400 font-medium">
+                    Core round types designed for complete interview preparation.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-sm font-bold text-blue-600 dark:text-blue-400">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                  Core Rounds
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
+                {filteredRounds.map((round) => (
+                  <InterviewCard
+                    key={round.type}
+                    type={round.type}
+                    description={round.description}
+                    icon={round.icon}
+                    color={round.color}
+                    routeKey={round.key}
+                    navigate={navigate}
+                    isAtLimit={isAtLimit}
+                    onLimitExceeded={handleLimitExceeded}
+                    isEndToEnd={round.isEndToEnd}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           {showComingSoonSection && (
-            <div className={`${filteredTopics.length > 0 ? 'mt-14' : 'mt-24'} space-y-8`}>
+            <div className={`${filteredRounds.length > 0 || filteredCompanies.length > 0 || filteredTopics.length > 0 ? 'mt-14' : 'mt-24'} space-y-8`}>
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div className="space-y-2">
                   <h3 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
@@ -456,7 +519,7 @@ export default function InterviewHome() {
             </div>
           )}
 
-          {filteredRounds.length === 0 && filteredTopics.length === 0 && (
+          {filteredRounds.length === 0 && filteredCompanies.length === 0 && filteredTopics.length === 0 && (
             <div className="mt-20 text-center py-20 bg-gray-50/50 dark:bg-gray-800/30 rounded-[3rem] border border-dashed border-gray-200 dark:border-gray-700">
               <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Search className="w-8 h-8 text-gray-400" />

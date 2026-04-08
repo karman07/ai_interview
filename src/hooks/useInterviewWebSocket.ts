@@ -13,6 +13,9 @@ export interface WSInitData {
     resumePath?: string;
     jdText: string;
     interviewType?: string;
+    interviewMode?: 'general' | 'company' | 'topic';
+    topicId?: string;
+    topicName?: string;
     role?: string;
     company?: string;
     duration?: number;
@@ -32,6 +35,8 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
     const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
     const [endReason, setEndReason] = useState<string>('');
     const feedbackRef = useRef<any>(null);
+    const shouldReconnectRef = useRef(true);
+    const mountedRef = useRef(true);
 
     const isStreamingResponseRef = useRef(false);
     const reconnectAttempts = useRef(0);
@@ -82,6 +87,9 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
                         resume_path: initDataRef.current.resumePath || "",
                         jd_text: initDataRef.current.jdText,
                         interview_type: initDataRef.current.interviewType || "technical",
+                        interview_mode: initDataRef.current.interviewMode || "general",
+                        topic_id: initDataRef.current.topicId || "",
+                        topic_name: initDataRef.current.topicName || "",
                         role: initDataRef.current.role || "",
                         company: initDataRef.current.company || "",
                         duration: initDataRef.current.duration || 0,
@@ -103,7 +111,7 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
             console.log(`[WS] Disconnected (Code: ${event.code})`);
             clearInterval(heartbeatInterval);
 
-            if (!feedbackRef.current && !interviewEnded) {
+            if (!feedbackRef.current && !interviewEnded && shouldReconnectRef.current && mountedRef.current && event.code !== 1000) {
                 setIsConnected(false);
                 // Attempt reconnect if not a clean close and not at limit
                 if (reconnectAttempts.current < maxReconnectAttempts) {
@@ -172,6 +180,11 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
                             : (data.error || 'The interview ended without generating a report.');
                         console.error('[WS] No feedback generated:', msg);
                         setError(msg);
+                        setIsEnding(false);
+                        shouldReconnectRef.current = false;
+                        if (ws.readyState === WebSocket.OPEN) {
+                            ws.close(1000, 'no_answers');
+                        }
                         setInterviewEnded(false); // DO NOT treat as a successful completion
                         return;
                     }
@@ -194,6 +207,7 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
         setSocket(ws);
 
         return () => {
+            shouldReconnectRef.current = false;
             clearTimeout(initTimer);
             clearInterval(heartbeatInterval);
             ws.close();
@@ -221,11 +235,28 @@ export const useInterviewWebSocket = (clientId: string, initData: WSInitData | n
         }
     }, [socket]);
 
+    const disconnect = useCallback((reason: string = 'user_terminated') => {
+        shouldReconnectRef.current = false;
+        setIsEnding(false);
+        setEndReason(reason);
+        if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+            socket.close(1000, reason);
+        }
+    }, [socket]);
+
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => {
+            mountedRef.current = false;
+            shouldReconnectRef.current = false;
+        };
+    }, []);
+
     useEffect(() => {
         if (clientId && initData && !interviewEnded) {
             return connect();
         }
     }, [clientId, initData, connect, interviewEnded]);
 
-    return { isConnected, messages, sendMessage, sendEndSession, isStreamingResponse, feedback, interviewEnded, isEnding, error, isCodingQuestion, isWaitingForResponse, endReason };
+    return { isConnected, messages, sendMessage, sendEndSession, disconnect, isStreamingResponse, feedback, interviewEnded, isEnding, error, isCodingQuestion, isWaitingForResponse, endReason };
 };
