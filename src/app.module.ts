@@ -41,6 +41,7 @@ import { FeedbackModule } from './feedback/feedback.module';
 import { BlogsModule } from './blogs/blogs.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { CoverLetterModule } from './cover-letter/cover-letter.module';
+import { TopicInterviewsModule } from './topic-interviews/topic-interviews.module';
 
 @Module({
   imports: [
@@ -86,6 +87,7 @@ import { CoverLetterModule } from './cover-letter/cover-letter.module';
     FeedbackModule,
     NotificationsModule,
     CoverLetterModule,
+    TopicInterviewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
