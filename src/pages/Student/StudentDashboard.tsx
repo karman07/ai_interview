@@ -35,21 +35,21 @@ export default function StudentDashboard() {
 
   const resumeUsed = user?.resumeCount ?? 0;
   const interviewUsed = user?.interviewCount ?? 0;
-  const resumeLimit = university?.resumeLimit ?? 5;
-  const interviewLimit = university?.interviewLimit ?? 10;
+  const resumeLimit = university?.resumeLimit;
+  const interviewLimit = university?.interviewLimit;
 
   const isUniversityStudent = !!user?.universityId;
 
   const quickActions = [
     {
       title: 'Build Resume',
-      description: `${resumeUsed} / ${resumeLimit} used`,
+      description: resumeLimit != null ? `${resumeUsed} / ${resumeLimit} used` : `${resumeUsed} used`,
       icon: <FileText className="w-6 h-6" />,
       color: 'bg-blue-600',
       labelColor: 'text-blue-600',
       bgLight: 'bg-blue-50',
       route: routes.resumeBuilder,
-      disabled: resumeUsed >= resumeLimit,
+      disabled: resumeLimit != null && resumeUsed >= resumeLimit,
     },
     // University-only features
     ...(isUniversityStudent ? [
@@ -86,13 +86,13 @@ export default function StudentDashboard() {
     ] : []),
     {
       title: 'Practice Interview',
-      description: `${interviewUsed} / ${interviewLimit} used`,
+      description: interviewLimit != null ? `${interviewUsed} / ${interviewLimit} used` : `${interviewUsed} used`,
       icon: <Mic className="w-6 h-6" />,
       color: 'bg-indigo-600',
       labelColor: 'text-indigo-600',
       bgLight: 'bg-indigo-50',
       route: routes.interviewHome,
-      disabled: interviewUsed >= interviewLimit,
+      disabled: interviewLimit != null && interviewUsed >= interviewLimit,
     },
     {
       title: 'Study Resources',
@@ -224,9 +224,9 @@ export default function StudentDashboard() {
 
 function UsageCard({
   label, used, limit, color, icon,
-}: { label: string; used: number; limit: number; color: 'blue' | 'indigo'; icon: React.ReactNode }) {
-  const pct = Math.min((used / limit) * 100, 100);
-  const full = used >= limit;
+}: { label: string; used: number; limit: number | undefined; color: 'blue' | 'indigo'; icon: React.ReactNode }) {
+  const pct = (limit != null && limit > 0) ? Math.min((used / limit) * 100, 100) : 0;
+  const full = limit != null && used >= limit;
   const barColor = full ? 'bg-red-400' : color === 'blue' ? 'bg-blue-600' : 'bg-indigo-600';
   const textColor = color === 'blue' ? 'text-blue-600' : 'text-indigo-600';
   const bgColor = color === 'blue' ? 'bg-blue-50' : 'bg-indigo-50';
@@ -239,7 +239,7 @@ function UsageCard({
       </div>
       <div className="flex items-end justify-between mb-2">
         <span className={`text-2xl font-bold ${full ? 'text-red-500' : textColor}`}>{used}</span>
-        <span className="text-xs text-gray-400">/ {limit}</span>
+        <span className="text-xs text-gray-400">{limit != null ? `/ ${limit}` : ''}</span>
       </div>
       <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
         <div className={`h-full ${barColor} rounded-full transition-all`} style={{ width: `${pct}%` }} />

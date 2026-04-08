@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePricing } from "@/contexts/PricingContext";
 import { useResume } from "@/contexts/ResumeContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { useInterviewLimits } from "@/hooks/useInterviewLimits";
 
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer
@@ -62,26 +63,14 @@ export default function InterviewStart() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [universityLimits, setUniversityLimits] = useState<{ resumeLimit: number; interviewLimit: number } | null>(null);
   const [knowledgeDocId, setKnowledgeDocId] = useState<string | null>(null);
   const [topicData, setTopicData] = useState<any | null>(null);
+
+  const { interviewLimit, currentInterviews: totalInterviewsTaken, isAtLimit, isPayg, universityResumeLimit } = useInterviewLimits();
 
   useEffect(() => {
     InterviewAnalyticsApi.getAnalytics().then(setAnalytics).catch(console.error);
   }, []);
-
-  useEffect(() => {
-    if ((user as any)?.role === 'student' && (user as any)?.universityId) {
-      import('@/api/http').then(({ default: http }) => {
-        http.get(`/universities/${(user as any).universityId}`)
-          .then(res => setUniversityLimits({
-            resumeLimit: res.data?.resumeLimit ?? 5,
-            interviewLimit: res.data?.interviewLimit ?? 20,
-          }))
-          .catch(() => {});
-      });
-    }
-  }, [(user as any)?.universityId]);
 
   useEffect(() => {
     if (preFilledData?.company) {
@@ -129,37 +118,22 @@ export default function InterviewStart() {
     ];
   }, [stats, analytics]);
 
-  const interviewLimit = useMemo(() => {
-    if ((user as any)?.role === 'student') return universityLimits?.interviewLimit ?? 20;
-    if ((user?.subscriptionPlan as any)?.type === 'pay_as_you_go' && typeof user?.paygInterviewsLimit === 'number') return user.paygInterviewsLimit;
-    if (typeof user?.interviewLimit === 'number' && user.interviewLimit > 0) return user.interviewLimit;
-    
-    if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
-      const f = (user.subscriptionPlan as any).features?.find?.((f: any) => f.name === 'Interview Limit');
-      if (f) return Number(f.value ?? f.limit ?? 3);
-    }
-    return 3; 
-  }, [user, universityLimits]);
-
-  const resumeLimit = useMemo(() => {
-    if ((user as any)?.role === 'student') return universityLimits?.resumeLimit ?? 5;
+  const resumeLimit = useMemo((): number | null => {
+    if ((user as any)?.role === 'student') return universityResumeLimit;
     if ((user?.subscriptionPlan as any)?.type === 'pay_as_you_go' && typeof user?.paygResumesLimit === 'number') return user.paygResumesLimit;
     if (typeof user?.resumeLimit === 'number' && user.resumeLimit > 0) return user.resumeLimit;
-    
+
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
       const f = (user.subscriptionPlan as any).features?.find?.((f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit');
-      if (f) return Number(f.value ?? f.limit ?? 5);
+      if (f != null) { const v = f.value ?? f.limit; if (v != null) return Number(v); }
     }
-    return 5; 
-  }, [user, universityLimits]);
+    return null;
+  }, [user, universityResumeLimit]);
 
-  const isPayg = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go';
-  // Use the user profile counters as source of truth for limit enforcement/usage UI.
-  const totalInterviewsTaken = isPayg ? (user?.paygInterviewsUsed ?? 0) : (user?.interviewCount ?? 0);
-  const isAtLimit = totalInterviewsTaken >= interviewLimit;
+  // isPayg, totalInterviewsTaken, isAtLimit come from useInterviewLimits above.
   
   const totalResumes = isPayg ? (user?.paygResumesUsed ?? 0) : (user?.resumeCount ?? resumes.length);
-  const isAtResumeLimit = totalResumes >= resumeLimit;
+  const isAtResumeLimit = resumeLimit !== null && totalResumes >= resumeLimit;
 
   const isPaidUser = useMemo(() => {
     if ((user as any)?.role === 'student') return true;
@@ -440,13 +414,13 @@ export default function InterviewStart() {
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Session Capacity</span>
                         <span className={`text-[10px] font-black ${isAtLimit ? 'text-rose-500' : 'text-blue-600'}`}>
-                          {totalInterviewsTaken} / {interviewLimit}
+                          {totalInterviewsTaken} / {interviewLimit ?? '—'}
                         </span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
-                          animate={{ width: `${Math.min((totalInterviewsTaken / interviewLimit) * 100, 100)}%` }}
+                          animate={{ width: `${interviewLimit ? Math.min((totalInterviewsTaken / interviewLimit) * 100, 100) : 0}%` }}
                           className={`h-full transition-all duration-500 ${isAtLimit ? 'bg-rose-500' : 'bg-blue-600'}`}
                         />
                       </div>
@@ -842,13 +816,13 @@ export default function InterviewStart() {
                         <div className="flex justify-between items-center mb-2">
                           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Vault Limit</span>
                           <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isAtResumeLimit ? 'bg-rose-500 text-white' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'}`}>
-                            {totalResumes} / {resumeLimit}
+                            {totalResumes}{resumeLimit != null ? ` / ${resumeLimit}` : ''}
                           </span>
                         </div>
                         <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                           <motion.div
                             initial={{ width: 0 }}
-                            animate={{ width: `${Math.min((totalResumes / resumeLimit) * 100, 100)}%` }}
+                            animate={{ width: `${(resumeLimit != null && resumeLimit > 0) ? Math.min((totalResumes / resumeLimit) * 100, 100) : 0}%` }}
                             className={`h-full transition-all duration-500 ${isAtResumeLimit ? 'bg-rose-500' : 'bg-blue-600'}`}
                           />
                         </div>

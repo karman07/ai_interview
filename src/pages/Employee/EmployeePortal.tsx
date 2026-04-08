@@ -83,7 +83,7 @@ const EmployeePortal = () => {
 
   // University features + limits for student users
   const [universityFeatures, setUniversityFeatures] = useState<string[]>([]);
-  const [universityStudentLimits, setUniversityStudentLimits] = useState<{ resumeLimit: number; interviewLimit: number } | null>(null);
+  const [universityStudentLimits, setUniversityStudentLimits] = useState<{ resumeLimit: number; interviewLimit?: number } | null>(null);
   useEffect(() => {
     if (user?.role === 'student' && (user as any)?.universityId) {
       http.get(`/universities/${(user as any).universityId}`)
@@ -92,7 +92,7 @@ const EmployeePortal = () => {
           if (res.data?.resumeLimit != null) {
             setUniversityStudentLimits({
               resumeLimit: res.data.resumeLimit,
-              interviewLimit: res.data.interviewLimit ?? 10,
+              interviewLimit: res.data.interviewLimit,
             });
           }
         })
@@ -111,16 +111,19 @@ const EmployeePortal = () => {
     return user?.subscriptionStatus === 'active' || (!!planName && !isFreeTier);
   }, [user, universityFeatures]);
 
-  const resumeLimit = React.useMemo(() => {
+  const resumeLimit = React.useMemo((): number | undefined => {
     // Students: use their university's configured resume limit
-    if (user?.role === 'student') return universityStudentLimits?.resumeLimit ?? 5;
+    if (user?.role === 'student') return universityStudentLimits?.resumeLimit;
     if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
       const feature = (user.subscriptionPlan as any).features?.find?.(
         (f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit'
       );
-      if (feature) return Number(feature.value ?? feature.limit ?? 5);
+      if (feature != null) {
+        const v = feature.value ?? feature.limit;
+        if (v != null) return Number(v);
+      }
     }
-    return 5; // default free tier
+    return undefined;
   }, [user, universityStudentLimits]);
 
   const loadLocations = useCallback(async () => {

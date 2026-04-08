@@ -41,6 +41,7 @@ import { InterviewAnalyticsApi } from '@/api/interviewAnalytics';
 import { InterviewV2Report } from '@/api/interviewV2';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePricing } from '@/contexts/PricingContext';
+import { useInterviewLimits } from '@/hooks/useInterviewLimits';
 
 interface ExternalAnalyticsSession extends InterviewV2Report {
   timestamp: string;
@@ -94,19 +95,12 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
   const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState<ExternalAnalyticsSession[]>([]);
   const [dashboardData, setDashboardData] = useState<any>(null);
-  const [universityInterviewLimit, setUniversityInterviewLimit] = useState<number | null>(null);
   const { user } = useAuth();
   const { setShowPricing } = usePricing();
+  const { interviewLimit, currentInterviews: currentMonthlyUsage, isAtLimit, isPayg } = useInterviewLimits();
 
   useEffect(() => {
     loadData();
-    if ((user as any)?.role === 'student' && (user as any)?.universityId) {
-      import('@/api/http').then(({ default: http }) => {
-        http.get(`/universities/${(user as any).universityId}`)
-          .then(res => setUniversityInterviewLimit(res.data?.interviewLimit ?? null))
-          .catch(() => {});
-      });
-    }
   }, []);
 
   const loadData = async () => {
@@ -126,41 +120,7 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
     }
   };
 
-  const interviewLimit = useMemo(() => {
-    if ((user as any)?.role === 'student') return universityInterviewLimit ?? 20;
-
-    // PAYG: use paygInterviewsLimit
-    if ((user?.subscriptionPlan as any)?.type === 'pay_as_you_go' && typeof user?.paygInterviewsLimit === 'number') {
-      return user.paygInterviewsLimit;
-    }
-
-    // ✅ Stamped at purchase — always the source of truth
-    if (typeof user?.interviewLimit === 'number' && user.interviewLimit > 0) {
-      return user.interviewLimit;
-    }
-
-    // Fallback: analytics dashboard data plan features
-    if (dashboardData?.overview?.plan?.features) {
-      const f = dashboardData.overview.plan.features.find((f: any) => f.name.toLowerCase().includes('interview limit'));
-      if (f && typeof (f.value ?? f.limit) === 'number') return f.value ?? f.limit;
-    }
-
-    // Fallback: subscriptionPlan object
-    if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
-      const f = user.subscriptionPlan.features.find(f => f.name.toLowerCase().includes('interview limit'));
-      if (f && typeof f.value === 'number') return f.value;
-    }
-
-    return user?.subscriptionStatus === 'active' ? 10 : 3;
-  }, [user, dashboardData, universityInterviewLimit]);
-
-  // PAYG usage comes from paygInterviewsUsed; regular from interviewCount (stamped at purchase)
-  const isPayg = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go';
-  const currentMonthlyUsage = isPayg
-    ? (user?.paygInterviewsUsed ?? 0)
-    : (user?.interviewCount ?? 0);
   const totalInterviews = Math.max(dashboardData?.overview?.totalInterviews || 0, sessions.length);
-  const isAtLimit = currentMonthlyUsage >= interviewLimit;
 
   const averageScore = sessions.length > 0
     ? sessions.reduce((a, s) => a + (s.summary?.overall_score || 0), 0) / sessions.length
@@ -381,17 +341,17 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.1em]">Interview Limit</span>
                   <div className="flex items-baseline gap-1">
                     <span className={`text-xl font-black ${isAtLimit ? 'text-rose-500' : 'text-slate-900 dark:text-white'}`}>{currentMonthlyUsage}</span>
-                    <span className="text-[10px] text-slate-400 font-bold">/ {interviewLimit}</span>
+                    <span className="text-[10px] text-slate-400 font-bold">/ {interviewLimit ?? '—'}</span>
                   </div>
                 </div>
                 <div className="w-24 flex flex-col gap-1.5">
                   <div className="flex justify-between text-[8px] font-bold text-slate-400/60 uppercase">
                     <span>Usage</span>
-                    <span>{Math.round((currentMonthlyUsage / interviewLimit) * 100)}%</span>
+                    <span>{interviewLimit ? Math.round((currentMonthlyUsage / interviewLimit) * 100) : 0}%</span>
                   </div>
                   <div className="h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                     <motion.div initial={{ width: 0 }}
-                      animate={{ width: `${Math.min((currentMonthlyUsage / interviewLimit) * 100, 100)}%` }}
+                      animate={{ width: `${interviewLimit ? Math.min((currentMonthlyUsage / interviewLimit) * 100, 100) : 0}%` }}
                       className={`h-full ${isAtLimit ? 'bg-rose-500' : 'bg-blue-600'}`} />
                   </div>
                 </div>

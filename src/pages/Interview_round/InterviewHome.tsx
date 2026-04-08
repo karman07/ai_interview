@@ -15,6 +15,7 @@ import { usePricing } from "@/contexts/PricingContext";
 import { useResults } from "@/contexts/ResultsContext";
 import { InterviewAnalyticsApi } from "@/api/interviewAnalytics";
 import http, { baseURL } from "@/api/http";
+import { useInterviewLimits } from "@/hooks/useInterviewLimits";
 
 type InterviewCardProps = {
   type: string;
@@ -133,8 +134,8 @@ export default function InterviewHome() {
   const { results, fetchMine } = useResults();
   const [showInterviewSelection, setShowInterviewSelection] = useState(false);
   const [analytics, setAnalytics] = useState<any>(null);
-  const [universityInterviewLimit, setUniversityInterviewLimit] = useState<number | null>(null);
   const [specializedTopics, setSpecializedTopics] = useState<any[]>([]);
+  const { interviewLimit, currentInterviews, isAtLimit } = useInterviewLimits();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
 
@@ -153,62 +154,7 @@ export default function InterviewHome() {
         setSpecializedTopics(mapped);
       })
       .catch(console.warn);
-
-    if ((user as any)?.role === 'student' && (user as any)?.universityId) {
-      import('@/api/http').then(({ default: http }) => {
-        http.get(`/universities/${(user as any).universityId}`)
-          .then(res => setUniversityInterviewLimit(res.data?.interviewLimit ?? null))
-          .catch(() => {});
-      });
-    }
   }, []);
-
-  const interviewLimit = useMemo(() => {
-    // Students: always use their university's configured limit (dynamic)
-    if ((user as any)?.role === 'student') {
-      return universityInterviewLimit ?? 20;
-    }
-
-    // PAYG users: use paygInterviewsLimit
-    const isPayg = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go'
-      || typeof user?.paygInterviewsLimit === 'number';
-    if (isPayg && typeof user?.paygInterviewsLimit === 'number') {
-      return user.paygInterviewsLimit;
-    }
-
-    // ✅ Use the limit stamped directly on the user at purchase time
-    if (typeof user?.interviewLimit === 'number' && user.interviewLimit > 0) {
-      return user.interviewLimit;
-    }
-
-    // Fallback: analytics plan features
-    if (analytics?.plan?.features) {
-      const limitFeature = analytics.plan.features.find((f: any) =>
-        f.name.toLowerCase().includes('interview limit')
-      );
-      if (limitFeature && typeof (limitFeature.value ?? limitFeature.limit) === 'number') {
-        return limitFeature.value ?? limitFeature.limit;
-      }
-    }
-
-    // Fallback: subscriptionPlan object features
-    if (user?.subscriptionPlan && typeof user.subscriptionPlan === 'object') {
-      const limitFeature = user.subscriptionPlan.features.find(f => f.name.toLowerCase().includes('interview limit'));
-      if (limitFeature && typeof limitFeature.value === 'number') {
-        return limitFeature.value;
-      }
-    }
-
-    // Absolute default: 3 free / 10 paid
-    return user?.subscriptionStatus === 'active' ? 10 : 3;
-  }, [user, analytics, universityInterviewLimit]);
-
-  // For PAYG track used from user directly; for regular track from analytics/results
-  const isPaygUser = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go';
-  const currentInterviews = isPaygUser
-    ? (user?.paygInterviewsUsed ?? 0)
-    : (user?.interviewCount ?? analytics?.overall?.monthlyInterviews ?? analytics?.overall?.totalInterviews ?? results?.length ?? 0);
-  const isAtLimit = currentInterviews >= interviewLimit;
 
   const handleLimitExceeded = () => {
     // Students cannot upgrade — their limit is set by their university admin

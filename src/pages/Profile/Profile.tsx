@@ -337,15 +337,15 @@ export default function Profile() {
               </div>
             ) : (() => {
               const isPayg = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go';
-              const interviewsUsed  = isPayg ? (user?.paygInterviewsUsed  ?? 0) : (user?.interviewCount ?? 0);
-              const interviewsLimit = isPayg ? (user?.paygInterviewsLimit ?? 0) : (user?.interviewLimit ?? 3);
-              const resumesUsed     = isPayg ? (user?.paygResumesUsed     ?? 0) : (user?.resumeCount    ?? 0);
-              const resumesLimit    = isPayg ? (user?.paygResumesLimit    ?? 0) : (user?.resumeLimit    ?? 5);
+              const interviewsUsed  = isPayg ? (user?.paygInterviewsUsed ?? 0) : (user?.interviewCount ?? 0);
+              const interviewsLimit = isPayg ? user?.paygInterviewsLimit : user?.interviewLimit;
+              const resumesUsed     = isPayg ? (user?.paygResumesUsed    ?? 0) : (user?.resumeCount   ?? 0);
+              const resumesLimit    = isPayg ? user?.paygResumesLimit    : user?.resumeLimit;
               const budgetRupees    = isPayg ? ((user?.paygMonthlyBudget ?? 0) / 100) : null;
               const cycleEnd        = isPayg && user?.paygBillingCycleEnd ? new Date(user.paygBillingCycleEnd) : null;
 
-              const interviewPct = interviewsLimit > 0 ? Math.min((interviewsUsed / interviewsLimit) * 100, 100) : 0;
-              const resumePct    = resumesLimit    > 0 ? Math.min((resumesUsed    / resumesLimit)    * 100, 100) : 0;
+              const interviewPct = (interviewsLimit != null && interviewsLimit > 0) ? Math.min((interviewsUsed / interviewsLimit) * 100, 100) : 0;
+              const resumePct    = (resumesLimit    != null && resumesLimit    > 0) ? Math.min((resumesUsed    / resumesLimit)    * 100, 100) : 0;
               const barColor     = (pct: number) =>
                 pct >= 90 ? 'from-red-500 to-rose-400' :
                 pct >= 70 ? 'from-amber-500 to-yellow-400' :
@@ -390,7 +390,7 @@ export default function Profile() {
                   </div>
 
                   {/* Usage bars — shown for active plans */}
-                  {(isPayg || user?.subscriptionStatus === 'active') && interviewsLimit > 0 && (
+                  {(isPayg || user?.subscriptionStatus === 'active') && interviewsLimit != null && interviewsLimit > 0 && (
                     <div className="space-y-4 mb-5">
                       {/* Interviews */}
                       <div>
