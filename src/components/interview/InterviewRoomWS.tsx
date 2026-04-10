@@ -586,7 +586,7 @@ export default function InterviewRoomWS() {
             </header>
 
             {/* Content Area */}
-            <main className="flex-1 min-h-0 flex flex-col p-4 md:p-6 gap-4 pb-16">
+            <main className="flex-1 min-h-0 flex flex-col p-3 md:p-4 gap-3 pb-20">
                 <div className="flex-1 min-h-0 flex gap-4 max-w-[1600px] mx-auto w-full">
 
                     {/* Left UI: Always visible */}
@@ -594,8 +594,10 @@ export default function InterviewRoomWS() {
                         animate={{ width: showCodeEditor ? 360 : "100%", maxWidth: showCodeEditor ? 360 : 780 }}
                         className="flex flex-col gap-3 shrink-0 h-full min-h-0 overflow-hidden mx-auto"
                     >
-                        {/* Avatar / Interviewer Card */}
-                        <div className={`shrink-0 bg-white dark:bg-slate-900 rounded-[2rem] border border-blue-50 dark:border-slate-800 shadow-sm overflow-hidden relative group transition-all duration-500 ${showCodeEditor ? 'h-[260px]' : 'h-[360px]'}`}>
+                        {/* Avatar / Interviewer Card - Height shrinks when Q box is open or code editor is open */}
+                        <div className={`shrink-0 bg-white dark:bg-slate-900 rounded-[2rem] border border-blue-50 dark:border-slate-800 shadow-sm overflow-hidden relative group transition-all duration-500 ${
+                            showCodeEditor ? 'h-[220px]' : (isQuestionBoxOpen ? 'h-[260px]' : 'h-[360px]')
+                        }`}>
                             <ThreeAvatar
                                 isSpeaking={isSpeaking}
                                 isListening={isListening || isTranscribing}
@@ -603,7 +605,7 @@ export default function InterviewRoomWS() {
                             />
 
                             {/* User Webcam PIP */}
-                            <div className={`absolute right-3 rounded-2xl overflow-hidden shadow-2xl bg-slate-950 z-20 transition-all duration-500 ${showCodeEditor ? 'bottom-3 w-24 h-[88px] border border-white/20' : 'bottom-14 w-28 h-36 border-2 border-white/25'}`}>
+                            <div className={`absolute right-3 rounded-2xl overflow-hidden shadow-2xl bg-slate-950 z-20 transition-all duration-500 ${showCodeEditor || isQuestionBoxOpen ? 'bottom-3 w-24 h-[80px] border border-white/20' : 'bottom-14 w-28 h-36 border-2 border-white/25'}`}>
                                 <video
                                     ref={videoRef}
                                     autoPlay
@@ -647,7 +649,7 @@ export default function InterviewRoomWS() {
                                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                     className="shrink-0"
                                 >
-                                    <div className="bg-blue-600/10 dark:bg-blue-900/20 border border-blue-500/20 rounded-2xl p-3.5 backdrop-blur-sm">
+                                    <div className="bg-blue-600/10 dark:bg-blue-900/20 border border-blue-500/20 rounded-2xl p-3 backdrop-blur-sm">
                                         <div className="flex items-center justify-between mb-1.5">
                                             <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-1.5">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />

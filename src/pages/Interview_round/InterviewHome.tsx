@@ -139,6 +139,9 @@ export default function InterviewHome() {
   const { interviewLimit, currentInterviews, isAtLimit } = useInterviewLimits();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
+  const [showAllCompanies, setShowAllCompanies] = useState(false);
+  const [showAllTopics, setShowAllTopics] = useState(false);
+  const INITIAL_COUNT = 4;
 
   React.useEffect(() => {
     fetchMine();
@@ -367,9 +370,9 @@ export default function InterviewHome() {
               </div>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
-                {filteredCompanies.map((topic) => (
+                {(showAllCompanies ? filteredCompanies : filteredCompanies.slice(0, INITIAL_COUNT)).map((topic) => (
                   <InterviewCard
-                      key={topic._id}
+                    key={topic._id}
                     type={topic.name}
                     description={`Specialized interview round focused on ${topic.name}.`}
                     icon={topic.logoUrl ? (
@@ -382,12 +385,33 @@ export default function InterviewHome() {
                       <Building2 className="w-8 h-8" />
                     )}
                     color="bg-gradient-to-br from-indigo-500 to-blue-700"
-                      navigate={() => navigate('/interview/start/technical', { state: { company: topic.name } })}
+                    navigate={() => navigate('/interview/start/technical', { state: { company: topic.name } })}
                     isAtLimit={isAtLimit}
                     onLimitExceeded={handleLimitExceeded}
                   />
                 ))}
               </div>
+
+              {filteredCompanies.length > INITIAL_COUNT && (
+                <div className="flex justify-center pt-2">
+                  <button
+                    onClick={() => setShowAllCompanies(!showAllCompanies)}
+                    className="group inline-flex items-center gap-2 px-7 py-3 rounded-xl border-2 border-blue-200 dark:border-blue-700/60 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 font-bold text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:border-blue-400 transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    {showAllCompanies ? (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" /></svg>
+                        Show Less
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+                        View {filteredCompanies.length - INITIAL_COUNT} More Companies
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -409,7 +433,7 @@ export default function InterviewHome() {
               </div>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
-                {filteredTopics.map((topic) => (
+                {(showAllTopics ? filteredTopics : filteredTopics.slice(0, INITIAL_COUNT)).map((topic) => (
                   <InterviewCard
                     key={topic._id}
                     type={topic.name}
@@ -430,6 +454,27 @@ export default function InterviewHome() {
                   />
                 ))}
               </div>
+
+              {filteredTopics.length > INITIAL_COUNT && (
+                <div className="flex justify-center pt-2">
+                  <button
+                    onClick={() => setShowAllTopics(!showAllTopics)}
+                    className="group inline-flex items-center gap-2 px-7 py-3 rounded-xl border-2 border-blue-200 dark:border-blue-700/60 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 font-bold text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:border-blue-400 transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    {showAllTopics ? (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" /></svg>
+                        Show Less
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+                        View {filteredTopics.length - INITIAL_COUNT} More Topics
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

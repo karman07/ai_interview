@@ -12,17 +12,38 @@ interface TranscriptPanelProps {
     isTranscribing: boolean;
 }
 
-export const WSTranscriptPanel: React.FC<TranscriptPanelProps> = ({ messages, transcript, isListening, isSpeaking, isThinking, isTranscribing: _isTranscribing }) => {
-    const [isOpen, setIsOpen] = useState(false);
+export const WSTranscriptPanel: React.FC<TranscriptPanelProps> = ({ messages, transcript, isListening, isSpeaking, isThinking, isTranscribing }) => {
+    const [isOpen, setIsOpen] = useState(true); // Open by default so user can see conversation
     const scrollRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    // Keep last spoken transcript visible until next user message is confirmed
+    const [lastTranscript, setLastTranscript] = useState('');
+    const prevMessageCountRef = useRef(messages.length);
 
-    // Auto-scroll only when panel is open
+    // Update lastTranscript when actively listening
     useEffect(() => {
-        if (isOpen && containerRef.current) {
-            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        if ((isListening || isTranscribing) && transcript) {
+            setLastTranscript(transcript);
         }
-    }, [messages, transcript, isOpen]);
+    }, [transcript, isListening, isTranscribing]);
+
+    // Clear lastTranscript when a new user message is added (confirmed send)
+    useEffect(() => {
+        if (messages.length > prevMessageCountRef.current) {
+            const newest = messages[messages.length - 1];
+            if (newest.role === 'user') {
+                setLastTranscript('');
+            }
+        }
+        prevMessageCountRef.current = messages.length;
+    }, [messages]);
+
+    // Auto-scroll when panel is open
+    useEffect(() => {
+        if (isOpen && scrollRef.current) {
+            scrollRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+    }, [messages, lastTranscript, isOpen]);
 
     const handleDownload = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -125,14 +146,28 @@ export const WSTranscriptPanel: React.FC<TranscriptPanelProps> = ({ messages, tr
                                 ))}
                             </AnimatePresence>
 
-                            {isListening && transcript && (
+                            {/* Live transcript preview — persists until user msg is confirmed */}
+                            {(isListening || isTranscribing || lastTranscript) && (lastTranscript || transcript) && (
                                 <motion.div
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
                                     className="flex flex-col items-end"
                                 >
-                                    <div className="px-4 py-2.5 rounded-2xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100/30 dark:border-blue-900/20 text-blue-800 dark:text-blue-300 text-xs italic rounded-tr-none">
-                                        {transcript}
+                                    <div className="px-4 py-2.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-900/10 border border-emerald-200/40 dark:border-emerald-800/30 text-emerald-800 dark:text-emerald-300 text-xs italic rounded-tr-none flex items-start gap-2">
+                                        {isListening && (
+                                            <span className="flex gap-0.5 items-center mt-0.5 shrink-0">
+                                                {[0,1,2].map(i => (
+                                                    <motion.span
+                                                        key={i}
+                                                        animate={{ height: [3, 10, 3] }}
+                                                        transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.15 }}
+                                                        className="block w-0.5 bg-emerald-400 rounded-full"
+                                                    />
+                                                ))}
+                                            </span>
+                                        )}
+                                        <span>{lastTranscript || transcript}</span>
                                     </div>
                                 </motion.div>
                             )}
