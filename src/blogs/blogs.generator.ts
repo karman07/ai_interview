@@ -114,23 +114,39 @@ coverImage: "Provide a real high-quality absolute Unsplash image URL that matche
       const apiKey = await this.aiConfigService.getActiveKey('gemini');
       const model = await this.aiConfigService.getActiveModel('gemini');
 
-      const res = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            topP: 0.95,
-            topK: 40,
-            maxOutputTokens: 2048,
-          },
-        },
-        {
-          headers: { 'Content-Type': 'application/json' },
-        },
-      );
+      let res;
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          res = await axios.post(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+            {
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.7,
+                topP: 0.95,
+                topK: 40,
+                maxOutputTokens: 2048,
+              },
+            },
+            {
+              headers: { 'Content-Type': 'application/json' },
+              timeout: 30000,
+            },
+          );
+          break; // success
+        } catch (error: any) {
+          if (error.response?.status === 503 && retries > 1) {
+            retries -= 1;
+            this.logger.warn(`Gemini 503 Service Unavailable, retrying... (${retries} retries left)`);
+            await new Promise(resolve => setTimeout(resolve, 5000)); // wait 5 seconds before retry
+          } else {
+            throw error;
+          }
+        }
+      }
 
-      let content = res.data.candidates?.[0]?.content?.parts?.[0]?.text;
+      let content = res?.data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!content) throw new Error('No content returned from Gemini');
 
       const slugMatch = content.match(/slug:\s*"([^"]+)"/);
