@@ -7,6 +7,7 @@ import { UserDocument, UserRole } from '../users/schemas/user.schema';
 import { FirebaseService } from '../common/firebase/firebase.service';
 import { EmailService } from '../email/email.service';
 import { UniversitiesService } from '../universities/universities.service';
+import { firebaseServiceAccount } from '../common/firebase/firebase-service-account';
 
 @Injectable()
 export class AuthService {
@@ -99,12 +100,27 @@ export class AuthService {
 
   async googleLogin(idToken: string) {
     const decoded = await this.firebase.verifyGoogleToken(idToken);
+    
+    // 1. Explicit App ID (Audience) Validation
+    // Although Firebase SDK verifies this, explicit check adds a second layer of defense.
+    if (decoded.aud !== firebaseServiceAccount.project_id) {
+      throw new UnauthorizedException('Invalid token audience (App ID mismatch)');
+    }
+
+    // 2. Strict Email Verification Check
+    // Prevent login from Google accounts where the email has not been verified.
+    if (!decoded.email_verified) {
+      throw new UnauthorizedException('Please verify your email address on your Google account first.');
+    }
+
     let user = await this.usersService.findByGoogleId(decoded.uid);
 
     if (!user) {
       user = await this.usersService.findByEmail(decoded.email);
       const uni = await this.getUniversityInfo(decoded.email);
+      
       if (!user) {
+        // New user - path is safe
         user = await this.usersService.createGoogleUser({
           name: decoded.name ?? 'Google User',
           email: decoded.email,
@@ -118,12 +134,21 @@ export class AuthService {
           coverLetterLimit: uni ? ((uni as any).coverLetterLimit ?? 5) : undefined,
         } as any);
 
-        // New user from Google, send welcome email
         await this.email.sendWelcomeEmail(user.email);
       } else {
+        // 3. Secure Account Linking Logic
+        // If user exists by email but isn't linked to Google yet, ensure it's safe.
+        // We only allow linking if the account doesn't already have a different googleId.
+        if (user.googleId && user.googleId !== decoded.uid) {
+          throw new ConflictException('This email is already associated with a different Google account.');
+        }
+
+        // Potential vulnerability fix: If the existing user was created via password, 
+        // we could require them to log in once with password to 'link' it, but 
+        // since we've verified decoded.email_verified is true, we trust Google's ownership.
         user.googleId = decoded.uid;
         user.isEmailVerified = true;
-        // Upgrade existing user to student if they match a university domain
+        
         if (uni && user.role === UserRole.USER) {
           user.role = UserRole.STUDENT;
           user.universityId = uni._id.toString();
@@ -144,9 +169,23 @@ export class AuthService {
 
 
 
-  async refresh(userId: string, email: string) {
-    // Get user to include role in new tokens and verify status
+  async refresh(userId: string, email: string, incomingRefreshToken?: string) {
+    // 4. Secure Token Refresh
+    // Ensure we have a refreshToken to validate against the database.
+    if (!incomingRefreshToken) {
+      throw new UnauthorizedException('Refresh token is required');
+    }
+
     const user = await this.usersService.findById(userId);
+    if (!user || !user.refreshTokenHash) {
+      throw new UnauthorizedException('Invalid session or session expired');
+    }
+
+    // Verify the incoming refresh token matches the hash in the DB
+    const isMatch = await bcrypt.compare(incomingRefreshToken, user.refreshTokenHash);
+    if (!isMatch) {
+      throw new UnauthorizedException('Invalid session or session expired');
+    }
 
     if (!user.isEmailVerified) {
       try {
@@ -163,7 +202,6 @@ export class AuthService {
       }
     }
 
-    // Upgrade existing user to student if they match a university domain
     const uni = await this.getUniversityInfo(user.email);
     if (uni && user.role === UserRole.USER) {
       user.role = UserRole.STUDENT;
@@ -233,7 +271,7 @@ export class AuthService {
         email,
         password,
         role: UserRole.STUDENT,
-        isEmailVerified: true, // university email implicitly trusted
+        isEmailVerified: false, // CRITICAL: Must verify email before login
         universityId: university._id.toString(),
         rollNumber: rollNumber || undefined,
         interviewLimit: university.interviewLimit,
@@ -241,15 +279,21 @@ export class AuthService {
         resumeCount: 0,
         interviewCount: 0,
       });
+      throw new UnauthorizedException('Account created. Please verify your email to log in.');
     } else {
       // Existing user: verify password
       if (!user.passwordHash) throw new UnauthorizedException('Please use Google login or reset your password');
       const valid = await bcrypt.compare(password, user.passwordHash);
       if (!valid) throw new UnauthorizedException('Wrong password');
-      if (user.role !== UserRole.STUDENT || !user.universityId || (rollNumber && user.rollNumber !== rollNumber) || !user.isEmailVerified) {
+
+      // Ensure account is verified before issuing tokens
+      if (!user.isEmailVerified) {
+        throw new UnauthorizedException('Please verify your email address to log in.');
+      }
+
+      if (user.role !== UserRole.STUDENT || !user.universityId || (rollNumber && user.rollNumber !== rollNumber)) {
         user.role = UserRole.STUDENT;
         user.universityId = university._id.toString();
-        user.isEmailVerified = true; // They passed Firebase validation to reach here
         user.interviewLimit = university.interviewLimit;
         user.resumeLimit = university.resumeLimit;
         if (rollNumber) user.rollNumber = rollNumber;
@@ -266,6 +310,16 @@ export class AuthService {
 
   async studentGoogleLogin(idToken: string, universityId: string, rollNumber?: string) {
     const decoded = await this.firebase.verifyGoogleToken(idToken);
+
+    // 1. Explicit App ID (Audience) Validation
+    if (decoded.aud !== firebaseServiceAccount.project_id) {
+      throw new UnauthorizedException('Invalid token audience (App ID mismatch)');
+    }
+
+    // 2. Strict Email Verification Check
+    if (!decoded.email_verified) {
+      throw new UnauthorizedException('Please verify your email address on your Google account first.');
+    }
 
     const emailDomain = decoded.email?.split('@')[1]?.toLowerCase();
     if (!emailDomain) throw new UnauthorizedException('Invalid email in Google token');
@@ -297,6 +351,11 @@ export class AuthService {
         } as any);
         await this.email.sendWelcomeEmail(user.email);
       } else {
+        // 3. Secure Linking for Students
+        if (user.googleId && user.googleId !== decoded.uid) {
+          throw new ConflictException('This email is already associated with a different Google account.');
+        }
+
         user.googleId = decoded.uid;
         user.isEmailVerified = true;
         user.role = UserRole.STUDENT;

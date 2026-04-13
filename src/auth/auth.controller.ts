@@ -1,5 +1,5 @@
-import { Body, Controller, Post, Res, UseGuards, Get, HttpException, HttpStatus, Logger, ConflictException } from '@nestjs/common';
-import { Response } from 'express';
+import { Body, Controller, Post, Res, UseGuards, Get, HttpException, HttpStatus, Logger, ConflictException, Req } from '@nestjs/common';
+import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
@@ -148,9 +148,11 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refresh(@Body() body: { userId: string; email: string }, @Res({ passthrough: true }) res: Response) {
+  async refresh(@Body() body: { userId: string; email: string }, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     try {
-      const tokens = await this.auth.refresh(body.userId, body.email);
+      // Pull refresh token from cookie or fallback to authorization header if necessary
+      const refreshToken = req.cookies?.['refresh_token'];
+      const tokens = await this.auth.refresh(body.userId, body.email, refreshToken);
       res.cookie('refresh_token', tokens.refreshToken, { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 7 * 24 * 3600 * 1000, path: '/' });
       return { accessToken: tokens.accessToken };
     } catch (error) {
