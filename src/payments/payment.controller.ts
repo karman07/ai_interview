@@ -69,6 +69,38 @@ export class PaymentController {
     return this.paymentService.verifyPaygSubscription(user.sub, body);
   }
 
+  @Post('create-trial-subscription')
+  async createTrialSubscription(
+    @CurrentUser() user: any,
+    @Body() body: {
+      couponId: string;
+      linkedPlanId: string;
+      trialDays: number;
+    },
+  ) {
+    return this.paymentService.createTrialSubscription(
+      user.sub,
+      body.couponId,
+      body.linkedPlanId,
+      body.trialDays,
+    );
+  }
+
+  @Post('verify-trial-subscription')
+  async verifyTrialSubscription(
+    @CurrentUser() user: any,
+    @Body() body: {
+      razorpaySubscriptionId: string;
+      razorpayPaymentId: string;
+      razorpaySignature: string;
+      couponId: string;
+      linkedPlanId: string;
+      trialDays: number;
+    },
+  ) {
+    return this.paymentService.verifyTrialSubscription(user.sub, body);
+  }
+
   @Post('verify-subscription')
   async verifySubscription(
     @CurrentUser() user: any,

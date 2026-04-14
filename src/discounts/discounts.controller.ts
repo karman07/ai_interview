@@ -116,4 +116,12 @@ export class DiscountsController {
   async getMyReferralStats(@CurrentUser() user: any) {
     return this.discountsService.getUserReferralStats(user.sub);
   }
+
+  @Post('redeem')
+  async redeemAccessCode(
+    @CurrentUser() user: any,
+    @Body() body: { code: string },
+  ) {
+    return this.discountsService.redeemAccessCode(user.sub, body.code);
+  }
 }

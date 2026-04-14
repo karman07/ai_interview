@@ -35,7 +35,7 @@ export class CoverLetterController {
     const user = await this.userModel.findById(userId).exec();
     if (!user) throw new BadRequestException('User not found');
 
-    let limit = user.coverLetterLimit ?? 5;
+    let limit = user.coverLetterLimit ?? 0;
 
     if (user.role === UserRole.STUDENT && user.universityId) {
       try {
@@ -65,7 +65,7 @@ export class CoverLetterController {
     if (!user) throw new BadRequestException('User not found');
 
     const currentUsage = user.coverLetterCount ?? 0;
-    let limit = user.coverLetterLimit ?? 5;
+    let limit = user.coverLetterLimit ?? 0;
 
     // Override for students: use university limits if linked
     if (user.role === UserRole.STUDENT && user.universityId) {
@@ -83,8 +83,10 @@ export class CoverLetterController {
     if (currentUsage >= limit) {
       this.logger.warn(`🚫 User ${userId} reached monthly cover letter limit of ${limit} (used: ${currentUsage})`);
       throw new BadRequestException(
-        `You have reached your monthly limit of ${limit} cover letter${limit !== 1 ? 's' : ''}. ` +
-        `Upgrade your plan or wait for your limit to reset on the 1st of next month.`,
+        limit === 0
+          ? 'You need an access code to use this feature. Please enter a valid access code to start your free trial.'
+          : `You have reached your monthly limit of ${limit} cover letter${limit !== 1 ? 's' : ''}. ` +
+            `Upgrade your plan or wait for your limit to reset on the 1st of next month.`,
       );
     }
 
@@ -116,7 +118,7 @@ export class CoverLetterController {
     if (!user) throw new BadRequestException('User not found');
 
     const currentUsage = user.coverLetterCount ?? 0;
-    let limit = user.coverLetterLimit ?? 5;
+    let limit = user.coverLetterLimit ?? 0;
 
     if (user.role === UserRole.STUDENT && user.universityId) {
       try {
@@ -133,8 +135,10 @@ export class CoverLetterController {
     if (currentUsage >= limit) {
       this.logger.warn(`🚫 User ${userId} reached monthly cover letter limit of ${limit} (used: ${currentUsage})`);
       throw new BadRequestException(
-        `You have reached your monthly limit of ${limit} cover letter${limit !== 1 ? 's' : ''}. ` +
-        `Upgrade your plan or wait for your limit to reset on the 1st of next month.`,
+        limit === 0
+          ? 'You need an access code to use this feature. Please enter a valid access code to start your free trial.'
+          : `You have reached your monthly limit of ${limit} cover letter${limit !== 1 ? 's' : ''}. ` +
+            `Upgrade your plan or wait for your limit to reset on the 1st of next month.`,
       );
     }
 

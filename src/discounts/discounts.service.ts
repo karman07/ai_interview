@@ -42,6 +42,7 @@ export class DiscountsService {
       createdBy: new Types.ObjectId(adminId),
       referrerId: dto.referrerId ? new Types.ObjectId(dto.referrerId) : undefined,
       applicablePlans: (dto.applicablePlans || []).map((id) => new Types.ObjectId(id)),
+      linkedPlanId: dto.linkedPlanId ? new Types.ObjectId(dto.linkedPlanId) : undefined,
     });
 
     return coupon.save();
@@ -341,5 +342,86 @@ export class DiscountsService {
       totalReferrals: usages.length,
       usages,
     };
+  }
+
+  // ── User: Redeem an ACCESS_CODE coupon ────────────────────────────────────────
+
+  async redeemAccessCode(
+    userId: string,
+    code: string,
+  ): Promise<{
+    valid: boolean;
+    couponId?: string;
+    linkedPlanId?: string;
+    trialDays?: number;
+    message: string;
+  }> {
+    const couponCode = code.toUpperCase().trim();
+    const coupon = await this.couponModel
+      .findOne({ code: couponCode })
+      .populate('linkedPlanId');
+
+    if (!coupon || !coupon.isActive) {
+      return { valid: false, message: 'Invalid or inactive access code.' };
+    }
+
+    if (coupon.type !== CouponType.ACCESS_CODE) {
+      return { valid: false, message: 'This is not a valid access code.' };
+    }
+
+    // Expiry check
+    if (coupon.expiresAt && new Date() > coupon.expiresAt) {
+      return { valid: false, message: 'This access code has expired.' };
+    }
+
+    // Max uses check
+    if (coupon.maxUses != null && coupon.usedCount >= coupon.maxUses) {
+      return { valid: false, message: 'This access code has reached its usage limit.' };
+    }
+
+    // Check user hasn't already used this code
+    const alreadyUsed = await this.usageModel.findOne({
+      couponId: coupon._id,
+      userId: new Types.ObjectId(userId),
+    });
+    if (alreadyUsed) {
+      return { valid: false, message: 'You have already used this access code.' };
+    }
+
+    if (!coupon.linkedPlanId) {
+      return { valid: false, message: 'Access code is not linked to any plan. Contact support.' };
+    }
+
+    if (!coupon.trialDays || coupon.trialDays <= 0) {
+      return { valid: false, message: 'Access code has no trial duration configured. Contact support.' };
+    }
+
+    return {
+      valid: true,
+      couponId: coupon._id.toString(),
+      linkedPlanId: coupon.linkedPlanId.toString(),
+      trialDays: coupon.trialDays,
+      message: `Access code valid! You'll get a ${coupon.trialDays}-day free trial.`,
+    };
+  }
+
+  // ── Record access code usage (after trial activation) ─────────────────────
+
+  async recordAccessCodeUsage(couponId: string, userId: string): Promise<void> {
+    try {
+      await this.usageModel.create({
+        couponId: new Types.ObjectId(couponId),
+        userId: new Types.ObjectId(userId),
+        discountAmount: 0,
+        originalAmount: 0,
+        finalAmount: 0,
+        subscriptionName: 'Trial via Access Code',
+      });
+
+      await this.couponModel.findByIdAndUpdate(couponId, { $inc: { usedCount: 1 } });
+      this.logger.log(`Access code ${couponId} redeemed by user ${userId}`);
+    } catch (err) {
+      this.logger.error(`Failed to record access code usage: ${err.message}`);
+    }
   }
 }

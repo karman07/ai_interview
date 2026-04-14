@@ -41,4 +41,13 @@ export class UpdateCouponDto {
   @IsArray()
   @IsOptional()
   applicablePlans?: string[];
+
+  // ── ACCESS_CODE fields ──────────────────────────────────────────────
+  @IsNumber()
+  @IsOptional()
+  trialDays?: number;
+
+  @IsString()
+  @IsOptional()
+  linkedPlanId?: string;
 }

@@ -113,8 +113,8 @@ export class ResumeService {
     } else {
       // ── Regular / Free plan: read limit stamped at purchase time ──────────
       const currentUsage = user?.resumeCount ?? 0;
-      // user.resumeLimit is set when plan is purchased; default 5 for free tier
-      let limit = user?.resumeLimit ?? 5;
+      // user.resumeLimit is set when plan is purchased; default 0 for free tier
+      let limit = user?.resumeLimit ?? 0;
 
       // ✅ Override for Students: Use University limits if linked
       if (user?.role === UserRole.STUDENT && user?.universityId) {
@@ -131,8 +131,10 @@ export class ResumeService {
 
       if (currentUsage >= limit) {
         throw new BadRequestException(
-          `You have reached your monthly limit of ${limit} resume${limit !== 1 ? 's' : ''}. ` +
-          `Upgrade your plan or wait for your limit to reset on the 1st of next month.`
+          limit === 0
+            ? 'You need an access code to use this feature. Please enter a valid access code to start your free trial.'
+            : `You have reached your monthly limit of ${limit} resume${limit !== 1 ? 's' : ''}. ` +
+              `Upgrade your plan or wait for your limit to reset on the 1st of next month.`
         );
       }
     }

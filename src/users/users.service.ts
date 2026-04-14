@@ -19,22 +19,22 @@ export class UsersService {
 
   private normalizeLimit(value: any, fallback: number): number {
     const n = Number(value);
-    return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+    return Number.isFinite(n) && n >= 0 ? Math.floor(n) : fallback;
   }
 
   extractLimitsFromPlan(plan: SubscriptionDocument | null) {
-    let interviewLimit = 3;
-    let resumeLimit = 5;
-    let coverLetterLimit = 5;
+    let interviewLimit = 0;
+    let resumeLimit = 0;
+    let coverLetterLimit = 0;
 
     if (plan && (plan as any).features) {
       const features = (plan as any).features;
       const intF = features.find((f: any) => f.name === 'Interview Limit');
       const resF = features.find((f: any) => f.name === 'Resume Limit' || f.name === 'Resume Upload Limit');
       const clF  = features.find((f: any) => f.name === 'Cover Letter Limit');
-      if (intF) interviewLimit    = this.normalizeLimit(intF.value ?? intF.limit, 3);
-      if (resF) resumeLimit       = this.normalizeLimit(resF.value ?? resF.limit, 5);
-      if (clF)  coverLetterLimit  = this.normalizeLimit(clF.value  ?? clF.limit,  5);
+      if (intF) interviewLimit    = this.normalizeLimit(intF.value ?? intF.limit, 0);
+      if (resF) resumeLimit       = this.normalizeLimit(resF.value ?? resF.limit, 0);
+      if (clF)  coverLetterLimit  = this.normalizeLimit(clF.value  ?? clF.limit,  0);
     }
 
     return { interviewLimit, resumeLimit, coverLetterLimit };
@@ -116,17 +116,18 @@ export class UsersService {
 
     const updatePayload: Record<string, any> = {};
 
-    // Keep effective limits in sync with plan features when stamped values are missing/invalid.
+    // 0 limits are now intentional for the free tier (coupon-gated access).
+    // Only repair limits if they are null/undefined (not if they are 0).
     const planDoc: any = (user as any).subscriptionPlan ?? null;
     const planLimits = this.extractLimitsFromPlan(planDoc);
-    if (!user.interviewLimit || user.interviewLimit <= 0) {
-      updatePayload.interviewLimit = this.normalizeLimit(planLimits.interviewLimit, 3);
+    if (user.interviewLimit == null) {
+      updatePayload.interviewLimit = planLimits.interviewLimit;
     }
-    if (!user.resumeLimit || user.resumeLimit <= 0) {
-      updatePayload.resumeLimit = this.normalizeLimit(planLimits.resumeLimit, 5);
+    if (user.resumeLimit == null) {
+      updatePayload.resumeLimit = planLimits.resumeLimit;
     }
-    if (!user.coverLetterLimit || user.coverLetterLimit <= 0) {
-        updatePayload.coverLetterLimit = planLimits.coverLetterLimit;
+    if (user.coverLetterLimit == null) {
+      updatePayload.coverLetterLimit = planLimits.coverLetterLimit;
     }
 
     // Repair inconsistent status (e.g., paid/PAYG plan but status is still "free").
@@ -211,8 +212,8 @@ export class UsersService {
 
     // Derive limits from the selected target plan.
     const limits = this.extractLimitsFromPlan(plan);
-    let newInterviewLimit = this.normalizeLimit(limits.interviewLimit, 3);
-    let newResumeLimit = this.normalizeLimit(limits.resumeLimit, 5);
+    let newInterviewLimit = this.normalizeLimit(limits.interviewLimit, 0);
+    let newResumeLimit = this.normalizeLimit(limits.resumeLimit, 0);
 
     const update: any = {
       subscriptionPlan: plan._id,

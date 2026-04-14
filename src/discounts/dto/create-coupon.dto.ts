@@ -10,11 +10,13 @@ export class CreateCouponDto {
   type?: CouponType;
 
   @IsEnum(DiscountType)
-  discountType: DiscountType;
+  @IsOptional()
+  discountType?: DiscountType;
 
   @IsNumber()
-  @Min(1)
-  discountValue: number; // percentage (1-100) or fixed amount in paisa
+  @IsOptional()
+  @Min(0)
+  discountValue?: number; // percentage (1-100) or fixed amount in paisa
 
   @IsNumber()
   @IsOptional()
@@ -51,4 +53,14 @@ export class CreateCouponDto {
   @IsArray()
   @IsOptional()
   applicablePlans?: string[]; // subscription plan IDs
+
+  // ── ACCESS_CODE fields ──────────────────────────────────────────────
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  trialDays?: number; // free trial duration in days
+
+  @IsString()
+  @IsOptional()
+  linkedPlanId?: string; // subscription plan ID to activate
 }

@@ -5,8 +5,9 @@ export type CouponDocument = Coupon & Document;
 export type CouponUsageDocument = CouponUsage & Document;
 
 export enum CouponType {
-  DISCOUNT = 'discount',   // Admin-created promo code
-  REFERRAL = 'referral',   // Referral code tied to a referrer user
+  DISCOUNT = 'discount',       // Admin-created promo code
+  REFERRAL = 'referral',       // Referral code tied to a referrer user
+  ACCESS_CODE = 'access_code', // Trial access code — grants a plan for X days
 }
 
 export enum DiscountType {
@@ -22,10 +23,10 @@ export class Coupon {
   @Prop({ required: true, enum: CouponType, default: CouponType.DISCOUNT })
   type: CouponType;
 
-  @Prop({ required: true, enum: DiscountType, default: DiscountType.PERCENTAGE })
+  @Prop({ enum: DiscountType, default: DiscountType.PERCENTAGE })
   discountType: DiscountType;
 
-  @Prop({ required: true })
+  @Prop({ default: 0 })
   discountValue: number; // Percentage (0-100) or fixed amount in paisa
 
   @Prop()
@@ -63,6 +64,15 @@ export class Coupon {
   // Which subscription plans this applies to (empty = all plans)
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Subscription' }], default: [] })
   applicablePlans: Types.ObjectId[];
+
+  // ── ACCESS_CODE fields ──────────────────────────────────────────────
+  // Number of free trial days this code grants (e.g. 14, 30)
+  @Prop()
+  trialDays?: number;
+
+  // The subscription plan that gets activated when this code is redeemed
+  @Prop({ type: Types.ObjectId, ref: 'Subscription' })
+  linkedPlanId?: Types.ObjectId;
 }
 
 export const CouponSchema = SchemaFactory.createForClass(Coupon);

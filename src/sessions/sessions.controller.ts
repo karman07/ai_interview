@@ -78,8 +78,8 @@ export class SessionsController {
     } else {
       // ── Regular / Free plan: read limit stamped at purchase time ──────────
       const currentUsage = user?.interviewCount ?? 0;
-      // user.interviewLimit is stamped at purchase; default 3 for free tier
-      let limit = user?.interviewLimit ?? 3;
+      // user.interviewLimit is stamped at purchase; default 0 for free tier
+      let limit = user?.interviewLimit ?? 0;
 
       // ✅ Override for Students: Use University limits if linked
       if (user?.role === UserRole.STUDENT && user?.universityId) {
@@ -97,8 +97,10 @@ export class SessionsController {
       if (currentUsage >= limit) {
         this.logger.warn(`🚫 User ${userId} reached monthly interview limit of ${limit} (current: ${currentUsage})`);
         throw new BadRequestException(
-          `You have reached your monthly limit of ${limit} interview${limit !== 1 ? 's' : ''}. ` +
-          `Upgrade your plan or wait for your limit to reset on the 1st of next month.`
+          limit === 0
+            ? 'You need an access code to use this feature. Please enter a valid access code to start your free trial.'
+            : `You have reached your monthly limit of ${limit} interview${limit !== 1 ? 's' : ''}. ` +
+              `Upgrade your plan or wait for your limit to reset on the 1st of next month.`
         );
       }
       await this.userModel.findByIdAndUpdate(userId, { $inc: { interviewCount: 1 } });

@@ -880,4 +880,167 @@ export class PaymentService {
       updatedAt: payment.updatedAt,
     };
   }
+
+  // ── Trial Subscription (via Access Code) ──────────────────────────────────────
+
+  /**
+   * Creates a Razorpay subscription with `start_at` delayed by `trialDays`.
+   * The user's card is authorized immediately (₹0 auth) but billing starts
+   * only after the trial period ends.
+   */
+  async createTrialSubscription(
+    userId: string,
+    couponId: string,
+    linkedPlanId: string,
+    trialDays: number,
+  ): Promise<any> {
+    try {
+      const user = await this.usersService.findById(userId);
+      if (!user) throw new NotFoundException('User not found');
+
+      const plan = await this.subscriptionService.findOneByAnyId(linkedPlanId);
+      if (!plan) throw new BadRequestException('Linked subscription plan not found');
+
+      // Ensure plan has a Razorpay plan ID, or create one dynamically
+      let razorpayPlanId = plan.razorpayPlanId;
+      if (!razorpayPlanId) {
+        const newPlan = await this.razorpay.plans.create({
+          period: 'monthly',
+          interval: 1,
+          item: {
+            name: plan.displayName || plan.name,
+            amount: plan.price,
+            currency: plan.currency || 'INR',
+            description: plan.description || 'Subscription plan',
+          },
+        } as any);
+        razorpayPlanId = newPlan.id;
+
+        // Save the plan ID back
+        await this.subscriptionService.update(plan._id.toString(), {
+          razorpayPlanId,
+        });
+        this.logger.log(`Created Razorpay plan ${razorpayPlanId} for ${plan.name}`);
+      }
+
+      // Calculate start_at: trial ends after trialDays
+      const startAt = Math.floor(Date.now() / 1000) + (trialDays * 24 * 60 * 60);
+
+      // Create the Razorpay subscription with delayed billing
+      const rzpSub = await this.razorpay.subscriptions.create({
+        plan_id: razorpayPlanId,
+        customer_notify: 1,
+        total_count: 120,
+        quantity: 1,
+        start_at: startAt,
+        notes: {
+          userId,
+          type: 'trial',
+          couponId,
+          trialDays: String(trialDays),
+          planName: plan.name,
+        },
+      } as any);
+
+      // Record pending payment
+      const payment = new this.paymentModel({
+        userId: new Types.ObjectId(userId),
+        subscriptionId: plan._id,
+        amount: 0, // Trial — no charge now
+        currency: plan.currency || 'INR',
+        status: PaymentStatus.CREATED,
+        razorpaySubscriptionId: rzpSub.id,
+        paymentType: 'subscription',
+        description: `Trial — ${plan.displayName || plan.name} (${trialDays} days free)`,
+        notes: { couponId, trialDays, type: 'trial' },
+      });
+      await payment.save();
+
+      this.logger.log(`Trial Razorpay subscription created: ${rzpSub.id} for user ${userId} — ${trialDays} days free`);
+
+      return {
+        subscriptionId: rzpSub.id,
+        razorpayKey: this.configService.get<string>('RAZORPAY_KEY_ID'),
+        planName: plan.displayName || plan.name,
+        trialDays,
+        startAt,
+      };
+    } catch (error) {
+      const msg = error.error?.description || error.message || 'Unknown error';
+      this.logger.error(`Failed to create trial subscription: ${msg}`, error.stack);
+      if (error instanceof BadRequestException || error instanceof NotFoundException) throw error;
+      throw new BadRequestException(`Failed to create trial subscription: ${msg}`);
+    }
+  }
+
+  /**
+   * Verifies Razorpay payment auth after trial checkout.
+   * Activates the plan with 'trial' status and sets limits from the linked plan.
+   */
+  async verifyTrialSubscription(userId: string, dto: {
+    razorpaySubscriptionId: string;
+    razorpayPaymentId: string;
+    razorpaySignature: string;
+    couponId: string;
+    linkedPlanId: string;
+    trialDays: number;
+  }): Promise<any> {
+    const { razorpaySubscriptionId, razorpayPaymentId, razorpaySignature, couponId, linkedPlanId, trialDays } = dto;
+    const secret = this.configService.get<string>('RAZORPAY_KEY_SECRET');
+
+    // Verify signature
+    const generated = crypto
+      .createHmac('sha256', secret)
+      .update(razorpayPaymentId + '|' + razorpaySubscriptionId)
+      .digest('hex');
+
+    if (generated !== razorpaySignature) {
+      throw new BadRequestException('Invalid trial payment signature');
+    }
+
+    // Update payment record
+    const payment = await this.paymentModel.findOne({ razorpaySubscriptionId });
+    if (payment) {
+      payment.razorpayPaymentId = razorpayPaymentId;
+      payment.razorpaySignature = razorpaySignature;
+      payment.status = PaymentStatus.PAID;
+      await payment.save();
+    }
+
+    // Record access code usage
+    await this.discountsService.recordAccessCodeUsage(couponId, userId);
+
+    // Activate the plan with trial status
+    const trialEndDate = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
+
+    // Get the linked plan and extract limits
+    const plan = await this.subscriptionService.findOneByAnyId(linkedPlanId);
+    const limits = this.usersService.extractLimitsFromPlan(plan);
+
+    await this.usersService.updateProfile(userId, {
+      subscriptionPlan: plan._id,
+      subscriptionStatus: 'trial',
+      subscriptionExpiry: trialEndDate,
+      razorpaySubscriptionId,
+      interviewLimit: limits.interviewLimit,
+      resumeLimit: limits.resumeLimit,
+      coverLetterLimit: limits.coverLetterLimit,
+      interviewCount: 0,
+      resumeCount: 0,
+      coverLetterCount: 0,
+      trialStartDate: new Date(),
+      trialEndDate,
+      trialCouponCode: couponId,
+    } as any);
+
+    this.logger.log(`Trial activated: ${razorpaySubscriptionId} for user ${userId} — ${trialDays} day trial, plan ${plan?.name}`);
+
+    return {
+      success: true,
+      planName: plan?.displayName || plan?.name,
+      trialDays,
+      trialEndDate,
+      limits,
+    };
+  }
 }

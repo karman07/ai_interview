@@ -96,9 +96,9 @@ export class SubscriptionService implements OnModuleInit {
         status: SubscriptionStatus.ACTIVE,
         description: 'Perfect for starters to experience the platform.',
         features: [
-          { name: 'Resume Limit', description: '5 Resume analysis reports', type: FeatureType.NUMERIC, value: 5, enabled: true, limit: 5, unit: 'resumes' },
-          { name: 'Interview Limit', description: '3 Professional Ai for jobs', type: FeatureType.NUMERIC, value: 3, enabled: true, limit: 3, unit: 'interviews' },
-          { name: 'Cover Letter Limit', description: '5 AI cover letters per month', type: FeatureType.NUMERIC, value: 5, enabled: true, limit: 5, unit: 'cover_letters' },
+          { name: 'Resume Limit', description: '0 Resume analysis reports', type: FeatureType.NUMERIC, value: 0, enabled: true, limit: 0, unit: 'resumes' },
+          { name: 'Interview Limit', description: '0 Professional Ai for jobs', type: FeatureType.NUMERIC, value: 0, enabled: true, limit: 0, unit: 'interviews' },
+          { name: 'Cover Letter Limit', description: '0 AI cover letters per month', type: FeatureType.NUMERIC, value: 0, enabled: true, limit: 0, unit: 'cover_letters' },
           { name: 'AI Feedback', description: 'Basic qualitative feedback', type: FeatureType.BOOLEAN, value: true, enabled: true },
         ],
         order: 0
@@ -486,20 +486,20 @@ export class SubscriptionService implements OnModuleInit {
         features: [
           {
             name: 'Resume Limit',
-            description: '5 Resume analysis reports',
+            description: '0 Resume analysis reports',
             type: FeatureType.NUMERIC,
-            value: 5,
+            value: 0,
             enabled: true,
-            limit: 5,
+            limit: 0,
             unit: 'resumes'
           },
           {
             name: 'Interview Limit',
-            description: '3 Professional Ai for jobs',
+            description: '0 Professional Ai for jobs',
             type: FeatureType.NUMERIC,
-            value: 3,
+            value: 0,
             enabled: true,
-            limit: 3,
+            limit: 0,
             unit: 'interviews'
           },
           { name: 'AI Feedback', description: 'Basic qualitative feedback', type: FeatureType.BOOLEAN, value: true, enabled: true },

@@ -107,13 +107,13 @@ export class User {
   fcmTokens?: string[];
 
   // ── Plan usage limits (stamped at purchase time) ───────────────────────────
-  @Prop({ default: 5 })
+  @Prop({ default: 0 })
   resumeLimit?: number;               // Max resumes per month for current plan
 
-  @Prop({ default: 3 })
+  @Prop({ default: 0 })
   interviewLimit?: number;            // Max interviews per month for current plan
 
-  @Prop({ default: 5 })
+  @Prop({ default: 0 })
   coverLetterLimit?: number;          // Max cover letters per month for current plan
 
   @Prop({ default: 0 })
@@ -143,6 +143,16 @@ export class User {
 
   @Prop()
   paygRazorpaySubscriptionId?: string; // The recurring Razorpay subscription for PAYG billing
+
+  // ── Trial tracking ──────────────────────────────────────────────────────
+  @Prop()
+  trialStartDate?: Date;
+
+  @Prop()
+  trialEndDate?: Date;
+
+  @Prop()
+  trialCouponCode?: string;           // Which access code activated the trial
 
   // Timestamps (automatically added by Mongoose)
   createdAt?: Date;
