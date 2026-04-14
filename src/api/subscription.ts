@@ -231,4 +231,38 @@ export const SubscriptionApi = {
             maxBudgetRupees: number;
         };
     },
+
+    // ── Trial & Access Codes ────────────────────────────────────────────────
+
+    redeemAccessCode: async (code: string) => {
+        const res = await http.post('/discounts/redeem', { code });
+        return res.data as {
+            valid: boolean;
+            couponId?: string;
+            linkedPlanId?: string;
+            trialDays?: number;
+            message: string;
+        };
+    },
+
+    createTrialSubscription: async (data: {
+        couponId: string;
+        linkedPlanId: string;
+        trialDays: number;
+    }) => {
+        const res = await http.post('/payments/create-trial-subscription', data);
+        return res.data;
+    },
+
+    verifyTrialSubscription: async (data: {
+        razorpaySubscriptionId: string;
+        razorpayPaymentId: string;
+        razorpaySignature: string;
+        couponId: string;
+        linkedPlanId: string;
+        trialDays: number;
+    }) => {
+        const res = await http.post('/payments/verify-trial-subscription', data);
+        return res.data;
+    },
 };

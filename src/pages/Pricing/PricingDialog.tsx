@@ -83,6 +83,22 @@ const PricingDialog = () => {
         orderAmount: selectedPlan.numericPrice,
         subscriptionId: selectedPlan.id,
       });
+      if (res.valid && res.coupon?.type === 'access_code') {
+        const cpn = res.coupon;
+        const linkedId = cpn.linkedPlanId?._id || cpn.linkedPlanId || cpn.linkedPlanId?.id;
+        if (linkedId && linkedId !== selectedPlan.id) {
+           setCouponResult({ valid: false, discountAmount: 0, finalAmount: selectedPlan.numericPrice, originalAmount: selectedPlan.numericPrice, message: 'This trial code is not valid for this plan.' });
+        } else {
+           setCouponResult({
+             valid: true, discountAmount: selectedPlan.numericPrice,
+             finalAmount: 0, originalAmount: selectedPlan.numericPrice,
+             message: `Trial Access Granted: ${cpn.trialDays || 14} Days Free!`,
+             coupon: cpn
+           });
+        }
+        return;
+      }
+
       setCouponResult({
         valid: res.valid, discountAmount: res.discountAmount,
         finalAmount: res.finalAmount, originalAmount: selectedPlan.numericPrice,
@@ -103,6 +119,37 @@ const PricingDialog = () => {
       if (!razorpayKey || razorpayKey === 'rzp_test_your_key') throw new Error('Razorpay key not configured.');
       const hasCoupon = couponResult?.valid;
       if (hasCoupon) {
+        if (couponResult.coupon?.type === 'access_code') {
+           const subRes = await SubscriptionApi.createTrialSubscription({
+              couponId: couponResult.coupon._id,
+              linkedPlanId: selectedPlan.id,
+              trialDays: couponResult.coupon.trialDays || 14
+           });
+           
+           new (window as any).Razorpay({
+              key: razorpayKey, subscription_id: subRes.subscriptionId,
+              name: 'AI for Job', description: `${selectedPlan.name} - ${subRes.trialDays} Days Free Trial`,
+              handler: async (r: any) => {
+                 try {
+                     await SubscriptionApi.verifyTrialSubscription({
+                        razorpaySubscriptionId: r.razorpay_subscription_id,
+                        razorpayPaymentId: r.razorpay_payment_id,
+                        razorpaySignature: r.razorpay_signature,
+                        couponId: couponResult.coupon._id,
+                        linkedPlanId: selectedPlan.id,
+                        trialDays: subRes.trialDays
+                     });
+                     await refreshMe();
+                     setShowPricing(false);
+                     window.location.reload();
+                 } catch (err: any) { alert('Verification failed. Contact support.'); }
+              },
+              prefill: { name: user.name, email: user.email }, theme: { color: '#2563EB' },
+           }).open();
+           setProcessing(false);
+           return;
+        }
+
         const orderData = await SubscriptionApi.createOrderWithCoupon({
           amount: selectedPlan.numericPrice, description: `${selectedPlan.name} Plan`,
           subscriptionId: selectedPlan.id, couponCode: couponInput.trim().toUpperCase(),
@@ -475,7 +522,9 @@ const PricingDialog = () => {
                                 <span className="text-[10px] font-black text-blue-200 uppercase tracking-[0.2em] opacity-60">Total Commitment</span>
                                 <div className="flex items-baseline gap-1 mt-1">
                                   <p className="text-5xl font-black text-white leading-none tracking-tighter tabular-nums">{fmtAmount(finalPrice!, currency)}</p>
-                                  <span className="text-xs font-bold text-blue-200/50 uppercase">/mo</span>
+                                  <span className="text-xs font-bold text-blue-200/50 uppercase">
+                                    {couponResult?.coupon?.type === 'access_code' ? 'DUE TODAY' : '/mo'}
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -598,7 +647,9 @@ const PricingDialog = () => {
                         <div>
                           <p className="text-sm font-black text-blue-400 uppercase tracking-wider italic">Subscription Policy</p>
                           <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mt-1 leading-relaxed max-w-[320px]">
-                            {couponResult?.valid
+                            {couponResult?.coupon?.type === 'access_code'
+                              ? `You won't be charged today. After your ${couponResult.coupon.trialDays || 14}-day trial, you will be billed ${selectedPlan.price}/month. Cancel anytime.`
+                              : couponResult?.valid
                               ? `Initial commitment of ${fmtAmount(couponResult.finalAmount, currency)} required. Future cycles revert to ${selectedPlan.price}/month.`
                               : `Authorized for ${selectedPlan.price} recurring monthly extraction. One-click termination at any time.`}
                           </p>
