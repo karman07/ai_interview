@@ -156,6 +156,11 @@ export class UsersService {
         updatePayload.paygInterviewsUsed = 0;
         updatePayload.paygResumesUsed = 0;
       }
+      if (!isPaygPlan) {
+        updatePayload.interviewLimit = planLimits.interviewLimit;
+        updatePayload.resumeLimit = planLimits.resumeLimit;
+        updatePayload.coverLetterLimit = planLimits.coverLetterLimit;
+      }
       updatePayload.limitsSyncKey = currentSyncKey;
     }
 

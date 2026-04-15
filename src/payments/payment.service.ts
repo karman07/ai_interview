@@ -901,9 +901,13 @@ export class PaymentService {
       const plan = await this.subscriptionService.findOneByAnyId(linkedPlanId);
       if (!plan) throw new BadRequestException('Linked subscription plan not found');
 
-      // Ensure plan has a Razorpay plan ID, or create one dynamically
+      // Verify/Create Plan dynamically before using it (handles test/live env DB mismatches)
       let razorpayPlanId = plan.razorpayPlanId;
-      if (!razorpayPlanId) {
+      try {
+        if (!razorpayPlanId) throw new Error('No plan id');
+        await this.razorpay.plans.fetch(razorpayPlanId);
+      } catch (e) {
+        this.logger.warn(`Plan ${razorpayPlanId} not found in Razorpay. Auto-creating...`);
         const newPlan = await this.razorpay.plans.create({
           period: 'monthly',
           interval: 1,
