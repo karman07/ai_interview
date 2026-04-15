@@ -92,10 +92,11 @@ export default function Sidebar() {
   const isStudent = role === 'student' || role.includes('student');
   const isPayg = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go' || normalizedPlanName.includes('payg_');
   const isPaidNamedPlan = ['pro_tier', 'career', 'professional', 'enterprise'].some((token) => normalizedPlanName.includes(token));
-  const isClearlyFreeStatus = !subscriptionStatus || ['free', 'trial', 'inactive', 'expired'].includes(subscriptionStatus);
+  const isTrial = subscriptionStatus === 'trial';
+  const isClearlyFreeStatus = !subscriptionStatus || ['free', 'inactive', 'expired'].includes(subscriptionStatus);
   const isClearlyPaidStatus = subscriptionStatus === 'active';
   // Show Upgrade for free/unknown non-student users, even if plan metadata is inconsistent.
-  const shouldShowUpgrade = !isStudent && !isPayg && (isClearlyFreeStatus || !isClearlyPaidStatus || !isPaidNamedPlan);
+  const shouldShowUpgrade = !isStudent && !isPayg && !isTrial && (isClearlyFreeStatus || !isClearlyPaidStatus || !isPaidNamedPlan);
 
   const handleItemClick = (path: string) => {
     setActiveItem(path);
@@ -180,15 +181,15 @@ export default function Sidebar() {
                 </div>
                 <div className="flex-1 min-w-0 text-left">
                   <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                    {shouldShowUpgrade ? "Upgrade Plan" : "View Plans"}
+                    {isTrial ? "Trial Active" : shouldShowUpgrade ? "Upgrade Plan" : "View Plans"}
                   </span>
                   <p className="text-xs text-slate-400 dark:text-slate-500">
-                    {shouldShowUpgrade ? "Unlock higher limits" : "Compare plans & billing"}
+                    {isTrial ? "Enjoy premium features" : shouldShowUpgrade ? "Unlock higher limits" : "Compare plans & billing"}
                   </p>
                 </div>
-                {shouldShowUpgrade && (
+                {(shouldShowUpgrade || isTrial) && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 uppercase tracking-wide">
-                    Pro
+                    {isTrial ? "TRIAL" : "PRO"}
                   </span>
                 )}
               </button>
@@ -278,15 +279,15 @@ export default function Sidebar() {
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                      {shouldShowUpgrade ? "Upgrade Plan" : "View Plans"}
+                      {isTrial ? "Trial Active" : shouldShowUpgrade ? "Upgrade Plan" : "View Plans"}
                     </span>
                     <p className="text-xs text-slate-400 dark:text-slate-500">
-                      {shouldShowUpgrade ? "Unlock higher limits" : "Compare plans & billing"}
+                      {isTrial ? "Enjoy premium features" : shouldShowUpgrade ? "Unlock higher limits" : "Compare plans & billing"}
                     </p>
                   </div>
-                  {shouldShowUpgrade && (
+                  {(shouldShowUpgrade || isTrial) && (
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 uppercase tracking-wide">
-                      Pro
+                      {isTrial ? "TRIAL" : "PRO"}
                     </span>
                   )}
                 </button>

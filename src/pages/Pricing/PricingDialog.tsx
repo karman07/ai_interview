@@ -199,8 +199,9 @@ const PricingDialog = () => {
   const isCurrentPlan = (plan: any) => {
     const cpId = getCurrentPlanId();
     const isFreeTier = plan.name.toLowerCase().includes('free');
-    const hasNoActive = !user?.subscriptionPlan || user?.subscriptionStatus !== 'active';
-    return (plan.id === cpId && user?.subscriptionStatus === 'active') || (hasNoActive && isFreeTier);
+    const isActiveOrTrial = user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trial';
+    const hasNoActive = !user?.subscriptionPlan || !isActiveOrTrial;
+    return (plan.id === cpId && isActiveOrTrial) || (hasNoActive && isFreeTier);
   };
 
   const finalPrice = couponResult?.valid ? couponResult.finalAmount : selectedPlan?.numericPrice;
@@ -295,7 +296,7 @@ const PricingDialog = () => {
                             {(isCurrent || highlight) && (
                               <div className={`absolute -top-4 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.2em] shadow-xl whitespace-nowrap z-20 ${isCurrent ? 'bg-emerald-500 text-white' : 'bg-white text-blue-600'
                                 }`}>
-                                {isCurrent ? 'Currently Active' : 'Most Popular'}
+                                {isCurrent ? (user?.subscriptionStatus === 'trial' ? 'Trial Active' : 'Currently Active') : 'Most Popular'}
                               </div>
                             )}
 

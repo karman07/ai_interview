@@ -117,7 +117,7 @@ const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ initialResumeData }) => {
 
     const handleDownload = () => {
         const name = resumeData.resume_content.personal_info.name.replace(/\s+/g, '_');
-        generateResumeFromBuilderData(resumeData, `Resume_${name}.pdf`);
+        generatePDF('resume-preview-container', `Resume_${name}.pdf`);
     };
 
     const renderTemplate = () => {
@@ -181,7 +181,7 @@ const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ initialResumeData }) => {
                     </aside>
 
                     <main className="flex-grow overflow-auto flex justify-center pb-20 w-full">
-                        <div className="bg-white shadow-2xl origin-top scale-[0.6] sm:scale-[0.8] md:scale-90 lg:scale-100 transition-transform">
+                        <div id="resume-preview-container" className="bg-white shadow-2xl origin-top scale-[0.6] sm:scale-[0.8] md:scale-90 lg:scale-100 transition-transform">
                             {renderTemplate()}
                         </div>
                     </main>
