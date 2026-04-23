@@ -164,7 +164,26 @@ export default function Sidebar() {
             </SidebarSection>
           ))}
 
-          {!isStudent && (
+          {isStudent ? (
+            <div className="mt-3 mb-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500 px-1 mb-2">
+                Subscription
+              </p>
+              <div className="w-full flex items-center gap-3 px-3 py-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-transparent">
+                <div className="flex-shrink-0 p-1.5 rounded-md text-purple-500 dark:text-purple-400">
+                  <User size={18} />
+                </div>
+                <div className="flex-1 min-w-0 text-left">
+                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                    Student Account
+                  </span>
+                  <p className="text-[10px] leading-tight mt-0.5 text-slate-400 dark:text-slate-500">
+                    Account is activated as a student account
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
             <div className="mt-3 mb-4">
               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500 px-1 mb-2">
                 Subscription
@@ -265,7 +284,26 @@ export default function Sidebar() {
               </SidebarSection>
             ))}
 
-            {!isStudent && (
+            {isStudent ? (
+              <div className="mt-3 mb-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500 px-1 mb-2">
+                  Subscription
+                </p>
+                <div className="w-full flex items-center gap-3 px-3 py-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-transparent">
+                  <div className="flex-shrink-0 p-1.5 rounded-md text-purple-500 dark:text-purple-400">
+                    <User size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                      Student Account
+                    </span>
+                    <p className="text-[10px] leading-tight mt-0.5 text-slate-400 dark:text-slate-500">
+                      Account is activated as a student account
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
               <div className="mt-3 mb-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500 px-1 mb-2">
                   Subscription

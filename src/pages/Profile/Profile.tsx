@@ -333,7 +333,8 @@ export default function Profile() {
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-gray-400 text-center">Your access is managed by your university administrator.</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 text-center font-bold">Your account is activated as a student account.</p>
+                <p className="text-xs text-gray-400 text-center mt-1">Your access is managed by your university administrator.</p>
               </div>
             ) : (() => {
               const isPayg = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go';
