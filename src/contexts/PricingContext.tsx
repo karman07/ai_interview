@@ -88,16 +88,29 @@ export const PricingProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     const detectCountryAndFetch = async () => {
-      let country = 'IN';
+      let country: string | null = null;
+      
       try {
-        const response = await fetch('https://ipapi.co/json/');
-        const data = await response.json();
-        if (data.country_code) {
-          country = data.country_code;
+        const response = await fetch('https://1.1.1.1/cdn-cgi/trace');
+        const text = await response.text();
+        
+        const locLine = text.split('\n').find(line => line.startsWith('loc='));
+        if (locLine) {
+          country = locLine.split('=')[1];
         }
       } catch (e) {
-        console.warn("Country detection failed, defaulting to IN", e);
+        console.warn("Cloudflare trace failed, falling back to timezone.", e);
       }
+
+      if (!country) {
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (timeZone === 'Asia/Calcutta' || timeZone === 'Asia/Kolkata') {
+          country = 'IN';
+        } else {
+          country = 'US';
+        }
+      }
+      
       fetchPlans(country);
     };
 
