@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { User, UserDocument, UserRole } from './schemas/user.schema';
 import { Subscription, SubscriptionDocument, SubscriptionType } from '../subscriptions/schemas/subscription.schema';
 import { CreateUserDto } from './dto/create-user.dto';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {

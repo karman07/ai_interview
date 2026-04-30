@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { University, UniversityDocument } from './schemas/university.schema';
 import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
 import { CreateUniversityDto, UpdateUniversityDto, CreateTeacherDto } from './dto/university.dto';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { Result, ResultDocument } from '../results/schemas/result.schema';
 import { Resume, ResumeDocument } from '../resume/resume.schema';
 import { Types } from 'mongoose';
