@@ -44,6 +44,8 @@ import { InterviewV2Report } from "@/api/interviewV2";
 import { InterviewAnalyticsApi } from "@/api/interviewAnalytics";
 import FeedbackDialog from "@/components/interview/FeedbackDialog";
 import { generateInterviewReport } from "@/utils/pdfGenerator";
+import HackathonPostForm from "@/components/hackathon/HackathonPostForm";
+import { useHackathon } from "@/contexts/HackathonContext";
 
 // ─────────────────────────────────────────────────────────────────
 // Round Config
@@ -207,6 +209,10 @@ export default function InterviewResultsV2() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackDone, setFeedbackDone] = useState(false);
 
+  const { eligible: isHackathon, formSubmitted } = useHackathon();
+  const isHackathonSession = isHackathon && localStorage.getItem('hackathon_interview_mode') === 'true';
+  const [showHackathonForm, setShowHackathonForm] = useState(false);
+
   const roundType: RoundKey = (
     ((report as any)?.roundType ?? (report as any)?.round_type ?? "general") as string
   ).toLowerCase() as RoundKey;
@@ -219,6 +225,14 @@ export default function InterviewResultsV2() {
       return () => clearTimeout(t);
     }
   }, [loading, report, sessionId, feedbackDone]);
+
+  // Auto-show hackathon form when results load and form not yet submitted
+  useEffect(() => {
+    if (!loading && report && isHackathonSession && !formSubmitted) {
+      const t = setTimeout(() => setShowHackathonForm(true), 800);
+      return () => clearTimeout(t);
+    }
+  }, [loading, report, isHackathonSession, formSubmitted]);
 
   useEffect(() => {
     async function load() {
@@ -272,7 +286,14 @@ export default function InterviewResultsV2() {
           </div>
           <div className="flex items-center gap-2">
             <NavBtn onClick={() => navigate("/interview_round")} icon={<Home className="w-4 h-4" />} label="Dashboard" />
-            {sessionId && (
+            {isHackathonSession && !formSubmitted && (
+              <NavBtn
+                onClick={() => setShowHackathonForm(true)}
+                icon={<GraduationCap className="w-4 h-4" />}
+                label="Submit Form"
+              />
+            )}
+            {sessionId && !isHackathonSession && (
               <NavBtn
                 onClick={() => setShowFeedback(true)}
                 icon={<MessageSquare className="w-4 h-4" />}
@@ -327,9 +348,13 @@ export default function InterviewResultsV2() {
         <CTABanner rc={rc} onNext={() => navigate("/interview_round")} />
       </main>
 
-      {sessionId && (
+      {sessionId && !isHackathonSession && (
         <FeedbackDialog sessionId={sessionId} open={showFeedback}
           onClose={() => { setShowFeedback(false); setFeedbackDone(true); }} />
+      )}
+
+      {showHackathonForm && (
+        <HackathonPostForm onDone={() => setShowHackathonForm(false)} />
       )}
     </div>
   );

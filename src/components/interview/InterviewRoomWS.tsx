@@ -14,6 +14,9 @@ import { ThreeAvatar } from './ws/ThreeAvatar';
 import { Loader2, Mic, MicOff, Video, VideoOff, LogOut, ShieldCheck, Zap, Code, AlertCircle, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog } from '@/components/ui/Dialog';
+import HackathonPostForm from '@/components/hackathon/HackathonPostForm';
+import AntiCheatOverlay from './ws/AntiCheatOverlay';
+import { useAntiCheat } from '@/hooks/useAntiCheat';
 
 /**
  * InterviewRoomWS — Replaces InterviewRoomV2 at the route level.
@@ -27,6 +30,9 @@ export default function InterviewRoomWS() {
     // ── Setup data from localStorage ──
     const [setupData, setSetupData] = useState<WSInitData | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [showHackathonForm, setShowHackathonForm] = useState(false);
+    const isHackathonMode = localStorage.getItem('hackathon_interview_mode') === 'true';
+    const pendingNavigationRef = useRef<string | null>(null);
 
     useEffect(() => {
         // ── Clear any stale report from a prior session immediately ──
@@ -76,6 +82,12 @@ export default function InterviewRoomWS() {
     const { videoRef, isActive: webcamActive, startCamera, toggleCamera } = useInterviewWebcam();
     const { isSpeaking, speak, cancel } = useInterviewTTS();
 
+    // ── Anti-cheat: for hackathon start monitoring from connection; for others, once the first message arrives ──
+    const antiCheatEnabled = isHackathonMode
+        ? !!isConnected && !interviewEnded
+        : !!(isConnected && messages.length > 0 && !interviewEnded);
+    const antiCheat = useAntiCheat(antiCheatEnabled);
+
     const [showCodeEditor, setShowCodeEditor] = useState(false);
     const [isQuestionBoxOpen, setIsQuestionBoxOpen] = useState(false);
     const [isTypingInEditor, setIsTypingInEditor] = useState(false);
@@ -102,6 +114,18 @@ export default function InterviewRoomWS() {
             return () => clearTimeout(timer);
         }
     }, [isTimeUp, interviewEnded, isEnding, messages.length, sendEndSession, cancel]);
+
+    // ── Anti-cheat: auto-end on disqualification ──
+    useEffect(() => {
+        if (antiCheat.isDisqualified && !interviewEnded && !isEnding) {
+            // Small delay so user can read the disqualified UI before session tears down
+            const t = setTimeout(() => {
+                cancel();
+                sendEndSession('disqualified');
+            }, 4000);
+            return () => clearTimeout(t);
+        }
+    }, [antiCheat.isDisqualified, interviewEnded, isEnding, sendEndSession, cancel]);
 
     // ── Browser/tab close handler ──
     useEffect(() => {
@@ -389,8 +413,53 @@ export default function InterviewRoomWS() {
             localStorage.removeItem('ws_interview_setup');
             localStorage.removeItem('ws_interview_client_id');
 
+            const doNavigate = (path: string) => {
+                if (isHackathonMode) {
+                    localStorage.removeItem('hackathon_interview_mode');
+                    pendingNavigationRef.current = path;
+                    setShowHackathonForm(true);
+                } else {
+                    navigate(path, { replace: true });
+                }
+            };
+
             // Only save full analytics to backend if user actually answered questions
             if (userMessageCount > 0) {
+
+                // Extract score — check multiple paths since backend schema nests it under summary
+                const extractScore = (fb: any): number => {
+                    const candidates = [
+                        fb?.summary?.overall_score,
+                        fb?.overall_score,
+                        fb?.score,
+                        fb?.summary?.score,
+                    ];
+                    for (const v of candidates) {
+                        if (typeof v === 'number' && !isNaN(v)) return Math.round(v);
+                    }
+                    return 0;
+                };
+
+                // Save hackathon result NOW — before external-analytics, so a network
+                // failure there never prevents the score from reaching the leaderboard.
+                if (isHackathonMode) {
+                    const overallScore = extractScore(feedback);
+                    http.post('/hackathon/save-result', {
+                        overallScore,
+                        sessionId: clientId,
+                        metrics: {
+                            technicalAccuracy: (feedback as any)?.summary?.technical_score ?? (feedback as any)?.technical_score,
+                            communicationClarity: (feedback as any)?.summary?.communication_score ?? (feedback as any)?.communication_score,
+                            problemSolving: (feedback as any)?.summary?.problem_solving_score ?? (feedback as any)?.problem_solving_score,
+                        },
+                        rawData: feedback,
+                    }).catch(e => console.error('[Hackathon] save-result failed:', e));
+                    // mark-interview-taken: ignore 400 (already taken) gracefully
+                    http.post('/hackathon/mark-interview-taken').catch(e => {
+                        if (e?.response?.status !== 400) console.error('[Hackathon] mark-interview-taken failed:', e);
+                    });
+                }
+
                 // Post external analytics to backend, including context metadata
                 const externalPayload = {
                     ...feedback,
@@ -401,13 +470,25 @@ export default function InterviewRoomWS() {
                     end_reason: endReason || 'user_terminated',
                 };
 
-                http.post('/enhanced-interview/external-analytics', externalPayload).then(res => {
-                    // Get the real MongoDB ID
+                http.post('/enhanced-interview/external-analytics', externalPayload).then(async res => {
                     const dbId = res.data?._id || res.data?.id || clientId;
-                    navigate(`/interview/results/${dbId}`, { replace: true });
+                    // Update hackathon result with the real DB session id now that we have it
+                    if (isHackathonMode && dbId !== clientId) {
+                        http.post('/hackathon/save-result', {
+                            overallScore: extractScore(feedback),
+                            sessionId: dbId,
+                            metrics: {
+                                technicalAccuracy: (feedback as any)?.summary?.technical_score ?? (feedback as any)?.technical_score,
+                                communicationClarity: (feedback as any)?.summary?.communication_score ?? (feedback as any)?.communication_score,
+                                problemSolving: (feedback as any)?.summary?.problem_solving_score ?? (feedback as any)?.problem_solving_score,
+                            },
+                            rawData: feedback,
+                        }).catch(console.error);
+                    }
+                    doNavigate(`/interview/results/${dbId}`);
                 }).catch(err => {
                     console.error('Failed to save external analytics to backend:', err);
-                    navigate(`/interview/results/${clientId}`, { replace: true });
+                    doNavigate(`/interview/results/${clientId}`);
                 });
             } else {
                 // No answers given — count was already incremented at interview start
@@ -551,6 +632,32 @@ export default function InterviewRoomWS() {
 
     return (
         <div className="h-screen bg-[#F8FAFF] dark:bg-slate-950 flex flex-col overflow-hidden text-slate-900 dark:text-slate-100 font-sans selection:bg-blue-100 selection:text-blue-900">
+            {/* Anti-cheat overlay — tab switch / fullscreen enforcement */}
+            <AntiCheatOverlay
+                visible={antiCheat.warningVisible}
+                type={antiCheat.warningType}
+                countdown={antiCheat.warningCountdown}
+                totalViolations={antiCheat.totalViolations}
+                maxViolations={3}
+                isDisqualified={antiCheat.isDisqualified}
+                onRequestFullscreen={antiCheat.requestFullscreen}
+                onDismiss={antiCheat.dismissWarning}
+                onEndInterview={() => {
+                    cancel();
+                    sendEndSession('disqualified');
+                    navigate('/interview_round', { replace: true });
+                }}
+            />
+
+            {/* Hackathon mandatory post-interview form */}
+            {showHackathonForm && (
+                <HackathonPostForm onDone={() => {
+                    setShowHackathonForm(false);
+                    if (pendingNavigationRef.current) {
+                        navigate(pendingNavigationRef.current, { replace: true });
+                    }
+                }} />
+            )}
             {/* Header: Minimal & Immersive */}
             <header className="h-16 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border-b border-blue-50/50 dark:border-slate-800/50 shrink-0 z-20">
                 <div className="max-w-[1920px] mx-auto h-full px-8 flex items-center justify-between">
@@ -581,6 +688,22 @@ export default function InterviewRoomWS() {
                             <WSInterviewTimer formattedTime={formattedTime} />
                             <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500' : 'bg-rose-500 animate-pulse'}`} />
                         </div>
+
+                        {/* Fullscreen / integrity status */}
+                        {antiCheatEnabled && (
+                            <button
+                                onClick={antiCheat.isFullscreen ? undefined : antiCheat.requestFullscreen}
+                                title={antiCheat.isFullscreen ? 'Interview secured — fullscreen active' : 'Click to enter fullscreen'}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all ${
+                                    antiCheat.isFullscreen
+                                        ? 'border-green-500/30 bg-green-500/10 text-green-500 cursor-default'
+                                        : 'border-orange-500/40 bg-orange-500/10 text-orange-400 animate-pulse cursor-pointer hover:bg-orange-500/20'
+                                }`}
+                            >
+                                <ShieldCheck className="w-3 h-3" />
+                                {antiCheat.isFullscreen ? 'Secured' : 'Fullscreen Required'}
+                            </button>
+                        )}
                     </div>
                 </div>
             </header>

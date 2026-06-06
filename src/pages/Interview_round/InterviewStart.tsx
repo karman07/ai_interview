@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Input from "@/components/common/Input";
@@ -7,7 +7,8 @@ import Button from "@/components/ui/button";
 import {
   Briefcase, Building2, FileText, Layers, Loader2, ArrowRight,
   Users, Code, Lightbulb, MessageCircle,
-  Award, BarChart3, Eye, Upload, X, CheckCircle, Clock, TrendingUp, Zap, Lock
+  Award, BarChart3, Eye, Upload, X, CheckCircle, Clock, TrendingUp, Zap, Lock, Trophy, Maximize2,
+  Camera, CameraOff, ShieldCheck, AlertTriangle, ListChecks, MonitorCheck,
 } from "lucide-react";
 import { InterviewAnalyticsApi, type Analytics, type RoundStats } from "@/api/interviewAnalytics";
 import { resumeService } from "@/api/resumeService";
@@ -18,6 +19,7 @@ import { useResume } from "@/contexts/ResumeContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInterviewLimits } from "@/hooks/useInterviewLimits";
 import http, { baseURL } from "@/api/http";
+import { useHackathon } from "@/contexts/HackathonContext";
 
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer
@@ -72,7 +74,72 @@ export default function InterviewStart() {
   const [topicData, setTopicData] = useState<any | null>(null);
   const [universityLimits, setUniversityLimits] = useState<{ resumeLimit: number; interviewLimit: number } | null>(null);
 
-  const { interviewLimit, currentInterviews: totalInterviewsTaken, isAtLimit, isPayg, universityResumeLimit } = useInterviewLimits();
+  const { interviewLimit, currentInterviews: totalInterviewsTaken, isAtLimit: planAtLimit, isPayg, universityResumeLimit } = useInterviewLimits();
+  const { eligible: isHackathonMode, interviewTaken: hackathonInterviewTaken, config: hackathonConfig } = useHackathon();
+
+  // For hackathon: detect via location state or context
+  const isHackathonRoute = isHackathonMode && (location.state as any)?.hackathon === true;
+
+  // Hard limits for hackathon users: 1 interview, 1 resume
+  const isAtLimit = isHackathonRoute ? hackathonInterviewTaken : planAtLimit;
+
+  // Fullscreen state — always tracked (not guarded by isHackathonRoute)
+  const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    document.addEventListener('webkitfullscreenchange', handler);
+    return () => {
+      document.removeEventListener('fullscreenchange', handler);
+      document.removeEventListener('webkitfullscreenchange', handler);
+    };
+  }, []);
+
+  const requestFullscreen = () => {
+    const el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if ((el as any).webkitRequestFullscreen) (el as any).webkitRequestFullscreen();
+  };
+
+  // Pre-start checklist modal
+  const [showPreStart, setShowPreStart] = useState(false);
+  const [cameraStatus, setCameraStatus] = useState<'idle' | 'checking' | 'granted' | 'denied'>('idle');
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const checkCamera = async () => {
+    setCameraStatus('checking');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setCameraStream(stream);
+      setCameraStatus('granted');
+    } catch {
+      setCameraStatus('denied');
+    }
+  };
+
+  useEffect(() => {
+    if (showPreStart && cameraStatus === 'idle') checkCamera();
+  }, [showPreStart]);
+
+  useEffect(() => {
+    if (videoRef.current && cameraStream) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [cameraStream, showPreStart]);
+
+  const stopCamera = () => {
+    cameraStream?.getTracks().forEach(t => t.stop());
+    setCameraStream(null);
+    setCameraStatus('idle');
+  };
+
+  const openPreStart = () => setShowPreStart(true);
+
+  const closePreStart = () => {
+    stopCamera();
+    setShowPreStart(false);
+  };
 
   useEffect(() => {
     InterviewAnalyticsApi.getAnalytics().then(setAnalytics).catch(console.error);
@@ -166,16 +233,24 @@ export default function InterviewStart() {
   }, [user, universityResumeLimit, universityLimits]);
 
   const effectiveInterviewLimit = useMemo(() => {
+    if (isHackathonRoute) return 1;
     if ((user as any)?.role === 'student') {
       return universityLimits?.interviewLimit ?? interviewLimit;
     }
     return interviewLimit;
-  }, [user, universityLimits, interviewLimit]);
+  }, [isHackathonRoute, user, universityLimits, interviewLimit]);
 
   // isPayg, totalInterviewsTaken, isAtLimit come from useInterviewLimits above.
-  
+
+  const hackathonInterviewsUsed = isHackathonRoute ? (hackathonInterviewTaken ? 1 : 0) : null;
+  const totalInterviewsTakenDisplay = hackathonInterviewsUsed !== null ? hackathonInterviewsUsed : totalInterviewsTaken;
+
   const totalResumes = isPayg ? (user?.paygResumesUsed ?? 0) : (user?.resumeCount ?? resumes.length);
-  const isAtResumeLimit = resumeLimit !== null && totalResumes >= resumeLimit;
+  const effectiveResumeLimit = isHackathonRoute ? 1 : resumeLimit;
+  // Pre-existing resumes don't count against the hackathon limit; only uploads during hackathon do.
+  const hackathonResumeUploaded = isHackathonRoute && localStorage.getItem('hackathon_resume_uploaded') === 'true';
+  const effectiveResumeUsage = isHackathonRoute ? (hackathonResumeUploaded ? 1 : 0) : totalResumes;
+  const isAtResumeLimit = effectiveResumeLimit !== null && effectiveResumeUsage >= effectiveResumeLimit;
 
   const isPaidUser = useMemo(() => {
     if ((user as any)?.role === 'student') return true;
@@ -291,6 +366,10 @@ export default function InterviewStart() {
       handleSelectResume(newResume);
       setShowUploadModal(false);
       setUploadFile(null);
+      // Hackathon: mark the upload slot as used
+      if (isHackathonRoute) {
+        localStorage.setItem('hackathon_resume_uploaded', 'true');
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || "Failed to upload resume");
     } finally {
@@ -300,21 +379,27 @@ export default function InterviewStart() {
 
   const handleStart = async () => {
     if (isAtLimit) {
-      if ((user as any)?.role !== 'student') setShowPricing(true);
+      if ((user as any)?.role !== 'student' && !isHackathonMode) setShowPricing(true);
       return;
     }
 
-    if (!details.role || !details.company) {
+    // Hackathon: verify actually in fullscreen right now (direct DOM check, not just state)
+    if (isHackathonRoute && !document.fullscreenElement) {
+      setError("You must be in fullscreen mode to start the hackathon interview.");
+      return;
+    }
+
+    if (!isHackathonRoute && (!details.role || !details.company)) {
       setError("Please fill in role and company");
       return;
     }
 
-    if (!details.resumeFile && !details.resumeText && !selectedResumeId && !isSpecializedFlow) {
+    if (!details.resumeFile && !details.resumeText && !selectedResumeId && !isSpecializedFlow && !isHackathonRoute) {
       setError("Please provide your resume (upload file or choose from history or enter text)");
       return;
     }
 
-    if (!details.jdFile && !details.jobDescription && !isSpecializedFlow) {
+    if (!details.jdFile && !details.jobDescription && !isSpecializedFlow && !isHackathonRoute) {
       setError("Please provide job description (upload file or enter text)");
       return;
     }
@@ -359,24 +444,36 @@ export default function InterviewStart() {
         : '';
 
       const setupData = {
-        resumeText: isSpecializedFlow
-          ? `SPECIALIZED TOPIC ASSESSMENT: No personal resume provided. Evaluate based on ${specializedName} interview context and technical depth.`
-          : resumeText,
+        resumeText: isHackathonRoute
+          ? resumeText
+          : isSpecializedFlow
+            ? `SPECIALIZED TOPIC ASSESSMENT: No personal resume provided. Evaluate based on ${specializedName} interview context and technical depth.`
+            : resumeText,
         resumeUrl: details.resumeUrl || "",
         resumePath: details.resumePath || "",
-        jdText: isSpecializedFlow
-          ? `Specialized ${specializedName} Interview Round\n\n${topicLinksText}`
-          : jdText,
-        role: details.role,
-        company: preFilledData?.topicId ? '' : details.company,
-        roundType: preFilledData?.topicId ? 'topic-specific' : (type || 'technical'),
-        interviewMode: preFilledData?.topicId ? 'topic' : (preFilledData?.company ? 'company' : 'general'),
+        jdText: isHackathonRoute
+          ? (hackathonConfig?.jdText || '')
+          : isSpecializedFlow
+            ? `Specialized ${specializedName} Interview Round\n\n${topicLinksText}`
+            : jdText,
+        role: isHackathonRoute ? 'Software Engineer' : details.role,
+        company: isHackathonRoute ? (hackathonConfig?.title || 'Hackathon') : (preFilledData?.topicId ? '' : details.company),
+        roundType: isHackathonRoute ? 'technical' : (preFilledData?.topicId ? 'topic-specific' : (type || 'technical')),
+        interviewMode: isHackathonRoute ? 'hackathon' : (preFilledData?.topicId ? 'topic' : (preFilledData?.company ? 'company' : 'general')),
         topicId: preFilledData?.topicId || '',
         topicName: preFilledData?.topicName || '',
         userId: user._id,
-        candidateName: "", // Leave empty so AI extracts name from resume itself
-        duration,
+        candidateName: "",
+        duration: isHackathonRoute ? 30 : duration,
+        difficulty: isHackathonRoute ? (hackathonConfig?.difficulty || 'hard') : undefined,
       };
+
+      if (isHackathonRoute) {
+        localStorage.setItem('hackathon_interview_mode', 'true');
+      }
+
+      stopCamera();
+      setShowPreStart(false);
 
       console.log('[InterviewStart] Setup data:', JSON.stringify({
         ...setupData,
@@ -463,19 +560,24 @@ export default function InterviewStart() {
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Session Capacity</span>
                         <span className={`text-[10px] font-black ${isAtLimit ? 'text-rose-500' : 'text-blue-600'}`}>
-                          {totalInterviewsTaken} / {effectiveInterviewLimit ?? '—'}
+                          {totalInterviewsTakenDisplay} / {effectiveInterviewLimit ?? '—'}
                         </span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
-                          animate={{ width: `${effectiveInterviewLimit ? Math.min((totalInterviewsTaken / effectiveInterviewLimit) * 100, 100) : 0}%` }}
+                          animate={{ width: `${effectiveInterviewLimit ? Math.min((totalInterviewsTakenDisplay / effectiveInterviewLimit) * 100, 100) : 0}%` }}
                           className={`h-full transition-all duration-500 ${isAtLimit ? 'bg-rose-500' : 'bg-blue-600'}`}
                         />
                       </div>
-                      {isAtLimit && (
+                      {isAtLimit && !isHackathonRoute && (
                         <p className="mt-2 text-[10px] text-blue-600 font-bold flex items-center gap-1">
                           <Zap className="w-3 h-3 fill-current" /> Upgrade to unlock unlimited
+                        </p>
+                      )}
+                      {isAtLimit && isHackathonRoute && (
+                        <p className="mt-2 text-[10px] text-rose-500 font-bold">
+                          Hackathon interview already completed
                         </p>
                       )}
                     </div>
@@ -489,7 +591,7 @@ export default function InterviewStart() {
                     <p className="text-[11px] text-slate-500 leading-relaxed">Complete your first session to unlock personalized performance analytics.</p>
                   </div>
                 )}
-                <Link to="/interview/history" className="flex items-center justify-center gap-2 w-full py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98]">
+                <Link to="/interview/history" className="flex items-center justify-center gap-2 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98]">
                   <Eye className="w-4 h-4" /> View History
                 </Link>
               </CardContent>
@@ -641,10 +743,32 @@ export default function InterviewStart() {
                   {/* JD Section */}
                   <div className="space-y-4">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
-                      <Layers className="w-3.5 h-3.5 text-blue-500" /> Job Description <span className="text-rose-500">*</span>
+                      <Layers className="w-3.5 h-3.5 text-blue-500" /> Job Description
+                      {!isHackathonRoute && <span className="text-rose-500">*</span>}
+                      {isHackathonRoute && <span className="ml-auto flex items-center gap-1 text-blue-500"><Lock className="w-3 h-3" /> Hackathon JD</span>}
                     </label>
                     <div className="group relative h-full">
-                      {isSpecializedFlow ? (
+                      {isHackathonRoute ? (
+                        <div className="relative p-6 bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/30 rounded-3xl flex flex-col items-center justify-center text-center gap-3 min-h-[300px]">
+                          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500/0 via-blue-500/40 to-blue-500/0 rounded-t-3xl" />
+                          <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/30 mb-2">
+                            <Lock className="w-6 h-6 text-white" />
+                          </div>
+                          <p className="text-base font-black text-slate-900 dark:text-white tracking-tight">
+                            {hackathonConfig?.title || 'Hackathon'} JD — Locked
+                          </p>
+                          <p className="text-[11px] text-slate-500 leading-relaxed max-w-[220px]">
+                            The job description is pre-set by the hackathon organizers and cannot be changed.
+                          </p>
+                          {hackathonConfig?.jdText && (
+                            <div className="mt-2 px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 text-left w-full">
+                              <p className="text-[10px] text-slate-500 line-clamp-4 leading-relaxed">
+                                {hackathonConfig.jdText.slice(0, 200)}{hackathonConfig.jdText.length > 200 ? '…' : ''}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ) : isSpecializedFlow ? (
                         <div className="relative p-6 bg-white dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-3xl flex flex-col items-center justify-start text-center gap-3 transition-all hover:border-blue-200 shadow-xl shadow-blue-500/5 group/jd h-full min-h-[300px]">
                           {/* Top accent line */}
                           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500/0 via-blue-500/40 to-blue-500/0 rounded-t-3xl" />
@@ -748,53 +872,71 @@ export default function InterviewStart() {
                 </div>
 
                 <div className="flex flex-col lg:flex-row items-end gap-8 pt-6 border-t border-slate-100 dark:border-slate-800/50">
-                  <div className="w-full lg:flex-1 space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
-                      <Clock className="w-3.5 h-3.5 text-blue-500" /> Session Duration
-                    </label>
-                    <div className="flex items-center gap-4">
-                      {[15, 30, 45, 60].map((mins) => {
-                        const isLocked = !isPaidUser && mins !== 15;
-                        const isSelected = duration === mins;
-                        return (
-                          <button
-                            key={mins}
-                            onClick={() => {
-                              if (isLocked) { setShowPricing(true); return; }
-                              setDuration(mins);
-                            }}
-                            title={isLocked ? 'Upgrade to unlock longer sessions' : undefined}
-                            className={`relative flex-1 flex flex-col items-center p-3 rounded-2xl border transition-all ${
-                              isLocked
-                                ? 'bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 border-slate-200 dark:border-slate-700 cursor-pointer opacity-60'
-                                : isSelected
-                                  ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/20 scale-105'
-                                  : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-800 hover:border-blue-200'
-                            }`}
-                          >
-                            {isLocked && (
-                              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center shadow-sm">
-                                <Lock className="w-2.5 h-2.5 text-white" />
-                              </span>
-                            )}
-                            <span className="text-sm font-black">{mins}</span>
-                            <span className="text-[8px] font-bold uppercase">Mins</span>
-                          </button>
-                        );
-                      })}
+                  {!isHackathonRoute && (
+                    <div className="w-full lg:flex-1 space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
+                        <Clock className="w-3.5 h-3.5 text-blue-500" /> Session Duration
+                      </label>
+                      <div className="flex items-center gap-4">
+                        {[15, 30, 45, 60].map((mins) => {
+                          const isLocked = !isPaidUser && mins !== 15;
+                          const isSelected = duration === mins;
+                          return (
+                            <button
+                              key={mins}
+                              onClick={() => {
+                                if (isLocked) { setShowPricing(true); return; }
+                                setDuration(mins);
+                              }}
+                              title={isLocked ? 'Upgrade to unlock longer sessions' : undefined}
+                              className={`relative flex-1 flex flex-col items-center p-3 rounded-2xl border transition-all ${
+                                isLocked
+                                  ? 'bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 border-slate-200 dark:border-slate-700 cursor-pointer opacity-60'
+                                  : isSelected
+                                    ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/20 scale-105'
+                                    : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-800 hover:border-blue-200'
+                              }`}
+                            >
+                              {isLocked && (
+                                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center shadow-sm">
+                                  <Lock className="w-2.5 h-2.5 text-white" />
+                                </span>
+                              )}
+                              <span className="text-sm font-black">{mins}</span>
+                              <span className="text-[8px] font-bold uppercase">Mins</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {!isPaidUser && (
+                        <p className="mt-2 text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                          <Lock className="w-3 h-3" /> 30, 45 & 60 min sessions require a paid plan.
+                          <button onClick={() => setShowPricing(true)} className="underline hover:text-amber-700">Upgrade</button>
+                        </p>
+                      )}
                     </div>
-                    {!isPaidUser && (
-                      <p className="mt-2 text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
-                        <Lock className="w-3 h-3" /> 30, 45 & 60 min sessions require a paid plan.
-                        <button onClick={() => setShowPricing(true)} className="underline hover:text-amber-700">Upgrade</button>
-                      </p>
-                    )}
-                  </div>
+                  )}
+
+                  {isHackathonRoute && (
+                    <div className="w-full lg:flex-1 space-y-2">
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30">
+                        <Clock className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">Fixed Duration</p>
+                          <p className="text-sm font-bold text-slate-700 dark:text-slate-300">30 minutes — Expert difficulty</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30">
+                        <ListChecks className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                        <p className="text-[10px] text-slate-600 dark:text-slate-400">Camera, fullscreen & instructions check required before starting.</p>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="w-full lg:flex-[1.5]">
                     <Button
                       className={`w-full h-[72px] rounded-3xl text-sm font-black uppercase tracking-[0.2em] gap-3 shadow-2xl transition-all hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden group ${isAtLimit ? 'bg-rose-600 text-white shadow-rose-500/20' : 'bg-blue-600 text-white shadow-blue-500/20'}`}
-                      onClick={handleStart}
+                      onClick={isAtLimit ? handleStart : openPreStart}
                       disabled={loading}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
@@ -806,13 +948,13 @@ export default function InterviewStart() {
                       ) : isAtLimit ? (
                         <div className="flex items-center gap-3">
                           <Zap className="w-5 h-5 fill-current" />
-                          <span>{(user as any)?.role === 'student' ? 'Interview Limit Reached' : 'Upgrade to Continue'}</span>
+                          <span>{isHackathonRoute ? 'Interview Already Completed' : (user as any)?.role === 'student' ? 'Interview Limit Reached' : 'Upgrade to Continue'}</span>
                           <ArrowRight className="w-5 h-5 opacity-50" />
                         </div>
                       ) : (
                         <div className="flex items-center gap-3">
-                          <CheckCircle className="w-5 h-5" />
-                          <span>Start Ai for job</span>
+                          <MonitorCheck className="w-5 h-5" />
+                          <span>{isHackathonRoute ? 'Continue to Checklist' : 'Continue to Checklist'}</span>
                           <ArrowRight className="w-5 h-5 opacity-50 group-hover:translate-x-1 transition-transform" />
                         </div>
                       )}
@@ -865,13 +1007,13 @@ export default function InterviewStart() {
                         <div className="flex justify-between items-center mb-2">
                           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Vault Limit</span>
                           <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isAtResumeLimit ? 'bg-rose-500 text-white' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'}`}>
-                            {totalResumes}{resumeLimit != null ? ` / ${resumeLimit}` : ''}
+                            {effectiveResumeUsage}{effectiveResumeLimit != null ? ` / ${effectiveResumeLimit}` : ''}
                           </span>
                         </div>
                         <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                           <motion.div
                             initial={{ width: 0 }}
-                            animate={{ width: `${(resumeLimit != null && resumeLimit > 0) ? Math.min((totalResumes / resumeLimit) * 100, 100) : 0}%` }}
+                            animate={{ width: `${(effectiveResumeLimit != null && effectiveResumeLimit > 0) ? Math.min((effectiveResumeUsage / effectiveResumeLimit) * 100, 100) : 0}%` }}
                             className={`h-full transition-all duration-500 ${isAtResumeLimit ? 'bg-rose-500' : 'bg-blue-600'}`}
                           />
                         </div>
@@ -983,6 +1125,191 @@ export default function InterviewStart() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Pre-start checklist modal */}
+      <AnimatePresence>
+        {showPreStart && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 20 }}
+              className="relative w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-7 py-5 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                    <ShieldCheck className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-black text-slate-900 dark:text-white text-sm">Pre-Interview Checklist</p>
+                    <p className="text-[10px] text-slate-400">Complete all checks before entering</p>
+                  </div>
+                </div>
+                <button onClick={closePreStart} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                  <X className="w-4 h-4 text-slate-400" />
+                </button>
+              </div>
+
+              <div className="overflow-y-auto flex-1 px-7 py-5 space-y-5">
+
+                {/* Instructions */}
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <ListChecks className="w-3.5 h-3.5" /> Interview Guidelines
+                  </p>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 space-y-2">
+                    {[
+                      "Speak clearly and concisely — the AI listens to every word.",
+                      "Answer one question at a time. Wait for the interviewer to finish.",
+                      "You may use the code editor for technical problems when asked.",
+                      "Stay professional — treat this as a real interview.",
+                      isHackathonRoute ? "This is a one-attempt hackathon session — you cannot restart." : "You can end the session early; results are saved automatically.",
+                      isHackathonRoute ? "Tab switching or exiting fullscreen will disqualify you." : "Avoid switching tabs during the session.",
+                    ].map((rule, i) => (
+                      <div key={i} className="flex items-start gap-2.5">
+                        <div className="w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0 mt-0.5">
+                          <span className="text-[8px] font-black text-blue-600 dark:text-blue-400">{i + 1}</span>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">{rule}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Camera check */}
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5" /> Camera & Microphone
+                  </p>
+                  <div className={`rounded-2xl border-2 overflow-hidden transition-all ${
+                    cameraStatus === 'granted' ? 'border-green-200 dark:border-green-800' :
+                    cameraStatus === 'denied'  ? 'border-red-200 dark:border-red-800' :
+                    'border-slate-200 dark:border-slate-700'
+                  }`}>
+                    {cameraStatus === 'granted' ? (
+                      <div className="relative">
+                        <video
+                          ref={videoRef}
+                          autoPlay
+                          muted
+                          playsInline
+                          className="w-full h-40 object-cover bg-black"
+                        />
+                        <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                          <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                          LIVE
+                        </div>
+                      </div>
+                    ) : cameraStatus === 'denied' ? (
+                      <div className="h-32 flex flex-col items-center justify-center gap-2 bg-red-50 dark:bg-red-900/20">
+                        <CameraOff className="w-8 h-8 text-red-400" />
+                        <p className="text-xs font-bold text-red-600 dark:text-red-400">Camera access denied</p>
+                        <button
+                          onClick={checkCamera}
+                          className="text-[10px] font-bold text-red-500 underline"
+                        >
+                          Try again
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="h-32 flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800">
+                        <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
+                        <p className="text-xs text-slate-400">Checking camera access…</p>
+                      </div>
+                    )}
+                    <div className={`px-4 py-2.5 flex items-center justify-between ${
+                      cameraStatus === 'granted' ? 'bg-green-50 dark:bg-green-900/20' :
+                      cameraStatus === 'denied'  ? 'bg-red-50 dark:bg-red-900/20' :
+                      'bg-slate-50 dark:bg-slate-800'
+                    }`}>
+                      <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        {cameraStatus === 'granted' ? 'Camera & microphone ready' :
+                         cameraStatus === 'denied'  ? 'Camera required to proceed' :
+                         'Requesting access…'}
+                      </span>
+                      {cameraStatus === 'granted' && <CheckCircle className="w-4 h-4 text-green-500" />}
+                      {cameraStatus === 'denied'  && <AlertTriangle className="w-4 h-4 text-red-500" />}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fullscreen check (hackathon only) */}
+                {isHackathonRoute && (
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                      <Maximize2 className="w-3.5 h-3.5" /> Fullscreen Mode
+                    </p>
+                    <div className={`rounded-2xl border-2 px-4 py-3 flex items-center justify-between transition-all ${
+                      isFullscreen
+                        ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
+                        : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'
+                    }`}>
+                      <div>
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                          {isFullscreen ? 'Fullscreen active' : 'Fullscreen required for hackathon'}
+                        </p>
+                        {!isFullscreen && (
+                          <p className="text-[10px] text-slate-400 mt-0.5">
+                            Tab switching or exiting fullscreen will disqualify you.
+                          </p>
+                        )}
+                      </div>
+                      {isFullscreen ? (
+                        <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+                      ) : (
+                        <button
+                          onClick={requestFullscreen}
+                          className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-xl transition-colors shrink-0"
+                        >
+                          <Maximize2 className="w-3 h-3" /> Enable
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer action */}
+              <div className="px-7 py-5 border-t border-slate-100 dark:border-slate-800">
+                {(() => {
+                  const cameraOk = cameraStatus === 'granted';
+                  const fullscreenOk = !isHackathonRoute || isFullscreen;
+                  const allOk = cameraOk && fullscreenOk;
+                  return (
+                    <Button
+                      className={`w-full h-14 rounded-2xl text-sm font-black uppercase tracking-widest gap-3 transition-all ${
+                        allOk
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 hover:scale-[1.01]'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+                      }`}
+                      onClick={allOk ? handleStart : undefined}
+                      disabled={!allOk || loading}
+                    >
+                      {loading ? (
+                        <><Loader2 className="w-5 h-5 animate-spin" /> Initializing…</>
+                      ) : !cameraOk ? (
+                        <><CameraOff className="w-5 h-5" /> Camera Required to Start</>
+                      ) : !fullscreenOk ? (
+                        <><Maximize2 className="w-5 h-5" /> Enable Fullscreen to Start</>
+                      ) : (
+                        <><CheckCircle className="w-5 h-5" /> {isHackathonRoute ? 'Begin Hackathon Interview' : 'Begin Interview'}</>
+                      )}
+                    </Button>
+                  );
+                })()}
               </div>
             </motion.div>
           </div>

@@ -42,6 +42,7 @@ import { InterviewV2Report } from '@/api/interviewV2';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePricing } from '@/contexts/PricingContext';
 import { useInterviewLimits } from '@/hooks/useInterviewLimits';
+import { useHackathon } from '@/contexts/HackathonContext';
 
 interface ExternalAnalyticsSession extends InterviewV2Report {
   timestamp: string;
@@ -97,7 +98,13 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
   const [dashboardData, setDashboardData] = useState<any>(null);
   const { user } = useAuth();
   const { setShowPricing } = usePricing();
-  const { interviewLimit, currentInterviews: currentMonthlyUsage, isAtLimit, isPayg } = useInterviewLimits();
+  const { interviewLimit: rawLimit, currentInterviews: rawUsage, isAtLimit: rawAtLimit, isPayg } = useInterviewLimits();
+  const { eligible: isHackathon, interviewTaken: hackathonInterviewTaken } = useHackathon();
+
+  // For hackathon users: hard cap of 1 interview, usage based on whether they've taken it
+  const interviewLimit = isHackathon ? 1 : rawLimit;
+  const currentMonthlyUsage = isHackathon ? (hackathonInterviewTaken ? 1 : 0) : rawUsage;
+  const isAtLimit = isHackathon ? hackathonInterviewTaken : rawAtLimit;
 
   useEffect(() => {
     loadData();
@@ -360,15 +367,13 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
                 {onStartNew && (
                   <motion.button whileHover={{ scale: 1.01, y: -1 }} whileTap={{ scale: 0.99 }}
                     onClick={() => {
-                      if (isAtLimit && (user as any)?.role !== 'student') setShowPricing(true);
+                      if (isAtLimit && !isHackathon && (user as any)?.role !== 'student') setShowPricing(true);
                       else if (!isAtLimit) onStartNew();
                     }}
-                    disabled={isAtLimit && (user as any)?.role === 'student'}
+                    disabled={isAtLimit && ((user as any)?.role === 'student' || isHackathon)}
                     className={`flex items-center gap-3 px-6 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all duration-300 shadow-lg disabled:cursor-not-allowed ${
                       isAtLimit
-                        ? (user as any)?.role === 'student'
-                          ? 'bg-rose-600/80 text-white shadow-rose-500/10 opacity-80'
-                          : 'bg-rose-600 text-white shadow-rose-500/10'
+                        ? 'bg-rose-600/80 text-white shadow-rose-500/10 opacity-80'
                         : 'bg-blue-600 text-white shadow-blue-600/10 hover:bg-blue-700'
                     }`}>
                     <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center">
@@ -376,7 +381,7 @@ export default function InterviewAnalyticsDashboard({ onStartNew }: InterviewAna
                     </div>
                     <span>
                       {isAtLimit
-                        ? (user as any)?.role === 'student' ? 'Limit Reached' : 'Upgrade Now'
+                        ? isHackathon ? 'Interview Completed' : (user as any)?.role === 'student' ? 'Limit Reached' : 'Upgrade Now'
                         : 'New Interview'}
                     </span>
                   </motion.button>

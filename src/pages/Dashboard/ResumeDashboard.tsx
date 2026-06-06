@@ -121,11 +121,18 @@ const ArrowRight: React.FC<{ className?: string }> = ({ className = "w-6 h-6" })
 
 import { useNotifications } from "@/hooks/useNotifications";
 import NotificationPrompt from "@/components/common/NotificationPrompt";
+import { useHackathon } from "@/contexts/HackathonContext";
 
 const ResumeDashboard: React.FC = () => {
   const { resumes, uploadResume, fetchResumes, isLoading } = useResume();
   const { user } = useAuth();
-  
+  const { eligible: isHackathon } = useHackathon();
+
+  // Track whether this hackathon user has uploaded a resume during the event
+  const [hackathonResumeUploaded, setHackathonResumeUploaded] = useState(
+    () => localStorage.getItem('hackathon_resume_uploaded') === 'true'
+  );
+
   // Initialize Push Notifications specifically for Dashboard entry
   useNotifications(user?._id);
 
@@ -266,7 +273,12 @@ const ResumeDashboard: React.FC = () => {
 
   const isPayg = (user?.subscriptionPlan as any)?.type === 'pay_as_you_go';
   const currentResumeUsage = isPayg ? (user?.paygResumesUsed ?? 0) : (user?.resumeCount ?? safeResumes.length);
-  const isAtLimit = currentResumeUsage >= resumeLimit;
+
+  // Hackathon users: limit is 1 resume. Pre-existing resumes don't count, but any
+  // resume uploaded *during* the hackathon does (tracked in localStorage).
+  const effectiveResumeLimit = isHackathon ? 1 : resumeLimit;
+  const effectiveResumeUsage = isHackathon ? (hackathonResumeUploaded ? 1 : 0) : currentResumeUsage;
+  const isAtLimit = effectiveResumeUsage >= effectiveResumeLimit;
 
   // Determine if user is on a paid plan (students are treated as paid within their university limits)
   const isPaidUser = useMemo(() => {
@@ -328,6 +340,12 @@ const ResumeDashboard: React.FC = () => {
         title: 'Resume uploaded successfully',
         message: `${resumeFile.name} has been analyzed and processed.`,
       });
+
+      // For hackathon users, track that they've used their 1 allowed upload
+      if (isHackathon) {
+        localStorage.setItem('hackathon_resume_uploaded', 'true');
+        setHackathonResumeUploaded(true);
+      }
 
       // Close upload modal and open detailed view with the uploaded resume
       setIsUploadOpen(false);
@@ -467,13 +485,13 @@ const ResumeDashboard: React.FC = () => {
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Resume Limit</span>
                   <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isAtLimit ? 'bg-red-500 text-white' : 'bg-blue-600 text-white'}`}>
-                    {currentResumeUsage} / {resumeLimit}
+                    {effectiveResumeUsage} / {effectiveResumeLimit}
                   </span>
                 </div>
                 <div className="w-32 h-1 bg-gray-200 dark:bg-slate-700/80 rounded-full overflow-hidden">
                   <div
                     className={`h-full transition-all duration-500 ${isAtLimit ? 'bg-red-500' : 'bg-blue-600'}`}
-                    style={{ width: `${Math.min((currentResumeUsage / resumeLimit) * 100, 100)}%` }}
+                    style={{ width: `${Math.min((effectiveResumeUsage / effectiveResumeLimit) * 100, 100)}%` }}
                   />
                 </div>
               </div>
@@ -493,16 +511,16 @@ const ResumeDashboard: React.FC = () => {
                 <button
                   onClick={() => {
                     if (!isAtLimit) { setIsUploadOpen(true); return; }
-                    if (user?.role !== 'student') setShowPricing(true);
+                    if (!isHackathon && user?.role !== 'student') setShowPricing(true);
                   }}
                   className={`px-6 py-2 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 shadow-sm hover:shadow-md ${isAtLimit
                     ? 'bg-red-500 hover:bg-red-600 text-white border-red-400'
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
                     }`}
-                  title={isAtLimit ? (user?.role === 'student' ? "You've reached your university's resume limit." : "You've reached your plan limit. Upgrade for more storage.") : "Upload New Resume"}
+                  title={isAtLimit ? (isHackathon ? 'Hackathon limit: 1 resume only.' : user?.role === 'student' ? "You've reached your university's resume limit." : "You've reached your plan limit. Upgrade for more storage.") : "Upload New Resume"}
                 >
                   {isAtLimit ? <TrendingUpIcon className="w-5 h-5" /> : <CloudArrowUpIcon className="w-5 h-5" />}
-                  {isAtLimit ? (user?.role === 'student' ? 'Limit Reached' : 'Upgrade Plan') : 'Upload Resume'}
+                  {isAtLimit ? (isHackathon ? 'Limit Reached' : user?.role === 'student' ? 'Limit Reached' : 'Upgrade Plan') : 'Upload Resume'}
                 </button>
               </div>
             </div>

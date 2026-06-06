@@ -20,6 +20,7 @@ import { ProgressProvider } from "./contexts/ProgressContext";
 import { LessonsProvider } from "./contexts/LessonsContext";
 import { AnalyticsProvider } from "./contexts/AnalyticsContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import { HackathonProvider } from "./contexts/HackathonContext";
 import UniversityRoute from "./routes/UniversityRoute";
 import RollNumberDialog from "@/components/common/RollNumberDialog";
 //
@@ -61,6 +62,7 @@ const StudentClassDetail      = lazy(() => import("@/pages/Student/ClassDetail")
 const BlogsPage               = lazy(() => import("@/pages/Blogs/BlogsPage"));
 const BlogDetailPage          = lazy(() => import("@/pages/Blogs/BlogDetailPage"));
 const CoverLetterGenerator    = lazy(() => import("@/pages/CoverLetter/CoverLetterGenerator"));
+const HackathonLeaderboard    = lazy(() => import("@/pages/Hackathon/HackathonLeaderboard"));
 
 // ── Minimal loading fallback (no layout shift) ────────────────────────────
 const PageLoader = () => (
@@ -110,6 +112,7 @@ function App() {
     routes.studentAssignments,
     routes.studentClasses,
     routes.coverLetterGenerator,
+    '/hackathon/leaderboard',
   ];
   const shouldHideNavbar =
     hideNavbarRoutes.includes(location.pathname) ||
@@ -125,6 +128,7 @@ function App() {
     <NotificationProvider>
       <NotificationHandler />
       <AnalyticsProvider userId={user?._id} isAdmin={user?.role === 'admin'}>
+        <HackathonProvider>
         <PricingProvider>
           <InterviewProvider>
             <ResultsProvider>
@@ -151,6 +155,7 @@ function App() {
                     <Route path={routes.jobsPublic} element={<JobsPublicPage />} />
                     <Route path={routes.blogs} element={<BlogsPage />} />
                     <Route path={routes.blogDetail(":slug")} element={<BlogDetailPage />} />
+                    {/* hackathon/leaderboard moved to protected routes below */}
                     <Route path={routes.privacy} element={<PrivacyPolicy />} />
                     <Route path={routes.terms} element={<TermsOfService />} />
                     <Route path={routes.cookies} element={<CookiePolicy />} />
@@ -262,6 +267,14 @@ function App() {
                         </div>
                       }
                       />
+                      <Route path="/hackathon/leaderboard" element={
+                        <div className="flex min-h-screen">
+                          <Sidebar />
+                          <div className="flex-1">
+                            <HackathonLeaderboard />
+                          </div>
+                        </div>
+                      } />
                       <Route path={routes.interviewStart(":type")} element={
                         <div className="flex min-h-screen">
                           <Sidebar />
@@ -409,6 +422,7 @@ function App() {
             </ResultsProvider>
           </InterviewProvider>
         </PricingProvider>
+        </HackathonProvider>
       </AnalyticsProvider>
     </NotificationProvider>
   );

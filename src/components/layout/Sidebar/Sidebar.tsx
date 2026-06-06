@@ -13,6 +13,7 @@ import {
   User,
   LogOut,
   FileText,
+  Trophy,
 } from "lucide-react";
 
 import { cn } from "@/utils/cn";
@@ -21,6 +22,7 @@ import SidebarSection from "./SidebarSection";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePricing } from "@/contexts/PricingContext";
+import { useHackathon } from "@/contexts/HackathonContext";
 
 const sidebarRoutes = [
   {
@@ -80,6 +82,7 @@ export default function Sidebar() {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const { setShowPricing } = usePricing();
+  const { eligible: isHackathon } = useHackathon();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -164,7 +167,17 @@ export default function Sidebar() {
             </SidebarSection>
           ))}
 
-          {isStudent ? (
+          {isHackathon && (
+            <SidebarItem
+              icon={<Trophy size={18} />}
+              label="Leaderboard"
+              description="View hackathon rankings"
+              active={location.pathname === '/hackathon/leaderboard'}
+              onClick={() => handleItemClick('/hackathon/leaderboard')}
+            />
+          )}
+
+          {!isHackathon && (isStudent ? (
             <div className="mt-3 mb-4">
               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500 px-1 mb-2">
                 Subscription
@@ -213,7 +226,7 @@ export default function Sidebar() {
                 )}
               </button>
             </div>
-          )}
+          ))}
 
           {/* Theme Toggle */}
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-slate-800">
@@ -284,7 +297,17 @@ export default function Sidebar() {
               </SidebarSection>
             ))}
 
-            {isStudent ? (
+            {isHackathon && (
+              <SidebarItem
+                icon={<Trophy size={18} />}
+                label="Leaderboard"
+                description="View hackathon rankings"
+                active={location.pathname === '/hackathon/leaderboard'}
+                onClick={() => handleItemClick('/hackathon/leaderboard')}
+              />
+            )}
+
+            {!isHackathon && (isStudent ? (
               <div className="mt-3 mb-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500 px-1 mb-2">
                   Subscription
@@ -330,7 +353,7 @@ export default function Sidebar() {
                   )}
                 </button>
               </div>
-            )}
+            ))}
 
             {/* Theme Toggle */}
             <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/50">

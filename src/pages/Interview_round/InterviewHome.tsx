@@ -7,6 +7,9 @@ import {
   MessageCircle,
   Building2,
   Search,
+  Trophy,
+  CheckCircle,
+  Lock,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import InterviewAnalyticsDashboard from "./InterviewAnalyticsDashboard";
@@ -16,6 +19,7 @@ import { useResults } from "@/contexts/ResultsContext";
 import { InterviewAnalyticsApi } from "@/api/interviewAnalytics";
 import http, { baseURL } from "@/api/http";
 import { useInterviewLimits } from "@/hooks/useInterviewLimits";
+import { useHackathon } from "@/contexts/HackathonContext";
 
 type InterviewCardProps = {
   type: string;
@@ -31,22 +35,24 @@ type InterviewCardProps = {
   isFeatured?: boolean;
   isPremium?: boolean;
   isEndToEnd?: boolean;
+  isHackathonLocked?: boolean;
 };
 
-function InterviewCard({ 
-  type, 
-  description, 
-  icon, 
-  color, 
+function InterviewCard({
+  type,
+  description,
+  icon,
+  color,
   routeKey,
   ctaLabel,
-  navigate, 
-  isAtLimit, 
-  onLimitExceeded, 
-  tags, 
-  isFeatured, 
+  navigate,
+  isAtLimit,
+  onLimitExceeded,
+  tags,
+  isFeatured,
   isPremium,
-  isEndToEnd
+  isEndToEnd,
+  isHackathonLocked,
 }: InterviewCardProps) {
   const getBGColor = (gradientClass: string) => {
     if (gradientClass.includes('indigo')) return 'bg-indigo-50 dark:bg-indigo-900/20';
@@ -62,7 +68,7 @@ function InterviewCard({
   const textColor = getTextColor(color);
 
   return (
-    <div className="group relative bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full text-left">
+    <div className={`group relative bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 transition-all duration-300 overflow-hidden flex flex-col h-full text-left ${isHackathonLocked ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-md'}`}>
       <div className="p-8 flex flex-col h-full">
         {/* Icon */}
         <div
@@ -112,14 +118,26 @@ function InterviewCard({
 
         {/* Action button */}
         <button
-          onClick={() => isAtLimit ? onLimitExceeded() : navigate(`/interview/start/${routeKey || type.toLowerCase()}`)}
-          className={`mt-8 w-full flex items-center justify-center gap-2 border px-4 py-3 rounded-lg transition-all duration-300 font-medium text-sm group-hover:border-gray-300 dark:group-hover:border-gray-600 ${isAtLimit
-            ? 'bg-gray-50 dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed'
-            : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-            }`}
+          disabled={isHackathonLocked || isAtLimit}
+          onClick={() => {
+            if (isHackathonLocked) return;
+            isAtLimit ? onLimitExceeded() : navigate(`/interview/start/${routeKey || type.toLowerCase()}`);
+          }}
+          className={`mt-8 w-full flex items-center justify-center gap-2 border px-4 py-3 rounded-lg transition-all duration-300 font-medium text-sm ${
+            isHackathonLocked
+              ? 'bg-gray-50 dark:bg-gray-800/50 text-gray-300 dark:text-gray-600 border-gray-100 dark:border-gray-700 cursor-not-allowed'
+              : isAtLimit
+              ? 'bg-gray-50 dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed'
+              : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 group-hover:border-gray-300 dark:group-hover:border-gray-600'
+          }`}
         >
-          {isAtLimit ? 'Limit Reached' : (ctaLabel || 'Start Session')}
-          <ArrowRight className="w-4 h-4" />
+          {isHackathonLocked ? (
+            <><Lock className="w-4 h-4" /> Locked</>
+          ) : isAtLimit ? (
+            <>Limit Reached <ArrowRight className="w-4 h-4" /></>
+          ) : (
+            <>{ctaLabel || 'Start Session'} <ArrowRight className="w-4 h-4" /></>
+          )}
         </button>
       </div>
     </div>
@@ -137,6 +155,7 @@ export default function InterviewHome() {
   const [specializedCompanies, setSpecializedCompanies] = useState<any[]>([]);
   const [specializedTopics, setSpecializedTopics] = useState<any[]>([]);
   const { interviewLimit, currentInterviews, isAtLimit } = useInterviewLimits();
+  const { eligible: isHackathon, interviewTaken: hackathonInterviewTaken, config: hackathonConfig } = useHackathon();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [showAllCompanies, setShowAllCompanies] = useState(false);
@@ -168,6 +187,8 @@ export default function InterviewHome() {
   }, []);
 
   const handleLimitExceeded = () => {
+    // Hackathon users cannot upgrade
+    if (isHackathon) return;
     // Students cannot upgrade — their limit is set by their university admin
     if ((user as any)?.role !== 'student') {
       setShowPricing(true);
@@ -278,6 +299,11 @@ export default function InterviewHome() {
 
   const showComingSoonSection = searchQuery.trim().length === 0 && activeFilter === "All";
 
+  const startHackathonInterview = () => {
+    // Route through InterviewStart so user can pick their CV; JD is locked to hackathon config
+    navigate('/interview/start/technical', { state: { hackathon: true } });
+  };
+
   if (showInterviewSelection) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900">
@@ -313,46 +339,104 @@ export default function InterviewHome() {
 
         {/* Global Search and Filter */}
         <div className="max-w-7xl mx-auto px-6 -mt-8">
-           <div className="bg-white dark:bg-gray-800 p-4 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row gap-4 items-center">
-              <div className="relative flex-1 w-full">
-                 <Search className="absolute left-4 top-1/2 -transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                 <input 
-                    type="text"
-                    placeholder="Search by company, topic or round..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 text-sm font-medium transition-all"
-                 />
-              </div>
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row gap-4 items-center">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-4 top-1/2 -transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by company, topic or round..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 text-sm font-medium transition-all"
+              />
+            </div>
+            {!isHackathon && (
               <div className="flex flex-wrap gap-2 overflow-x-auto pb-1 max-w-full no-scrollbar px-2">
-                 {allTags.map(tag => {
-                    const isActive = activeFilter === tag;
-                    const isPremium = false;
-                    const isFeatured = false;
-                    
-                    let activeStyles = 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/30 ring-2 ring-blue-500/20';
-
-                    return (
-                      <button
-                        key={tag}
-                        onClick={() => setActiveFilter(tag)}
-                        className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 border h-10 flex items-center justify-center whitespace-nowrap ${
-                          isActive 
-                            ? activeStyles
-                            : 'bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-100 dark:border-gray-700 hover:border-blue-300 hover:text-blue-500 shadow-sm'
-                        }`}
-                      >
-                        {tag}
-                      </button>
-                    );
-                 })}
+                {allTags.map(tag => {
+                  const isActive = activeFilter === tag;
+                  const activeStyles = 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/30 ring-2 ring-blue-500/20';
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => setActiveFilter(tag)}
+                      className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 border h-10 flex items-center justify-center whitespace-nowrap ${
+                        isActive
+                          ? activeStyles
+                          : 'bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-100 dark:border-gray-700 hover:border-blue-300 hover:text-blue-500 shadow-sm'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
               </div>
-           </div>
+            )}
+          </div>
         </div>
 
         {/* Cards section */}
         <div className="max-w-7xl mx-auto px-6 pb-10">
-          {filteredCompanies.length > 0 && (
+          {/* ── Hackathon card (shown only in hackathon mode) ── */}
+          {isHackathon && (
+            <div className="mt-16 mb-10">
+              <div className="mb-5 flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                <Trophy size={12} className="text-blue-500" />
+                Your Hackathon Interview
+              </div>
+
+              <div className="max-w-sm">
+                {hackathonInterviewTaken ? (
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 flex items-center gap-4 shadow-sm">
+                    <CheckCircle size={32} className="text-green-500 flex-shrink-0" />
+                    <div>
+                      <div className="font-bold text-gray-900 dark:text-white">Interview Submitted</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">You've completed your hackathon interview.</div>
+                      <button
+                        onClick={() => navigate('/hackathon/leaderboard')}
+                        className="mt-3 text-sm font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1 hover:underline"
+                      >
+                        <Trophy size={13} /> View Leaderboard
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="group bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-300 overflow-hidden">
+                    <div className="p-8">
+                      <div className="w-14 h-14 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mb-6">
+                        <Trophy className="w-7 h-7 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                        {hackathonConfig?.title || 'Hackathon Interview'}
+                      </h3>
+                      {hackathonConfig?.description && (
+                        <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-2">{hackathonConfig.description}</p>
+                      )}
+                      <p className="text-gray-500 dark:text-gray-500 text-xs leading-relaxed mb-6">
+                        One attempt only · Expert difficulty · Genuine CV required · No AI enhancement
+                      </p>
+                      <button
+                        onClick={startHackathonInterview}
+                        className="w-full flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 px-4 py-3 rounded-lg transition-all duration-300 font-medium text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        Start Session <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Divider before locked rounds */}
+              <div className="mt-12 mb-5 flex items-center gap-3">
+                <div className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
+                <div className="flex items-center gap-2 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                  <Lock size={11} /> Other rounds are locked during the hackathon
+                </div>
+                <div className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
+              </div>
+            </div>
+          )}
+
+          {(isHackathon ? specializedCompanies.length > 0 : filteredCompanies.length > 0) && (
             <div className="mt-10 space-y-10">
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div className="space-y-2">
@@ -370,16 +454,19 @@ export default function InterviewHome() {
               </div>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
-                {(showAllCompanies ? filteredCompanies : filteredCompanies.slice(0, INITIAL_COUNT)).map((topic) => (
+                {(isHackathon
+                  ? specializedCompanies.slice(0, INITIAL_COUNT)
+                  : (showAllCompanies ? filteredCompanies : filteredCompanies.slice(0, INITIAL_COUNT))
+                ).map((topic) => (
                   <InterviewCard
                     key={topic._id}
                     type={topic.name}
                     description={`Specialized interview round focused on ${topic.name}.`}
                     icon={topic.logoUrl ? (
-                      <img 
-                        src={String(topic.logoUrl).startsWith('http') ? topic.logoUrl : `${baseURL}${topic.logoUrl}`} 
-                        alt={topic.name} 
-                        className="w-12 h-12 object-contain" 
+                      <img
+                        src={String(topic.logoUrl).startsWith('http') ? topic.logoUrl : `${baseURL}${topic.logoUrl}`}
+                        alt={topic.name}
+                        className="w-12 h-12 object-contain"
                       />
                     ) : (
                       <Building2 className="w-8 h-8" />
@@ -388,11 +475,12 @@ export default function InterviewHome() {
                     navigate={() => navigate('/interview/start/technical', { state: { company: topic.name } })}
                     isAtLimit={isAtLimit}
                     onLimitExceeded={handleLimitExceeded}
+                    isHackathonLocked={isHackathon}
                   />
                 ))}
               </div>
 
-              {filteredCompanies.length > INITIAL_COUNT && (
+              {!isHackathon && filteredCompanies.length > INITIAL_COUNT && (
                 <div className="flex justify-center pt-2">
                   <button
                     onClick={() => setShowAllCompanies(!showAllCompanies)}
@@ -415,8 +503,8 @@ export default function InterviewHome() {
             </div>
           )}
 
-          {filteredTopics.length > 0 && (
-            <div className={`${filteredCompanies.length > 0 ? 'mt-14' : 'mt-24'} space-y-10`}>
+          {(isHackathon ? specializedTopics.length > 0 : filteredTopics.length > 0) && (
+            <div className={`${(isHackathon ? specializedCompanies.length > 0 : filteredCompanies.length > 0) ? 'mt-14' : 'mt-24'} space-y-10`}>
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div className="space-y-2">
                   <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
@@ -433,7 +521,10 @@ export default function InterviewHome() {
               </div>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
-                {(showAllTopics ? filteredTopics : filteredTopics.slice(0, INITIAL_COUNT)).map((topic) => (
+                {(isHackathon
+                  ? specializedTopics.slice(0, INITIAL_COUNT)
+                  : (showAllTopics ? filteredTopics : filteredTopics.slice(0, INITIAL_COUNT))
+                ).map((topic) => (
                   <InterviewCard
                     key={topic._id}
                     type={topic.name}
@@ -451,11 +542,12 @@ export default function InterviewHome() {
                     navigate={() => navigate('/interview/start/technical', { state: { topicId: topic._id, topicName: topic.name } })}
                     isAtLimit={isAtLimit}
                     onLimitExceeded={handleLimitExceeded}
+                    isHackathonLocked={isHackathon}
                   />
                 ))}
               </div>
 
-              {filteredTopics.length > INITIAL_COUNT && (
+              {!isHackathon && filteredTopics.length > INITIAL_COUNT && (
                 <div className="flex justify-center pt-2">
                   <button
                     onClick={() => setShowAllTopics(!showAllTopics)}
@@ -478,8 +570,8 @@ export default function InterviewHome() {
             </div>
           )}
 
-          {filteredRounds.length > 0 && (
-            <div className={`${filteredCompanies.length > 0 || filteredTopics.length > 0 ? 'mt-14' : 'mt-24'} space-y-10`}>
+          {(isHackathon ? rounds.length > 0 : filteredRounds.length > 0) && (
+            <div className={`${!isHackathon && (filteredCompanies.length > 0 || filteredTopics.length > 0) ? 'mt-14' : isHackathon ? 'mt-0' : 'mt-24'} space-y-10`}>
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div className="space-y-2">
                   <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
@@ -496,7 +588,7 @@ export default function InterviewHome() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
-                {filteredRounds.map((round) => (
+                {(isHackathon ? rounds : filteredRounds).map((round) => (
                   <InterviewCard
                     key={round.type}
                     type={round.type}
@@ -508,13 +600,14 @@ export default function InterviewHome() {
                     isAtLimit={isAtLimit}
                     onLimitExceeded={handleLimitExceeded}
                     isEndToEnd={round.isEndToEnd}
+                    isHackathonLocked={isHackathon}
                   />
                 ))}
               </div>
             </div>
           )}
 
-          {showComingSoonSection && (
+          {!isHackathon && showComingSoonSection && (
             <div className={`${filteredRounds.length > 0 || filteredCompanies.length > 0 || filteredTopics.length > 0 ? 'mt-14' : 'mt-24'} space-y-8`}>
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div className="space-y-2">
@@ -564,7 +657,7 @@ export default function InterviewHome() {
             </div>
           )}
 
-          {filteredRounds.length === 0 && filteredCompanies.length === 0 && filteredTopics.length === 0 && (
+          {!isHackathon && filteredRounds.length === 0 && filteredCompanies.length === 0 && filteredTopics.length === 0 && (
             <div className="mt-20 text-center py-20 bg-gray-50/50 dark:bg-gray-800/30 rounded-[3rem] border border-dashed border-gray-200 dark:border-gray-700">
               <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Search className="w-8 h-8 text-gray-400" />

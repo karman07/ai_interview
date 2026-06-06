@@ -13,6 +13,7 @@ import { renderTemplate, TEMPLATE_LIST } from '@/components/CoverLetter/template
 import { CoverLetterData, CoverLetterSettings } from '@/types/CoverLetter';
 import { useResume } from '@/contexts/ResumeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useHackathon } from '@/contexts/HackathonContext';
 import { Resume } from '@/types/Resume';
 import { User } from '@/types/user';
 // @ts-ignore
@@ -1338,7 +1339,27 @@ const EmptyHistory: React.FC<{ onNew: () => void }> = ({ onNew }) => (
 ═══════════════════════════════════════════════════════════ */
 export default function CoverLetterGenerator() {
   const { user } = useAuth();
+  const { eligible: isHackathon } = useHackathon();
   const uid = user?._id || 'guest';
+
+  if (isHackathon) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Sidebar />
+        <div className="flex-1 flex items-center justify-center p-10">
+          <div className="text-center max-w-sm">
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto mb-5">
+              <FileText className="w-8 h-8 text-blue-500 dark:text-blue-400" />
+            </div>
+            <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">Cover Letter Unavailable</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+              Cover letter generation is not available during the hackathon. Focus on your interview preparation instead.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const [history, setHistory] = useState<SavedCoverLetter[]>([]);
   const [showCreator, setShowCreator] = useState(false);
