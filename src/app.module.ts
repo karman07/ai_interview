@@ -42,6 +42,7 @@ import { BlogsModule } from './blogs/blogs.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { CoverLetterModule } from './cover-letter/cover-letter.module';
 import { TopicInterviewsModule } from './topic-interviews/topic-interviews.module';
+import { HackathonModule } from './hackathon/hackathon.module';
 
 @Module({
   imports: [
@@ -88,6 +89,7 @@ import { TopicInterviewsModule } from './topic-interviews/topic-interviews.modul
     NotificationsModule,
     CoverLetterModule,
     TopicInterviewsModule,
+    HackathonModule,
   ],
   controllers: [AppController],
   providers: [AppService],
