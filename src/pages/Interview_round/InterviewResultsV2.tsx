@@ -235,23 +235,38 @@ export default function InterviewResultsV2() {
   }, [loading, report, isHackathonSession, formSubmitted]);
 
   useEffect(() => {
+    async function loadFromLocalStorage(): Promise<any> {
+      const raw = localStorage.getItem("v2_interview_report");
+      if (!raw) return null;
+      try {
+        const p = JSON.parse(raw);
+        // Accept any report that has at least a summary or overall score
+        if (p?.summary || p?.overall_score != null || p?.summary?.overall_score != null) return p;
+      } catch { /**/ }
+      return null;
+    }
+
     async function load() {
       if (!sessionId) {
-        const raw = localStorage.getItem("v2_interview_report");
-        if (raw) {
-          try {
-            const p = JSON.parse(raw);
-            if (p?.summary && p.question_wise_analysis?.length > 0) setReport(p);
-          } catch { /**/ }
-        }
+        const local = await loadFromLocalStorage();
+        setReport(local);
         setLoading(false);
         return;
       }
       setLoading(true);
       try {
         const data = await InterviewAnalyticsApi.getInterviewReport(sessionId);
-        setReport(data?.summary ? data : null);
-      } catch { setReport(null); }
+        if (data?.summary || data?.overall_score != null) {
+          setReport(data);
+        } else {
+          // API returned empty/null — fall back to localStorage
+          const local = await loadFromLocalStorage();
+          setReport(local);
+        }
+      } catch {
+        const local = await loadFromLocalStorage();
+        setReport(local);
+      }
       finally { setLoading(false); }
     }
     load();

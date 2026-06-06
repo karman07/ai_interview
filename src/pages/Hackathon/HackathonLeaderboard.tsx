@@ -6,6 +6,7 @@ interface LeaderboardEntry {
   _id: string;
   userName: string;
   userEmail: string;
+  userImage?: string;
   overallScore: number;
   metrics?: Record<string, number>;
   formFilled: boolean;
@@ -92,10 +93,14 @@ export default function HackathonLeaderboard() {
                 return (
                   <div key={e._id} className={`flex flex-col items-center ${i === 0 ? 'order-2' : i === 1 ? 'order-1' : 'order-3'}`}>
                     <div
-                      className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 shadow border-2 flex items-center justify-center mb-2"
+                      className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 shadow border-2 overflow-hidden flex items-center justify-center mb-2"
                       style={{ borderColor: getMedalColor(rank) }}
                     >
-                      <span className="font-black text-base" style={{ color: getMedalColor(rank) }}>{rank}</span>
+                      {e.userImage ? (
+                        <img src={e.userImage} alt={e.userName} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="font-black text-base" style={{ color: getMedalColor(rank) }}>{e.userName.charAt(0).toUpperCase()}</span>
+                      )}
                     </div>
                     <div className="text-center mb-2">
                       <div className="font-bold text-xs text-gray-900 dark:text-white truncate max-w-[90px]">{e.userName}</div>
@@ -141,8 +146,12 @@ export default function HackathonLeaderboard() {
                   </div>
 
                   {/* Avatar */}
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-sm flex-shrink-0">
-                    {entry.userName.charAt(0).toUpperCase()}
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-sm flex-shrink-0 overflow-hidden">
+                    {entry.userImage ? (
+                      <img src={entry.userImage} alt={entry.userName} className="w-full h-full object-cover" />
+                    ) : (
+                      entry.userName.charAt(0).toUpperCase()
+                    )}
                   </div>
 
                   {/* Name & email */}
