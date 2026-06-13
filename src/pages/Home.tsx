@@ -375,28 +375,6 @@ const HeroSection = ({ onStart, onResume }: { onStart: () => void; onResume: () 
               </Button>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="flex items-center gap-5 flex-wrap"
-            >
-              <div className="flex -space-x-2">
-                {[
-                  { url: "/images/karman.png", name: "Karman" },
-                  { url: "/images/rahat.png", name: "Rahat" },
-                  { url: "/images/advitya.png", name: "Advitya" },
-                ].map((p, i) => (
-                  <img key={i} src={p.url} alt={p.name} className="w-9 h-9 rounded-full border-2 border-white dark:border-slate-950 object-cover" />
-                ))}
-              </div>
-              <div>
-                <div className="flex items-center gap-0.5 mb-0.5">
-                  {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
-                </div>
-                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">4.6 · Trusted by 1,000+ candidates</span>
-              </div>
-            </motion.div>
           </div>
 
           {/* Right — CSS illustration */}
@@ -1055,7 +1033,7 @@ const Home = () => {
         <HowItWorksSection />
         <FeaturesSection navigate={navigate} />
         <LiveDemoSection />
-        <TestimonialsSection />
+        {/* <TestimonialsSection /> */}
         <ComparisonSection />
         <FAQSection />
         <FinalCTA onStart={() => navigate("/signup")} />
